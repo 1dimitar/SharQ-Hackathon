@@ -1,0 +1,14 @@
+{
+  "generation": 116,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tail_exposure_calibration",
+  "patch_description": "Raise the exposure cutoff from the 75th to the 80th percentile and reduce the correction slope from 0.25 to 0.12. This makes the linear adjustment target only the most unusually exposed links and less aggressively counteracts route rewards. The smaller, more selective correction should preserve useful path-completion signals while reducing distortion of topology rankings; the existing cap remains as a safeguard.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:31:57.297837",
+  "llm_cost": 0.001996,
+  "llm_model": "gpt-6-luna"
+}

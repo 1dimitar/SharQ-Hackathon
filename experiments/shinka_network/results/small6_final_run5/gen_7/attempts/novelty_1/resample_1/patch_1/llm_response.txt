@@ -1,0 +1,33 @@
+<NAME>
+reciprocal_synergy
+</NAME>
+
+<DESCRIPTION>
+Add a compact reciprocal-link coupling for each unordered node pair. The existing linear terms value each direction separately, but do not express the joint benefit when both directions of a substantial bidirectional demand can be served directly. A small negative coupling, capped by the weaker direction’s normalized demand, rewards that combination without letting a one-way-heavy pair dominate. This adds at most n(n−1)/2 terms and leaves the degree penalty and existing route terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                add_route(j, -0.30 * float(support) / discount)
+
+    return linear, quadratic, 1.25
+=======
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                add_route(j, -0.30 * float(support) / discount)
+
+    # Reward selecting both directions of a pair when both carry demand.
+    # Capping by the weaker direction avoids a large one-way flow creating
+    # an artificial incentive to add its lightly-used reverse link.
+    for i in range(n):
+        for j in range(i + 1, n):
+            reciprocal_support = min(normalized[i, j], normalized[j, i])
+            if reciprocal_support > 0.0:
+                key = ((i, j), (j, i))
+                quadratic[key] = quadratic.get(key, 0.0) - 0.18 * float(reciprocal_support)
+
+    return linear, quadratic, 1.25
+>>>>>>> REPLACE
+</DIFF>

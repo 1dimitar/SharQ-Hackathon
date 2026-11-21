@@ -1,0 +1,83 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link and two-hop-path surrogate terms."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n == 0:
+        return {}, {}, 8.0
+
+    # Ignore invalid negative traffic, and use a stable scale for zero-demand cases.
+    t = np.maximum(t, 0.0)
+    scale = float(np.max(t))
+    if scale <= 0.0:
+        scale = 1.0
+    d = t / scale
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                linear[(i, j)] = -float(d[i, j])
+
+    # Reward a pair of links when they form a useful two-hop route.
+    # Spreading each OD contribution over its possible intermediate nodes
+    # prevents the quadratic component from overwhelming direct-link value.
+    quadratic = {}
+    if n > 2:
+        path_scale = 0.30 / float(n - 2)
+        for i in range(n):
+            for k in range(n):
+                if k == i:
+                    continue
+                traffic = float(d[i, k])
+                if traffic <= 0.0:
+                    continue
+
+                # Directly served OD pairs receive less additional credit for
+                # an indirect route; this focuses the surrogate on useful
+                # alternate connectivity.
+                scarcity = 0.35 + 0.65 * (1.0 - min(1.0, traffic))
+                reward = path_scale * traffic * scarcity
+                if reward <= 1e-12:
+                    continue
+
+                for j in range(n):
+                    if j == i or j == k:
+                        continue
+                    a = (i, j)
+                    b = (j, k)
+                    key = (a, b) if a < b else (b, a)
+                    quadratic[key] = quadratic.get(key, 0.0) - reward
+
+    # Ensure deterministic key ordering and omit numerical noise.
+    quadratic = {key: value for key, value in quadratic.items()
+                 if abs(value) > 1e-12}
+
+    # The evaluator adds this weight to the exact degree-deviation penalty.
+    # A stronger value than the baseline discourages invalid degree patterns.
+    penalty_weight = 8.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

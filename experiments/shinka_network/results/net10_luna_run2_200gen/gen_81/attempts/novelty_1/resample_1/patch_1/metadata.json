@@ -1,0 +1,14 @@
+{
+  "generation": 81,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "linear_component_pressure",
+  "patch_description": "Replace the nonlinear component-link discount with `1 + 0.75 * edge_pressure`, keeping demand support, node capacity, and reward allocation unchanged. The current power discount can suppress paths using busy component links sharply, even when those paths are valuable; this milder linear form tests whether preserving more such alternatives improves the typical sampled topology and median routing score.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:44.260398",
+  "llm_cost": 0.0009444000000000001,
+  "llm_model": "gpt-6-luna"
+}

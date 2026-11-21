@@ -1,0 +1,58 @@
+<NAME>
+relay_aware_two_hop
+</NAME>
+
+<DESCRIPTION>
+Add a restrained reward for useful two-hop routes, coupling the links that form each path. The reward is proportional to the traffic that path can serve, but is reduced when its intermediate node has high total demand, discouraging reliance on already busy relays. This is more selective than an unweighted two-hop reward, which can overvalue paths indiscriminately. The number of added terms is at most n(n−1)(n−2), within the limit. Increase the degree penalty to make invalid topologies less attractive during sampling.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Estimate how much traffic each node must originate and relay. Prefer
+    # two-hop paths through nodes with comparatively more spare capacity.
+    node_load = np.asarray(demand, dtype=float).sum(axis=0) + np.asarray(
+        demand, dtype=float
+    ).sum(axis=1)
+    mean_load = float(node_load.mean())
+    if mean_load > 0.0:
+        relay_factor = np.minimum(
+            1.5, 2.0 * mean_load / (mean_load + node_load)
+        )
+    else:
+        relay_factor = np.ones(n, dtype=float)
+
+    # x_ij * x_jk represents a usable two-hop route i -> j -> k.
+    # Keep these bonuses moderate so they complement, rather than overwhelm,
+    # the direct-traffic preference.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                value = float(demand[i, k])
+                if value > 0.0:
+                    quadratic[((i, j), (j, k))] = (
+                        -0.22 * (value / scale) * float(relay_factor[j])
+                    )
+
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

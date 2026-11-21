@@ -1,0 +1,20 @@
+[project]
+name = "sharq-hackathon"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "dimod",
+    "dwave-hybrid",
+    "dwave-ocean-sdk>=9.5.0",
+    "dwave-samplers",
+    "ipykernel",
+    "ipython",
+    "jupyterlab>=4.6.6",
+    "networkx",
+    "numpy",
+    "qoro-divi[jupyter,qubo-decompose]==0.16.2",
+    "requests",
+    "scipy>=1.18.1",
+]

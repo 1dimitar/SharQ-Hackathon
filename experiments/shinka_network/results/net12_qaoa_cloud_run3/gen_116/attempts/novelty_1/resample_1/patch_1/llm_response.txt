@@ -1,0 +1,16 @@
+<NAME>
+stronger_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Raise the pressure exponent in the relay-ranking denominator from 1 to 1.25. This makes heavily loaded nodes less likely to be retained as relays, while leaving the existing reward discount unchanged. The edit is confined to candidate selection, so it preserves the current quadratic-term budget and tests the recommended stronger pressure-aware ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = affinity / (0.75 + float(node_pressure[j]))
+=======
+                rank = affinity / ((0.75 + float(node_pressure[j])) ** 1.25)
+>>>>>>> REPLACE
+
+</DIFF>

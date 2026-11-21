@@ -1,0 +1,144 @@
+<NAME>
+operator_adaptive_trials
+</NAME>
+
+<DESCRIPTION>
+Track stall signals separately for bottleneck switches, random switches, rotations, and archive recombination. Attribute each proposed move to its generating operator, then update an operator’s stall count only when a move from that operator was actually LP-scored. Increase proposal effort for operators whose scored moves have stopped beating their parent, with caps to keep generation bounded. This gives underexplored or stalled move types more chances without letting a parent’s overall stall signal incorrectly drive every neighborhood operator.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stalls = {}
+    best_net = None
+=======
+    stalls = {}
+    operator_stalls = {}
+    move_operators = {}
+    best_net = None
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+        moves = {}
+
+        def add_move(move, operator):
+            if move is None or move == parent:
+                return
+            moves.setdefault(move, set()).add(operator)
+            move_operators.setdefault((parent, move), set()).add(operator)
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                move = two_switch(parent, p, q)
+                if move is not None:
+                    moves.add(move)
+
+        # Unrestricted samples retain paths out of regions poorly described by prices.
+        for _ in range(80):
+=======
+                move = two_switch(parent, p, q)
+                add_move(move, "bottleneck")
+
+        # Unrestricted samples retain paths out of regions poorly described by prices.
+        random_trials = min(
+            320, 80 * (1 + operator_stalls.get((parent, "random"), 0) // 3)
+        )
+        for _ in range(random_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            move = two_switch(parent, p, q)
+            if move is not None:
+                moves.add(move)
+
+        # Three-link rotations can cross barriers that single switches cannot.
+        if len(arcs) >= 3:
+            for _ in range(90):
+=======
+            move = two_switch(parent, p, q)
+            add_move(move, "random")
+
+        # Three-link rotations can cross barriers that single switches cannot.
+        if len(arcs) >= 3:
+            rotation_trials = min(
+                360, 90 * (1 + operator_stalls.get((parent, "rotation"), 0) // 3)
+            )
+            for _ in range(rotation_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    if new & (current - old):
+                        continue
+                    moves.add(tuple(sorted((current - old) | new)))
+
+        # Recombine destination assignments supported by good archived networks.
+=======
+                    if new & (current - old):
+                        continue
+                    add_move(tuple(sorted((current - old) | new)), "rotation")
+
+        # Recombine destination assignments supported by good archived networks.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(12):
+            k = 3 + int(rng.integers(4))
+=======
+        recombination_trials = min(
+            48, 12 * (1 + operator_stalls.get((parent, "recombine"), 0) // 3)
+        )
+        for _ in range(recombination_trials):
+            k = 3 + int(rng.integers(4))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            if best_assignment is not None:
+                moves.add(tuple(sorted(remainder | best_assignment)))
+
+        return [
+            net for net in moves
+=======
+            if best_assignment is not None:
+                add_move(tuple(sorted(remainder | best_assignment)), "recombine")
+
+        return [
+            net for net in moves
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        if best_score < previous_best:
+=======
+        observed_operators = set()
+        improved_operators = set()
+        for net in batch:
+            operators = move_operators.get((parent, net), ())
+            if not operators:
+                continue
+            observed_operators.update(operators)
+            if scores.get(net, float("inf")) < parent_score:
+                improved_operators.update(operators)
+        for operator in observed_operators:
+            key = (parent, operator)
+            if operator in improved_operators:
+                operator_stalls[key] = 0
+            else:
+                operator_stalls[key] = operator_stalls.get(key, 0) + 1
+
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        if best_score < previous_best:
+>>>>>>> REPLACE
+</DIFF>

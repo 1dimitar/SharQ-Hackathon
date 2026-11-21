@@ -1,0 +1,14 @@
+{
+  "generation": 86,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bilateral_route_evidence",
+  "patch_description": "Rank two-hop routes using the harmonic mean of their two leg demands, so a strong leg cannot hide a weak one. Modulate that evidence by a bounded endpoint-share factor: whether the first leg is important in the source\u2019s outgoing demand and the second is important in the target\u2019s incoming demand. This refines which routes receive the existing sparse rewards without adding couplings or changing the degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:08:54.251110",
+  "llm_cost": 0.0036297,
+  "llm_model": "gpt-6-luna"
+}

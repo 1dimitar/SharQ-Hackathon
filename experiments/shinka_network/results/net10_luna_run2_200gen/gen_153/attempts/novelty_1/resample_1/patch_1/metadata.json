@@ -1,0 +1,14 @@
+{
+  "generation": 153,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_route_diversity",
+  "patch_description": "This crossover combines the current program\u2019s direct-demand reward and pressure-discounted two-hop terms with the inspiration program\u2019s endpoint-capacity signal and correlated-profile diversity penalties. Two-hop reward is distributed across all eligible intermediate nodes using demand support, transit pressure, and a congestion discount, rather than assigning the same reward to every possible path. The two-hop interactions are capped to the supported path structure, while diversity terms discourage redundant same-source or same-destination links. Degree penalties remain the evaluator\u2019s responsibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:00.462579",
+  "llm_cost": 0.0016113,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 74,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "archive_yield_selection",
+  "patch_description": "Track how often each archive parent is explored and whether its evaluated batches improve on that parent. Use these results to modestly favor productive parents, while reserving a share of archive selections for uniform exploration so less-tested and diverse members still get opportunities. This directs search effort using observed LP outcomes rather than relying only on archive score rank.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:06:33.892204",
+  "llm_cost": 0.0023766,
+  "llm_model": "gpt-6-luna"
+}

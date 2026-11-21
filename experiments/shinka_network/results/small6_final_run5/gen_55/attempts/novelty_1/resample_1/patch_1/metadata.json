@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "resolvent_response",
+  "patch_description": "This replaces selected two-hop rewards with an all-hop routing proxy. A demand-biased fractional network defines a discounted walk resolvent, which measures connectivity through paths of every length.\n\nExact binary finite differences of this proxy produce link rewards and interactions: complementary links receive rewards, while competing alternatives can receive penalties. Unlike a Taylor expansion, these differences remain well behaved when a link changes from a small fractional value to one. Degree-invariant components are removed, and sparse interactions are retained with a mean-field correction for discarded terms.\n\nThe construction is deterministic, uses no routing solver, and generates fewer than \\(2n^3\\) candidate couplings before sparsification. Its intended advantage is size-consistent, saturation-aware ranking rather than adding more independently rewarded paths; improvement still requires evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:39:04.575178",
+  "llm_cost": 0.18306200000000003,
+  "llm_model": "gpt-6.1-sol"
+}

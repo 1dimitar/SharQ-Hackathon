@@ -1,0 +1,27 @@
+<NAME>
+adaptive_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Use the recommended baseline relay count `min(n - 2, max(1, n // 5))`, with up to two additional relays for OD demands at or above the 80th-percentile cutoff. This keeps the relay-selection structure intact while reducing unnecessary interactions for smaller instances and reserving extra alternatives for the heaviest demands. The sparser, demand-selective couplings may also make the QUBO easier to partition and solve.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+
+    quadratic = {}
+=======
+    cutoff = float(np.quantile(positive, 0.80)) if positive.size else 0.0
+    relay_count = min(n - 2, max(1, n // 5))
+
+    quadratic = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            budget = min(n - 2, 4 if od >= cutoff else 2)
+=======
+            budget = min(n - 2, relay_count + (2 if od >= cutoff else 0))
+>>>>>>> REPLACE
+
+</DIFF>

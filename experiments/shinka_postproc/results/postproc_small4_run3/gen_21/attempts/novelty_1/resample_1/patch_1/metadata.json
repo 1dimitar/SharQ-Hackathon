@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "stall_adaptive_diversification",
+  "patch_description": "Reserve explicit LP-batch capacity for candidates that are structurally distant from the scored archive, rather than letting energy-ranked moves fill nearly every slot. Increase that exploration share as a parent stalls, while retaining slots for energy and link-pressure guidance. Also make kicks from stalled parents progressively longer and more numerous, so the search can cross barriers instead of repeatedly sampling small variations. All changes scale with the instance size or stall count.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:39:22.659982",
+  "llm_cost": 0.004262999999999999,
+  "llm_model": "gpt-6-luna"
+}

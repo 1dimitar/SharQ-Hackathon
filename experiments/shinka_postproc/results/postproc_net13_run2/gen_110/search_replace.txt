@@ -1,0 +1,43 @@
+<NAME>
+multi_elite_novelty
+</NAME>
+
+<DESCRIPTION>
+Use one batch slot to explore a proposal that is structurally distant, on average, from several strong archive members rather than merely distant from the current parent or already selected moves. This helps search reach alternative elite regions when the surrogate ranking repeatedly favors small variations around one basin. Surrogate energy breaks ties, while the remaining batch slots retain the existing ranked selection.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Keep one exploratory proposal from outside the very top of the
+        # ranking, particularly useful when the parent has stalled.
+        if len(selected) < limit and len(ranked) > 8:
+            pool = [net for net in ranked[6:] if net not in selected]
+            if pool:
+                selected.append(pool[int(rng.integers(len(pool)))])
+
+        for net in ranked:
+=======
+        # Reserve a slot for novelty against several strong archive regions,
+        # not just distance from this parent or the current batch.
+        if len(selected) < limit and len(ranked) > 8:
+            anchors = sorted(scores, key=scores.get)[:8]
+            pool = [
+                net for net in ranked
+                if net not in selected
+                and all(distance(net, old) >= 2 for old in selected)
+            ]
+            if pool and anchors:
+                base_energy = energy(parent)
+                novel = max(
+                    pool,
+                    key=lambda net: (
+                        sum(distance(net, anchor) for anchor in anchors) / len(anchors),
+                        -(energy(net) - base_energy),
+                    ),
+                )
+                selected.append(novel)
+
+        for net in ranked:
+>>>>>>> REPLACE
+
+</DIFF>

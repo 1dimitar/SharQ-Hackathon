@@ -1,0 +1,14 @@
+{
+  "generation": 125,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_affinity",
+  "patch_description": "Separates demand preparation, direct-link scoring, and sparse relay-term construction. Relay candidates are ranked using the stronger-weaker-leg affinity, so a useful strong leg contributes without letting it completely mask a weak leg. Limiting each OD pair to a small, deterministic relay budget keeps the interaction graph sparse while retaining the existing pressure adjustment.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:32:38.498391",
+  "llm_cost": 0.0012095,
+  "llm_model": "gpt-6-luna"
+}

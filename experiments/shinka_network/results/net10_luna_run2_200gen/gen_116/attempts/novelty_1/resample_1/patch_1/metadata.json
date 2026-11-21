@@ -1,0 +1,14 @@
+{
+  "generation": 116,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_quality_clamp",
+  "patch_description": "Clamp each OD pair\u2019s candidate two-hop route scores to 0.8\u20131.4 times their mean before allocating its indirect reward. This preserves route preferences while preventing a few intermediates from dominating the reward. The narrower range may make the low-energy region less dependent on uncertain route estimates and improve the typical sampled topology, without adding quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:00.539822",
+  "llm_cost": 0.0012448000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,182 @@
+<NAME>
+dual_metric_screen
+</NAME>
+
+<DESCRIPTION>
+Use LP dual prices to construct reusable, mathematically valid congestion lower bounds. Shortest-path distances under nonnegative dual prices form a directed metric. For any proposed network, its congestion is at least demand-weighted metric distance divided by the sum of metric lengths of its links.
+
+Keep a bounded bundle of these metrics from previously explored parents. Before computing the existing demand-distance proxy, preferentially retain proposals whose lower bound permits improvement over their parent. Unlike ranking moves by removed bottleneck prices, this accounts for the usefulness of newly added links.
+
+Reserve a quarter of each LP batch for structurally diverse proposals from the unfiltered pool. This preserves uphill moves and larger perturbations needed to escape local optima. If no proposal passes the bound screen, fall back to the original pool rather than stopping exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def choose_starts(repaired, limit):
+=======
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0)
+    np.fill_diagonal(traffic, 0.0)
+    dual_metrics = []
+    dual_recorded = set()
+
+    def record_dual_metric(net, detail):
+        """Turn link prices into a valid congestion-bound metric."""
+        if net in dual_recorded or not detail:
+            return
+        dual_recorded.add(net)
+        prices = detail.get("prices", {})
+        if not prices:
+            return
+
+        lengths = np.full((n, n), np.inf)
+        np.fill_diagonal(lengths, 0.0)
+        for a, b in net:
+            lengths[a, b] = max(0.0, float(prices.get((a, b), 0.0)))
+        for k in range(n):
+            np.minimum(
+                lengths,
+                lengths[:, k:k + 1] + lengths[k:k + 1, :],
+                out=lengths,
+            )
+        if not np.all(np.isfinite(lengths)):
+            return
+        numerator = float(np.sum(traffic * lengths))
+        if not np.isfinite(numerator) or numerator <= 0.0:
+            return
+
+        # Normalization makes the bound on any topology equal to
+        # 1 / sum(metric lengths of its links).
+        metric = lengths.ravel() / numerator
+        if any(
+            np.allclose(metric, old, rtol=1e-6, atol=1e-14)
+            for old in dual_metrics
+        ):
+            return
+        dual_metrics.append(metric)
+        if len(dual_metrics) > 2 * n:
+            dual_metrics.pop(0)
+
+    def choose_starts(repaired, limit):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        current = set(net)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+        current = set(net)
+        moves = set()
+        record_dual_metric(net, detail)
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Rank a bounded move shortlist by both QUBO energy and demand distances."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        fresh.sort(key=energy)
+        # Keep the proxy calculation bounded while sampling beyond the energy head.
+=======
+    def screen_batch(moves, parent, batch_size=9):
+        """Screen with dual bounds, retaining explicit barrier-crossing trials."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        all_fresh = sorted(fresh, key=energy)
+        total_size = min(batch_size, len(all_fresh))
+        escape_slots = max(1, total_size // 4)
+        batch_size = max(1, total_size - escape_slots)
+        fresh = all_fresh
+
+        if dual_metrics:
+            edge_ids = np.asarray(
+                [[a * n + b for a, b in net] for net in all_fresh],
+                dtype=np.intp,
+            )
+            denominators = np.asarray(dual_metrics)[:, edge_ids].sum(axis=2)
+            bounds = np.full_like(denominators, np.inf)
+            np.divide(
+                1.0, denominators, out=bounds, where=denominators > 0.0,
+            )
+            lower_bounds = bounds.max(axis=0)
+            parent_score = seen.get(parent, best_score)
+            promising = [
+                net for net, bound in zip(all_fresh, lower_bounds)
+                if bound < parent_score * (1.0 - 1e-7)
+            ]
+            if promising:
+                fresh = promising
+
+        # Keep the proxy calculation bounded while sampling beyond the energy head.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # If diversity constraints prevented a full batch, fill with the best
+        # remaining consensus moves.
+        for raw in order_mix:
+            if len(selected) >= batch_size:
+                break
+            i = int(raw)
+            if i not in selected_ids:
+                selected.append(shortlist[i])
+                selected_ids.add(i)
+        return selected
+=======
+        # If diversity constraints prevented a full batch, fill with the best
+        # remaining consensus moves.
+        for raw in order_mix:
+            if len(selected) >= batch_size:
+                break
+            i = int(raw)
+            if i not in selected_ids:
+                selected.append(shortlist[i])
+                selected_ids.add(i)
+
+        # Bound-rejected moves may still be valuable stepping stones. Reserve
+        # trials for novelty, including energy-promising larger perturbations.
+        escape_pool = all_fresh[:max(4 * n, 4 * total_size)]
+        larger_moves = [
+            net for net in all_fresh if distance(net, parent) >= 8
+        ][:n]
+        escape_pool = list(dict.fromkeys(escape_pool + larger_moves))
+        references = archive()
+        selected_set = set(selected)
+        while len(selected) < total_size:
+            remaining = [net for net in escape_pool if net not in selected_set]
+            if not remaining:
+                break
+            reference = references + selected
+            candidate = max(
+                remaining,
+                key=lambda net: (
+                    min(distance(net, old) for old in reference),
+                    -energy(net),
+                ),
+            )
+            selected.append(candidate)
+            selected_set.add(candidate)
+
+        for net in all_fresh:
+            if len(selected) >= total_size:
+                break
+            if net not in selected_set:
+                selected.append(net)
+                selected_set.add(net)
+        return selected
+>>>>>>> REPLACE
+</DIFF>

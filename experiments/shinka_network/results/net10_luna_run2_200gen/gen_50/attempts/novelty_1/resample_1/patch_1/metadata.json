@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_gated_paths",
+  "patch_description": "This design keeps direct-demand rewards, but uses a distinct pressure-gated two-hop signal: a path is considered only when its origin\u2013destination pair has positive demand, and its reward is reduced when the transit node is busy or either path edge already has substantial direct demand. Unlike uniform allocation across possible intermediates, it does not divide an OD pair\u2019s reward among all candidate paths; instead, each candidate path receives a modest reward, allowing useful alternatives to remain visible to the sampler. The total quadratic-term count is bounded by the number of eligible two-hop paths, at most n(n\u22121)(n\u22122).",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:10.428169",
+  "llm_cost": 0.0011525,
+  "llm_model": "gpt-6-luna"
+}

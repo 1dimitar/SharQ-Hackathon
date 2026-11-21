@@ -1,0 +1,14 @@
+{
+  "generation": 149,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "scaled_route_surrogate",
+  "patch_description": "This keeps the existing direct-link rewards, route ranking and selection, transit-pressure estimate, cut-congestion correction, and reciprocal-link terms. The targeted change is to reduce the strength of the route couplings for larger networks: many more route alternatives are available as n grows, so their combined influence may overwhelm the direct and congestion signals. The reduction is modest at n=15\u201316 and grows gradually beyond that, while leaving the route structure unchanged. It is a demand-only heuristic and does not guarantee improved evaluation scores.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:07:01.376182",
+  "llm_cost": 0.0048675,
+  "llm_model": "gpt-6-luna"
+}

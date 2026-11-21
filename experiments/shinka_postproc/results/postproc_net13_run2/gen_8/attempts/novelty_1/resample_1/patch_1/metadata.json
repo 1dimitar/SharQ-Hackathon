@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_batch_screening",
+  "patch_description": "The current batch screen uses a symmetric-difference threshold of 2, which often does little to distinguish valid two-switch moves. Build the first part of each LP batch from a small, energy-ranked shortlist using farthest-point selection instead: keep the best-energy move as an anchor, then prefer moves that are topologically distant from those already selected. Require distance 6 where possible, relax to 4 if needed, and retain the existing energy-ranked fill as a fallback. This aims to spend LP calls across more distinct network variants without losing the surrogate\u2019s guidance.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:42:21.305278",
+  "llm_cost": 0.0018258000000000003,
+  "llm_model": "gpt-6-luna"
+}

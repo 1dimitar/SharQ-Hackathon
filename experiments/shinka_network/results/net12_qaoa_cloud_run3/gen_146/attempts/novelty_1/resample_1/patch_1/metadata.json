@@ -1,0 +1,14 @@
+{
+  "generation": 146,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_exponent_075",
+  "patch_description": "Change only the relay-ranking pressure discount, using affinity divided by pressure to the 0.75 power. This tests the suggested milder pressure sensitivity while leaving the affinity formula, relay budgets, and reward equations unchanged. Because the ranking also feeds the existing rank factor, the selected relays and their relative influence may shift; comparing this variant against a 1.25 exponent would help isolate the effect of pressure sensitivity.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:32:16.467437",
+  "llm_cost": 0.0009978,
+  "llm_model": "gpt-6-luna"
+}

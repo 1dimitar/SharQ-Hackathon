@@ -1,0 +1,103 @@
+<NAME>
+archive_preserving_targeted_kicks
+</NAME>
+
+<DESCRIPTION>
+The current search generates small random kicks from whichever parent happens to be selected, but it does not escalate exploration when the whole search stagnates. Track global progress and, after a stall, perturb a non-elite archive member rather than the incumbent. Bias the kick’s switches toward that donor’s priced or heavily loaded links, while retaining the existing random switches for broader exploration. The archive is refreshed from scored networks, so the elite remains available and the kicked topology is evaluated as a new search start.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def random_kick(net, count):
+        """Apply a few random legal switches to produce a distant proposal."""
+        cur = net
+        for _ in range(count):
+            arcs = list(cur)
+            pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+            if not pairs:
+                break
+            rng.shuffle(pairs)
+            cur_set = set(cur)
+            for p, q in pairs:
+                (a, b), (c, d) = arcs[p], arcs[q]
+                x, y = (a, d), (c, b)
+                if a != d and c != b and x not in cur_set and y not in cur_set:
+                    cur = canonical((cur_set - {arcs[p], arcs[q]}) | {x, y})
+                    break
+        return cur
+=======
+    def random_kick(net, count, hot=None):
+        """Apply legal switches, trying bottleneck-touching pairs first."""
+        cur = net
+        for _ in range(count):
+            arcs = list(cur)
+            pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+            if not pairs:
+                break
+            rng.shuffle(pairs)
+            if hot:
+                pairs.sort(key=lambda pq: not (arcs[pq[0]] in hot or arcs[pq[1]] in hot))
+            cur_set = set(cur)
+            for p, q in pairs:
+                (a, b), (c, d) = arcs[p], arcs[q]
+                x, y = (a, d), (c, b)
+                if a != d and c != b and x not in cur_set and y not in cur_set:
+                    cur = canonical((cur_set - {arcs[p], arcs[q]}) | {x, y})
+                    break
+        return cur
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    refresh_archive()
+    iteration = 0
+    while tools.lp_calls_left > 0 and iteration < max_iterations:
+=======
+    refresh_archive()
+    iteration = 0
+    global_stall = 0
+    kick_stage = 0
+    while tools.lp_calls_left > 0 and iteration < max_iterations:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        refresh_archive()
+        iteration += 1
+
+    return list(best_net)
+=======
+        refresh_archive()
+        if best_score < before:
+            global_stall = 0
+            kick_stage = 0
+        else:
+            global_stall += 1
+
+        # Stagnation kicks start from a non-elite archive member, preserving
+        # the best networks while opening a new basin of search.
+        if global_stall >= 10 and tools.lp_calls_left > 0:
+            ranked = sorted(archive, key=lambda net: scores[net])
+            donors = ranked[2:] if len(ranked) > 2 else ranked[1:]
+            if donors:
+                donor = donors[int(rng.integers(len(donors)))]
+                kick_stage = min(kick_stage + 1, 5)
+                detail = tools.lp_detail(donor)
+                prices = {tuple(k): float(v) for k, v in detail.get("prices", {}).items()}
+                loads = {tuple(k): float(v) for k, v in detail.get("loads", {}).items()}
+                hot = {a for a in donor if prices.get(a, 0.0) > 0}
+                if not hot:
+                    hot = set(sorted(donor, key=lambda a: loads.get(a, 0.0),
+                                     reverse=True)[:max(4, n // 3)])
+                kicked = random_kick(donor, 2 + kick_stage, hot)
+                if (kicked != donor and tools.is_valid(kicked)
+                        and kicked not in scores and not tools.is_cached(kicked)):
+                    record(kicked)
+                    refresh_archive()
+                    if best_score < before:
+                        kick_stage = 0
+            global_stall = 0
+        iteration += 1
+
+    return list(best_net)
+>>>>>>> REPLACE
+
+</DIFF>

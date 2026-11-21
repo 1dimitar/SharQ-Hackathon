@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "routing_residual_search",
+  "patch_description": "This design replaces fixed surrogate screening with an online, routing-aware model. A vectorized shortest-path flow approximation supplies inexpensive congestion features; LP observations then teach two regularized models: one predicts absolute quality, while the other predicts changes relative to a parent.\n\nSearch batches retain separate allocations for learned predictions, Hamiltonian energy, structural novelty, and random exploration. Stalled regions receive longer destination rotations and repaired recombinations. Dual prices guide only part of move generation, avoiding dependence on a single bottleneck heuristic. All exact routing evaluations go through `tools`.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:36:04.312210",
+  "llm_cost": 0.113224,
+  "llm_model": "gpt-6.1-sol"
+}

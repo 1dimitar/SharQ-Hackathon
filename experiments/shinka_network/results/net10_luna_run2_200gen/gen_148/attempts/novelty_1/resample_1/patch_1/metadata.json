@@ -1,0 +1,14 @@
+{
+  "generation": 148,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_blend",
+  "patch_description": "Increase the concave component of the direct-link reward from 0.15 to 0.25, reducing the linear component from 0.85 to 0.75. This gives moderate-demand direct links more influence, which may improve typical sampled topologies and their median routing score, while leaving the current two-hop route discounts unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:24.333519",
+  "llm_cost": 0.0008314,
+  "llm_model": "gpt-6-luna"
+}

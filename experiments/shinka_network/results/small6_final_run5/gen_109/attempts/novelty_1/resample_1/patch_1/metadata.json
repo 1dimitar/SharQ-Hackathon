@@ -1,0 +1,14 @@
+{
+  "generation": 109,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cut_endpoint_vulnerability",
+  "patch_description": "Make the two-node cut penalty more sensitive to endpoint vulnerability. The current cut coefficient depends only on squared external demand, so it can treat equally loaded cuts similarly even when one cut\u2019s endpoints have very different incident traffic. Scaling it by a clipped measure of external demand relative to each endpoint\u2019s incident demand gives more weight to cuts whose endpoints are especially exposed. The factor is bounded to keep this correction from overwhelming the other surrogate terms, and the existing valid-topology offset removal remains unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:25:46.378404",
+  "llm_cost": 0.0025327,
+  "llm_model": "gpt-6-luna"
+}

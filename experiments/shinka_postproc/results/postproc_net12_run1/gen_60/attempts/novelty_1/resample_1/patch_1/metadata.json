@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "adaptive_move_returns",
+  "patch_description": "Adapt the random switch, rotation, and multi-switch-kick proposal effort using their observed returns. Track how often each move class produces a network better than its parent, then allocate a fixed proposal budget according to smoothed success rates. The exhaustive bottleneck-focused switch neighborhood remains unchanged, so adaptation preserves that reliable source of moves while shifting exploratory effort toward move types that are productive in the current search.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:59:29.969000",
+  "llm_cost": 0.0028159,
+  "llm_model": "gpt-6-luna"
+}

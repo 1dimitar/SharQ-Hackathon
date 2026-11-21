@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_twohop",
+  "patch_description": "This version keeps direct-demand rewards and two-hop path synergies, but caps the total two-hop coefficient magnitude assigned to each origin\u2013destination pair across all possible intermediates. That limits the influence of many alternative paths without removing demand-targeted route information. Candidate paths retain a discount for busy transit nodes, and the evaluator remains responsible for degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:01.332254",
+  "llm_cost": 0.00211,
+  "llm_model": "gpt-6-luna"
+}

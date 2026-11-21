@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vulnerability_cut",
+  "patch_description": "Add a compact two-node-cut congestion correction. A pair of reciprocal links leaves fewer links crossing the cut between those two nodes, so the correction penalizes cuts with high external traffic. Scale each cut coefficient modestly by the endpoints\u2019 external-demand vulnerability, normalizing the factors so the overall correction strength stays stable. The linear offsets preserve the correction\u2019s intended ranking on valid degree-two topologies, while the cut interaction reinforces the reciprocal-link term without adding new coupling keys.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:13:43.070841",
+  "llm_cost": 0.0034452,
+  "llm_model": "gpt-6-luna"
+}

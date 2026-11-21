@@ -1,0 +1,14 @@
+{
+  "generation": 135,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stricter_relay_cutoff",
+  "patch_description": "Raise the high-demand cutoff for the extra relay choice from the 80th to the 90th percentile, while keeping the existing two-relay base budget and three-relay cap unchanged. This concentrates additional relay interactions on the largest OD flows, where useful alternate paths are most likely to reduce peak link load, and avoids increasing the QUBO\u2019s overall interaction budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:43:17.211454",
+  "llm_cost": 0.0007351,
+  "llm_model": "gpt-6-luna"
+}

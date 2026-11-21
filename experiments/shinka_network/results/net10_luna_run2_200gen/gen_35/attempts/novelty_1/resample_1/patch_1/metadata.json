@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop025",
+  "patch_description": "The current program combines a concave direct-demand reward with a two-hop reward of 0.20. I remove the concave blend to restore the stronger, simpler direct-demand signal, and raise the two-hop strength to 0.25, as suggested by the parameter sweep. Positive-demand gating and both existing pressure discounts are retained so the change focuses on path-reward strength rather than introducing additional signals. The evaluator continues to apply the degree penalty; its weight remains 1.0.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:29.170400",
+  "llm_cost": 0.0015477,
+  "llm_model": "gpt-6-luna"
+}

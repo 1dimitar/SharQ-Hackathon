@@ -1,0 +1,14 @@
+{
+  "generation": 114,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tempered_switch_chains",
+  "patch_description": "This design replaces the large screened batches and archive-guided relinking with several parallel simulated-annealing walks. Each walk has a different acceptance temperature, so some exploit improving local moves while others can cross score barriers; occasional state exchanges let good discoveries spread between walks. LP calls are spent one at a time on valid, previously unscored proposals. Bottleneck links guide switch proposals, while random switches and three-link rotations preserve exploration when the LP dual information is incomplete. Repaired QAOA samples still provide diverse, energy-ranked starting points, but the search thereafter is driven by exact LP scores rather than surrogate ranking alone.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:17:10.252364",
+  "llm_cost": 0.0035404000000000004,
+  "llm_model": "gpt-6-luna"
+}

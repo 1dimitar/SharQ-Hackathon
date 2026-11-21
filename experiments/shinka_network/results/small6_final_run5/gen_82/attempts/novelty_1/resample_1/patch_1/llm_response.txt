@@ -1,0 +1,44 @@
+<NAME>
+size_aware_route_sparsity
+</NAME>
+
+<DESCRIPTION>
+At larger network sizes, the current route rewards become a less reliable ranking signal, and rewarding four alternatives for every top-quartile demand can add noisy couplings. This edit independently makes route rewards taper more with size and raises the heavy-demand cutoff gradually, while reducing the heavy-pair route count from four to three. The intent is to retain extra route flexibility for the most important demands while keeping the QUBO sparser and its route signal more focused.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        self.heavy_cutoff = (
+            float(np.quantile(positive, 0.75))
+            if positive.size else 0.0
+        )
+=======
+        heavy_quantile = min(
+            0.85, 0.75 + 0.01 * max(0, self.n - 10)
+        )
+        self.heavy_cutoff = (
+            float(np.quantile(positive, heavy_quantile))
+            if positive.size else 0.0
+        )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    route_size_factor = max(
+        0.84, 1.0 - 0.01 * max(0, n - 10)
+    )
+=======
+    route_size_factor = max(
+        0.84, 1.0 - 0.02 * max(0, n - 10)
+    )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            keep = min(
+                len(candidates),
+                4 if t[source, target] >= model.heavy_cutoff else 2,
+            )
+=======
+            keep = min(
+                len(candidates),
+                3 if t[source, target] >= model.heavy_cutoff else 2,
+            )
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 193,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_path_strength",
+  "patch_description": "Reduce the two-hop path reward coefficient from 0.52 to 0.46. Two-hop support can help identify useful indirect service, but rewarding it too strongly may favor topologies that route traffic indirectly instead of selecting valuable direct links. This targeted adjustment preserves the existing pressure estimates and congestion discount while testing a more conservative balance between direct-link and path rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:02:45.957409",
+  "llm_cost": 0.0008507000000000001,
+  "llm_model": "gpt-6-luna"
+}

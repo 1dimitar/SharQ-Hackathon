@@ -1,0 +1,14 @@
+{
+  "generation": 109,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_indirect_budget",
+  "patch_description": "The current two-hop terms allocate an aggregate reward of 0.58 times each OD pair\u2019s normalized demand, even when that reward is large relative to the direct-link reward. Cap that aggregate indirect reward at 35% of the corresponding direct-link value. This retains the existing support- and pressure-weighted route selection while limiting how strongly indirect paths can compete with direct service, which may improve the typical sampled topology without adding quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:08.808766",
+  "llm_cost": 0.0010829000000000001,
+  "llm_model": "gpt-6-luna"
+}

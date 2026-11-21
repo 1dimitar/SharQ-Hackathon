@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "routing_robust_screen",
+  "patch_description": "Add a cheap, cached routing screen for a bounded set of energy-promising proposals. It routes each demand along shortest paths under three deterministic tie-breakings, then scores the candidate using both the mean and worst peak link load. The batch still reserves most of its choices for existing energy, operator, and dual-guided signals; only a size-scaled fraction is selected by the routing screen. This adds an independent signal for topologies whose apparent quality depends on how shortest-path ties are resolved, without spending extra LP calls or letting the heuristic dominate selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:12:41.335640",
+  "llm_cost": 0.0029858000000000003,
+  "llm_model": "gpt-6-luna"
+}

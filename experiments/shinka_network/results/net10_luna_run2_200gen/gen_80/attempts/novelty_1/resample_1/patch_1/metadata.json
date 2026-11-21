@@ -1,0 +1,14 @@
+{
+  "generation": 80,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_through_signal",
+  "patch_description": "Apply a mild concave transform only to the two-hop through-demand signal. The linear direct-link rewards remain unchanged, preserving their useful demand ranking, while the square-root component gives medium-sized through-demands more influence relative to the largest demands. This may help the sampled topologies balance indirect routing opportunities instead of focusing too heavily on only the biggest OD pairs.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:41.936418",
+  "llm_cost": 0.0008439000000000001,
+  "llm_model": "gpt-6-luna"
+}

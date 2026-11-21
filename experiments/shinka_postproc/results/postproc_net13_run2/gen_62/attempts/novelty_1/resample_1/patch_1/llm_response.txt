@@ -1,0 +1,49 @@
+<NAME>
+batch_novelty_reserve
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP evaluation in each screened batch for a structurally novel move. Surrogate-ranked moves remain the main selection mechanism, but a move far from the evaluated archive may reveal a good region that the surrogate ranking would otherwise overlook. Choose the novel move by maximizing its minimum symmetric-difference distance from the archive; because the ranked list is surrogate-ordered, ties naturally favor the better surrogate score. The batch remains bounded by its existing size.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # If the neighborhood is smaller than the desired batch, use random
+        # tail moves rather than spending every call on near-duplicate variants.
+        tail = [net for _, net in ranked if net not in selected]
+=======
+        # Reserve one slot for a structurally novel candidate. The archive is
+        # deliberately used as the reference set, so this tests a different
+        # region rather than merely another small variation of the parent.
+        if len(selected) < batch_size:
+            reference = archive()
+            remaining = [net for _, net in ranked if net not in selected]
+            if remaining:
+                novel = max(
+                    remaining,
+                    key=lambda net: min(
+                        (distance(net, old) for old in reference),
+                        default=26,
+                    ),
+                )
+                selected.append(novel)
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # If the neighborhood is smaller than the desired batch, use random
+        # tail moves rather than spending every call on near-duplicate variants.
+        tail = [net for _, net in ranked if net not in selected]
+>>>>>>> REPLACE
+</DIFF>

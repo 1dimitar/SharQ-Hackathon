@@ -1,0 +1,14 @@
+{
+  "generation": 186,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "normalized_relay_support",
+  "patch_description": "Separates input cleanup, node-pressure estimation, and QUBO construction into small helpers. Unlike the previous design, which gave every possible relay an independent reward for the same OD demand, this version normalizes relay scores per OD pair so the total two-hop reward is bounded. It also makes lower-pressure relays more attractive when distributing that reward, reducing the incentive to add many mediocre two-hop paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:57.004570",
+  "llm_cost": 0.0013915,
+  "llm_model": "gpt-6-luna"
+}

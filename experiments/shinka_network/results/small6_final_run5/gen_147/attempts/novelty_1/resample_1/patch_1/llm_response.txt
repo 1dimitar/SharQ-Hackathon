@@ -1,0 +1,35 @@
+<NAME>
+endpoint_aware_route_ranking
+</NAME>
+
+<DESCRIPTION>
+Make transit-node pressure matter slightly more when routing demands between heavily loaded endpoints. The bounded exponent changes which candidate transit nodes rank highest without changing the default two-route selection or the conditional third-route rule. This keeps the route set sparse while making selected indirect paths more sensitive to likely endpoint congestion, which should help both annealing and the post-processor’s move ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            support = float(support_matrix[i, k])
+            candidates = []
+
+            for j in range(n):
+=======
+            support = float(support_matrix[i, k])
+            endpoint_pressure = float(np.sqrt(pressure[i] * pressure[k]))
+            endpoint_bias = float(np.clip(
+                (endpoint_pressure - 0.48) / 0.72, 0.0, 1.0
+            ))
+            pressure_exponent = 0.82 + 0.28 * endpoint_bias
+            candidates = []
+
+            for j in range(n):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                rank = (
+                    0.18 + balance + edge_evidence
+                ) / rank_pressure[j]
+=======
+                rank = (
+                    0.18 + balance + edge_evidence
+                ) / (rank_pressure[j] ** pressure_exponent)
+>>>>>>> REPLACE
+</DIFF>

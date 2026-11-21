@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_relink_escapes",
+  "patch_description": "Strengthen stalled-search escapes in two complementary ways. Instead of proposing only isolated switches toward elite networks, perform short, degree-preserving path-relinking walks toward several distant elites and retain intermediate networks. Also increase both the number and length of random multi-switch kicks as a parent accumulates stalls. This gives the search a better chance to cross barriers while keeping the extra proposals screened before they consume LP calls.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:52:22.203462",
+  "llm_cost": 0.0022937,
+  "llm_model": "gpt-6-luna"
+}

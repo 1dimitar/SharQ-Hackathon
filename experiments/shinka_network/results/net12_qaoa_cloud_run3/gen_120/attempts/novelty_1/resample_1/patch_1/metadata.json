@@ -1,0 +1,14 @@
+{
+  "generation": 120,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_support",
+  "patch_description": "Reorganizes term construction into separate traffic normalization, direct-link scoring, and sparse relay-selection stages. Relay candidates are ranked by their weakest leg and adjusted for node pressure, so the limited interaction budget favors plausible paths without creating a dense QUBO. The returned terms remain deterministic and within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:29:43.580345",
+  "llm_cost": 0.0013709,
+  "llm_model": "gpt-6-luna"
+}

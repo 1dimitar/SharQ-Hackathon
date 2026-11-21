@@ -1,0 +1,30 @@
+<NAME>
+cap_route_reward
+</NAME>
+
+<DESCRIPTION>
+Cap each OD pair’s combined two-hop reward at half the magnitude of its direct-link reward. The current fixed budget is proportional to demand, so for high-demand pairs it can compete too strongly with selecting the direct link. This cap preserves the existing ranking of candidate intermediate nodes and their relative weights, while limiting their total influence; pairs whose existing route budget is already smaller remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+def _route_costs(z, pressure, limit=3):
+=======
+def _route_costs(z, pressure, direct_reward, limit=3):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            budget = 0.52 * demand_value
+=======
+            budget = min(
+                0.52 * demand_value,
+                0.50 * abs(float(direct_reward[(source, target)])),
+            )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    quadratic.update(_route_costs(z, pressure))
+=======
+    quadratic.update(_route_costs(z, pressure, linear))
+>>>>>>> REPLACE
+</DIFF>

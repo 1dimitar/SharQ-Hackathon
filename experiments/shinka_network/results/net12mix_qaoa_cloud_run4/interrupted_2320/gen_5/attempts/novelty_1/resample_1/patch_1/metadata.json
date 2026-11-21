@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop_surrogate",
+  "patch_description": "Keep the baseline reward for direct demand, and add a restrained reward for two-hop routes. Scale each route reward down when either link already has high direct demand, so the surrogate favors paths that can use spare link capacity rather than blindly rewarding every two-hop path. Also reduce the reward for intermediates with high origin-destination traffic, as a rough proxy for avoiding already busy transit nodes. This makes the path couplings more capacity-aware than a uniform two-hop reward. Increase the degree penalty to make exact in/out degree choices more influential and reduce the number of samples that need repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:23.340736",
+  "llm_cost": 0.0021144,
+  "llm_model": "gpt-6-luna"
+}

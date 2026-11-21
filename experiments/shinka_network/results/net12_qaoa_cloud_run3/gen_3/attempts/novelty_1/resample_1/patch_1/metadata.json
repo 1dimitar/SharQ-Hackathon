@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_degree_penalty",
+  "patch_description": "Increase the evaluator-supplied degree penalty from 1.0 to 10.0. The current feasible rate is low, so many QAOA samples spend effort on networks that need substantial repair before scoring. Since the evaluator applies this penalty separately from the rescaled QUBO terms, a stronger penalty should make degree violations more costly during sampling and steer the search toward networks with exactly two incoming and outgoing links per node. This leaves the traffic surrogate unchanged while targeting the observed feasibility bottleneck.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:20:31.713261",
+  "llm_cost": 0.0005115,
+  "llm_model": "gpt-6-luna"
+}

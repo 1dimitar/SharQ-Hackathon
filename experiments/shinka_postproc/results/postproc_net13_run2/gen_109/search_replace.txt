@@ -1,0 +1,52 @@
+<NAME>
+multi_region_seed_diversity
+</NAME>
+
+<DESCRIPTION>
+The current seed selector greedily accepts only candidates at least four arc changes from every previously selected seed. This can preserve one broad region while still underrepresenting other strong regions. Replace that pass with a quality-constrained novelty pass: retain a small energy-ranked elite, then choose additional seeds that are far on average from several elite anchors, using surrogate energy to break ties. This should spread initial LP calls across structurally distinct promising regions without allowing novelty alone to promote arbitrarily poor seeds.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        chosen = []
+        for net in ordered:
+            if all(distance(net, old) >= 4 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= limit:
+                break
+        for net in ordered:
+            if len(chosen) >= limit:
+                break
+            if net not in chosen:
+                chosen.append(net)
+=======
+        chosen = ordered[:min(4, limit)]
+        # Preserve a compact high-quality anchor set, then spend the remaining
+        # seed slots on candidates diverse from several elite regions at once.
+        anchors = chosen[:]
+        remaining = [net for net in ordered if net not in chosen]
+        while remaining and len(chosen) < limit:
+            # Restrict novelty choices to the better half of the surrogate-ranked
+            # pool, so structural diversity does not overwhelm predicted quality.
+            quality_pool = remaining[:max(1, (len(remaining) + 1) // 2)]
+            net = max(
+                quality_pool,
+                key=lambda candidate: (
+                    sum(distance(candidate, anchor) for anchor in anchors)
+                    / max(1, len(anchors)),
+                    -ordered.index(candidate),
+                ),
+            )
+            chosen.append(net)
+            remaining.remove(net)
+            # Refresh anchors with the best-ranked selected networks, keeping
+            # novelty measured against multiple strong and distinct regions.
+            anchors = sorted(chosen, key=energy)[:min(8, len(chosen))]
+        for net in ordered:
+            if len(chosen) >= limit:
+                break
+            if net not in chosen:
+                chosen.append(net)
+>>>>>>> REPLACE
+
+</DIFF>

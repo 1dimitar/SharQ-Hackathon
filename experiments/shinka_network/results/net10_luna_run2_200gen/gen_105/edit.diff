@@ -1,0 +1,160 @@
+--- a/original.py
++++ b/original.py
+@@ -1,84 +1,113 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+-def surrogate_terms(demand):
+-    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
++def _normalise_demand(demand):
++    """Return nonnegative, off-diagonal demand scaled to [0, 1]."""
++    d = np.asarray(demand, dtype=float)
++    if d.ndim != 2 or d.shape[0] != d.shape[1]:
++        raise ValueError("demand must be a square matrix")
+ 
+-    Args:
+-        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+-            (zero diagonal).
++    d = np.maximum(d, 0.0).copy()
++    np.fill_diagonal(d, 0.0)
++    scale = float(np.max(d)) if d.size else 0.0
++    if scale > 0.0:
++        d /= scale
++    return d
+ 
+-    Returns:
+-        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+-            (x_ij = 1 if the directed link i -> j is built), i != j.
+-        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+-        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+-            after rescaling these terms so the largest |weight| is 1.
+ 
+-    Lower energy must mean a better topology. Baseline: reward each link by the demand
+-    it carries directly.
+-    """
+-    n = len(demand)
+-    dmax = float(np.max(demand)) or 1.0
+-    row = np.sum(demand, axis=1)
+-    col = np.sum(demand, axis=0)
+-    node_scale = float(max(np.max(row), np.max(col))) or 1.0
++def _direct_link_terms(d):
++    """Reward direct service, with a small endpoint-traffic signal."""
++    n = d.shape[0]
++    row = np.sum(d, axis=1)
++    col = np.sum(d, axis=0)
++    endpoint_scale = max(float(np.max(row)), float(np.max(col)), 1.0)
+ 
+-    # Preserve the strong direct-demand signal, with a small preference for
+-    # links incident to high-throughput sources and destinations.
+     linear = {}
+     for i in range(n):
+         for j in range(n):
+             if i == j:
+                 continue
+-            endpoint_pressure = (float(row[i]) + float(col[j])) / (2.0 * node_scale)
+-            linear[(i, j)] = -(
+-                0.90 * float(demand[i, j]) / dmax
+-                + 0.10 * endpoint_pressure
+-            )
++            endpoint = (float(row[i]) + float(col[j])) / (2.0 * endpoint_scale)
++            value = float(d[i, j])
++            linear[(i, j)] = -(0.90 * value + 0.10 * endpoint)
++    return linear
+ 
+-    # A selected pair i->j, j->k can serve i->k traffic in two hops.
+-    # Keep this synergy deliberately weaker than the direct-link reward.
++
++def _indirect_route_terms(d):
++    """Reward useful two-hop paths, discounting busy edges and transit nodes."""
++    n = d.shape[0]
++    node_load = np.sum(d, axis=0) + np.sum(d, axis=1)
++    mean_load = float(np.mean(node_load)) if n else 0.0
++
++    if mean_load > 0.0:
++        transit_capacity = 2.0 * mean_load / (mean_load + node_load)
++    else:
++        transit_capacity = np.ones(n, dtype=float)
++
+     quadratic = {}
++    edge_discount = 0.85
++    indirect_cap = 0.55
++
+     for i in range(n):
+-        for j in range(n):
+-            if j == i:
++        for k in range(n):
++            traffic = float(d[i, k])
++            if i == k or traffic <= 0.0:
+                 continue
+-            for k in range(n):
+-                if k == i or k == j:
++
++            candidates = []
++            total_quality = 0.0
++            for j in range(n):
++                if j == i or j == k:
+                     continue
+-                traffic = float(demand[i, k])
+-                if traffic > 0.0:
+-                    # Discount indirect value when either chosen route edge
+-                    # already carries substantial direct demand.
+-                    edge_pressure = (
+-                        float(demand[i, j]) + float(demand[j, k])
+-                    ) / dmax
+-                    quadratic[((i, j), (j, k))] = (
+-                        -0.15 * traffic / dmax / (1.0 + 0.25 * edge_pressure)
+-                    )
+ 
+-    penalty_weight = 1.0
+-    return linear, quadratic, penalty_weight
++                # Penalise routes whose component edges already have high
++                # direct demand; also avoid concentrating transit at busy nodes.
++                edge_load = float(d[i, j]) + float(d[j, k])
++                quality = float(transit_capacity[j]) / (
++                    1.0 + edge_discount * edge_load
++                )
++                if quality > 0.0:
++                    candidates.append((j, quality))
++                    total_quality += quality
++
++            if total_quality <= 0.0:
++                continue
++
++            # The aggregate reward is capped per OD pair, so adding more
++            # candidate intermediates does not overwhelm direct-link terms.
++            aggregate = min(0.30 * traffic, indirect_cap * traffic)
++            for j, quality in candidates:
++                weight = -aggregate * quality / total_quality
++                quadratic[((i, j), (j, k))] = float(weight)
++
++    return quadratic
++
++
++def surrogate_terms(demand):
++    """Build linear and quadratic QUBO cost terms."""
++    d = _normalise_demand(demand)
++    linear = _direct_link_terms(d)
++    quadratic = _indirect_route_terms(d)
++    return linear, quadratic, 1.0
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

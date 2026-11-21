@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_twohop",
+  "patch_description": "Keep the direct-demand reward, but make two-hop path couplings sensitive to the estimated load on their component links. A chain that can carry meaningful demand is rewarded when its links have light direct demand; the reward is reduced, and can become a penalty, when the chain would send traffic through already heavily demanded links. This retains useful routing structure without applying the same unconditional two-hop reward to every path. The chain terms number at most n(n\u22121)(n\u22122), within the quadratic-term limit. Raising the degree penalty also makes exact-degree solutions more attractive before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:05.025256",
+  "llm_cost": 0.0018674,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,29 @@
+<NAME>
+adaptive_small_batches
+</NAME>
+
+<DESCRIPTION>
+The current search evaluates up to nine surrogate-ranked moves before using any LP result to choose its next move. Since the Hamiltonian energy is only loosely correlated with the LP score, a large batch can spend several calls on moves that look promising to the surrogate but are poor under the true objective. Smaller batches make the search more responsive to actual LP scores and allow more frequent parent selection and bottleneck updates within the fixed budget. I also bias parent selection toward the strongest archive members while retaining some exploration, to intensify around promising networks without eliminating diversity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+        if rng.random() < 0.70:
+            return pop[int(rng.integers(min(4, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        batch = screen_batch(moves, parent)
+=======
+        batch = screen_batch(moves, parent, batch_size=3)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                batch = screen_batch(make_moves(parent, detail), parent)
+=======
+                batch = screen_batch(make_moves(parent, detail), parent, batch_size=3)
+>>>>>>> REPLACE
+</DIFF>

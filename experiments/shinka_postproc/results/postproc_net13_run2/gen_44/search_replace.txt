@@ -1,0 +1,87 @@
+<NAME>
+stalled_path_relinking
+</NAME>
+
+<DESCRIPTION>
+When a parent has stalled, generate a short path toward a distant, high-quality archive member. Each path step inserts a target link using a degree-preserving two-switch, while avoiding removal of links already shared with the target. Screen a few valid intermediate networks and reserve part of the LP batch for them. This provides a directed escape from a local basin without replacing the existing bottleneck-focused neighborhood search or spending LP calls on every path step.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    while tools.lp_calls_left > 0:
+        pop = frontier()
+=======
+    def path_relink(parent, target, limit=10):
+        """Build valid intermediates that progressively share links with target."""
+        current = set(parent)
+        target_set = set(target)
+        path = []
+
+        for _ in range(limit):
+            missing = target_set - current
+            if not missing:
+                break
+
+            proposals = []
+            # Insert a missing (u,v) by switching the destinations of
+            # (u,w) and (x,v), preserving all in- and out-degrees.
+            for u, v in missing:
+                for a, w in current:
+                    if a != u or (u, w) in target_set:
+                        continue
+                    for x, y in current:
+                        if y != v or (x, v) in target_set:
+                            continue
+                        if x == w:
+                            continue
+                        old = {(u, w), (x, v)}
+                        new = {(u, v), (x, w)}
+                        if len(new) != 2 or new & (current - old):
+                            continue
+                        if any(s == d for s, d in new):
+                            continue
+                        candidate = tuple(sorted((current - old) | new))
+                        if candidate != parent and candidate not in scored:
+                            if not tools.is_cached(candidate) and tools.is_valid(candidate):
+                                proposals.append(candidate)
+
+            if not proposals:
+                break
+
+            # Prefer intermediates with good surrogate energy, breaking ties
+            # in favor of greater overlap with the destination network.
+            candidate = min(
+                set(proposals),
+                key=lambda net: (
+                    energy(net),
+                    -len(set(net) & target_set),
+                ),
+            )
+            current = set(candidate)
+            path.append(candidate)
+
+        return path
+
+    while tools.lp_calls_left > 0:
+        pop = frontier()
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if not batch:
+            # A small random sequence of valid two-switches helps escape exhausted basins.
+=======
+        if stalls.get(parent, 0) >= 2 and len(pop) > 1:
+            elite = sorted(pop, key=scored.get)[:12]
+            targets = [net for net in elite if net != parent and distance(net, parent) >= 8]
+            if targets:
+                target = max(targets, key=lambda net: (distance(net, parent), -scored[net]))
+                relinked = path_relink(parent, target)
+                relink_batch = screen(relinked, parent, limit=4)
+                if relink_batch:
+                    batch = batch[:5] + [
+                        net for net in relink_batch if net not in batch
+                    ][:3]
+
+        if not batch:
+            # A small random sequence of valid two-switches helps escape exhausted basins.
+>>>>>>> REPLACE
+</DIFF>

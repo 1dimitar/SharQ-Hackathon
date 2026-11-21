@@ -1,0 +1,124 @@
+<NAME>
+sparse_balanced_branch_coverage
+</NAME>
+
+<DESCRIPTION>
+Replace overlap-only penalties with a two-branch coverage and load-balance proxy. Overlap alone can penalize two useful neighbors without crediting the traffic they serve. The new cost estimates uncovered demand and first-link load imbalance, treating direct destinations preferentially.
+
+For each node, decompose the complete branch-pair cost into additive link costs and a zero-row-sum interaction residual. This decomposition is exact when exactly two branches are selected, before sparsification. Retain only the strongest residual interactions, including rewards for complementary branches. This preserves broad coverage information in linear terms while keeping the coupling budget compact. Existing route rewards, transit-pressure estimates, and degree penalties remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Penalize a small number of demand-weighted redundant branch pairs.
+    # Outbound profiles describe destinations; transposed profiles describe
+    # origins for the analogous inbound correction.
+    for inbound in (False, True):
+        od = normalized.T if inbound else normalized
+        profiles = np.sqrt(od).copy()
+        np.fill_diagonal(profiles, 1.0)
+        for center in range(n):
+            weights = od[center]
+            if float(weights.sum()) <= 0.0:
+                continue
+            gram = (profiles * weights[None, :]) @ profiles.T
+            branches = [j for j in range(n) if j != center]
+            normalizer = max(float(gram[j, j]) for j in branches)
+            if normalizer <= 1e-12:
+                continue
+
+            redundant = []
+            for position, j in enumerate(branches):
+                for k in branches[position + 1:]:
+                    overlap = float(gram[j, k]) / normalizer
+                    if overlap > 0.15:
+                        redundant.append((overlap, j, k))
+            redundant.sort(reverse=True)
+
+            for overlap, j, k in redundant[:3]:
+                first = (j, center) if inbound else (center, j)
+                second = (k, center) if inbound else (center, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = quadratic.get(key, 0.0) + 0.24 * overlap
+=======
+    # Score pairs by coverage and estimated first-link load balance.
+    # Compress each complete pair table into unary effects plus a sparse
+    # residual, exploiting the fact that exactly two branches are selected.
+    base_strength = 0.24
+    pair_budget = max(2, n // 3)
+
+    for inbound in (False, True):
+        od = normalized.T if inbound else normalized
+        profiles = np.sqrt(od).copy()
+        np.fill_diagonal(profiles, 1.0)
+
+        for center in range(n):
+            weights = od[center]
+            total = float(weights.sum())
+            if total <= 0.0:
+                continue
+            weights = weights / total
+
+            branches = [j for j in range(n) if j != center]
+            m = len(branches)
+            service = profiles[branches]
+            coverage = service @ weights
+            gram = (service * weights[None, :]) @ service.T
+            normalizer = max(0.20, float(np.max(np.diag(gram))))
+
+            # Independent-service proxy: neither branch serves a target.
+            pair_cost = (
+                1.0 - coverage[:, None] - coverage[None, :] + gram
+            )
+
+            # Soft routing estimates the demand assigned to each branch.
+            # Unsupported destinations split equally; direct destinations
+            # use their direct branch rather than an indirect alternative.
+            imbalance = np.zeros((m, m), dtype=float)
+            branch_rows = np.arange(m)
+            for a in range(m):
+                shares = (service[a][None, :] + 1e-8) / (
+                    service[a][None, :] + service + 2e-8
+                )
+                shares[:, branches[a]] = 1.0
+                shares[branch_rows, branches] = 0.0
+                assigned = shares @ weights
+                imbalance[a] = (2.0 * assigned - 1.0) ** 2
+
+            pair_cost += 0.15 * (imbalance + imbalance.T) * 0.5
+            np.fill_diagonal(pair_cost, 0.0)
+
+            # Fit C_ab = u_a + u_b + R_ab with zero row sums in R.
+            # With two selected branches, the additive part is exactly
+            # sum_a u_a*x_a, so it needs no quadratic couplings.
+            row_totals = pair_cost.sum(axis=1)
+            offset_total = float(row_totals.sum()) / (2.0 * (m - 1))
+            unary = (row_totals - offset_total) / (m - 2)
+            residual = pair_cost - unary[:, None] - unary[None, :]
+            np.fill_diagonal(residual, 0.0)
+
+            # This shift is constant on valid topologies and avoids adding
+            # a large uniform link bias to the sampling objective.
+            unary = unary - float(unary.mean())
+            gain = base_strength / normalizer
+
+            for a, node in enumerate(branches):
+                link = (node, center) if inbound else (center, node)
+                linear[link] += float(gain * unary[a])
+
+            interactions = []
+            for a in range(m):
+                for b in range(a + 1, m):
+                    value = float(residual[a, b])
+                    if abs(value) > 1e-12:
+                        interactions.append((abs(value), a, b, value))
+            interactions.sort(reverse=True)
+
+            for _, a, b, value in interactions[:pair_budget]:
+                j, k = branches[a], branches[b]
+                first = (j, center) if inbound else (center, j)
+                second = (k, center) if inbound else (center, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = quadratic.get(key, 0.0) + gain * value
+>>>>>>> REPLACE
+</DIFF>

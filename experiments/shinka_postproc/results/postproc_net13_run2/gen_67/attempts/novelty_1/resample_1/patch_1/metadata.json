@@ -1,0 +1,14 @@
+{
+  "generation": 67,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "lp_rewarded_operators",
+  "patch_description": "Adapt the number of sampled swaps, rotations, and multi-switch kicks using their observed improvement rate per LP evaluation. Count only proposals actually sent to the LP, and reward an operator when its proposal beats its parent. Smoothed rates and a probability floor prevent early results from eliminating an operator, while directing more proposal effort toward operators that have proved productive.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:30:04.495738",
+  "llm_cost": 0.0028955,
+  "llm_model": "gpt-6-luna"
+}

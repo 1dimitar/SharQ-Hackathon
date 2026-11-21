@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "twophop_strength_020",
+  "patch_description": "Increase the two-hop reward coefficient from 0.15 to 0.20 by raising `indirect_fraction` from 0.6 to 0.8; the code divides it by four when forming each term. This tests a moderate increase in the value of indirect service while keeping positive-demand gating and the transit-load discount unchanged, as suggested by the prior feedback.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:50.558288",
+  "llm_cost": 0.0009262000000000001,
+  "llm_model": "gpt-6-luna"
+}

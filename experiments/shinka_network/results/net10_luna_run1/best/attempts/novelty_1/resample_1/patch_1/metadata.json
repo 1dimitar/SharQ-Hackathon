@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "balance_direct_path",
+  "patch_description": "The current QUBO gives direct demand a coefficient of \u22121.0 and two-hop paths a coefficient of 0.12. Sweep toward a less dominant direct reward and a moderately stronger path reward: use \u22120.8 for direct links and 0.16 for qualifying two-hop paths. This preserves the existing positive-endpoint-demand and traffic-share filters while testing whether the low-energy topologies better account for traffic that can be carried through relays.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:17:42.105718",
+  "llm_cost": 0.0008707000000000001,
+  "llm_model": "gpt-6-luna"
+}

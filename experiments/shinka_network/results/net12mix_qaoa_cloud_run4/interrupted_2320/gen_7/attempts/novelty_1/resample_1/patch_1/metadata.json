@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_surrogate",
+  "patch_description": "Separates coefficient construction into demand normalization, direct-link scoring, and capped two-hop path scoring. Direct traffic remains the main signal; two-hop rewards are distributed across plausible intermediaries instead of rewarding every path equally, with lower weight for intermediaries carrying high local demand. The resulting sparse interaction graph contains at most one coupling per two-hop path, keeping the quadratic-term count below the required limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:02:46.564115",
+  "llm_cost": 0.0009788,
+  "llm_model": "gpt-6-luna"
+}

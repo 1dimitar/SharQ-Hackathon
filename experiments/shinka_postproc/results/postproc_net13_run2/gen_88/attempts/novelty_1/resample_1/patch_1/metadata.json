@@ -1,0 +1,14 @@
+{
+  "generation": 88,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_aggregate_novelty",
+  "patch_description": "Reserve one LP evaluation in each batch for a move that is structurally novel relative to several leading archive members. The current batch selection fills all available slots with quality-ranked moves, so its tail-exploration step usually has no effect. This change keeps up to `batch_size - 1` quality-selected moves, then uses the remaining slot for the shortlist candidate with the greatest summed distance from the leading archive members; surrogate rank breaks ties. This adds archive-wide exploration without replacing the batch\u2019s main quality bias.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:48:23.953649",
+  "llm_cost": 0.0032502,
+  "llm_model": "gpt-6-luna"
+}

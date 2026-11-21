@@ -1,0 +1,14 @@
+{
+  "generation": 107,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "clamped_route_quality",
+  "patch_description": "The current two-hop reward applies across every possible intermediate node, so routes through relatively poor transit points can still receive substantial reward. This edit computes a quality for each candidate route from the existing transit-node and edge-pressure signals, normalizes those qualities to their per-OD mean, and clamps their relative influence to 0.8\u20131.4. The clamp limits how much any single route can dominate while still preferring better-supported, less-congested alternatives. The existing route reward, direct-link terms, and degree-penalty setting remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:41.346271",
+  "llm_cost": 0.0011367,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mild_concave_direct",
+  "patch_description": "The current approach uses a purely linear direct-demand reward and a two-hop reward scaled by 0.12 and discounted by transit-node load; the degree penalty weight is 1.0. This version changes only the direct-link reward: it blends 90% normalized demand with 10% of its square root. The small concave component gives moderate-demand links a little more influence without displacing the strongest direct-demand signal. The two-hop formulation and penalty weight remain unchanged, so this is a focused comparison rather than a wholesale retuning.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:49.008499",
+  "llm_cost": 0.0011752,
+  "llm_model": "gpt-6-luna"
+}

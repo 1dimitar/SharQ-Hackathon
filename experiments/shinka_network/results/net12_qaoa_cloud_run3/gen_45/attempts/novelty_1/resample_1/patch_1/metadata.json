@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_relay_portfolio",
+  "patch_description": "Keep a compact portfolio of relays per OD pair, with two extra alternatives for demands in the top decile. Rank relays using node pressure, edge pressure, and the weaker leg\u2019s demand, favoring paths whose links can also serve other traffic. Restore the milder relay discount from the better-scoring prior program.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:12:11.917005",
+  "llm_cost": 0.015165000000000001,
+  "llm_model": "gpt-6.1-terra"
+}

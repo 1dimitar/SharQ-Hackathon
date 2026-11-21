@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "discounted_path_terms",
+  "patch_description": "Add weak, discounted rewards for two-hop routes alongside the direct-demand rewards. A pair of links on a useful two-hop route is then coupled in the interaction graph, helping the partitioned solver consider route structure. The discount is deliberately small: the feedback says a strong, uniform two-hop reward performed worse than the direct-demand baseline, and the routing LP\u2014not the surrogate\u2014determines whether a route is actually useful. The degree penalty remains external, so it is not duplicated here.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:02:45.593374",
+  "llm_cost": 0.0007804,
+  "llm_model": "gpt-6-luna"
+}

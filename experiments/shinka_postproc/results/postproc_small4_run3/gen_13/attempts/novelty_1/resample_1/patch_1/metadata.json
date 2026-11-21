@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_local_routing",
+  "patch_description": "Retains the successful routing-screened archive search, but adds a locally trained move model alongside the global predictor. Ranking weights adapt to observed within-batch LP ordering accuracy rather than trusting either predictor unconditionally. Energy and exploration retain guaranteed evaluation slots.\n\nCached energies, bit-mask diversity checks, bounded training sets, and size-adaptive routing shortlists reduce screening overhead. Target-directed degree-preserving exchanges improve path relinking, while rotations and random kicks remain available for escaping local optima.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:22:39.673163",
+  "llm_cost": 0.098056,
+  "llm_model": "gpt-6.1-sol"
+}

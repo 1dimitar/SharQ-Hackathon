@@ -1,0 +1,14 @@
+{
+  "generation": 132,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_service_021",
+  "patch_description": "This version keeps the current sparse route, cut, and reciprocal-link factors, while reducing the neighbor-service multiplier from 0.24 to 0.21. That follows the suggested service-factor sweep: service corrections can help distinguish topologies, but over-weighting them may weaken direct-demand preferences and make energy a poorer guide for sampling and local-search moves. The coupling budget and other factor strengths remain unchanged, so the adjustment is targeted and preserves the model\u2019s compact structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:48:01.263505",
+  "llm_cost": 0.0039778,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,107 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link and capped two-hop surrogate cost terms."""
+    traffic = np.asarray(demand, dtype=float)
+    n = traffic.shape[0]
+
+    # Sanitize input and exclude self-links.
+    traffic = np.maximum(np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0), 0.0)
+    traffic = traffic.copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    d = traffic / scale
+
+    # Blend linear and concave demand support so moderate demands retain
+    # influence while the largest direct demands remain most attractive.
+    direct_mix = 0.82
+    linear = {}
+    direct_reward = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            value = float(d[i, k])
+            reward = direct_mix * value + (1.0 - direct_mix) * np.sqrt(value)
+            direct_reward[i, k] = reward
+            linear[(i, k)] = -reward
+
+    # Relative incident demand estimates transit-node pressure.
+    incident = np.sum(d, axis=0) + np.sum(d, axis=1)
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 1e-12:
+        mean_incident = 1.0
+    pressure = np.maximum(0.70, incident / mean_incident)
+
+    # Form route weights first, then cap the aggregate support per OD pair.
+    # The cap is proportional: it never truncates individual paths.
+    path_strength = 0.54
+    cap_fraction = 0.75
+    quadratic = {}
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+
+            # Use the same demand blend for route support as for direct links.
+            od_support = (
+                direct_mix * float(d[i, k])
+                + (1.0 - direct_mix) * np.sqrt(float(d[i, k]))
+            )
+            candidates = []
+            total_support = 0.0
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                # Favor less congested transit nodes and avoid routes whose
+                # component links already have substantial direct demand.
+                edge_pressure = float(d[i, j] + d[j, k])
+                quality = 1.0 / (
+                    np.sqrt(float(pressure[j]))
+                    * (1.0 + 0.45 * edge_pressure)
+                )
+                raw = path_strength * od_support * quality
+                candidates.append((j, raw))
+                total_support += raw
+
+            budget = cap_fraction * float(direct_reward[i, k])
+            factor = budget / total_support if total_support > budget and total_support > 0.0 else 1.0
+
+            for j, raw in candidates:
+                weight = -raw * factor
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+
+    # The evaluator supplies the degree penalty separately.
+    penalty_weight = 2.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

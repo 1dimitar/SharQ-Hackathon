@@ -1,0 +1,482 @@
+--- a/original.py
++++ b/original.py
+@@ -1,268 +1,263 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build direct rewards and sparse, transit-pressure-aware path rewards."""
+-    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+-    n = len(traffic)
++    """Build sparse direct, transit-route, and cut-congestion surrogate costs."""
++    traffic = np.asarray(demand, dtype=float)
++    if traffic.ndim != 2 or traffic.shape[0] != traffic.shape[1]:
++        raise ValueError("demand must be a square matrix")
++
++    traffic = np.maximum(
++        np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0), 0.0
++    ).copy()
++    n = int(traffic.shape[0])
+     np.fill_diagonal(traffic, 0.0)
+ 
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
++    off_diagonal = ~np.eye(n, dtype=bool)
++    penalty_weight = float(min(1.50, 1.27 + 0.010 * max(0, n - 10)))
++
++    scale = float(traffic.max()) if traffic.size else 0.0
+     if scale <= 0.0:
+-        scale = 1.0
++        linear = {
++            (i, j): 0.0
++            for i in range(n)
++            for j in range(n)
++            if i != j
++        }
++        return linear, {}, penalty_weight
+ 
+     z = traffic / scale
+     root = np.sqrt(z)
+-
+-    # Preserve broad support for moderate demands while emphasizing large ones.
+     direct_score = 0.68 * z + 0.32 * root
+-    linear = {
+-        (i, j): -float(direct_score[i, j])
+-        for i in range(n)
+-        for j in range(n)
+-        if i != j
+-    }
+-
+-    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+-    incident_scale = float(np.max(incident)) if incident.size else 0.0
+-    if incident_scale <= 0.0:
+-        incident_scale = 1.0
++    costs = -direct_score.copy()
++    mean_direct = float(direct_score[off_diagonal].mean())
++
++    outgoing = z.sum(axis=1)
++    incoming = z.sum(axis=0)
++    incident = np.maximum(outgoing, incoming)
++    incident_scale = max(float(incident.max()), 1e-12)
+     base_pressure = np.maximum(0.60, incident / incident_scale)
+ 
+-    # Candidate paths are kept for the pressure iterations and final sparse QUBO.
+-    # Their initial affinity rewards paths whose constituent links are plausible.
+-    paths = {}
+-    for i in range(n):
+-        for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
+-                continue
+-            candidates = []
+-            for j in range(n):
+-                if j == i or j == k:
+-                    continue
+-                edge_affinity = z[i, j] + z[j, k]
+-                affinity = 0.22 + edge_affinity + 0.12 * np.sqrt(
+-                    max(0.0, z[i, j] * z[j, k])
+-                )
+-                candidates.append((j, float(affinity), float(edge_affinity)))
+-            candidates.sort(key=lambda item: (-item[1], item[0]))
+-            paths[(i, k)] = candidates
+-
+-    # Softly estimate which nodes would become transit points. Three damped
+-    # updates prevent one early route choice from dominating the estimate.
++    # Route tensors have axes (source, intermediate, destination).
++    edge_affinity = z[:, :, None] + z[None, :, :]
++    affinity = (
++        0.22
++        + edge_affinity
++        + 0.12 * np.sqrt(z[:, :, None] * z[None, :, :])
++    )
++    valid_paths = (
++        off_diagonal[:, :, None]
++        & off_diagonal[None, :, :]
++        & off_diagonal[:, None, :]
++    )
++
++    # Damped mean-field routing pressure, with a direct option for each OD pair.
++    temperature = 0.42
++    log_affinity = np.log(affinity)
++    log_edge_discount = np.log1p(0.18 * edge_affinity)
++    direct_utility = np.log(0.30 + 1.15 * z) / temperature
+     transit = np.zeros(n, dtype=float)
+-    temperature = 0.42
++
+     for iteration in range(3):
+-        updated = np.zeros(n, dtype=float)
+-        for (i, k), candidates in paths.items():
+-            if not candidates:
+-                continue
+-
+-            pressure = np.maximum(
+-                1.0,
+-                0.72 * (base_pressure / 0.60)
+-                + 0.28 * (1.0 + transit / (incident + scale)),
+-            )
+-            utilities = []
+-            for j, affinity, edge_affinity in candidates:
+-                # Route-specific transit pressure; modest edge-pressure
+-                # discount avoids repeatedly selecting already attractive links.
+-                congestion = pressure[j] ** (0.72 + 0.08 * iteration)
+-                edge_factor = 1.0 + 0.18 * edge_affinity
+-                utilities.append(np.log(max(1e-12, affinity / (congestion * edge_factor))))
+-
+-            # Include a direct option so the estimate does not assume every
+-            # OD pair must use a transit node.
+-            direct_utility = np.log(
+-                max(1e-12, 0.30 + 1.15 * z[i, k])
+-            )
+-            all_utilities = np.asarray([direct_utility] + utilities, dtype=float)
+-            all_utilities = (all_utilities - np.max(all_utilities)) / temperature
+-            probabilities = np.exp(np.clip(all_utilities, -30.0, 0.0))
+-            probabilities /= max(1e-12, float(probabilities.sum()))
+-
+-            amount = float(traffic[i, k])
+-            for idx, (j, _, _) in enumerate(candidates, start=1):
+-                updated[j] += amount * probabilities[idx]
+-
++        pressure = np.maximum(
++            1.0,
++            0.72 * base_pressure / 0.60
++            + 0.28 * (1.0 + transit / (incident + 1.0)),
++        )
++        utilities = (
++            log_affinity
++            - (0.72 + 0.08 * iteration) * np.log(pressure)[None, :, None]
++            - log_edge_discount
++        ) / temperature
++        utilities = np.where(valid_paths, utilities, -np.inf)
++
++        maximum = np.maximum(utilities.max(axis=1), direct_utility)
++        route_mass = np.exp(
++            np.clip(utilities - maximum[:, None, :], -30.0, 0.0)
++        )
++        route_mass = np.where(valid_paths, route_mass, 0.0)
++        direct_mass = np.exp(np.clip(direct_utility - maximum, -30.0, 0.0))
++        denominator = route_mass.sum(axis=1) + direct_mass
++        probabilities = route_mass / np.maximum(denominator[:, None, :], 1e-12)
++        updated = (probabilities * z[:, None, :]).sum(axis=(0, 2))
+         transit = 0.45 * transit + 0.55 * updated
+ 
+-    # Final node pressure combines observed incident demand and route-estimated
+-    # transit load. The floor prevents low-demand nodes from being overfavoured.
+-    transit_reference = max(
+-        scale,
+-        float(np.mean(incident)) if incident.size else scale,
+-        1e-12,
+-    )
++    transit_reference = max(1.0, float(incident.mean()))
+     route_pressure = 1.0 + transit / transit_reference
+     node_pressure = np.maximum(
+         0.60,
+-        0.62 * (incident / incident_scale) + 0.38 * route_pressure / max(1.0, float(np.max(route_pressure))),
+-    )
+-
+-    positive = traffic[traffic > 0.0]
+-    cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
++        0.62 * incident / incident_scale
++        + 0.38 * route_pressure / max(1.0, float(route_pressure.max())),
++    )
++
++    ranks = (
++        affinity
++        / node_pressure[None, :, None] ** 0.82
++        / (1.0 + 0.10 * edge_affinity)
++    )
++    ranks = np.where(valid_paths, ranks, -np.inf)
++    ordering = np.argsort(-ranks, axis=1, kind="stable")
++
++    positive = z[z > 0.0]
++    heavy_cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
++    demand_support = 0.66 * z + 0.34 * root
++    size_factor = float(np.clip((12.0 / max(n, 1)) ** 0.15, 0.88, 1.0))
++    route_strength = 0.39 * size_factor
++    pressure_discount = node_pressure ** 0.55
++
+     quadratic = {}
+-
+-    # Sparse two-hop rewards: typically two intermediates per OD, three for
+-    # high-demand pairs. Ranking incorporates both estimated transit pressure
+-    # and route-specific edge affinity.
+-    for (i, k), candidates in paths.items():
+-        demand_support = 0.66 * z[i, k] + 0.34 * np.sqrt(z[i, k])
+-        ranked = []
+-        for j, affinity, edge_affinity in candidates:
+-            pressure = float(node_pressure[j])
+-            rank = affinity / (pressure ** 0.82) / (1.0 + 0.10 * edge_affinity)
+-            ranked.append((rank, j, pressure, edge_affinity))
+-        ranked.sort(key=lambda item: (-item[0], item[1]))
+-
+-        base_keep = min(len(ranked), 3 if traffic[i, k] >= cutoff else 2)
+-        keep = base_keep
+-        if keep < len(ranked):
+-            boundary_rank = ranked[keep - 1][0]
+-            next_rank = ranked[keep][0]
+-            relative_gap = (boundary_rank - next_rank) / max(boundary_rank, 1e-12)
+-            if relative_gap < 0.12:
+-                keep += 1
+-
+-        for position, (_, j, pressure, edge_affinity) in enumerate(ranked[:keep]):
+-            if position < base_keep:
+-                rank_boost = 1.0 + 0.055 * (base_keep - position - 1)
+-            else:
+-                rank_boost = 0.72
+-            weight = (
+-                -0.39
+-                * float(demand_support)
+-                * rank_boost
+-                / (pressure ** 0.55)
+-                / (1.0 + 0.08 * edge_affinity)
+-            )
+-            first, second = (i, j), (j, k)
+-            key = (first, second) if first < second else (second, first)
+-            quadratic[key] = float(weight)
+-
+-    # Reciprocal links can be useful for mutual traffic, but otherwise consume
+-    # scarce degree and routing capacity. Keep this structural penalty modest.
+-    mean_direct = (
+-        float(sum(-value for value in linear.values())) / max(1, n * (n - 1))
+-    )
+-    size_scale = max(0.80, float(np.log2(max(n, 2))) / float(np.log2(12.0)))
++    route_frequency = np.zeros((n, n), dtype=float)
++    route_support = np.zeros((n, n), dtype=float)
++
++    for i in range(n):
++        for k in range(n):
++            if i == k or z[i, k] <= 0.0:
++                continue
++
++            candidates = ordering[i, :, k]
++            base_keep = min(n - 2, 3 if z[i, k] >= heavy_cutoff else 2)
++            keep = base_keep
++
++            # A single discounted alternative captures near ties without
++            # expanding the coupling graph substantially.
++            if keep < n - 2:
++                boundary = float(ranks[i, int(candidates[keep - 1]), k])
++                following = float(ranks[i, int(candidates[keep]), k])
++                relative_gap = (boundary - following) / max(boundary, 1e-12)
++                if relative_gap < 0.12:
++                    keep += 1
++
++            support = float(demand_support[i, k])
++            for position in range(keep):
++                j = int(candidates[position])
++                rank_boost = (
++                    1.0 + 0.055 * (base_keep - position - 1)
++                    if position < base_keep
++                    else 0.72
++                )
++                magnitude = float(
++                    route_strength
++                    * support
++                    * rank_boost
++                    / pressure_discount[j]
++                    / (1.0 + 0.08 * edge_affinity[i, j, k])
++                )
++
++                first, second = (i, j), (j, k)
++                key = (first, second) if first < second else (second, first)
++                quadratic[key] = -magnitude
++
++                route_frequency[i, j] += 1.0
++                route_frequency[j, k] += 1.0
++                route_support[i, j] += magnitude
++                route_support[j, k] += magnitude
++
++    # Two-node cut congestion: penalize reciprocal internal links more when
++    # the pair has substantial demand crossing its boundary.
++    internal = z + z.T
++    external_cut = np.maximum(
++        0.0,
++        np.maximum(
++            outgoing[:, None] + outgoing[None, :],
++            incoming[:, None] + incoming[None, :],
++        ) - internal,
++    )
++
++    row_total = outgoing
++    col_total = incoming
++    out_i = np.maximum(row_total[:, None] - z, 0.0)
++    in_i = np.maximum(col_total[:, None] - z.T, 0.0)
++    out_j = np.maximum(row_total[None, :] - z.T, 0.0)
++    in_j = np.maximum(col_total[None, :] - z, 0.0)
++
++    vulnerability_i = np.maximum(
++        out_i / np.maximum(row_total[:, None], 1e-12),
++        in_i / np.maximum(col_total[:, None], 1e-12),
++    )
++    vulnerability_j = np.maximum(
++        out_j / np.maximum(row_total[None, :], 1e-12),
++        in_j / np.maximum(col_total[None, :], 1e-12),
++    )
++    vulnerability = np.maximum(vulnerability_i, vulnerability_j)
++    cut_factor = 0.80 + 0.40 * np.clip(vulnerability, 0.0, 1.0)
++    factor_mean = max(float(cut_factor[off_diagonal].mean()), 1e-12)
++
++    cut_coefficient = (
++        (0.80 / 144.0)
++        * (external_cut / incident_scale) ** 2
++        * cut_factor
++        / factor_mean
++    )
++    np.fill_diagonal(cut_coefficient, 0.0)
++    cut_linear = 7.0 * cut_coefficient
++
++    # Remove node potentials that are constant on valid degree-two topologies.
++    node_offset = cut_linear.sum(axis=1) / max(1, n - 1)
++    edge_offset = float(cut_linear[off_diagonal].mean())
++    costs += (
++        cut_linear
++        - node_offset[:, None]
++        - node_offset[None, :]
++        + edge_offset
++    )
++
++    # Reciprocal links get a modest structural cost, combined with the cut term.
++    size_scale = max(0.80, float(np.log2(max(n, 2)) / np.log2(12.0)))
+     reciprocal_scale = 0.43 * mean_direct * size_scale
+     for i in range(n):
+         for j in range(i + 1, n):
+             mutual = min(float(z[i, j]), float(z[j, i]))
+             quadratic[((i, j), (j, i))] = float(
+                 reciprocal_scale * (1.0 - 0.62 * mutual)
++                + 13.0 * cut_coefficient[i, j]
+             )
+ 
+-    # Approximate congestion across each two-node cut. The cut has
+-    # 4 - x_ij - x_ji boundary links in each direction on a valid topology;
+-    # the quadratic expansion of its inverse-square load has coefficients
+-    # 7/144 for each arc and 13/144 for the reciprocal product.
+-    row_sum = traffic.sum(axis=1)
+-    column_sum = traffic.sum(axis=0)
+-    total_incident = row_sum + column_sum
+-    cut_linear = np.zeros((n, n), dtype=float)
+-    cut_strength = 0.80 / 144.0
+-    cut_data = []
+-    vulnerability_factors = []
+-
+-    for i in range(n):
+-        for j in range(i + 1, n):
+-            internal = float(traffic[i, j] + traffic[j, i])
+-            external_cut = max(
+-                0.0,
+-                max(
+-                    float(row_sum[i] + row_sum[j]),
+-                    float(column_sum[i] + column_sum[j]),
+-                ) - internal,
++    # Debias links with unusually high route exposure, blending route count
++    # and demand-weighted support while keeping the correction sparse.
++    for exposure, fraction in (
++        (route_frequency, 0.75),
++        (route_support, 0.25),
++    ):
++        active = exposure[off_diagonal & (exposure > 0.0)]
++        if not active.size:
++            continue
++
++        threshold = float(np.quantile(active, 0.80))
++        maximum = float(active.max())
++        if maximum > threshold:
++            excess = np.clip(
++                (exposure - threshold) / (maximum - threshold), 0.0, 1.0
+             )
+-            squared_load = (external_cut / incident_scale) ** 2
+-
+-            # Evaluate each endpoint's external exposure by direction:
+-            # outgoing and incoming traffic consume distinct capacities.
+-            out_i = max(0.0, float(row_sum[i]) - float(traffic[i, j]))
+-            in_i = max(0.0, float(column_sum[i]) - float(traffic[j, i]))
+-            out_j = max(0.0, float(row_sum[j]) - float(traffic[j, i]))
+-            in_j = max(0.0, float(column_sum[j]) - float(traffic[i, j]))
+-            vulnerability_i = max(
+-                out_i / max(float(row_sum[i]), 1e-12),
+-                in_i / max(float(column_sum[i]), 1e-12),
+-            )
+-            vulnerability_j = max(
+-                out_j / max(float(row_sum[j]), 1e-12),
+-                in_j / max(float(column_sum[j]), 1e-12),
+-            )
+-            vulnerability = max(vulnerability_i, vulnerability_j)
+-            factor = 0.80 + 0.40 * min(1.0, max(0.0, vulnerability))
+-            cut_data.append((i, j, squared_load, factor))
+-            vulnerability_factors.append(factor)
+-
+-    factor_mean = float(np.mean(vulnerability_factors)) if vulnerability_factors else 1.0
+-    for i, j, squared_load, factor in cut_data:
+-        if squared_load <= 0.0:
+-            continue
+-        coefficient = cut_strength * squared_load * factor / max(factor_mean, 1e-12)
+-        cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+-        reciprocal_key = ((i, j), (j, i))
+-        quadratic[reciprocal_key] = quadratic.get(reciprocal_key, 0.0) + 13.0 * coefficient
+-
+-    # Remove node potentials and a common edge offset: these are constant
+-    # over valid degree-two topologies, so the cut correction guides rankings
+-    # without introducing a spurious degree preference.
+-    node_offset = cut_linear.sum(axis=1) / max(1, n - 1)
+-    edge_offset = float(cut_linear.sum()) / max(1, n * (n - 1))
+-    for i, j in linear:
+-        linear[(i, j)] += float(
+-            cut_linear[i, j] - node_offset[i] - node_offset[j] + edge_offset
+-        )
+-
+-    # Debias only links that occur unusually often in route-reward couplings.
+-    # This is a demand-based link cost, not an additional degree penalty.
+-    route_frequency = np.zeros((n, n), dtype=float)
+-    for (first, second), weight in quadratic.items():
+-        if weight < 0.0:
+-            route_frequency[first[0], first[1]] += 1.0
+-            route_frequency[second[0], second[1]] += 1.0
+-
+-    off_diagonal = ~np.eye(n, dtype=bool)
+-    active_frequency = route_frequency[off_diagonal]
+-    active_frequency = active_frequency[active_frequency > 0.0]
+-    if active_frequency.size:
+-        frequency_cutoff = float(np.quantile(active_frequency, 0.80))
+-        frequency_max = float(np.max(active_frequency))
+-        if frequency_max > frequency_cutoff:
+-            for i in range(n):
+-                for j in range(n):
+-                    count = route_frequency[i, j]
+-                    if i != j and count > frequency_cutoff:
+-                        excess = (count - frequency_cutoff) / (
+-                            frequency_max - frequency_cutoff
+-                        )
+-                        linear[(i, j)] += float(0.12 * mean_direct * excess)
+-
+-    # The evaluator adds the degree penalty separately.
+-    penalty_weight = min(1.50, 1.27 + 0.010 * max(0, n - 10))
+-    return linear, quadratic, float(penalty_weight)
++            costs += 0.12 * mean_direct * fraction * excess
++
++    linear = {
++        (i, j): float(costs[i, j])
++        for i in range(n)
++        for j in range(n)
++        if i != j
++    }
++
++    # Degree penalties are supplied solely by the evaluator.
++    return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "path_balance_surrogate",
+  "patch_description": "Separates demand preprocessing, direct-link scoring, two-hop path scoring, and endpoint-diversity interactions into small builders. The cost combines the direct-demand signal with gated, transit-discounted two-hop rewards and a modest penalty for redundant endpoint choices. This keeps the model sparse\u2014below the quadratic-term limit\u2014while making each contribution easier to tune independently.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:23.983825",
+  "llm_cost": 0.0022461,
+  "llm_model": "gpt-6-luna"
+}

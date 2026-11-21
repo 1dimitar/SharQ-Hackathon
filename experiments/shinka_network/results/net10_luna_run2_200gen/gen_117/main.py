@@ -1,0 +1,93 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build capped direct-demand and two-hop surrogate terms."""
+    raw = np.asarray(demand, dtype=float)
+    n = int(raw.shape[0])
+
+    # Work with nonnegative off-diagonal traffic and protect zero-demand inputs.
+    d = np.maximum(raw, 0.0).copy()
+    np.fill_diagonal(d, 0.0)
+    scale = float(np.max(d))
+    if scale <= 0.0:
+        scale = 1.0
+    d /= scale
+
+    linear = {
+        (i, j): -float(d[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # A high-throughput node is a less attractive transit point.
+    node_load = d.sum(axis=0) + d.sum(axis=1)
+    mean_load = float(np.mean(node_load))
+    if mean_load <= 0.0:
+        mean_load = 1.0
+    transit = 2.0 * mean_load / (mean_load + node_load)
+
+    quadratic = {}
+    indirect_fraction = 0.8
+    # Bound the total absolute two-hop reward for each OD pair, summed over
+    # every candidate intermediate node. Without this cap, large n can make
+    # the collection of alternative paths overwhelm direct-link information.
+    od_reward_cap = 0.50
+
+    for i in range(n):
+        for k in range(n):
+            traffic = float(d[i, k])
+            if i == k or traffic <= 0.0:
+                continue
+
+            intermediates = [
+                j for j in range(n)
+                if j != i and j != k
+            ]
+            factor_sum = sum(float(transit[j]) for j in intermediates)
+            if factor_sum <= 0.0:
+                continue
+
+            # Uncapped pair coefficients are indirect_fraction * traffic *
+            # transit[j] / 4. Scale them together if their aggregate exceeds
+            # the per-OD cap, preserving the relative transit preferences.
+            uncapped_total = indirect_fraction * traffic * factor_sum / 4.0
+            cap_total = od_reward_cap * traffic
+            multiplier = min(1.0, cap_total / uncapped_total)
+
+            for j in intermediates:
+                weight = (
+                    -indirect_fraction
+                    * traffic
+                    * float(transit[j])
+                    / 4.0
+                    * multiplier
+                )
+                quadratic[((i, j), (j, k))] = weight
+
+    # Degree penalties are added by the evaluator.
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

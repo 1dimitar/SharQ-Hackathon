@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "dual_metric_screen",
+  "patch_description": "Use LP dual prices to construct reusable, mathematically valid congestion lower bounds. Shortest-path distances under nonnegative dual prices form a directed metric. For any proposed network, its congestion is at least demand-weighted metric distance divided by the sum of metric lengths of its links.\n\nKeep a bounded bundle of these metrics from previously explored parents. Before computing the existing demand-distance proxy, preferentially retain proposals whose lower bound permits improvement over their parent. Unlike ranking moves by removed bottleneck prices, this accounts for the usefulness of newly added links.\n\nReserve a quarter of each LP batch for structurally diverse proposals from the unfiltered pool. This preserves uphill moves and larger perturbations needed to escape local optima. If no proposal passes the bound screen, fall back to the original pool rather than stopping exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:24:55.741332",
+  "llm_cost": 0.096596,
+  "llm_model": "gpt-6.1-sol"
+}

@@ -1,0 +1,94 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear, quadratic, and degree-penalty terms for the topology QUBO."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n == 0:
+        return {}, {}, 1.05
+
+    # Work on a separate nonnegative array; the caller's input is not modified.
+    t = np.maximum(t, 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+
+    scale = float(np.max(t))
+    if scale <= 0.0:
+        scale = 1.0
+    normalized = t / scale
+    concave = np.sqrt(normalized)
+
+    row = np.sum(t, axis=1)
+    col = np.sum(t, axis=0)
+    endpoint = np.add.outer(row, col)
+    endpoint_scale = float(np.max(endpoint))
+    if endpoint_scale > 0.0:
+        endpoint /= endpoint_scale
+
+    # Blend the current direct-demand emphasis with a small concave component
+    # and endpoint-traffic context.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            d = float(normalized[i, j])
+            linear[(i, j)] = -(
+                0.882 * d
+                + 0.0255 * float(concave[i, j])
+                + 0.0925 * float(endpoint[i, j])
+            )
+
+    # Reward useful two-hop paths, discounting busy transit nodes. A small
+    # shared-intermediate component tempers the stronger current-program reward.
+    node_load = row + col
+    mean_load = float(np.mean(node_load))
+    if mean_load <= 0.0:
+        mean_load = 1.0
+
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+
+            demand_fraction = float(normalized[i, k])
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                current_transit = 2.0 * mean_load / (mean_load + float(node_load[j]))
+                shared_transit = mean_load / (mean_load + float(node_load[j]))
+
+                # 85% current-style degree-aware reward and 15% shared-path
+                # reward from the inspiration implementation.
+                current_part = 0.85 * (0.60 / 4.0) * current_transit
+                shared_part = 0.15 * (0.48 / float(n - 2)) * (
+                    0.65 + 0.70 * shared_transit
+                )
+                weight = -demand_fraction * (current_part + shared_part)
+                quadratic[((i, j), (j, k))] = weight
+
+    return linear, quadratic, 1.05
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,15 @@
+<NAME>
+soften_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Soften the pressure discount used to rank relay candidates by raising node pressure to 0.75. This gives demand-supported relays with moderate pressure a better chance of being selected, rather than concentrating relay choices on the least-loaded nodes. The direct-link rewards and relay rewards remain unchanged, so this tests pressure sensitivity without changing the reward structure or number of quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        quality = (0.75 + 0.25 * leg_affinity) / (0.7 + float(pressure[j]))
+=======
+        quality = (0.75 + 0.25 * leg_affinity) / (0.7 + float(pressure[j]) ** 0.75)
+>>>>>>> REPLACE
+</DIFF>

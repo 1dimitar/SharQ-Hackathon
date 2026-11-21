@@ -1,0 +1,14 @@
+{
+  "generation": 130,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "elite_path_relinking",
+  "patch_description": "Add degree-preserving path-relinking proposals between the current parent and a network in the evaluated archive. A relinking step inserts an arc from the target by switching the parent\u2019s outgoing arc from its tail with an arc entering its head; this preserves all in/out degrees and moves the topology toward a known-good network. The existing multi-switch kick remains as a fallback, so relinking supplements rather than replaces broader exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:32:49.885580",
+  "llm_cost": 0.0018763,
+  "llm_model": "gpt-6-luna"
+}

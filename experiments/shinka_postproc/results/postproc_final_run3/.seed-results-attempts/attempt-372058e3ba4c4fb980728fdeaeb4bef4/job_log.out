@@ -1,0 +1,22 @@
+Parallel evaluation enabled with 2 worker(s) for 16 run(s)
+correct: True | error: None
+combined_score: 0.9754284031654838
+network13_r2g181_seed0: best 309883 vs best known 300620 (gap +3.08%), 2000 LP calls, 11.7s
+network13_r2g181_seed1: best 313000 vs best known 300620 (gap +4.12%), 2000 LP calls, 11.9s
+network13_r3g128_seed0: best 306616 vs best known 300620 (gap +1.99%), 2000 LP calls, 10.5s
+network13_r3g128_seed1: best 309834 vs best known 300620 (gap +3.06%), 2000 LP calls, 10.3s
+network14_r2g181_seed0: best 361385 vs best known 343091 (gap +5.33%), 2000 LP calls, 13.7s
+network14_r2g181_seed1: best 349539 vs best known 343091 (gap +1.88%), 2000 LP calls, 13.9s
+network14_r3g128_seed0: best 351697 vs best known 343091 (gap +2.51%), 2000 LP calls, 11.9s
+network14_r3g128_seed1: best 358375 vs best known 343091 (gap +4.45%), 2000 LP calls, 12.2s
+network15_r2g181_seed0: best 373572 vs best known 370870 (gap +0.73%), 2000 LP calls, 17.2s
+network15_r2g181_seed1: best 377131 vs best known 370870 (gap +1.69%), 2000 LP calls, 17.9s
+network15_r3g128_seed0: best 378875 vs best known 370870 (gap +2.16%), 2000 LP calls, 14.3s
+network15_r3g128_seed1: best 379536 vs best known 370870 (gap +2.34%), 2000 LP calls, 13.9s
+network16_r2g181_seed0: best 402539 vs best known 397908 (gap +1.16%), 2000 LP calls, 21.5s
+network16_r2g181_seed1: best 402100 vs best known 397908 (gap +1.05%), 2000 LP calls, 21.8s
+network16_r3g128_seed0: best 411589 vs best known 397908 (gap +3.44%), 2000 LP calls, 18.2s
+network16_r3g128_seed1: best 404072 vs best known 397908 (gap +1.55%), 2000 LP calls, 17.8s
+Mean gap per instance size: n=13 +3.06%, n=14 +3.54%, n=15 +1.73%, n=16 +1.80%
+Best per Hamiltonian (over its pools): r2g181 309883 (+3.08%), r3g128 306616 (+1.99%)
+Mean over Hamiltonians of best_known/best(best of its pools): 0.9753; mean over all pools: 0.9754 (this is the score).

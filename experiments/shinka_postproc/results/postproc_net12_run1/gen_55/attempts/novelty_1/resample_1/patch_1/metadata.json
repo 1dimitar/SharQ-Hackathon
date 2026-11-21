@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "ucb_parent_selection",
+  "patch_description": "Track how often each archive network is selected and how often its search batch improves on that parent. Select parents with an upper-confidence-style bonus: strong basins remain attractive, while under-tested archive members receive exploration weight. This allocates LP calls adaptively instead of repeatedly sampling parents using only their archive rank, and retains explicit exploration of distant archive entries.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:56:55.938391",
+  "llm_cost": 0.0022701,
+  "llm_model": "gpt-6-luna"
+}

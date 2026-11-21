@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "gated_twohop_support",
+  "patch_description": "Gate each two-hop reward by how plausible its two component links are, using the geometric mean of their normalized direct demands. Retain a 25% floor so a useful transit link is not discarded merely because it carries little direct demand. This keeps the existing OD-demand routing signal while reducing rewards for paths whose component links have little demand support; the number of quadratic terms is unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:13.065965",
+  "llm_cost": 0.0006856,
+  "llm_model": "gpt-6-luna"
+}

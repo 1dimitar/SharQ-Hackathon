@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "basin_portfolio",
+  "patch_description": "Reorganizes the search as a portfolio of local-search basins. It scores a diverse set of repaired candidates, then repeatedly selects promising or underexplored archive members, builds focused degree-preserving neighborhoods, and spends LP calls on a screened batch of novel networks. An adaptive archive and occasional multi-switch perturbations help preserve diversity and escape local minima while avoiding repeated scoring.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:39:42.569318",
+  "llm_cost": 0.0026569999999999996,
+  "llm_model": "gpt-6-luna"
+}

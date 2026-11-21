@@ -1,0 +1,87 @@
+<NAME>
+selective_three_hop
+</NAME>
+
+<DESCRIPTION>
+For OD pairs whose best two-hop route has weak leg evidence or is closely matched by another route, test one three-hop path with positive demand on all three legs. Discount it by pressure at both transit nodes, then add small couplings for its two consecutive link pairs. This gives the surrogate a limited signal for viable longer routes without rewarding every three-hop fragment or substantially increasing the coupling count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+def _correct_route_exposure(direct, linear, quadratic):
+=======
+def _add_three_hop_terms(traffic, roots, pressure, catalog, quadratic):
+    """Add one lightly weighted three-hop option for difficult OD pairs."""
+    n = len(traffic)
+
+    for (i, k), (nodes, evidence, _) in catalog.items():
+        two_hop = []
+        for position, node in enumerate(nodes):
+            j = int(node)
+            ev = float(evidence[position])
+            rank = (0.25 + ev) / float(pressure[j]) ** 0.75
+            two_hop.append((rank, ev))
+
+        if not two_hop:
+            continue
+        two_hop.sort(reverse=True)
+        weak = two_hop[0][1] < 0.45
+        close = (
+            len(two_hop) > 1
+            and two_hop[1][0] >= 0.88 * two_hop[0][0]
+        )
+        if not (weak or close):
+            continue
+
+        best_path = None
+        for j in range(n):
+            if j == i or j == k:
+                continue
+            first_leg = float(traffic[i, j])
+            if first_leg <= 0.0:
+                continue
+
+            for h in range(n):
+                if h == i or h == k or h == j:
+                    continue
+                middle_leg = float(traffic[j, h])
+                last_leg = float(traffic[h, k])
+                if middle_leg <= 0.0 or last_leg <= 0.0:
+                    continue
+
+                confidence = (first_leg * middle_leg * last_leg) ** (1.0 / 3.0)
+                discount = (
+                    float(pressure[j]) * float(pressure[h])
+                ) ** 0.5
+                rank = confidence / discount
+                if best_path is None or rank > best_path[0]:
+                    best_path = (rank, j, h, confidence, discount)
+
+        if best_path is None:
+            continue
+
+        _, j, h, confidence, discount = best_path
+        support = float(0.70 * traffic[i, k] + 0.30 * roots[i, k])
+        reward = 0.16 * support * confidence / discount
+        _add_pair(quadratic, (i, j), (j, h), -0.5 * reward)
+        _add_pair(quadratic, (j, h), (h, k), -0.5 * reward)
+
+
+def _correct_route_exposure(direct, linear, quadratic):
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    _add_route_terms(
+        traffic, roots, cutoff, pressure, catalog, quadratic
+    )
+    _correct_route_exposure(direct, linear, quadratic)
+=======
+    _add_route_terms(
+        traffic, roots, cutoff, pressure, catalog, quadratic
+    )
+    _add_three_hop_terms(traffic, roots, pressure, catalog, quadratic)
+    _correct_route_exposure(direct, linear, quadratic)
+>>>>>>> REPLACE
+</DIFF>

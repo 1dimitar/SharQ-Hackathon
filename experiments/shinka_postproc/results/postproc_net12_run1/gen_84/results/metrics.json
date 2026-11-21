@@ -1,0 +1,24 @@
+{
+    "combined_score": 0.9685110326448502,
+    "public": {
+        "mean_gap_pct": 3.2773425349219045,
+        "control_score": 0.9691505996419537,
+        "qaoa_minus_control": -0.0006395669971035467,
+        "mean_lp_calls": 2000.0,
+        "mean_seconds": 36.85052039199991
+    },
+    "private": {
+        "network12_seed0": 290688.0,
+        "network12_seed1": 279667.0,
+        "network12_seed2": 286250.0,
+        "network12_seed0_control": 283500.0,
+        "network12_seed1_control": 283750.0,
+        "network12_seed2_control": 288632.0
+    },
+    "text_feedback": "network12_seed0: best 290688 vs best known 276474 (gap +5.14%), 2000 LP calls, 37.5s | same program from random starts: 283500 (gap +2.54%)\nnetwork12_seed1: best 279667 vs best known 276474 (gap +1.15%), 2000 LP calls, 36.8s | same program from random starts: 283750 (gap +2.63%)\nnetwork12_seed2: best 286250 vs best known 276474 (gap +3.54%), 2000 LP calls, 36.3s | same program from random starts: 288632 (gap +4.40%)\nMean best_known/best: QAOA starts 0.9685, random starts 0.9692.",
+    "execution_time_mean": 41.72663026216651,
+    "execution_time_std": 4.503362157117102,
+    "num_valid_runs": 6,
+    "num_invalid_runs": 0,
+    "all_validation_errors": []
+}

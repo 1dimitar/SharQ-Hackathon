@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "Combines the concave direct-demand reward from the first inspiration with the current implementation\u2019s nonnegative traffic handling and pressure-discounted two-hop paths. A moderate path strength balances the stronger two-hop signal against the higher feasibility seen with milder path rewards. Quadratic terms are stored in canonical order and remain limited to at most n(n\u22121)(n\u22122).",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:25.939068",
+  "llm_cost": 0.0011788,
+  "llm_model": "gpt-6-luna"
+}

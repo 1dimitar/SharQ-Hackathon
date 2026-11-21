@@ -1,0 +1,19 @@
+<NAME>
+large_n_route_damping
+</NAME>
+
+<DESCRIPTION>
+Cap the route-size multiplier at 1.0 instead of letting it grow with network size. At n=10 and n=12 this leaves the multiplier unchanged; at n=16 it reduces it from about 1.15 to 1.0. Since the multiplier scales both route rewards and their direct-route redundancy terms, this moderates their influence relative to direct-link and cut terms on larger instances. That may improve sample feasibility and keep the energy ranking useful for the post-processor, where feasibility currently drops most at n=16.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    route_size_factor = float(
+        np.clip(np.sqrt(n / 12.0), 0.85, 1.42)
+    )
+=======
+    route_size_factor = float(
+        np.clip(np.sqrt(n / 12.0), 0.85, 1.0)
+    )
+>>>>>>> REPLACE
+</DIFF>

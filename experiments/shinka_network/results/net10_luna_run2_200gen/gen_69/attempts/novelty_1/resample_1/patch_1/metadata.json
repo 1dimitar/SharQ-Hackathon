@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_balanced_paths",
+  "patch_description": "Preserves the direct-link and demand-supported two-hop rewards, but discounts candidate two-hop paths more strongly when their component links already have high direct demand. The discount changes how each OD pair\u2019s indirect-reward budget is allocated among intermediates; it does not change the budget itself. This encourages paths using less demand-loaded links while retaining alternatives, and keeps the quadratic term count within the required bound. The degree penalty remains external, so the returned penalty weight is 1.0.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:46:52.369393",
+  "llm_cost": 0.0017031000000000001,
+  "llm_model": "gpt-6-luna"
+}

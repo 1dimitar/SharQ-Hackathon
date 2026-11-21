@@ -1,0 +1,204 @@
+<NAME>
+dual_routing_rank
+</NAME>
+
+<DESCRIPTION>
+The current move screen uses deterministic shortest-path tie-breakings as its only routing proxy. Add an equal-split shortest-path peak as an independent signal, computing it alongside the tie-break loads while reusing each destination’s reverse-BFS distances. Rank the shortlisted moves separately by energy, tie-robust peak, and equal-split peak, then combine those ranks for part of the batch. This makes routing estimates less dependent on one path-selection convention without turning either proxy into a hard filter, preserving energy guidance and exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def routing_peak(net):
+        """High-percentile peak load across deterministic shortest-path tie-breakings."""
+        demand_array = np.asarray(demand, dtype=float)
+        adjacency = [[] for _ in range(n)]
+        reverse = [[] for _ in range(n)]
+        for u, v in net:
+            adjacency[u].append(v)
+            reverse[v].append(u)
+
+        peaks = []
+        for mode in range(4):
+            loads = np.zeros((n, n), dtype=float)
+            unserved = 0.0
+
+            # Reverse BFS gives distances to each destination.
+            for target in range(n):
+                dist = [n + 1] * n
+                dist[target] = 0
+                queue = [target]
+                head = 0
+                while head < len(queue):
+                    v = queue[head]
+                    head += 1
+                    for u in reverse[v]:
+                        if dist[u] == n + 1:
+                            dist[u] = dist[v] + 1
+                            queue.append(u)
+
+                for source in range(n):
+                    if source == target:
+                        continue
+                    amount = float(demand_array[source, target])
+                    if dist[source] > n:
+                        unserved += amount
+                        continue
+                    u = source
+                    failed = False
+                    while u != target:
+                        choices = [
+                            v for v in adjacency[u]
+                            if dist[v] == dist[u] - 1
+                        ]
+                        if not choices:
+                            failed = True
+                            break
+                        offset = (
+                            mode * (source + 1) + (mode + 1) * target
+                        ) % n
+                        v = min(choices, key=lambda x: (x - offset) % n)
+                        loads[u, v] += amount
+                        u = v
+                    if failed:
+                        unserved += amount
+
+            peak = max((loads[u, v] for u, v in net), default=0.0)
+            peaks.append(peak + unserved)
+
+        return float(np.percentile(peaks, 75.0))
+=======
+    def routing_peaks(net):
+        """Return tie-robust and equal-split shortest-path congestion proxies."""
+        demand_array = np.asarray(demand, dtype=float)
+        adjacency = [[] for _ in range(n)]
+        reverse = [[] for _ in range(n)]
+        for u, v in net:
+            adjacency[u].append(v)
+            reverse[v].append(u)
+
+        tie_loads = np.zeros((4, n, n), dtype=float)
+        split_loads = np.zeros((n, n), dtype=float)
+        unserved = 0.0
+
+        # One reverse BFS per destination supports both routing estimates.
+        for target in range(n):
+            dist = [n + 1] * n
+            dist[target] = 0
+            queue = [target]
+            head = 0
+            while head < len(queue):
+                v = queue[head]
+                head += 1
+                for u in reverse[v]:
+                    if dist[u] == n + 1:
+                        dist[u] = dist[v] + 1
+                        queue.append(u)
+
+            choices_by_node = [
+                [v for v in adjacency[u] if dist[v] == dist[u] - 1]
+                if dist[u] <= n else []
+                for u in range(n)
+            ]
+
+            # Fractionally split each destination's traffic among shortest
+            # outgoing choices, propagating flow from distant nodes to target.
+            flow = demand_array[:, target].copy()
+            for u in sorted(range(n), key=lambda x: dist[x], reverse=True):
+                if u == target or dist[u] > n or flow[u] == 0.0:
+                    continue
+                choices = choices_by_node[u]
+                if not choices:
+                    continue
+                share = flow[u] / len(choices)
+                for v in choices:
+                    split_loads[u, v] += share
+                    flow[v] += share
+
+            # Also route all traffic on several deterministic shortest-path
+            # tie-breakings to measure sensitivity to path choices.
+            for source in range(n):
+                if source == target:
+                    continue
+                amount = float(demand_array[source, target])
+                if dist[source] > n:
+                    unserved += amount
+                    continue
+                for mode in range(4):
+                    u = source
+                    while u != target:
+                        choices = choices_by_node[u]
+                        if not choices:
+                            break
+                        offset = (
+                            mode * (source + 1) + (mode + 1) * target
+                        ) % n
+                        v = min(choices, key=lambda x: (x - offset) % n)
+                        tie_loads[mode, u, v] += amount
+                        u = v
+
+        tie_peaks = [
+            max((tie_loads[mode, u, v] for u, v in net), default=0.0)
+            + unserved
+            for mode in range(4)
+        ]
+        split_peak = max(
+            (split_loads[u, v] for u, v in net), default=0.0
+        ) + unserved
+        return float(np.percentile(tie_peaks, 75.0)), float(split_peak)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        proxy_order = sorted(proxy_pool, key=routing_peak)
+        proxy_rank = {net: i for i, net in enumerate(proxy_order)}
+        combined_order = sorted(
+            proxy_pool,
+            key=lambda net: (
+                energy_rank[net] / max(1, len(ranked))
+                + proxy_rank[net] / max(1, len(proxy_order))
+            ),
+        )
+
+        selected = []
+
+        def take(order, number):
+=======
+        routing_scores = {net: routing_peaks(net) for net in proxy_pool}
+        proxy_order = sorted(
+            proxy_pool, key=lambda net: routing_scores[net][0]
+        )
+        proxy_rank = {net: i for i, net in enumerate(proxy_order)}
+        split_order = sorted(
+            proxy_pool, key=lambda net: routing_scores[net][1]
+        )
+        split_rank = {net: i for i, net in enumerate(split_order)}
+        combined_order = sorted(
+            proxy_pool,
+            key=lambda net: (
+                energy_rank[net] / max(1, len(ranked))
+                + proxy_rank[net] / max(1, len(proxy_order))
+                + split_rank[net] / max(1, len(split_order))
+            ),
+        )
+
+        selected = []
+
+        def take(order, number):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Keep energy as the main guide, while reserving several choices for routing.
+        take(ranked, max(2, batch_size // 3))
+        take(proxy_order, max(1, batch_size // 4))
+        take(combined_order, max(0, batch_size - 1 - len(selected)))
+
+        # Preserve genuine exploration rather than filling every slot by rank.
+=======
+        # Keep energy prominent while giving both routing estimates a voice.
+        take(ranked, max(2, batch_size // 3))
+        take(proxy_order, max(1, batch_size // 4))
+        take(split_order, 1)
+        take(combined_order, max(0, batch_size - 2 - len(selected)))
+
+        # Preserve genuine exploration rather than filling every slot by rank.
+>>>>>>> REPLACE
+</DIFF>

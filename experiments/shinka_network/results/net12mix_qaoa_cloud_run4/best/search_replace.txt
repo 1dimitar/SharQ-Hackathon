@@ -1,0 +1,57 @@
+<NAME>
+balanced_link_load
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, but add a congestion surrogate for pairs of links sharing a tail or a head. A node has only two outgoing and two incoming links, so selecting two links with high estimated traffic exposure at the same endpoint is a warning sign for an unbalanced topology. The exposure estimate combines direct demand on the link with a modest share of the relevant node’s total traffic, reflecting transit pressure. Positive pair costs discourage concentrating that pressure on a single node; the direct-demand reward still favors useful links. The number of added terms is O(n^3), within the limit, and the stronger degree penalty helps preserve feasible degree patterns before repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    d = np.asarray(demand, dtype=float)
+    scale = float(d.max()) or 1.0
+
+    # A link's exposure includes its direct traffic and a modest estimate of
+    # transit pressure at its endpoints.
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    exposure = {}
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(d[i, j])
+            pressure = 0.10 * (float(row[i]) + float(col[j])) / max(1, n - 1)
+            exposure[i, j] = direct + pressure
+            linear[i, j] = -direct / scale
+
+    # Penalize pairs of selected links that concentrate estimated exposure
+    # at the same sending or receiving node. Each pair is included once.
+    quadratic = {}
+    pair_scale = 0.18 / scale
+    for center in range(n):
+        outgoing = [(center, j) for j in range(n) if j != center]
+        incoming = [(i, center) for i in range(n) if i != center]
+        for links in (outgoing, incoming):
+            for a in range(len(links)):
+                e1 = links[a]
+                for b in range(a + 1, len(links)):
+                    e2 = links[b]
+                    weight = pair_scale * exposure[e1] * exposure[e2] / scale
+                    if weight:
+                        quadratic[(e1, e2)] = weight
+
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

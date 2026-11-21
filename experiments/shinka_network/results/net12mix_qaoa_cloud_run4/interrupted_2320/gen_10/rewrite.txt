@@ -1,0 +1,102 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and congestion-aware two-hop relay terms."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+
+    # Demands are nonnegative in the benchmark; clipping also makes the
+    # surrogate well-defined for mildly noisy input.
+    t = np.maximum(t, 0.0)
+    dscale = float(t.max()) if t.size else 0.0
+    if dscale <= 0.0:
+        dscale = 1.0
+    tn = t / dscale
+
+    # A simple estimate of how much traffic an arc might carry: its direct
+    # demand plus a mixing-based proxy for transit traffic.
+    rows = t.sum(axis=1)
+    cols = t.sum(axis=0)
+    total = float(t.sum())
+    if total > 0.0:
+        load_proxy = t + np.outer(rows, cols) / total
+    else:
+        load_proxy = np.zeros_like(t)
+
+    positive = load_proxy[load_proxy > 0.0]
+    typical_load = float(np.median(positive)) if positive.size else 1.0
+    if typical_load <= 0.0:
+        typical_load = 1.0
+
+    # Lower suitability means an arc is already a plausible bottleneck.
+    # The floor prevents high-load arcs from being completely excluded.
+    suitability = 1.0 / np.sqrt(1.0 + load_proxy / typical_load)
+    np.fill_diagonal(suitability, 0.0)
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                # Direct service avoids consuming two links and remains the
+                # strongest individual signal for a high-demand OD pair.
+                linear[(i, j)] = -float(tn[i, j])
+
+    quadratic = {}
+    if n >= 3:
+        relay_strength = 0.8
+        for a in range(n):
+            for b in range(n):
+                if a == b or t[a, b] <= 0.0:
+                    continue
+
+                intermediates = [k for k in range(n) if k != a and k != b]
+                # Distribute, rather than duplicate, this OD pair's relay
+                # value among possible intermediates. Congestion-aware
+                # suitability shifts value toward less burdened paths.
+                scores = np.empty(len(intermediates), dtype=float)
+                for p, k in enumerate(intermediates):
+                    scores[p] = suitability[a, k] * suitability[k, b]
+
+                score_sum = float(scores.sum())
+                if score_sum <= 0.0:
+                    continue
+
+                od_value = float(tn[a, b]) * relay_strength
+                for p, k in enumerate(intermediates):
+                    value = od_value * float(scores[p]) / score_sum
+                    if value <= 0.0:
+                        continue
+                    u = (a, k)
+                    v = (k, b)
+                    # Canonical key ordering makes the dictionary stable.
+                    key = (u, v) if u < v else (v, u)
+                    quadratic[key] = quadratic.get(key, 0.0) - value
+
+    # Degree penalties are added by the evaluator, not encoded in these terms.
+    # A robustly strong value helps avoid spending most samples on invalid
+    # degree sequences before the evaluator's repair step.
+    penalty_weight = 6.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

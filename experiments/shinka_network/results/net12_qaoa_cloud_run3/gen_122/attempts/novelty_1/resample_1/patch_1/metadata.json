@@ -1,0 +1,14 @@
+{
+  "generation": 122,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_relay_pressure_discount",
+  "patch_description": "Raise the pressure exponent in candidate ranking from 1 to 1.25. This makes relay selection more selective against nodes with high incident demand, which are less attractive as transit hubs because they already face substantial traffic. The relay reward itself remains unchanged, isolating the effect of the ranking adjustment. The number of selected relays and quadratic terms is also unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:31:36.114089",
+  "llm_cost": 0.0007538,
+  "llm_model": "gpt-6-luna"
+}

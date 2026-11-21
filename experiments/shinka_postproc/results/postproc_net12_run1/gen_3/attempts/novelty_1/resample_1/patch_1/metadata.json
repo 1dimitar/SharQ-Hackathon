@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_portfolio",
+  "patch_description": "Replaces the single best-network descent with a portfolio of diverse repaired starts and annealed search states. Each iteration uses LP dual prices to focus exchanges on congested links, ranks legal uncached moves with the free surrogate energy, and evaluates only a small promising batch. Elite retention and periodic diversification help avoid premature convergence while keeping the search within the LP budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:33:58.281187",
+  "llm_cost": 0.0013824,
+  "llm_model": "gpt-6-luna"
+}

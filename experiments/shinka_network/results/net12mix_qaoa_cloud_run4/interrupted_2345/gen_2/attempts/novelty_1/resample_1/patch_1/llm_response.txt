@@ -1,0 +1,55 @@
+<NAME>
+balanced_twohop
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand link reward, and add a restrained reward for two-link paths that can carry traffic between their endpoints. Weight that reward by the intermediate node’s traffic burden, so paths through heavily loaded nodes are less attractive, and discount it relative to direct service to avoid letting many indirect-path terms overwhelm the direct-link signal. The quadratic term count is at most \(n(n-1)(n-2)\), within the stated limit. A moderate degree-penalty weight also helps the QUBO favour valid degree patterns before repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    d = np.asarray(demand, dtype=float)
+    scale = float(d.max()) or 1.0
+
+    # Direct service remains the main signal.
+    linear = {
+        (i, j): -float(d[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A two-hop path is useful when it serves appreciable endpoint demand.
+    # Discount paths through high-traffic intermediate nodes: their two
+    # outgoing/incoming links are likely to be needed for other transit too.
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    node_load = row + col
+    mean_load = float(node_load.mean()) or 1.0
+    quadratic = {}
+    path_discount = 0.18
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(d[i, k])
+                if traffic <= 0.0:
+                    continue
+                congestion = 1.0 + 0.5 * float(node_load[j]) / mean_load
+                weight = -path_discount * traffic / scale / congestion
+                if weight:
+                    quadratic[((i, j), (j, k))] = weight
+
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

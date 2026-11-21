@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_three_hop_closure",
+  "patch_description": "Add one supported three-hop alternative for heavy OD pairs whose two-hop options are weak or nearly tied. Require the longer route to have stronger pressure-adjusted leg support than the best two-hop route.\n\nApproximate three-hop completion using two adjacent-link couplings, weighted by demand-derived probabilities for the omitted legs. A positive bridge correction centers this approximation: selecting the bridge alone earns no reward. This is a quadratic heuristic, not an exact encoding of three-hop reachability.\n\nScale its strength by the fraction of destinations that cannot fit within an ideal two-hop, degree-two expansion. This emphasizes larger networks without changing the existing surrogate or constraint weight. Each eligible OD pair adds at most two couplings, often overlapping existing terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:38:01.413427",
+  "llm_cost": 0.146016,
+  "llm_model": "gpt-6.1-sol"
+}

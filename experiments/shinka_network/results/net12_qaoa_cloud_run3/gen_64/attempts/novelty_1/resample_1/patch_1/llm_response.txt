@@ -1,0 +1,29 @@
+<NAME>
+bottleneck_relay_ranking
+</NAME>
+
+<DESCRIPTION>
+Replace the geometric-mean relay affinity with `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)`. This follows the suggested bottleneck-sensitive ranking while retaining the existing pressure discounts, rank ordering, and relay budgets. The additive score gives more credit to relays with one strong leg without letting that leg count as much as two strong legs, potentially improving relay selection when useful two-hop alternatives are scarce.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    eps = 1.0e-4
+
+=======
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                # The minimum leg is the bottleneck; the geometric factor
+                # gives limited credit when both legs have useful support.
+                low = min(a, b)
+                high = max(a, b)
+                affinity = np.sqrt(low * (high + eps))
+=======
+                # Favor relays with two useful legs, while giving partial
+                # credit when one leg is substantially stronger.
+                low = min(a, b)
+                high = max(a, b)
+                affinity = low + 0.25 * high
+>>>>>>> REPLACE
+</DIFF>

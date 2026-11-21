@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bounded_path_relinking",
+  "patch_description": "Add a short path-relinking phase to `propose`. It chooses a strong, sufficiently different scored network as a guide, then greedily applies valid two-switches that increase overlap with the guide. The intermediate networks create directed routes between promising regions that ordinary local neighborhoods may not reach. The path is bounded to five steps, and the existing validity, surrogate-ranking, and LP-budget filters still decide which proposals are scored.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:16:30.670072",
+  "llm_cost": 0.0019207000000000002,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,68 @@
+<NAME>
+enumerate_hot_rotations
+</NAME>
+
+<DESCRIPTION>
+The current hot-arc rotation block samples partner arcs randomly, so it can repeatedly miss useful rotations or fail to change a particular bottleneck arc. Enumerate compatible two-partner rotations for each hot arc instead, then retain a small, size-scaled set per hot arc with low added direct demand. Every retained rotation removes its selected hot arc, while the existing energy, routing, and LP stages still decide whether it is actually beneficial. This makes bottleneck-focused proposals more deliberate without using extra LP calls; the amount retained scales with n.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Explicitly anchor additional rotations on bottleneck arcs so they are
+        # not left to chance in the uniformly sampled three-arc neighborhood.
+        hot_ids = [i for i, edge in enumerate(parent) if edge in hot]
+        if hot_ids:
+            partner_ids = [i for i in range(m)]
+            for _ in range(max(2 * n, 24)):
+                p = hot_ids[int(rng.integers(len(hot_ids)))]
+                available = [i for i in partner_ids if i != p]
+                q, r = (int(i) for i in rng.choice(available, size=2, replace=False))
+                old = [parent[p], parent[q], parent[r]]
+                tails = [a for a, b in old]
+                heads = [b for a, b in old]
+                if len(set(tails)) < 3 or len(set(heads)) < 3:
+                    continue
+                rest = cur.difference(old)
+                for shift in (1, 2):
+                    new = {
+                        (tails[k], heads[(k + shift) % 3]) for k in range(3)
+                    }
+                    if any(a == b for a, b in new) or new & rest:
+                        continue
+                    candidate = tuple(sorted(rest | new))
+                    moves[candidate] = 1
+=======
+        # Enumerate compatible rotations anchored on each hot arc. Each such
+        # rotation removes that arc; keep low-direct-demand alternatives for
+        # further ranking by the energy and routing screens.
+        hot_ids = [i for i, edge in enumerate(parent) if edge in hot]
+        keep_per_hot = max(2, n // 4)
+        for p in hot_ids:
+            ranked_rotations = []
+            for q in range(m):
+                if q == p:
+                    continue
+                for r in range(q + 1, m):
+                    if r == p:
+                        continue
+                    old = [parent[p], parent[q], parent[r]]
+                    tails = [a for a, b in old]
+                    heads = [b for a, b in old]
+                    if len(set(tails)) < 3 or len(set(heads)) < 3:
+                        continue
+                    rest = cur.difference(old)
+                    for shift in (1, 2):
+                        new = {
+                            (tails[k], heads[(k + shift) % 3]) for k in range(3)
+                        }
+                        if any(a == b for a, b in new) or new & rest:
+                            continue
+                        candidate = tuple(sorted(rest | new))
+                        pressure = sum(float(D[a, b]) for a, b in new)
+                        ranked_rotations.append((pressure, candidate))
+            ranked_rotations.sort(key=lambda item: item[0])
+            for _, candidate in ranked_rotations[:keep_per_hot]:
+                moves[candidate] = 1
+>>>>>>> REPLACE
+
+</DIFF>

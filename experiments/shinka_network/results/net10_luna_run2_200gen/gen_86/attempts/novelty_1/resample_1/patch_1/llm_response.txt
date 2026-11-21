@@ -1,0 +1,76 @@
+<NAME>
+capped_indirect_budget
+</NAME>
+
+<DESCRIPTION>
+The current two-hop reward is assigned independently to every possible intermediate node, so an OD pair with many candidate paths can contribute a large aggregate incentive even when its direct demand is modest. Keep the existing path-specific signal and transit/edge-pressure discounts, but collect the candidate rewards per OD pair and proportionally cap their sum at 0.5 times that pair’s normalized direct demand. This preserves the relative preference among useful paths while limiting the aggregate indirect reward, reducing the risk that indirect incentives overwhelm direct-link demand. The number of quadratic terms remains within the existing bound.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reward useful two-hop alternatives, while discounting paths whose links
+    # are already likely to be loaded by their own direct traffic.
+    quadratic = {}
+    path_strength = 0.56
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                through_demand = float(demand[i, k])
+                if through_demand <= 0.0:
+                    continue
+                edge_pressure = (
+                    float(demand[i, j]) + float(demand[j, k])
+                ) / scale
+                through_fraction = through_demand / scale
+                through_signal = (
+                    0.8 * through_fraction + 0.2 * np.sqrt(through_fraction)
+                )
+                weight = (
+                    -path_strength * through_signal
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+                quadratic[((i, j), (j, k))] = weight
+=======
+    # Rank candidate two-hop paths by their existing path-specific signal,
+    # then cap the total reward for each OD pair relative to its direct demand.
+    quadratic = {}
+    path_strength = 0.56
+    indirect_cap = 0.50
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(demand[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            candidates = []
+            raw_total = 0.0
+            through_fraction = through_demand / scale
+            through_signal = (
+                0.8 * through_fraction + 0.2 * np.sqrt(through_fraction)
+            )
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                edge_pressure = (
+                    float(demand[i, j]) + float(demand[j, k])
+                ) / scale
+                raw = (
+                    path_strength * through_signal
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+                if raw > 0.0:
+                    candidates.append((j, raw))
+                    raw_total += raw
+
+            cap = indirect_cap * through_fraction
+            factor = min(1.0, cap / raw_total) if raw_total > 0.0 else 0.0
+            for j, raw in candidates:
+                quadratic[((i, j), (j, k))] = -raw * factor
+>>>>>>> REPLACE
+</DIFF>

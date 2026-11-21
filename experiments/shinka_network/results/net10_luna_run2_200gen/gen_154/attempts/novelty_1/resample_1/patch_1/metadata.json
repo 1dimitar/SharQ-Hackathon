@@ -1,0 +1,14 @@
+{
+  "generation": 154,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_discount_085",
+  "patch_description": "This version keeps the current direct-link and node-pressure terms unchanged, and tests the suggested stronger edge-aware discount in isolation: the two-hop reward is divided by `1 + 0.85 * edge_pressure` instead of `1 + 0.5 * edge_pressure`. This more strongly discounts indirect routes whose component links already have high demand. Input handling also sanitizes non-finite and negative values while preserving the existing return format and penalty weight.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:19.807912",
+  "llm_cost": 0.0013105,
+  "llm_model": "gpt-6-luna"
+}

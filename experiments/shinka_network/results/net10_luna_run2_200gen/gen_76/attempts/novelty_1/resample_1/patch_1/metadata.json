@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_path_signal",
+  "patch_description": "Use a restrained blend of linear and square-root normalized demand for two-hop rewards, while leaving direct-link rewards unchanged. The square-root component gives moderate-demand OD pairs more influence relative to the largest demands, which may help the selected links provide useful indirect routes for a broader range of traffic. The blend remains bounded and preserves the existing pressure and edge-load discounts.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:13.537700",
+  "llm_cost": 0.0010227,
+  "llm_model": "gpt-6-luna"
+}

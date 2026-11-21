@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop_pressure",
+  "patch_description": "This crossover preserves the current implementation\u2019s nonnegative demand handling and per-OD cap on indirect rewards, while borrowing the inspiration program\u2019s endpoint-pressure signal for direct-link selection. A modest concave demand component keeps medium-demand links relevant, and transit-node weighting favors less-loaded intermediates. The capped two-hop terms avoid letting many alternative paths overwhelm direct-demand information; the degree penalty remains the evaluator\u2019s responsibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:05.015413",
+  "llm_cost": 0.0012868,
+  "llm_model": "gpt-6-luna"
+}

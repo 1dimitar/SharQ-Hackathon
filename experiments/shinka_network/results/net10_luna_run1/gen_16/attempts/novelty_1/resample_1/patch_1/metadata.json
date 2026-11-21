@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_share_normalization",
+  "patch_description": "Measure relay usefulness using the share of traffic entering node j that comes from i and the share leaving j that goes to k. The current inbound factor divides by i\u2019s total outgoing traffic, which can favor links that are common destinations for i without establishing that j is a meaningful receiving relay. Normalizing by j\u2019s incoming traffic instead makes the path-specific factor reflect both sides of the relay. Keep the existing small background reward and congestion discount so the change adjusts, rather than replaces, the current two-hop signal.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:58.672753",
+  "llm_cost": 0.0009786,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 132,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_indirect_bonus",
+  "patch_description": "Narrow the relative-quality range for two-hop rewards. With the current support formula, low-demand OD pairs receive a larger relative bonus than high-demand pairs; capping that bonus more tightly should keep the indirect terms focused on substantial traffic rather than letting many weak paths shape the typical sampled topology. This preserves the direct-demand signal and the existing term count, while testing a more conservative route-quality bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:39.660349",
+  "llm_cost": 0.0009062000000000001,
+  "llm_model": "gpt-6-luna"
+}

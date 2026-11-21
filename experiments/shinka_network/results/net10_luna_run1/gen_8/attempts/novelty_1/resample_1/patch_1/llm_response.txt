@@ -1,0 +1,66 @@
+<NAME>
+transit_congestion
+</NAME>
+
+<DESCRIPTION>
+The current two-hop terms reward every selected two-link path, which can favor topologies that route traffic through the same busy intermediaries. Replace that reward with a modest positive congestion cost: selecting both links of a path incurs more cost when its demand is high and the intermediate node has heavy inbound or outbound traffic. This retains the direct-demand signal while discouraging especially risky transit paths, without exceeding the existing O(n³) term count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # A useful two-hop route requires both directed links. Weight it below
+    # direct service to reduce the tendency to over-reward arbitrary paths.
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                od = float(d[i, k])
+                if od <= 0.0:
+                    continue
+
+                # Favor intermediates whose inbound/outbound traffic profile
+                # makes them plausible transit nodes, while damping large
+                # endpoint traffic totals to avoid excessive hub attraction.
+                endpoint_scale = 1.0 + 0.35 * (
+                    float(row_share[i]) + float(col_share[k])
+                )
+                transit_scale = 0.65 + 0.35 * (
+                    float(row_share[j]) + float(col_share[j])
+                )
+                value = -0.30 * od * transit_scale / endpoint_scale
+
+                # The pair is the path i -> j -> k.
+                key = ((i, j), (j, k))
+                quadratic[key] = quadratic.get(key, 0.0) + value
+=======
+    # A two-hop path consumes capacity on both of its links. Add a small
+    # congestion cost instead of rewarding every such path: this discourages
+    # routing substantial traffic through intermediates with already-heavy
+    # inbound/outbound traffic, while leaving direct demand as the main signal.
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                od = float(d[i, k])
+                if od <= 0.0:
+                    continue
+
+                endpoint_scale = 1.0 + 0.35 * (
+                    float(row_share[i]) + float(col_share[k])
+                )
+                transit_load = float(row_share[j]) + float(col_share[j])
+                value = 0.12 * od * (0.5 + transit_load) / endpoint_scale
+
+                # The pair is the path i -> j -> k; positive energy penalizes
+                # selecting both links when that path is likely congested.
+                key = ((i, j), (j, k))
+                quadratic[key] = quadratic.get(key, 0.0) + value
+>>>>>>> REPLACE
+
+</DIFF>

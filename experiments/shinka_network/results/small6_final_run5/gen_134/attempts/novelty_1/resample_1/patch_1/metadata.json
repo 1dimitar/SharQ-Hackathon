@@ -1,0 +1,14 @@
+{
+  "generation": 134,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "route_edge_congestion",
+  "patch_description": "Discount two-hop routes whose legs already have substantial direct demand. A selected link carrying its own heavy traffic has less spare capacity for transit, so letting edge demand modestly reduce both candidate rank and route reward should make the surrogate less likely to concentrate additional flow on those links. The coupling budget and the existing transit-pressure and cut terms stay unchanged; the discount is deliberately moderate so plausible high-demand routes are not excluded outright.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:52:01.097687",
+  "llm_cost": 0.0035906,
+  "llm_model": "gpt-6-luna"
+}

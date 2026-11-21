@@ -1,0 +1,14 @@
+{
+  "generation": 67,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_pressure_discount",
+  "patch_description": "The current two-hop allocation favors paths whose component links already carry substantial direct demand through the geometric-support term, but it does not explicitly suppress those potentially congested links. Discount each intermediate\u2019s evidence by the average normalized demand on its two component edges. Using a moderate coefficient of 0.5 should temper this effect without eliminating useful demand-supported paths, and it changes only the allocation of the existing OD-pair budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:55.044255",
+  "llm_cost": 0.0009039000000000001,
+  "llm_model": "gpt-6-luna"
+}

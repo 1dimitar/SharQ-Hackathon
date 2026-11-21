@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_load_discount",
+  "patch_description": "Add a conservative second pass that estimates which transit nodes are likely to carry demand across plausible two-hop routes. The estimate distributes each demand over its three highest-ranked intermediates, then mildly raises the pressure on heavily used nodes before the existing route selection. This makes the route rewards account for aggregate transit load, not just a node\u2019s row and column sums, while preserving the current sparse coupling structure and limiting the adjustment to 18%.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:46:52.159544",
+  "llm_cost": 0.0024822,
+  "llm_model": "gpt-6-luna"
+}

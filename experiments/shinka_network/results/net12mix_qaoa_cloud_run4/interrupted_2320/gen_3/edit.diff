@@ -1,0 +1,90 @@
+--- a/original.py
++++ b/original.py
+@@ -1,48 +1,85 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+     """Build the surrogate cost terms of the topology QUBO from the demand matrix.
+ 
+     Args:
+         demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+             (zero diagonal).
+ 
+     Returns:
+         linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+             (x_ij = 1 if the directed link i -> j is built), i != j.
+         quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+         penalty_weight: float. Strength of the degree penalty that the evaluator adds
+             after rescaling these terms so the largest |weight| is 1.
+ 
+     Lower energy must mean a better topology. Baseline: reward each link by the demand
+     it carries directly.
+     """
+     n = len(demand)
+     scale = float(demand.max()) or 1.0
+-    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
++    d = np.asarray(demand, dtype=float)
++
++    # Direct links carry their own OD demand; keep this as the dominant signal.
++    linear = {
++        (i, j): -float(d[i, j]) / scale
++        for i in range(n) for j in range(n) if i != j
++    }
++
++    # A relay's total incident traffic is a rough proxy for how costly it is
++    # to route additional traffic through that node.
++    row = d.sum(axis=1)
++    col = d.sum(axis=0)
++    mean_incident = float(np.mean(row + col)) or 1.0
++    relay_factor = [
++        1.0 / (1.0 + 0.5 * float(row[j] + col[j]) / mean_incident)
++        for j in range(n)
++    ]
++
++    # Reward a two-link path for traffic that could use it. Spread the signal
++    # over candidate relays and damp it at high-traffic relays to avoid
++    # over-concentrating transit flow.
+     quadratic = {}
+-    penalty_weight = 1.0
++    if n > 2:
++        for i in range(n):
++            for k in range(n):
++                if i == k:
++                    continue
++                path_demand = float(d[i, k]) / scale
++                if path_demand == 0.0:
++                    continue
++                for j in range(n):
++                    if j == i or j == k:
++                        continue
++                    a, b = (i, j), (j, k)
++                    key = (a, b) if a < b else (b, a)
++                    quadratic[key] = quadratic.get(key, 0.0) - (
++                        0.12 * path_demand * relay_factor[j] / (n - 2)
++                    )
++
++    penalty_weight = 4.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

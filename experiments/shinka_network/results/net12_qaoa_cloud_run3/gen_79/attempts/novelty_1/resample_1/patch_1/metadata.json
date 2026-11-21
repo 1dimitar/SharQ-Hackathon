@@ -1,0 +1,14 @@
+{
+  "generation": 79,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_affinity",
+  "patch_description": "Ranks candidate relays using a balanced-leg affinity: the weaker leg contributes fully and the stronger leg contributes at 25%. This favors paths supported by both links, rather than relays with one strong leg and one negligible leg. The existing pressure discounts, demand-adaptive relay budgets, and alternative-relay term are retained. Direct-demand rewards and the evaluator-supplied degree penalty are unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:24:04.921194",
+  "llm_cost": 0.0013596,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,145 @@
+<NAME>
+balanced_path_qubo
+</NAME>
+
+<DESCRIPTION>
+This crossover keeps the current implementation’s discounted two-hop rewards and endpoint-profile diversity, while adding a small source/destination throughput signal from the inspiration program. The two-hop reward is kept moderate so it complements rather than overwhelms direct-demand rewards. Demand sanitization, precomputed profiles, and sparse insertion of nonzero terms keep construction efficient; the quadratic term count remains below the required \(4n^3\) limit.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic surrogate cost terms from a demand matrix."""
+    d = np.asarray(demand, dtype=float)
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0)
+
+    n = d.shape[0]
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    rows = np.sum(d, axis=1)
+    cols = np.sum(d, axis=0)
+    endpoint_scale = max(
+        float(np.max(rows)) if rows.size else 0.0,
+        float(np.max(cols)) if cols.size else 0.0,
+    )
+    if endpoint_scale <= 0.0:
+        endpoint_scale = 1.0
+
+    # Normalized traffic profiles describe the destinations/origins served
+    # by a potential transit neighbor.
+    row_norm = np.linalg.norm(d, axis=1)
+    col_norm = np.linalg.norm(d, axis=0)
+    row_profiles = np.divide(
+        d, row_norm[:, None], out=np.zeros_like(d),
+        where=row_norm[:, None] > 0.0,
+    )
+    col_profiles = np.divide(
+        d, col_norm[None, :], out=np.zeros_like(d),
+        where=col_norm[None, :] > 0.0,
+    )
+
+    pressure = rows + cols
+    pressure_scale = float(np.max(pressure)) if pressure.size else 0.0
+    if pressure_scale > 0.0:
+        pressure = pressure / pressure_scale
+    else:
+        pressure = np.zeros(n, dtype=float)
+
+    # Preserve the direct-demand signal and add only a small endpoint
+    # throughput preference, avoiding strong attraction to busy nodes alone.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            endpoint = (float(rows[i]) + float(cols[j])) / (2.0 * endpoint_scale)
+            linear[(i, j)] = -(
+                0.94 * float(d[i, j]) / scale
+                + 0.06 * endpoint
+            )
+
+    quadratic = {}
+
+    # Similar neighbors provide redundant routing options. Apply a modest
+    # positive interaction to pairs of links sharing an endpoint.
+    diversity_weight = 0.06
+    for node in range(n):
+        neighbors = [v for v in range(n) if v != node]
+        for a in range(len(neighbors)):
+            j = neighbors[a]
+            for b in range(a + 1, len(neighbors)):
+                k = neighbors[b]
+
+                outgoing_similarity = float(np.dot(row_profiles[j], row_profiles[k]))
+                if outgoing_similarity > 1e-12:
+                    key = ((node, j), (node, k))
+                    quadratic[key] = diversity_weight * outgoing_similarity
+
+                incoming_similarity = float(np.dot(col_profiles[j], col_profiles[k]))
+                if incoming_similarity > 1e-12:
+                    key = ((j, node), (k, node))
+                    quadratic[key] = diversity_weight * incoming_similarity
+
+    # Reward selected two-link paths for carrying OD demand. Busy transit
+    # nodes receive a discount, and small demands are omitted for sparsity.
+    demand_cutoff = 0.01 * scale
+    gate_scale = 0.05 * scale
+    indirect_fraction = 0.48
+
+    for source in range(n):
+        for middle in range(n):
+            if middle == source:
+                continue
+            first_link = (source, middle)
+            transit_discount = 1.0 / (1.0 + float(pressure[middle]))
+
+            for target in range(n):
+                if target == source or target == middle:
+                    continue
+                traffic = float(d[source, target])
+                if traffic <= demand_cutoff:
+                    continue
+
+                gate = min(1.0, traffic / gate_scale) if gate_scale > 0.0 else 1.0
+                reward = (
+                    -indirect_fraction
+                    * (traffic / scale)
+                    * gate
+                    * transit_discount
+                    / 4.0
+                )
+                if reward:
+                    quadratic[(first_link, (middle, target))] = reward
+
+    # Degree penalties are applied by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

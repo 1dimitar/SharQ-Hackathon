@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_productivity",
+  "patch_description": "Track LP-call allocation and incumbent improvements for each archive parent. Parent selection then combines productivity-weighted exploitation with a guaranteed exploration share for less-tested and structurally distant parents. This aims to spend more calls near regions that have recently produced gains without letting early success collapse the search onto a single basin.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:03:27.366523",
+  "llm_cost": 0.0016412,
+  "llm_model": "gpt-6-luna"
+}

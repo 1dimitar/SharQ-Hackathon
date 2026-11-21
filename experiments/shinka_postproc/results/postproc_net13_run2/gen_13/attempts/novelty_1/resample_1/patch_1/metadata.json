@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_frontier_search",
+  "patch_description": "Reorganizes the search as a feedback-driven frontier: repaired candidates seed a diverse archive, and short batched neighborhoods are explored from archive members chosen using both solution quality and visit history. Each neighborhood prioritizes bottleneck-relieving switches, then mixes surrogate-ranked proposals with diverse alternatives. Adaptive parent selection shifts toward less-visited regions after repeated stalls, while bounded move generation and small batches leave more of the LP budget for trying different regions.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:48:20.299596",
+  "llm_cost": 0.0027543999999999997,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,17 @@
+<NAME>
+stronger_edge_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the edge-load discount in the two-hop route quality estimate from 0.65 to 0.85. This preserves the existing path-scoring structure while more strongly favoring routes whose component links appear less loaded, a targeted test intended to improve guidance on weaker demand instances.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    edge_load = float(normalized[i, j] + normalized[j, k])
+    return 1.0 / (float(pressure[j]) * (1.0 + 0.65 * edge_load))
+=======
+    edge_load = float(normalized[i, j] + normalized[j, k])
+    return 1.0 / (float(pressure[j]) * (1.0 + 0.85 * edge_load))
+>>>>>>> REPLACE
+</DIFF>

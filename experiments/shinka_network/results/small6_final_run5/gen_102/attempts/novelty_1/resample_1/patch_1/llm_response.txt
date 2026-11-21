@@ -1,0 +1,78 @@
+<NAME>
+share_aware_bilateral_routes
+</NAME>
+
+<DESCRIPTION>
+Rank two-hop routes by support from both legs, rather than their summed demand alone. A harmonic-mean component discounts candidates favored by one heavy leg and one nearly useless leg. Modulate this component using clipped row/column demand shares, so each leg’s importance reflects competition for its endpoints’ two available links.
+
+The absolute harmonic mean remains the limiting factor: small demands cannot become strong route support merely because their endpoints are quiet. Retain some summed-demand affinity and the existing low-pressure fallback to allow transit links with little direct traffic. This changes route selection without increasing coupling counts or altering the successful neighbor factors, reward scale, or degree penalty. The share normalization scales with network size.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    pressure_rank = pressure ** 0.75
+    route_size_factor = max(
+        0.84, 1.0 - 0.02 * max(0, n - 10)
+    )
+=======
+    pressure_rank = pressure ** 0.75
+
+    # Harmonic mean of each link's row and column demand shares,
+    # scaled so a uniform-demand link has support one at every size.
+    # Clipping prevents quiet endpoints from dominating route selection.
+    endpoint_share = np.clip(
+        2.0 * max(1, n - 1) * t
+        / np.maximum(
+            model.outgoing[:, None] + model.incoming[None, :],
+            1e-15,
+        ),
+        0.0,
+        2.0,
+    )
+
+    route_size_factor = max(
+        0.84, 1.0 - 0.02 * max(0, n - 10)
+    )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                leg_traffic = float(
+                    t[source, middle] + t[middle, target]
+                )
+                rank = (
+                    (0.25 + leg_traffic) / pressure_rank[middle]
+                )
+                discount = float(
+                    pressure[middle] * (1.0 + 0.5 * leg_traffic)
+                )
+=======
+                leg_a = float(t[source, middle])
+                leg_b = float(t[middle, target])
+                leg_traffic = leg_a + leg_b
+                bilateral_support = (
+                    2.0 * leg_a * leg_b / (leg_traffic + 1e-15)
+                )
+
+                share_a = float(endpoint_share[source, middle])
+                share_b = float(endpoint_share[middle, target])
+                bilateral_share = (
+                    2.0 * share_a * share_b
+                    / (share_a + share_b + 1e-15)
+                )
+                bilateral_support *= 0.80 + 0.20 * bilateral_share
+
+                # Preserve the original affinity for equally supported
+                # legs, but reduce one-sided shortcuts. Endpoint shares
+                # only modulate support backed by actual leg demands.
+                rank = (
+                    (
+                        0.25
+                        + 0.60 * leg_traffic
+                        + 0.80 * bilateral_support
+                    )
+                    / pressure_rank[middle]
+                )
+                discount = float(
+                    pressure[middle] * (1.0 + 0.5 * leg_traffic)
+                )
+>>>>>>> REPLACE
+</DIFF>

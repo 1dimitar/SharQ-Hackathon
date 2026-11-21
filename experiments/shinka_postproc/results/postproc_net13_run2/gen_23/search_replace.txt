@@ -1,0 +1,49 @@
+<NAME>
+elite_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Add a short path-relinking phase to each neighborhood. It chooses a strong, topologically distant network from the scored archive, then repeatedly applies legal degree-preserving switches that increase the number of shared links with that target. The intermediate networks join the existing move set, where the usual surrogate screening and LP scoring decide which are worth exploring. This provides directed exploration between promising regions instead of relying only on random kicks.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+        # Relink toward a strong, distant archive member. Each step is a legal
+        # two-switch that increases overlap with the target, so intermediates
+        # provide a directed bridge between otherwise separate search regions.
+        targets = [
+            x for x in archive()
+            if x != net and distance(x, net) >= 8
+        ]
+        if targets:
+            targets.sort(key=lambda x: seen.get(x, float("inf")))
+            target = targets[int(rng.integers(min(6, len(targets))))]
+            target_set = set(target)
+            walk = net
+            for _ in range(5):
+                walk_arcs = list(walk)
+                old_overlap = len(set(walk) & target_set)
+                best_overlap = old_overlap
+                advancing = []
+                for p in range(len(walk_arcs)):
+                    for q in range(p + 1, len(walk_arcs)):
+                        cand = switch(walk, p, q)
+                        if cand is None:
+                            continue
+                        overlap = len(set(cand) & target_set)
+                        if overlap > best_overlap:
+                            best_overlap = overlap
+                            advancing = [cand]
+                        elif overlap == best_overlap and overlap > old_overlap:
+                            advancing.append(cand)
+                if not advancing:
+                    break
+                walk = advancing[int(rng.integers(len(advancing)))]
+                moves.add(walk)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 199,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fractional_load_envelope",
+  "patch_description": "This replaces explicit two-hop path rewards with a fractional load-envelope model. It estimates each link\u2019s risk from direct demand and the traffic pressure at its endpoints, then penalizes selecting pairs of risky links that share a source or destination. The sparse pairwise terms discourage concentrated choices without rewarding every possible two-hop route equally; direct-demand rewards remain to favor useful links.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:04:09.337301",
+  "llm_cost": 0.0028427,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 139,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bounded_endpoint_routing",
+  "patch_description": "Rank two-hop candidates partly by the transit node\u2019s pressure relative to the source and destination: a bounded factor favors transit nodes that are less burdened than the endpoints, without allowing pressure to dominate the existing route evidence. Keep two routes by default and add a third only for a high-demand pair whose third candidate is close in rank to the second. This targets route quality while avoiding a broad increase in couplings, which can weaken sample validity and dilute the energy ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:57:21.806124",
+  "llm_cost": 0.0027764,
+  "llm_model": "gpt-6-luna"
+}

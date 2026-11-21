@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "productivity_aware_parent_selection",
+  "patch_description": "Track how often each archived network is selected and how often its neighborhood produces a better-scoring network. Select parents with a weighted exploration rule that still favors high-ranked solutions, but gives underexplored and productive parents more opportunities than repeatedly selected, unproductive ones. This targets search effort at promising regions while retaining coverage of the archive.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:59:33.169964",
+  "llm_cost": 0.0028568000000000005,
+  "llm_model": "gpt-6-luna"
+}

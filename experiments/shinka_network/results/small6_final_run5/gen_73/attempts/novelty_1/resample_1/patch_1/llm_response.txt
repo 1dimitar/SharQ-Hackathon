@@ -1,0 +1,103 @@
+<NAME>
+localized_pair_cut_excess
+</NAME>
+
+<DESCRIPTION>
+Blend the reciprocal-link heuristic with an exact two-node cut surrogate, without adding quadratic terms.
+
+For a node pair, let D be its larger incoming/outgoing external demand. With m internal links, its cut has capacity 4−m, giving the congestion lower bound D/(4−m). Subtract the endpoints’ unavoidable singleton bound and retain only positive excess. Its values at m=0,1,2 have an exact quadratic representation in the two reciprocal link variables.
+
+Scale each pair’s contribution by a bounded external-to-incident demand ratio. Blend this correction into 35% of the existing reciprocal penalty, preserving the average reciprocal coefficient. Include the corresponding linear terms, removing endpoint potentials that are constant on valid degree-two networks.
+
+This introduces demand-specific cut information into topology and exchange rankings while retaining most of the successful structural heuristic. Construction remains O(n²), and the number of quadratic terms is unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Two useful neighbors need not provide two distinct useful routes.
+    # Penalize the strongest demand-weighted coverage overlaps, rather
+    # than rewarding every supported two-hop path independently.
+    diversity_scale = 0.45 * mean_direct * depth_scale
+=======
+    # A two-node set has 4 - x_ij - x_ji outgoing AND incoming
+    # boundary links on every valid topology. Measure the cut's excess
+    # congestion above the endpoints' unavoidable singleton bound.
+    if backtrack_weight > 0.0 and n > 2:
+        outgoing = normalized.sum(axis=1)
+        incoming = normalized.sum(axis=0)
+        incident_load = np.maximum(outgoing, incoming)
+        external = np.maximum(
+            outgoing[:, None] + outgoing[None, :],
+            incoming[:, None] + incoming[None, :],
+        ) - normalized - normalized.T
+        singleton_bound = 0.5 * np.maximum(
+            incident_load[:, None], incident_load[None, :]
+        )
+
+        # Localize the strength without allowing exceptional demand
+        # patterns to overwhelm the existing path and direct-link terms.
+        typical_external_share = (n - 2.0) / (n - 1.0)
+        local_scale = np.clip(
+            external / np.maximum(
+                typical_external_share
+                * (incident_load[:, None] + incident_load[None, :]),
+                1e-15,
+            ),
+            0.75,
+            1.25,
+        )
+
+        one_internal = np.maximum(
+            0.0, external / 3.0 - singleton_bound
+        )
+        two_internal = np.maximum(
+            0.0, external / 2.0 - singleton_bound
+        )
+        # The zero-internal-link excess is always zero. Consequently
+        # H(x+y) = H(1)*(x+y) + (H(2)-2*H(1))*x*y exactly.
+        cut_linear = local_scale * one_internal
+        cut_pair = local_scale * np.maximum(
+            0.0, two_internal - 2.0 * one_internal
+        )
+        np.fill_diagonal(cut_linear, 0.0)
+        np.fill_diagonal(cut_pair, 0.0)
+        mean_cut = float(cut_pair.sum()) / (n * (n - 1))
+
+        if mean_cut > 1e-15:
+            pair_count = n * (n - 1) // 2
+            old_mean = sum(
+                quadratic[((i, j), (j, i))]
+                for i in range(n)
+                for j in range(i + 1, n)
+            ) / pair_count
+            cut_mix = 0.35
+            cut_gain = cut_mix * old_mean / mean_cut
+
+            # Remove endpoint potentials, which contribute only a
+            # constant when every node has two incoming/outgoing links.
+            # This preserves valid-topology rankings while avoiding
+            # unnecessary additional pressure on the degree constraints.
+            row_sum = cut_linear.sum(axis=1)
+            offset_total = float(row_sum.sum()) / (2.0 * (n - 1))
+            offsets = (row_sum - offset_total) / (n - 2)
+
+            for i in range(n):
+                for j in range(i + 1, n):
+                    key = ((i, j), (j, i))
+                    quadratic[key] = float(
+                        (1.0 - cut_mix) * quadratic[key]
+                        + cut_gain * cut_pair[i, j]
+                    )
+                    correction = float(
+                        cut_gain
+                        * (cut_linear[i, j] - offsets[i] - offsets[j])
+                    )
+                    linear[(i, j)] += correction
+                    linear[(j, i)] += correction
+
+    # Two useful neighbors need not provide two distinct useful routes.
+    # Penalize the strongest demand-weighted coverage overlaps, rather
+    # than rewarding every supported two-hop path independently.
+    diversity_scale = 0.45 * mean_direct * depth_scale
+>>>>>>> REPLACE
+</DIFF>

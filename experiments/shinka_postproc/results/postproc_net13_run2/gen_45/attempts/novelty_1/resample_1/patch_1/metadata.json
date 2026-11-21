@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elite_edge_model",
+  "patch_description": "This replaces parent-by-parent local search with a population-based edge-model search. It builds an elite set from repaired QAOA samples and LP-scored networks, learns which directed links are common among the best members, and samples new networks biased toward those links. Repairs and degree-preserving switches keep proposals feasible; surrogate energy and population novelty screen them before LP calls. The model is periodically refreshed from newly found elites, allowing broad recombination while retaining exploration rather than repeatedly searching one incumbent\u2019s neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:15:44.429665",
+  "llm_cost": 0.0030555,
+  "llm_model": "gpt-6-luna"
+}

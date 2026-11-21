@@ -1,0 +1,167 @@
+<NAME>
+adaptive_operator_portfolio
+</NAME>
+
+<DESCRIPTION>
+Track LP-confirmed success rates separately for focused swaps, random swaps, rotations, and multi-switch kicks. Use those rates to allocate a diverse portion of each LP batch across operators, with a nonzero exploration floor so that operators are not abandoned prematurely. Update the rates from each evaluated move’s outcome relative to its parent. This directs scarce LP calls toward operators that have recently produced improvements while preserving exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_uses = {}
+    parent_gain = {}
+
+    def canon(arcs):
+=======
+    parent_uses = {}
+    parent_gain = {}
+    # Beta-smoothed improvement rates: [successes, failures] per move operator.
+    operator_stats = {
+        name: [1.0, 1.0]
+        for name in ("focused", "random", "rotation", "kick")
+    }
+    move_sources = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+        move_sources.clear()
+
+        def add_move(cand, source):
+            if cand not in moves:
+                moves.add(cand)
+                move_sources[cand] = source
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                cand = switch(net, p, q)
+                if cand is not None:
+                    moves.add(cand)
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+=======
+                cand = switch(net, p, q)
+                if cand is not None:
+                    add_move(cand, "focused")
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            cand = switch(net, p, q)
+            if cand is not None:
+                moves.add(cand)
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+=======
+            cand = switch(net, p, q)
+            if cand is not None:
+                add_move(cand, "random")
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    cand = tuple(sorted((current - old) | new))
+                    moves.add(cand)
+
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+=======
+                    cand = tuple(sorted((current - old) | new))
+                    add_move(cand, "rotation")
+
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+            cand = tuple(sorted(cur))
+            if cand != net:
+                add_move(cand, "kick")
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+=======
+        selected = []
+        # Allocate initial LP slots adaptively across operators, using smoothed
+        # success rates and an exploration floor to avoid premature lock-in.
+        available = {}
+        for _, net in ranked:
+            source = move_sources.get(net, "random")
+            available.setdefault(source, []).append(net)
+        operator_order = list(operator_stats)
+        while len(selected) < min(batch_size, len(operator_order)):
+            active = [op for op in operator_order if available.get(op)]
+            if not active:
+                break
+            weights = []
+            for op in active:
+                successes, failures = operator_stats[op]
+                weights.append(0.15 + successes / (successes + failures))
+            pick = float(rng.random()) * sum(weights)
+            chosen_op = active[-1]
+            for op, weight in zip(active, weights):
+                pick -= weight
+                if pick <= 0:
+                    chosen_op = op
+                    break
+            # Candidate lists inherit surrogate ordering from `ranked`.
+            selected.append(available[chosen_op].pop(0))
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+=======
+            try:
+                move_score = evaluate(net)
+                source = move_sources.get(net, "random")
+                if move_score < parent_score:
+                    operator_stats[source][0] += 1.0
+                else:
+                    operator_stats[source][1] += 1.0
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+>>>>>>> REPLACE
+
+</DIFF>

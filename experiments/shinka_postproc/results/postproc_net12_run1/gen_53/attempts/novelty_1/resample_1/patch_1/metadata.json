@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_relink_beam",
+  "patch_description": "This design combines a small, quality-and-diversity archive with path relinking between valid networks. Rather than repeatedly building large rotation neighborhoods, it moves a parent toward a different archive member by applying degree-preserving switches that introduce that member\u2019s links. Candidate moves are screened using energy and dual-price change, but a small number of alternatives are retained so those imperfect signals do not become hard filters. Short LP batches then update the archive, with occasional randomized transitions to explore beyond the current relinking paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:56:23.644748",
+  "llm_cost": 0.0029605000000000005,
+  "llm_model": "gpt-6-luna"
+}

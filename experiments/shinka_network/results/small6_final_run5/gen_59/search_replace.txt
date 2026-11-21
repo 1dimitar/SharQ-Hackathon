@@ -1,0 +1,66 @@
+<NAME>
+transit_pressure_second_pass
+</NAME>
+
+<DESCRIPTION>
+Replace the interaction-count adjustment with a demand-weighted transit-pressure correction. Count each OD demand once, distributing its estimated transit usage across selected intermediates in proportion to their path rewards. Then mildly discount rewards through above-average-use intermediates, with a capped reduction of about 21%.
+
+This targets concentrated transit incentives rather than merely counting couplings. It preserves the sparse coupling graph, direct-link rewards, and structural penalties. The correction is dimensionless and adds no quadratic terms, so it scales naturally across network sizes. Its intended benefit is better load-balancing guidance for both samples and local-search move ranking; evaluation is needed to confirm that benefit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Slightly discourage links that participate in unusually many distinct
+    # route interactions, limiting the risk of concentrating transit load.
+    interaction_count = {}
+    for first, second in quadratic:
+        interaction_count[first] = interaction_count.get(first, 0) + 1
+        interaction_count[second] = interaction_count.get(second, 0) + 1
+
+    if interaction_count:
+        counts = np.asarray(list(interaction_count.values()), dtype=float)
+        cutoff_count = float(np.quantile(counts, 0.75))
+        max_count = float(counts.max())
+        mean_direct = -float(sum(linear.values())) / max(1, n * (n - 1))
+        count_range = max_count - cutoff_count
+        if count_range > 0.0 and mean_direct > 0.0:
+            for link, count in interaction_count.items():
+                if count > cutoff_count:
+                    excess = (count - cutoff_count) / count_range
+                    linear[link] += 0.025 * mean_direct * float(excess)
+=======
+    # Estimate transit pressure from the selected routes. Normalize within
+    # each OD pair so extra alternatives do not create extra traffic.
+    route_mass = {}
+    path_records = []
+    for key, weight in quadratic.items():
+        first, second = key
+        if first[1] == second[0]:
+            source, transit, target = first[0], first[1], second[1]
+        elif second[1] == first[0]:
+            source, transit, target = second[0], second[1], first[1]
+        else:
+            continue
+        mass = max(0.0, -float(weight))
+        if mass <= 0.0:
+            continue
+        od = (source, target)
+        route_mass[od] = route_mass.get(od, 0.0) + mass
+        path_records.append((key, od, transit, mass))
+
+    transit_usage = np.zeros(n, dtype=float)
+    for key, od, transit, mass in path_records:
+        transit_usage[transit] += (
+            float(normalized[od]) * mass / route_mass[od]
+        )
+
+    mean_usage = float(transit_usage.mean()) if n else 0.0
+    if mean_usage > 1e-15:
+        # A single conservative correction, not a global rerouting loop:
+        # retain at least 79% of every selected route's original reward.
+        excess = np.clip(transit_usage / mean_usage - 1.0, 0.0, 1.5)
+        transit_discount = 1.0 / (1.0 + 0.18 * excess)
+        for key, od, transit, mass in path_records:
+            quadratic[key] *= float(transit_discount[transit])
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pathbalance",
+  "patch_description": "The baseline has only direct-demand linear rewards, no interactions, and a degree-penalty weight of 1. This version adds sparse two-link path rewards, so a pair of links can be valued for carrying traffic between nodes that are not directly connected. The path reward is spread across possible intermediate nodes and discounted when the OD pair already has substantial direct demand, limiting the tendency to over-reward indirect routes. Direct rewards remain the dominant signal, and a stronger degree penalty encourages the sampled solutions to satisfy the exact in/out-degree constraints before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:27:29.632103",
+  "llm_cost": 0.0008902000000000001,
+  "llm_model": "gpt-6-luna"
+}

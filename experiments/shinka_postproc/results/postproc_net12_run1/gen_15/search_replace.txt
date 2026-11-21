@@ -1,0 +1,76 @@
+<NAME>
+targeted_rotation_escape
+</NAME>
+
+<DESCRIPTION>
+When two-switch descent reaches a local optimum, try a small, targeted set of three-link rotations before restarting. Rotations preserve every node’s in- and out-degree. The triples are centered on links with the highest dual prices or loads, and `tools.energy` screens the resulting networks so only a bounded number are sent to the LP. This spends LP calls on compound moves at the point they are most useful, rather than widening every two-switch neighborhood.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def descend(net, score):
+        improved = True
+        while improved:
+            improved = False
+            for cand in swaps(net):
+                s = tools.lp(cand)
+                if s < score:
+                    net, score, improved = cand, s, True
+                    break
+        return net, score
+=======
+    def descend(net, score):
+        while True:
+            improved = False
+            for cand in swaps(net):
+                s = tools.lp(cand)
+                if s < score:
+                    net, score, improved = cand, s, True
+                    break
+            if improved:
+                continue
+
+            arcs = list(net)
+            detail = tools.lp_detail(net)
+            loads = detail.get("loads", {})
+            prices = detail.get("prices", {})
+            priority = lambda arc: (
+                float(prices.get(arc, 0.0)), float(loads.get(arc, 0.0))
+            )
+            focus = set(sorted(arcs, key=priority, reverse=True)[:5])
+            cur = set(net)
+            rotations = {}
+            for p in range(len(arcs)):
+                for q in range(p + 1, len(arcs)):
+                    for r in range(q + 1, len(arcs)):
+                        if not any(arcs[t] in focus for t in (p, q, r)):
+                            continue
+                        (a, b), (c, d), (e, f) = arcs[p], arcs[q], arcs[r]
+                        for added in (
+                            ((a, d), (c, f), (e, b)),
+                            ((a, f), (c, b), (e, d)),
+                        ):
+                            if any(x == y for x, y in added):
+                                continue
+                            removed = {arcs[p], arcs[q], arcs[r]}
+                            if len(set(added)) != 3 or any(
+                                arc in cur - removed for arc in added
+                            ):
+                                continue
+                            cand = tuple(sorted((cur - removed) | set(added)))
+                            if cand != net and cand not in rotations:
+                                rotations[cand] = tools.energy(cand)
+
+            for cand in sorted(rotations, key=rotations.get)[:16]:
+                if tools.is_cached(cand):
+                    continue
+                s = tools.lp(cand)
+                if s < score:
+                    net, score = cand, s
+                    improved = True
+                    break
+            if not improved:
+                return net, score
+>>>>>>> REPLACE
+
+</DIFF>

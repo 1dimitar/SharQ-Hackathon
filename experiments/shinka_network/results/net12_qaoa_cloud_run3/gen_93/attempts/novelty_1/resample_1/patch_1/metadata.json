@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_relay_blend",
+  "patch_description": "This crossover keeps the direct-link rewards, relay budget, demand support, and 0.80 high-demand cutoff from the stronger-performing implementation. It blends that implementation\u2019s geometric-mean relay ranking with the inspiration program\u2019s preference for relays with two useful legs, and adds a mild edge-pressure adjustment when ranking and weighting paths. The result remains sparse, deterministic, and within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:48:57.162701",
+  "llm_cost": 0.0018416,
+  "llm_model": "gpt-6-luna"
+}

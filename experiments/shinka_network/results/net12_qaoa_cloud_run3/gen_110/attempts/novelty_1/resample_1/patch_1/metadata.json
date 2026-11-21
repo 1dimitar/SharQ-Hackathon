@@ -1,0 +1,14 @@
+{
+  "generation": 110,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "relay_pressure_rank",
+  "patch_description": "Separate relay selection from relay reward allocation. Rank candidate intermediates by leg affinity discounted by node pressure to the 0.75 power, as suggested. Then continue to distribute each OD pair\u2019s quadratic reward using the existing pressure-discounted quality. This tests the ranking sensitivity without also changing the reward scale or pressure discount. The sparse two-candidate structure and term count remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:12:21.964871",
+  "llm_cost": 0.0013455,
+  "llm_model": "gpt-6-luna"
+}

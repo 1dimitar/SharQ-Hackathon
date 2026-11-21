@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_two_hop_reward",
+  "patch_description": "Reduce the two-hop reward strength from 0.36 to 0.25 while keeping the demand gating, intermediate sharing, and transit discount unchanged. The current reward may overvalue indirect routes relative to direct links; this targeted adjustment tests a more moderate balance without changing other features.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:20.322656",
+  "llm_cost": 0.0010618000000000001,
+  "llm_model": "gpt-6-luna"
+}

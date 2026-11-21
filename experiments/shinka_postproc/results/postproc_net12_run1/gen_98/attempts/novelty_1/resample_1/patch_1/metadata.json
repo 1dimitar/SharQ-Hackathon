@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_diverse_search",
+  "patch_description": "This crossover combines the inspiration program\u2019s energy-ranked, diverse repaired seeds and compact archive with the current program\u2019s LP-dual-guided move selection. It searches priced bottleneck links exhaustively for two-switches, then adds sampled general switches, rotations, and kicks to escape local basins. Candidate batches blend dual benefit and surrogate energy, with a few exploratory moves retained; this avoids spending most LP calls on a large, expensive neighborhood enumeration.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:20:33.571819",
+  "llm_cost": 0.0042263000000000005,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,270 @@
+<NAME>
+diverse_frontier_search
+</NAME>
+
+<DESCRIPTION>
+Reorganizes the search around a bounded, topology-diverse frontier. Repaired candidates seed the frontier; each iteration expands one frontier network using bottleneck-focused swaps and degree-preserving rotations. Surrogate energy and topology distance screen each batch before LP evaluation, while adaptive parent selection favors both strong networks and underexplored regions. Cached or previously scored networks are excluded to conserve LP calls.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    """Search a diverse frontier of repaired networks with screened local moves."""
+    n = tools.n
+    scored = {}
+    best_net = None
+    best_score = float("inf")
+    stalls = {}
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in scored:
+            scored[net] = tools.lp(net)
+        value = scored[net]
+        if value < best_score:
+            best_net, best_score = net, value
+        return value
+
+    # Repair first, then choose structurally different seeds, ranked by surrogate.
+    repaired = set()
+    for candidate in candidates:
+        try:
+            net = canon(tools.repair(candidate))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    seeds = []
+    for net in ordered:
+        if all(distance(net, other) >= 4 for other in seeds):
+            seeds.append(net)
+        if len(seeds) >= 36:
+            break
+    for net in ordered:
+        if len(seeds) >= 36:
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if not scored:
+        return list(seeds[0])
+
+    def frontier():
+        ranked = sorted(scored, key=scored.get)
+        chosen = []
+        # Preserve topology diversity among good regions.
+        for net in ranked:
+            if all(distance(net, other) >= 4 for other in chosen):
+                chosen.append(net)
+            if len(chosen) >= 18:
+                break
+        for net in ranked:
+            if len(chosen) >= 30:
+                break
+            if net not in chosen:
+                chosen.append(net)
+        return chosen
+
+    def select_parent(pop):
+        # Most iterations exploit strong solutions; some explore less-used regions.
+        if rng.random() < 0.62:
+            return pop[int(rng.integers(min(7, len(pop))))]
+        weights = [1.0 / (1.0 + stalls.get(net, 0)) for net in pop]
+        total = sum(weights)
+        pick = float(rng.random()) * total
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+
+    def two_switch(net, p, q):
+        arcs = list(net)
+        a, b = arcs[p]
+        c, d = arcs[q]
+        if a == d or c == b:
+            return None
+        old = set(net)
+        if (a, d) in old or (c, b) in old:
+            return None
+        old.remove((a, b))
+        old.remove((c, d))
+        old.add((a, d))
+        old.add((c, b))
+        return tuple(sorted(old))
+
+    def neighborhood(parent, detail):
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, link)) for link, price in prices.items() if price > 0}
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            ranked = sorted(
+                ((float(value), tuple(map(int, link))) for link, value in loads.items()),
+                reverse=True,
+            )
+            hot = {link for _, link in ranked[:6]}
+
+        # Exhaustive two-switches touching a bottleneck, plus sampled unrestricted moves.
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                if hot and arcs[p] not in hot and arcs[q] not in hot:
+                    continue
+                move = two_switch(parent, p, q)
+                if move is not None:
+                    moves.add(move)
+
+        for _ in range(100):
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            move = two_switch(parent, p, q)
+            if move is not None:
+                moves.add(move)
+
+        # Three-link rotations add moves that cannot be expressed as a single switch.
+        for _ in range(120):
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            if hot and not (old & hot):
+                continue
+            for new in (
+                {(a, d), (c, f), (e, b)},
+                {(a, f), (c, b), (e, d)},
+            ):
+                if len(new) != 3 or any(x == y for x, y in new):
+                    continue
+                if new & (current - old):
+                    continue
+                moves.add(tuple(sorted((current - old) | new)))
+
+        return [
+            net for net in moves
+            if net != parent and net not in scored
+            and not tools.is_cached(net) and tools.is_valid(net)
+        ]
+
+    def screen(moves, parent, limit=8):
+        if not moves:
+            return []
+        base_energy = energy(parent)
+        ranked = sorted(moves, key=lambda net: energy(net) - base_energy)
+        selected = []
+        # Diversify the high-surrogate-quality choices before filling the batch.
+        for net in ranked:
+            if all(distance(net, other) >= 3 for other in selected):
+                selected.append(net)
+            if len(selected) >= min(5, limit):
+                break
+        for net in ranked:
+            if len(selected) >= limit:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected
+
+    while tools.lp_calls_left > 0:
+        pop = frontier()
+        if not pop:
+            break
+        parent = select_parent(pop)
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+
+        batch = screen(neighborhood(parent, detail), parent)
+
+        # If this neighborhood is exhausted, try another frontier member.
+        if not batch:
+            alternatives = [net for net in pop if net != parent]
+            rng.shuffle(alternatives)
+            for alternative in alternatives[:6]:
+                try:
+                    alt_detail = tools.lp_detail(alternative)
+                except Exception:
+                    alt_detail = None
+                batch = screen(neighborhood(alternative, alt_detail), alternative)
+                if batch:
+                    parent = alternative
+                    break
+
+        if not batch:
+            # A small random sequence of valid two-switches helps escape exhausted basins.
+            for _ in range(80):
+                cur = set(parent)
+                for _ in range(3 + int(rng.integers(4))):
+                    now = list(cur)
+                    p, q = rng.choice(len(now), size=2, replace=False)
+                    a, b = now[int(p)]
+                    c, d = now[int(q)]
+                    if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                        continue
+                    cur.remove((a, b))
+                    cur.remove((c, d))
+                    cur.add((a, d))
+                    cur.add((c, b))
+                kicked = tuple(sorted(cur))
+                if (kicked != parent and kicked not in scored
+                        and not tools.is_cached(kicked) and tools.is_valid(kicked)):
+                    batch = [kicked]
+                    break
+
+        if not batch:
+            break
+
+        old_score = scored.get(parent, float("inf"))
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+        if min((scored.get(net, float("inf")) for net in batch), default=float("inf")) < old_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_demand",
+  "patch_description": "Use a mild square-root transform for direct-demand rewards while retaining most of their linear signal. This gives moderate-demand direct links more influence, which may help the typical sampled topology, while preserving the preference for links serving the largest demands. The change is limited to the direct-demand component; endpoint and two-hop terms remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:44.487365",
+  "llm_cost": 0.0005847000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_ranking",
+  "patch_description": "Rank relay candidates by the usefulness of their weaker leg, using `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)`, discounted by relay pressure. This favors paths whose two links can both plausibly support traffic instead of selecting relays mainly because their edge-demand penalty is small. Keep the existing relay budget and pressure/edge-pressure discounts, with a mild rank factor so the top-ranked relay is preferred without dominating the path reward.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:36.633112",
+  "llm_cost": 0.0012897,
+  "llm_model": "gpt-6-luna"
+}

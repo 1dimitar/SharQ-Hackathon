@@ -1,0 +1,17 @@
+<NAME>
+relay_pressure_power_075
+</NAME>
+
+<DESCRIPTION>
+Rank relay candidates using the existing affinity formula divided by pressure to the power 0.75, rather than by pressure linearly. This tests a less aggressive pressure discount: busy relays remain less attractive, but are less likely to be excluded from the limited relay budget. The selected-relay coupling weights and all other terms remain unchanged, isolating the effect of the ranking pressure sensitivity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = min(a, b) + 0.25 * max(a, b) + 0.01
+                candidates.append((affinity / pressure, j, pressure))
+=======
+                affinity = min(a, b) + 0.25 * max(a, b) + 0.01
+                candidates.append((affinity / (pressure ** 0.75), j, pressure))
+>>>>>>> REPLACE
+</DIFF>

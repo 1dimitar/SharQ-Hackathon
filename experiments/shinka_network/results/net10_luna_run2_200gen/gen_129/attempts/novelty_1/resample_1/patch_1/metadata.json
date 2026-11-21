@@ -1,0 +1,14 @@
+{
+  "generation": 129,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestionaware15",
+  "patch_description": "The current surrogate rewards direct traffic and two-hop paths, but its two-hop discount uses a relatively mild linear edge-pressure factor. This version uses a stronger, superlinear congestion discount, `(1 + edge_pressure) ** 1.5`, so paths using already-demanded edges receive less reward. It retains the concave direct-demand and path-support terms, and raises the external degree-penalty weight from 1.0 to 1.25 to encourage more valid low-energy samples before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:37.065627",
+  "llm_cost": 0.0011816,
+  "llm_model": "gpt-6-luna"
+}

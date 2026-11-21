@@ -1,0 +1,164 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Demand-Reward Linear QUBO Surrogate**
+- **Implementation**: Assigns each directed link a linear weight equal to its negative demand, normalized by the maximum demand; includes no quadratic terms and sets the degree-penalty weight to 1. The wrapper converts demand to a NumPy array and records runtime.
+- **Performance**: Combined score was **0.77** across six instances, with a mean best-gap of **18.38%** and mean feasibility rate of **9%**.
+- **Feedback**: The demand-only objective produced varied topologies but no quadratic terms, and most sampled solutions were infeasible before repair. Results ranged from an 8.3% best-gap on `sub12_s3` to the largest gap of 32.2% on `network12_s0`, indicating inconsistent solution quality.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Demand-Weighted Relay Surrogate QUBO**
+- **Implementation**: Normalizes demand by its maximum, rewards direct links with negative linear weights, and adds discounted quadratic rewards for two-hop paths through balanced in/out-demand relays. Relay rewards are distributed across candidate intermediates, with a fixed degree-penalty weight of 3.0.
+- **Performance**: Achieved a combined score of 0.82 across six instances, with a mean best-solution gap of 13.44%, mean feasible rate of 7%, and about 840 quadratic terms per instance.
+- **Feedback**: Sub-12 instances scored 0.82–0.85, while network12_s0 was weakest at 0.77 and had the largest gap (20.5%). Validity before repair was generally low (0–14%), and median gaps averaged 31.62%, suggesting the surrogate’s topology incentives leave substantial room for improvement.
+**Program Identifier:** Generation 1 - Patch Name capacity_aware_paths - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Builds negative linear rewards for directed links from normalized demand plus a small endpoint-traffic term, and adds normalized, weak negative couplings for two-hop routes. It uses a fixed degree-penalty weight of 4.0.
+- **Performance**: Combined score was 0.80 across six instances, with mean best-solution gap of 15.55% and mean feasibility rate of 0.07.
+- **Feedback**: Scores ranged from 0.737 to 0.852; sub12_s1 was weakest, with the largest gap at 25.5%, while sub12_s4 had the smallest gap at 9.6%. Only 0–17% of samples were valid before repair, indicating that feasibility remains a major weakness despite varied topologies.
+**Program Identifier:** Generation 2 - Patch Name path_balance_surrogate - Correct Program: True
+
+**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**
+- **Implementation**: Assigns negative linear weights to directed links proportional to normalized direct demand, and negative quadratic weights to two-hop paths serving demanded origin-destination pairs. Discounts paths through high-load intermediates and sets the degree-penalty weight to 4.0.
+- **Performance**: Achieved a combined score of 0.79 across six instances, with a mean best gap of 16.51% and mean feasible rate of 0.14.
+- **Feedback**: Scores ranged from 0.762 to 0.850; sub12_s4 had the smallest gap (8.0%), while sub12_s1 had the largest (23.7%). Low pre-repair feasibility on several instances suggests degree-constraint satisfaction remains a weakness despite the demand-based link and path rewards.
+**Program Identifier:** Generation 3 - Patch Name congestion_aware_twohop - Correct Program: True
+
+**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**
+- **Implementation**: Assigns each directed link a negative weight proportional to its direct demand, then adds discounted two-hop rewards scaled by traffic pressure at the endpoints. Uses a fixed degree-penalty weight of 4.0.
+- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 15.02% and mean feasible rate of 9%.
+- **Feedback**: Scores ranged from 0.757 to 0.833; sub12_s1 was weakest, with the largest gap at 24.7%. Despite generating 810–880 quadratic terms per instance, pre-repair validity was often low (1–25%), indicating that the surrogate and penalty did not reliably produce feasible topologies.
+**Program Identifier:** Generation 4 - Patch Name balanced_twohop_routing - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, rewards direct links, and assigns limited two-hop path credit across candidate hubs weighted by demand affinity and estimated transit pressure. It scales all coefficients and returns a fixed degree-penalty weight of 3.0.
+- **Performance**: Mean score was 0.81 across six instances, with a 14.14% mean gap to best references and a 15% mean pre-repair feasible rate.
+- **Feedback**: Scores ranged from 0.754 to 0.853; sub12_s1 was weakest at a 20.8% gap, while sub12_s4 was strongest at a 10.1% gap. Feasibility varied sharply—0% on sub12_s3—and median gaps remained high at 33.16%, indicating that good scores did not consistently translate into valid or near-best solutions.
+**Program Identifier:** Generation 5 - Patch Name hub_balanced_path_cover - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Assigns each directed link a linear reward based on its direct demand, normalized by maximum demand. Adds quadratic penalties for pairs of links sharing a sender or receiver, weighted by estimated endpoint exposure, with a fixed degree-penalty weight of 4.
+- **Performance**: Achieved a combined score of 0.82 across six instances, with a mean best-solution gap of 12.64% and mean feasible rate of 18%.
+- **Feedback**: The surrogate produced 1,320 quadratic terms per instance and found solutions within 9.8–15.5% of the reference best; sub12_s3 had the largest gap and only 5% of solutions were valid before repair. Median gaps were substantially larger than best gaps (mean 31.82%), indicating inconsistent solution quality.
+**Program Identifier:** Generation 6 - Patch Name balanced_link_load - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Normalizes demand and builds directed-link linear costs from direct traffic rewards and endpoint-load penalties. Adds positive quadratic couplings for competing incoming/outgoing links and two-hop routes, rescales coefficients, and returns a fixed penalty weight of 2.5.
+- **Performance**: Combined score was 0.80 across six instances (mean best gap 15.01%); the weakest result was sub12_s5 at 0.73 score and a 22.2% gap.
+- **Feedback**: The model generated about 2,160 quadratic terms per instance, but only 0–26% of QAOA solutions were valid before repair, and median gaps averaged 37.08%. Its relatively consistent scores on five instances suggest the demand-based terms provide useful guidance, while sub12_s5’s larger gap indicates limited robustness across demand patterns.
+**Program Identifier:** Generation 7 - Patch Name endpoint_load_balance - Correct Program: True
+
+**Program Name: Demand-Weighted Relay QUBO Surrogate**
+- **Implementation**: Assigns negative linear weights to directed links in proportion to normalized direct demand, and adds modest negative quadratic rewards for two-link paths, scaled by demand and a relay score based on balanced incoming and outgoing traffic. Sets the degree-penalty weight to 1.0.
+- **Performance**: Combined score was 0.82 across six instances, with a mean best-solution gap of 12.64% and mean feasible rate of 7%.
+- **Feedback**: Scores ranged from 0.75 to 0.85; the largest gap was 21.2% on `sub12_s1`, while `sub12_s5` had the smallest gap at 6.6%. Low pre-repair feasibility (0–15%) suggests the surrogate rewards alone do not reliably guide QAOA toward valid topologies.
+**Program Identifier:** Generation 8 - Patch Name selective_relay_paths - Correct Program: True
+
+**Program Name: Sparse Two-Hop Network Design QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and adds sparse quadratic rewards for selected two-hop routes. Relay candidates are ranked by traffic balance and observed endpoint demand; coefficients are normalized, with a fixed penalty weight of 2.5.
+- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 13.92% and 336 quadratic terms on average.
+- **Feedback**: Best performance was on network12_s0 (score 0.875, gap 6.7%); sub12_s1 was weakest (score 0.736, gap 22.6%). Pre-repair feasibility was very low (0–7%), and median gaps averaged 34.63%, suggesting the surrogate rewards produced varied topologies but did not reliably guide QAOA toward strong feasible solutions.
+**Program Identifier:** Generation 10 - Patch Name sparse_relay_surrogate - Correct Program: True
+
+**Program Name: Demand-Normalized Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative directed demand by its maximum, assigns negative linear rewards to demanded links, and adds sparse negative quadratic rewards for plausible two-hop paths. It also adjusts link rewards by relay participation and returns a fixed degree-constraint penalty weight of 2.0.
+- **Performance**: The combined score was 0.75 across six instances, with a mean best-solution gap of 22.06% and mean feasibility rate of 4%.
+- **Feedback**: Five instances scored about 0.75–0.83, but sub12_s4 scored 0.46 with the largest gap (58.6%). Most instances had no valid raw QAOA solutions before repair, indicating that the surrogate rewards and penalty did not reliably enforce feasibility.
+**Program Identifier:** Generation 9 - Patch Name relay_balanced_paths - Correct Program: True
+
+**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**
+- **Implementation**: Assigns each directed link a negative demand-proportional linear weight, then rewards two-hop routes with discounted quadratic terms allocated among relays according to inverse traffic pressure. Uses a fixed degree-penalty weight of 4.0 and scales demand-derived weights by the maximum demand.
+- **Performance**: Achieved a combined score of 0.75 across six instances, with a mean best-reference gap of 19.86% and mean feasible rate of 9%.
+- **Feedback**: Scores ranged from 0.619 to 0.808; sub12_s5 was weakest, with a 32.1% best gap and 108% median gap. Feasibility before repair was low (0–13%), suggesting the surrogate’s rewards and fixed penalty do not consistently guide QAOA toward valid topologies.
+**Program Identifier:** Generation 11 - Patch Name relay_balanced_indirect_rewards - Correct Program: True
+
+**Program Name: Demand-Weighted Relay QUBO Surrogate**
+- **Implementation**: Assigns negative linear weights to directed links in proportion to normalized direct demand, then adds bounded negative quadratic rewards for two-link paths through relays. Relay rewards use balanced aggregate incoming/outgoing traffic and endpoint suitability, with each OD pair’s reward distributed across candidate relays; the degree penalty weight is 1.0.
+- **Performance**: Combined score was 0.81 across six instances (mean best-solution gap 15.57%), with 840 quadratic terms on average.
+- **Feedback**: Scores ranged from 0.77 to 0.85; the largest gap was network12_s0 at 23.6%, while sub12_s5 had the smallest at 11.9%. Only 4% of solutions were feasible before repair on average (22% for sub12_s4), indicating that the surrogate’s link and relay rewards did not by themselves reliably enforce valid topology constraints.
+**Program Identifier:** Generation 12 - Patch Name normalized_relay_rewards - Correct Program: True
+
+**Program Name: Demand-Sensitive Sparse QUBO Surrogate**
+- **Implementation**: Normalizes demand, then builds negative linear rewards from direct traffic and concave endpoint exposure. It adds sparse, discounted quadratic rewards for up to two suitable relay nodes per OD pair and returns a fixed degree-penalty weight of 1.25.
+- **Performance**: Combined score was 0.77 across six instances, with a mean best-reference gap of 19.20% and mean feasible rate of 9%.
+- **Feedback**: Sub12_s4 performed best (score 0.834; 5.8% gap), while network12_s0 had the largest gap (34.1%) and sub12_s5 also lagged (30.0%). Feasibility before repair was low or zero on several instances, suggesting that sparse surrogate rewards did not consistently guide QAOA toward valid topologies.
+**Program Identifier:** Generation 13 - Patch Name sparse_relay_diversification - Correct Program: True
+
+**Program Name: Demand-Weighted Relay Surrogate QUBO**
+- **Implementation**: Direct-link rewards are negative square roots of normalized demand, compressing large-demand differences. Two-hop rewards are distributed across candidate relays using a traffic-based relay score, with a 0.30 discount; the degree-penalty weight is 3.0.
+- **Performance**: Combined score was 0.79 across six instances, with a mean best-solution gap of 17.49% and a mean feasible rate of 3%.
+- **Feedback**: Best performance was on `sub12_s4` (score 0.839, 11.51% gap), while `network12_s0` had the largest gap (21.1%). Most sampled QAOA solutions were invalid before repair, indicating feasibility remained a challenge despite 810–880 quadratic terms per instance.
+**Program Identifier:** Generation 14 - Patch Name concave_direct_rewards - Correct Program: True
+
+**Program Name: Demand-Aware Surrogate QUBO Terms**
+- **Implementation**: Clips negative demand and removes self-demand, then assigns negative linear rewards to direct links using normalized demand and endpoint importance. Adds positive quadratic penalties for pairs of links sharing a sender or receiver, weighted by endpoint exposure; the penalty weight is 3.5.
+- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 14.85% and mean feasibility rate of 13%.
+- **Feedback**: Scores ranged from 0.73 to 0.90; sub12_s2 had the largest gap at 21.92%, while sub12_s4 performed best at 0.90 with a 7.50% gap. Feasibility before repair was low (1–25%) despite 1,320 quadratic terms per instance, indicating that solution validity remains a weakness.
+**Program Identifier:** Generation 15 - Patch Name endpoint_exposure_qubo - Correct Program: True
+
+**Program Name: Demand-Weighted Relay QUBO Surrogate**
+- **Implementation**: Builds linear rewards from normalized directed demand, then adds two-hop relay rewards allocated across intermediates according to inverse node load. It also adds normalized same-endpoint link penalties and uses a fixed degree-penalty weight of 1.5.
+- **Performance**: Achieved a combined score of 0.80 across six instances, with a mean best-solution gap of 15.60% and mean feasibility rate of 10%.
+- **Feedback**: Scores ranged from 0.73 to 0.83; sub12_s5 was weakest, with a 24.03% gap, while two instances produced no valid unrepaired solutions. The surrogate generated about 1,381 quadratic terms on average, but median gaps remained high at 36.59%, indicating substantial room to improve solution quality and feasibility.
+**Program Identifier:** Generation 16 - Patch Name relay_pressure_balance - Correct Program: True
+
+**Program Name: Demand-Weighted Relay Surrogate QUBO**
+- **Implementation**: Rewards directed links in proportion to normalized direct demand, adds discounted pairwise rewards for two-hop routes through relays with balanced incoming and outgoing traffic, and adds modest congestion penalties for multiple links sharing high-traffic endpoints. Returns a fixed degree-penalty weight of 3.0.
+- **Performance**: Combined score was 0.80 across six instances, with best-solution gaps of 12.5–20.4% and a mean best-reference gap of 15.85%.
+- **Feedback**: The surrogate produced roughly 2,130–2,200 quadratic terms per instance, but only 2–42% of sampled QAOA solutions were feasible before repair. Median gaps remained high (29.4–46.6%), suggesting that feasibility and solution quality—not a lack of varied topologies—limited performance.
+**Program Identifier:** Generation 17 - Patch Name selective_endpoint_congestion - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Builds normalized direct-link rewards from nonnegative demand, with a small correction for endpoint traffic importance. Adds bounded negative quadratic couplings for up to two preferred two-hop relays per demanded pair and uses a degree-deviation penalty weight of 4.0.
+- **Performance**: Achieved a combined score of 0.79 across six instances, with a mean best-solution gap of 16.47% and a mean feasible rate of 6%.
+- **Feedback**: Scores ranged from 0.751 to 0.823; `sub12_s3` had the largest gap at 20.9%. Most QAOA samples were invalid before repair (0–16% valid across instances), indicating that feasibility remains a key weakness despite the surrogate terms producing many distinct topologies.
+**Program Identifier:** Generation 18 - Patch Name selective_relay_bonus - Correct Program: True
+
+**Program Name: Demand-Weighted Relay Surrogate QUBO**
+- **Implementation**: Builds QUBO terms for directed links using demand-normalized negative square-root linear rewards, relay rewards allocated across candidate intermediates, and positive endpoint-sharing penalties; it returns a fixed degree-penalty weight of 1.5. Relay quality is reduced for high-load nodes, and terms are assembled per OD pair and endpoint.
+- **Performance**: Achieved a combined score of 0.79 across six instances, with a mean best-solution gap of 17.64%, mean feasible rate of 11%, and about 1,381 quadratic terms.
+- **Feedback**: Scores ranged from 0.74 to 0.84; sub12_s4 performed best, while sub12_s5 had the largest gap (24.5%) and worst score (0.741). Validity before repair was low or zero on several instances, and median gaps (28.7–47.2%) show that the surrogate’s rewards and penalties still leave substantial room to improve solution quality.
+**Program Identifier:** Generation 20 - Patch Name concave_direct_reward - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **The current best, Generation 6’s *Demand-Aware Surrogate QUBO Terms*, remains the strongest aggregate result.** It scores **0.82** with a **12.64% mean best-solution gap**, outperforming all five newly evaluated programs, whose scores range from **0.79–0.81** and mean gaps from **14.85–17.64%**. Its direct-demand rewards paired with endpoint-exposure conflict penalties remain the clearest successful pattern.
+- **Targeted penalties for links sharing a sender or receiver are consistently more effective here than the newer relay-heavy variants.** Generation 6 uses **1,320** quadratic terms and achieves a **12.64%** gap. By comparison, Generation 17’s balanced two-hop rewards and congestion penalties use roughly **2,130–2,200** terms but reach a **15.85%** mean gap; Generation 16’s relay-pressure design reaches **15.60%**.
+- **Generation 6’s advantage holds across the highlighted instances, not just in aggregate.** It scores **0.844** on `network12_s0` with an **11.29%** gap, and **0.865** on `sub12_s4` with a **9.76%** gap. Generation 15 also does best on `sub12_s4`, but its score is **0.90** with a **7.50%** gap according to its summary—an instance-level exception that does not change its weaker aggregate result of **0.81 / 14.85%**.
+
+## Ineffective Approaches
+- **Adding relay rewards has not improved on the current best in these evaluations.** Generation 16, which allocates two-hop rewards by inverse node load, scores **0.80 / 15.60%**; Generation 17’s balanced relay rewards score **0.80 / 15.85%**; Generation 18’s selective relay bonuses score **0.79 / 16.47%**; and Generation 20’s concave direct rewards plus relay allocation score **0.79 / 17.64%**. Each trails Generation 6’s **0.82 / 12.64%**.
+- **More quadratic interactions have not translated into better solution quality.** Generation 17 uses roughly **2,130–2,200** terms and reports only **2–42%** feasibility before repair, while Generation 6 uses **1,320** terms and averages **18%** feasibility. The newer relay programs therefore add structural interactions without a corresponding aggregate gain.
+- **Low pre-repair feasibility remains a shared weakness, and fixed degree penalties do not resolve it.** Generation 6 averages **18%** feasibility, but falls to **5%** on `sub12_s3` and `sub12_s5`. The new programs also show low rates: Generation 15 averages **13%**, Generation 16 **10%**, Generation 18 **6%**, and Generation 20 **11%**. Several use fixed penalty weights from **1.5 to 4.0**, with no consistent feasibility improvement.
+- **Best-sample scores conceal weaker typical outcomes.** Generation 6’s mean median gap is **31.82%**, with a **41.2%** median gap on `sub12_s5`; other relay variants also report high median gaps, including **36.59%** for Generation 16 and **28.7–47.2%** for Generation 20. Strong best samples do not imply that most sampled topologies are competitive.
+
+## Implementation Insights
+- **Generation 6 combines direct service rewards with a modest, targeted endpoint-conflict signal.** It sets each linear weight to `-direct / scale`, where `scale` is maximum demand. For each link it estimates exposure as direct demand plus `0.10 * (row[i] + col[j]) / (n - 1)`, then penalizes pairs sharing a sender or receiver with weight `0.18 / scale * exposure[e1] * exposure[e2] / scale`. This design scores **0.82 / 12.64%** with **1,320** quadratic terms.
+- **The best program’s endpoint signal appears more useful than simply broadening the objective with path rewards.** Generation 15 also uses direct-link rewards and endpoint-sharing penalties, scoring **0.81 / 14.85%**. Its summary reports a penalty weight of **3.5** and low feasibility (**13%**), versus Generation 6’s penalty weight of **4.0** and **18%** mean feasibility. The shared structure is competitive, but Generation 6’s particular exposure scaling and coefficients perform better overall.
+- **Relay variants differ substantially in allocation, but none matches the current best.** Generation 16 distributes two-hop rewards according to inverse node load and uses a degree penalty of **1.5**; Generation 17 balances incoming and outgoing relay traffic and uses **3.0**; Generation 18 limits bonuses to preferred relays and uses **4.0**; Generation 20 reduces relay quality for high-load nodes and uses **1.5**. Their scores span **0.79–0.80**, with mean gaps of **15.60–17.64%**.
+- **Term count alone is not predictive of performance.** Generation 6’s **1,320** terms outperform Generation 17’s approximately **2,130–2,200** and Generation 18’s reported **many distinct topologies** with only **6%** feasibility. The results align with earlier comparisons: Generation 7’s roughly **2,160** terms reached a **15.01%** gap, while Generation 10’s roughly **336** terms reached **13.92%**. The quality and scaling of couplings matter more than their number.
+
+## Performance Analysis
+- **Generation 6 remains the leader across the evaluated programs.** Its **0.82** score and **12.64%** mean gap beat Generation 15 (**0.81 / 14.85%**), Generation 16 (**0.80 / 15.60%**), Generation 17 (**0.80 / 15.85%**), Generation 18 (**0.79 / 16.47%**), and Generation 20 (**0.79 / 17.64%**). Generation 15 is the closest by mean gap, but remains **2.21 percentage points** behind.
+- **The current best’s instance results show both a strong case and persistent weak spots.** Its best highlighted result is `sub12_s4` (**0.865**, **9.76%** gap); its largest gap is `sub12_s3` (**15.50%**), where only **5%** of samples are feasible. `sub12_s5` has a smaller best gap (**12.62%**) but the worst median gap (**41.2%**) and also only **5%** feasibility.
+- **The new programs have isolated instance wins but do not show a consistent aggregate advantage.** Generation 15 reports its best outcome on `sub12_s4` (**0.90**, **7.50%** gap), better than Generation 6’s result there, but its overall mean gap is **14.85%** versus **12.64%**. Generation 18 also identifies `sub12_s4` as its best instance, while `sub12_s5` is its weakest at a **24.5%** gap.
+- **Across generations, relay complexity and fixed penalty choices do not correlate with better scores or feasibility.** The relay-based programs cluster around **0.79–0.80**, below Generation 6’s **0.82**, while their feasibility rates remain mostly in the **6–11%** range (with Generation 17 reporting **2–42%** by instance). Generation 6 is still imperfect, but its combination of lower term count, best aggregate gap, and higher mean feasibility is the strongest overall result.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Sweep the endpoint-conflict scale while keeping the current objective otherwise unchanged.** Test `pair_scale = c / scale` for `c` values such as `0.10`, `0.14`, and `0.24` around the successful `0.18`. This directly probes whether stronger or weaker same-sender/same-receiver penalties can improve the weak-feasibility cases without adding the broader interactions that have underperformed.
+
+2. **Tune the traffic-pressure component of exposure independently.** Compare the current coefficient `0.10` with values such as `0.05` and `0.20`, leaving direct rewards and pair construction fixed. The existing direct-demand rewards plus targeted endpoint penalties are the strongest observed pattern, so this tests whether better endpoint-load estimates can improve those couplings without changing the objective’s structure.
+
+3. **Make conflict penalties depend on the shared endpoint’s normalized traffic load.** For same-sender pairs, scale the penalty by a bounded measure of that sender’s row demand; for same-receiver pairs, use the corresponding column demand. Keep the current exposure product and global scale as a baseline, and compare against it to test whether concentrating penalties on pressured endpoints helps—particularly on `sub12_s3` and `sub12_s5`, where pre-repair feasibility is only 5%.
+
+4. **Try a modest, normalized two-hop reward as an addition to—not a replacement for—the direct-demand objective.** Allocate each two-hop demand contribution across eligible relays so that it is not counted in full for every path, and keep its total contribution small relative to the direct rewards. Relay-heavy objectives have trailed the best program, so this tests only whether restrained indirect credit complements its successful endpoint-conflict structure.
+
+5. **Test a concave direct reward while preserving the current conflict penalties.** Replace `direct / scale` in the linear term with a normalized transform such as `sqrt(direct / scale)`, then keep the quadratic construction and coefficient unchanged for a clean comparison. This checks whether reducing dominance by the largest demands helps, while retaining the targeted endpoint interactions that distinguish the current best.

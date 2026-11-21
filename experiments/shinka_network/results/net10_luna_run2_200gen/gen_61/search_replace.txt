@@ -1,0 +1,20 @@
+<NAME>
+nonlinear_edge_pressure
+</NAME>
+
+<DESCRIPTION>
+Discount two-hop rewards when either component link already has substantial direct demand. Using a smooth nonlinear denominator reduces the incentive to route more traffic through links likely to be busy, while retaining the existing transit-capacity weighting and per-OD sharing. This tests a stronger congestion-aware signal without changing the term structure or exceeding the quadratic-term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                share = float(transit[j]) / denom
+                weight = -0.72 * value * share
+=======
+                share = float(transit[j]) / denom
+                edge_pressure = float(d[i, j] + d[j, k])
+                edge_discount = (1.0 + 0.75 * edge_pressure) ** 1.5
+                weight = -0.72 * value * share / edge_discount
+>>>>>>> REPLACE
+
+</DIFF>

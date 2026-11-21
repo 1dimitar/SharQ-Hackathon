@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_suppression",
+  "patch_description": "Increase suppression of two-hop rewards when either link already carries substantial direct demand. The current denominator, `1 + 0.5 * edge_pressure`, discounts those routes only mildly; replacing it with `(1 + edge_pressure) ** 1.5` makes routes through potentially loaded links less attractive. This tests the suggested stronger-suppression direction while leaving direct-link rewards, node pressure, and all other terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:38.564592",
+  "llm_cost": 0.0007882000000000001,
+  "llm_model": "gpt-6-luna"
+}

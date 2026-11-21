@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "calibrated_portfolio",
+  "patch_description": "Combines the diverse archive and mixed move portfolio with batched shortest-path routing features and an online ridge predictor. LP batches explicitly reserve room for energy, routing, rotations, kicks, novelty, and random exploration, preventing one ranking signal from consuming the entire budget.\n\nEfficiency improvements include bit-mask topology distances, cached energy evaluations, periodic model fitting, bounded routing screens, and degree-preserving moves that avoid repeated validity checks. Improving offspring receive continuation opportunities, while stalled parents generate stronger perturbations.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:08:32.831826",
+  "llm_cost": 0.105866,
+  "llm_model": "gpt-6.1-sol"
+}

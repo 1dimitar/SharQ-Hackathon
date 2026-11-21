@@ -1,0 +1,158 @@
+--- a/original.py
++++ b/original.py
+@@ -1,108 +1,101 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build approximate cost terms for a directed, degree-constrained network."""
++    """Build demand-conditioned two-hop QUBO surrogate terms."""
+     t = np.asarray(demand, dtype=float)
+     n = len(t)
+     if n == 0:
+         return {}, {}, 1.0
+ 
+-    # Normalize the demand first, avoiding dependence on the units of traffic.
+-    max_demand = float(np.max(np.abs(t))) if t.size else 0.0
+-    if max_demand > 0.0:
+-        d = np.maximum(t, 0.0) / max_demand
+-    else:
+-        d = np.zeros_like(t)
++    # Ignore negative entries if supplied; normalize for scale invariance.
++    t = np.maximum(t, 0.0)
++    scale = float(np.max(t))
++    d = t / scale if scale > 0.0 else np.zeros_like(t)
+ 
+     row = d.sum(axis=1)
+     col = d.sum(axis=0)
+     total = float(d.sum())
+ 
+-    # Node traffic is a modest proxy for how valuable it is to have the
+-    # node participate in routes. The square root limits the influence of hubs.
+-    if total > 0.0:
+-        row_share = np.sqrt(row / total)
+-        col_share = np.sqrt(col / total)
+-    else:
+-        row_share = np.zeros(n)
+-        col_share = np.zeros(n)
+-
+-    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+     linear = {}
+     quadratic = {}
+ 
+-    for i, j in links:
+-        # Direct traffic remains the strongest single-link signal. The node
+-        # term is deliberately smaller because degree constraints already
+-        # force every node to choose the same number of incident links.
+-        linear[(i, j)] = (
+-            -0.72 * float(d[i, j])
+-            -0.08 * float(row_share[i] + col_share[j])
+-        )
+-
+-    # A useful two-hop route requires both directed links. Weight it below
+-    # direct service to reduce the tendency to over-reward arbitrary paths.
++    # Prefer direct service for significant OD pairs, while mildly reflecting
++    # how much traffic originates at i and terminates at j.
+     for i in range(n):
+         for j in range(n):
+-            if j == i:
++            if i == j:
+                 continue
++            endpoint = 0.5 * (
++                row[i] / (float(row.max()) + 1e-12)
++                + col[j] / (float(col.max()) + 1e-12)
++            )
++            linear[(i, j)] = -0.72 * float(d[i, j]) - 0.06 * endpoint
++
++    if total > 0.0:
++        # Local link evidence estimates whether j is a plausible bridge for
++        # this specific OD pair: i's traffic to j and j's traffic to k.
++        # Normalizing each side avoids allowing a single hub to dominate.
++        for i in range(n):
+             for k in range(n):
+-                if k == i or k == j:
++                if i == k:
+                     continue
+                 od = float(d[i, k])
+                 if od <= 0.0:
+                     continue
+ 
+-                # Favor intermediates whose inbound/outbound traffic profile
+-                # makes them plausible transit nodes, while damping large
+-                # endpoint traffic totals to avoid excessive hub attraction.
+-                endpoint_scale = 1.0 + 0.35 * (
+-                    float(row_share[i]) + float(col_share[k])
+-                )
+-                transit_scale = 0.65 + 0.35 * (
+-                    float(row_share[j]) + float(col_share[j])
+-                )
+-                value = -0.30 * od * transit_scale / endpoint_scale
++                for j in range(n):
++                    if j == i or j == k:
++                        continue
+ 
+-                # The pair is the path i -> j -> k.
+-                key = ((i, j), (j, k))
+-                quadratic[key] = quadratic.get(key, 0.0) + value
++                    in_fit = float(d[i, j]) / (float(row[i]) + 1e-12)
++                    out_fit = float(d[j, k]) / (float(row[j]) + 1e-12)
+ 
+-    # Keep coefficient magnitudes in a stable range; the evaluator also
+-    # rescales, but this makes the returned values well behaved on zero/small
+-    # and large demand matrices alike.
+-    largest = 0.0
+-    for value in linear.values():
+-        largest = max(largest, abs(float(value)))
+-    for value in quadratic.values():
+-        largest = max(largest, abs(float(value)))
++                    # A small background term permits useful transit routes
++                    # even when the exact adjacent OD traffic is absent.
++                    fit = 0.15 + 0.85 * np.sqrt(in_fit * out_fit)
++
++                    # Discount transit through nodes with high total
++                    # throughput, which are more likely to become bottlenecks.
++                    transit_load = (float(row[j]) + float(col[j])) / (
++                        2.0 * total / max(1, n) + 1e-12
++                    )
++                    congestion_discount = 1.0 / (1.0 + 0.35 * transit_load)
++
++                    key = ((i, j), (j, k))
++                    quadratic[key] = -0.34 * od * fit * congestion_discount
++
++    # Keep the returned coefficients numerically well scaled; the evaluator
++    # performs its own rescaling as well.
++    largest = max(
++        [abs(v) for v in linear.values()]
++        + [abs(v) for v in quadratic.values()]
++        + [0.0]
++    )
+     if largest > 0.0:
+         linear = {key: value / largest for key, value in linear.items()}
+         quadratic = {key: value / largest for key, value in quadratic.items()}
+ 
+-    # Degree penalties are supplied by the evaluator, not included here.
+-    penalty_weight = 2.0
+-    return linear, quadratic, penalty_weight
++    return linear, quadratic, 1.5
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

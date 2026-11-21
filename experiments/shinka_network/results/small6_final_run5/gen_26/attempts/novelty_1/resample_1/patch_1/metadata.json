@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "targeted_three_hop",
+  "patch_description": "Add a sparse three-hop alternative only for high-demand OD pairs whose two-hop evidence is weak or ambiguous. Rank candidate paths using support on their legs and pressure at both transit nodes, then add small pairwise rewards for the three links in the selected path. This tests the targeted three-hop recommendation without adding broad route coverage or making longer paths compete strongly with the existing direct-link and two-hop terms. The added work is O(n\u2074) in the worst case, which is modest for n \u2264 24, and adds at most three couplings per qualifying OD pair.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:07:21.234913",
+  "llm_cost": 0.0027630000000000003,
+  "llm_model": "gpt-6-luna"
+}

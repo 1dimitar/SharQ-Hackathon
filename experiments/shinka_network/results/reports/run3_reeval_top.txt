@@ -1,0 +1,11 @@
+program                                           quad   score mean ± SD       (min..max)  best topo median gap
+results/net12_qaoa_cloud_run3/gen_0/main.py        880    0.8412 ± 0.0176 (0.8190..0.8623)     296539      27.8%
+results/net12_qaoa_cloud_run3/gen_109/main.py      216    0.8383 ± 0.0097 (0.8234..0.8483)     303410      28.5%
+results/net12_qaoa_cloud_run3/gen_132/main.py      220    0.8222 ± 0.0192 (0.7919..0.8425)     309223      31.4%
+results/net12_qaoa_cloud_run3/gen_128/main.py      308    0.8503 ± 0.0135 (0.8330..0.8730)     305200      23.5%
+
+Re-evaluation 2026-11-21 ~23:00 (local Maestro simulator, 6 partitioned-QAOA runs per program,
+analysis/reeval_top.py). In-run scores (2 runs each): gen_0 0.8297, gen_109 0.8653, gen_132 0.8515,
+gen_128 0.8514. With 6 runs, no program is reliably better than the starting program (gen_0): the
+in-run best (gen_109) is a winner's-curse outlier. gen_109 / gen_128 reach the same quality with
+216 / 308 couplings instead of 880.

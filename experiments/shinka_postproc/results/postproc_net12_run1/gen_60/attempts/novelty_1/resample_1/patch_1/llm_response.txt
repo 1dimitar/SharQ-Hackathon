@@ -1,0 +1,83 @@
+<NAME>
+adaptive_move_returns
+</NAME>
+
+<DESCRIPTION>
+Adapt the random switch, rotation, and multi-switch-kick proposal effort using their observed returns. Track how often each move class produces a network better than its parent, then allocate a fixed proposal budget according to smoothed success rates. The exhaustive bottleneck-focused switch neighborhood remains unchanged, so adaptation preserves that reliable source of moves while shifting exploratory effort toward move types that are productive in the current search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_net = None
+    best_score = float("inf")
+    parent_stalls = {}
+=======
+    best_net = None
+    best_score = float("inf")
+    parent_stalls = {}
+    # Track evaluated move types and parent-relative improvements.
+    move_stats = {
+        "switch": [0, 0],
+        "rotation": [0, 0],
+        "kick": [0, 0],
+    }
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+        # Allocate exploratory proposals according to smoothed, observed returns.
+        # A positive prior keeps every move type in circulation.
+        raw_weights = []
+        for kind in ("switch", "rotation", "kick"):
+            trials, wins = move_stats[kind]
+            raw_weights.append(0.2 + (wins + 1.0) / (trials + 4.0))
+        total_weight = sum(raw_weights)
+        switch_share, rotation_share, kick_share = (
+            weight / total_weight for weight in raw_weights
+        )
+        exploration_budget = 164
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(int(exploration_budget * switch_share)):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+=======
+            rotation_trials = min(
+                350,
+                max(10, int(exploration_budget * rotation_share * (1 + stalls // 3))),
+            )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(24):
+            cur = set(net)
+=======
+        for _ in range(max(4, int(exploration_budget * kick_share))):
+            cur = set(net)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+=======
+        # Attribute each evaluated move by its change size: one switch changes
+        # four arcs, a three-link rotation changes six, and larger kicks usually
+        # change more. Use parent-relative improvement as the observed return.
+        for net in batch:
+            if net not in seen:
+                continue
+            changed = distance(net, parent)
+            kind = "switch" if changed == 4 else "rotation" if changed == 6 else "kick"
+            move_stats[kind][0] += 1
+            if seen[net] < parent_score:
+                move_stats[kind][1] += 1
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+>>>>>>> REPLACE
+
+</DIFF>

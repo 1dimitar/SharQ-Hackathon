@@ -1,0 +1,188 @@
+--- a/original.py
++++ b/original.py
+@@ -1,99 +1,126 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
++def _prepare_demand(demand):
++    """Return a nonnegative, normalized demand matrix and node traffic totals."""
++    d = np.asarray(demand, dtype=float)
++    n = len(d)
++    if n == 0:
++        return d, np.zeros(0), np.zeros(0)
++
++    d = np.maximum(d, 0.0).copy()
++    np.fill_diagonal(d, 0.0)
++    scale = float(np.max(d))
++    if scale > 0.0:
++        d /= scale
++    return d, d.sum(axis=1), d.sum(axis=0)
++
++
++def _relay_candidates(d, row, col, source, target, limit):
++    """Rank plausible intermediate nodes for one OD pair."""
++    n = len(d)
++    candidates = []
++    for relay in range(n):
++        if relay == source or relay == target:
++            continue
++
++        # A relay needs both receiving and sending capacity. The small
++        # uniform component avoids excluding useful relays on sparse data.
++        balance = np.sqrt(max(0.0, row[relay] * col[relay]))
++        balance_scale = max(1.0, float(np.max(row)) * float(np.max(col)))
++        endpoint_fit = 0.25 + 0.75 * min(
++            1.0, float(d[source, relay] + d[relay, target])
++        )
++        score = (0.25 + balance / np.sqrt(balance_scale)) * endpoint_fit
++
++        # Prefer routes whose constituent links have observed demand, while
++        # preserving a positive baseline score for otherwise plausible paths.
++        score *= 0.5 + np.sqrt(max(0.0, float(d[source, relay] * d[relay, target])))
++        candidates.append((score, relay))
++
++    # Stable tie-breaking makes results repeatable across calls.
++    candidates.sort(key=lambda item: (-item[0], item[1]))
++    return candidates[:limit]
++
++
+ def surrogate_terms(demand):
+-    """Construct demand-based topology costs and congestion couplings."""
+-    d = np.asarray(demand, dtype=float)
++    """Construct direct-link rewards and sparse two-hop route rewards."""
++    d, row, col = _prepare_demand(demand)
+     n = len(d)
+     if n < 2:
+         return {}, {}, 1.0
+ 
+-    # Scale demand to make coefficients stable across instances.
+-    scale = float(np.max(np.abs(d))) or 1.0
+-    d = np.maximum(d, 0.0) / scale
+-    row = d.sum(axis=1)
+-    col = d.sum(axis=0)
+-    total = float(d.sum()) or 1.0
+-
+     links = [(i, j) for i in range(n) for j in range(n) if i != j]
+-    linear = {}
+-
+-    # Direct traffic is attractive, but links attached to high-traffic endpoints
+-    # are costly because those nodes also need to carry transit traffic.
+-    for i, j in links:
+-        direct = d[i, j]
+-        endpoint_load = (row[i] + col[j]) / total
+-        linear[(i, j)] = -0.72 * direct + 0.10 * endpoint_load
+-
++    linear = {link: -float(d[link]) for link in links}
+     quadratic = {}
+ 
+-    def add(a, b, value):
+-        if a == b or value <= 0.0:
+-            return
+-        key = (a, b) if a < b else (b, a)
+-        quadratic[key] = quadratic.get(key, 0.0) + float(value)
++    # Restrict each OD pair to a few likely relays. This preserves path
++    # incentives without creating every possible two-hop interaction.
++    relay_limit = min(4, max(1, n - 2))
++    indirect_fraction = 0.34
++    component_fraction = 0.10
+ 
+-    # Competing links at a node are more concerning when that node has large
+-    # traffic in the corresponding direction. Degree penalties are supplied
+-    # separately by the evaluator; these couplings express congestion instead.
+-    for i in range(n):
+-        outgoing = [(i, j) for j in range(n) if j != i]
+-        incoming = [(j, i) for j in range(n) if j != i]
+-        out_factor = row[i] / total
+-        in_factor = col[i] / total
+-        for p in range(len(outgoing)):
+-            for q in range(p + 1, len(outgoing)):
+-                add(outgoing[p], outgoing[q], 0.10 * out_factor / max(1, n - 2))
+-        for p in range(len(incoming)):
+-            for q in range(p + 1, len(incoming)):
+-                add(incoming[p], incoming[q], 0.10 * in_factor / max(1, n - 2))
++    for source in range(n):
++        for target in range(n):
++            flow = float(d[source, target])
++            if source == target or flow <= 0.0:
++                continue
+ 
+-    # A two-hop route i->j->k places load on both links. A positive coupling
+-    # discourages relying heavily on such routes, especially for large OD flows;
+-    # direct-link rewards remain the primary preference for serving that flow.
+-    for i in range(n):
+-        for j in range(n):
+-            if i == j:
++            candidates = _relay_candidates(
++                d, row, col, source, target, relay_limit
++            )
++            if not candidates:
+                 continue
+-            a = (i, j)
+-            for k in range(n):
+-                if k == i or k == j:
+-                    continue
+-                b = (j, k)
+-                flow = d[i, k]
+-                if flow > 0:
+-                    add(a, b, 0.16 * flow / max(1.0, row[i] + col[k]))
+ 
+-    # Bound the total coefficient mass so congestion terms do not overwhelm
+-    # direct-service information after the evaluator's global rescaling.
+-    max_abs = max(
+-        [abs(v) for v in linear.values()] +
+-        [abs(v) for v in quadratic.values()] +
+-        [1.0]
++            total_score = sum(score for score, _ in candidates)
++            if total_score <= 0.0:
++                continue
++
++            for score, relay in candidates:
++                share = flow * score / total_score
++                first = (source, relay)
++                second = (relay, target)
++                key = (first, second) if first < second else (second, first)
++
++                # A modest component reward keeps useful links attractive,
++                # while the larger joint reward applies only to a full route.
++                linear[first] -= component_fraction * share
++                linear[second] -= component_fraction * share
++                quadratic[key] = quadratic.get(key, 0.0) - (
++                    indirect_fraction * share
++                )
++
++    # Normalize internally for numerical stability; the evaluator may apply
++    # its own common rescaling to the returned coefficients.
++    largest = max(
++        max((abs(value) for value in linear.values()), default=0.0),
++        max((abs(value) for value in quadratic.values()), default=0.0),
++        1e-12,
+     )
+-    linear = {key: value / max_abs for key, value in linear.items()}
+-    quadratic = {key: value / max_abs for key, value in quadratic.items()}
++    inverse = 1.0 / largest
++    linear = {key: float(value * inverse) for key, value in linear.items()}
++    quadratic = {key: float(value * inverse) for key, value in quadratic.items()}
+ 
+     return linear, quadratic, 2.5
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

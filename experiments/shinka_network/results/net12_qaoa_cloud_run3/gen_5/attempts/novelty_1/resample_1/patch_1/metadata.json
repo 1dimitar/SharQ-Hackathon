@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_support",
+  "patch_description": "Replace the dense two-hop rewards with a few promising relays per OD pair. Rank relays by the existing demand affinity of both legs and discount nodes with high incident traffic. This reduces redundant path rewards and interaction density while preserving the direct-demand signal. Increase the degree penalty modestly to encourage feasibility before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:20:37.284820",
+  "llm_cost": 0.00745,
+  "llm_model": "gpt-6.1-terra"
+}

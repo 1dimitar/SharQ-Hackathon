@@ -1,0 +1,14 @@
+{
+  "generation": 140,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "strong_leg_affinity",
+  "patch_description": "Add the recommended leg-affinity factor to each two-hop interaction: a path is more useful when at least one of its links already has meaningful demand, while the small additive safeguard preserves some influence for paths with two weak legs. This may steer relay choices toward links that are better supported by the demand pattern without changing the existing path-support formula, pressure discounts, interaction count, or degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:57:44.637828",
+  "llm_cost": 0.001222,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,131 @@
+<NAME>
+uncertainty_ucb
+</NAME>
+
+<DESCRIPTION>
+Add a small uncertainty-aware exploration component to the existing online ridge model. Its prediction uncertainty is estimated from the regularized feature-space leverage, so candidates in poorly sampled regions can receive attention without replacing the energy, routing, and novelty signals. Reserve one LP slot for a candidate whose predicted score remains competitive but whose uncertainty improves its lower-confidence-bound ranking. The other batch slots and the existing selection signals remain in place.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        try:
+            coef = np.linalg.solve(
+                Z.T @ Z + ridge, Z.T @ (y - target_mean)
+            )
+        except np.linalg.LinAlgError:
+            return None
+        return target_mean + np.clip((X - mean) / sd, -12.0, 12.0) @ coef
+=======
+        system = Z.T @ Z + ridge
+        try:
+            coef = np.linalg.solve(system, Z.T @ (y - target_mean))
+            inverse = np.linalg.solve(system, np.eye(A.shape[1]))
+        except np.linalg.LinAlgError:
+            return None
+        ZX = np.clip((X - mean) / sd, -12.0, 12.0)
+        predicted = target_mean + ZX @ coef
+        residual = y - target_mean - Z @ coef
+        sigma = max(
+            float(np.sqrt(np.mean(residual * residual))),
+            0.01 * max(abs(target_mean), 1.0),
+        )
+        leverage = np.maximum(
+            np.einsum("ij,jk,ik->i", ZX, inverse, ZX), 0.0
+        )
+        uncertainty = sigma * np.sqrt(leverage)
+        return predicted, uncertainty
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        learned = predictions(X)
+        proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+        eorder = np.argsort(X[:, 0], kind="stable")
+        porder = np.argsort(proxy, kind="stable")
+        if learned is None:
+            rank_e = np.empty(len(shortlist))
+            rank_p = np.empty(len(shortlist))
+            rank_e[eorder] = np.arange(len(shortlist))
+            rank_p[porder] = np.arange(len(shortlist))
+            lorder = np.argsort(rank_e + rank_p, kind="stable")
+        else:
+            lorder = np.argsort(learned, kind="stable")
+=======
+        learned = predictions(X)
+        proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+        eorder = np.argsort(X[:, 0], kind="stable")
+        porder = np.argsort(proxy, kind="stable")
+        uncertainty = None
+        if learned is None:
+            rank_e = np.empty(len(shortlist))
+            rank_p = np.empty(len(shortlist))
+            rank_e[eorder] = np.arange(len(shortlist))
+            rank_p[porder] = np.arange(len(shortlist))
+            lorder = np.argsort(rank_e + rank_p, kind="stable")
+        else:
+            learned, uncertainty = learned
+            lorder = np.argsort(learned, kind="stable")
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        def take_from(order, number, diverse=True):
+            taken = 0
+            for raw in order:
+                i = int(raw)
+                if i in batch_ids:
+                    continue
+                ns = set(shortlist[i])
+                if diverse and any(m - len(ns & old) < 3 for old in batch_sets):
+                    continue
+                batch_ids.append(i)
+                batch_sets.append(ns)
+                taken += 1
+                if taken >= number or len(batch_ids) >= batch_size:
+                    break
+=======
+        def take_from(order, number, diverse=True, limit=None):
+            taken = 0
+            if limit is None:
+                limit = batch_size - 1
+            for raw in order:
+                if len(batch_ids) >= limit:
+                    break
+                i = int(raw)
+                if i in batch_ids:
+                    continue
+                ns = set(shortlist[i])
+                if diverse and any(m - len(ns & old) < 3 for old in batch_sets):
+                    continue
+                batch_ids.append(i)
+                batch_sets.append(ns)
+                taken += 1
+                if taken >= number:
+                    break
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if len(batch_ids) < batch_size:
+            take_from(rng.permutation(len(shortlist)), 1)
+        if len(batch_ids) < batch_size:
+            take_from(lorder, batch_size - len(batch_ids), diverse=False)
+=======
+        if len(batch_ids) < batch_size and uncertainty is not None:
+            best_prediction = float(np.min(learned))
+            competitive = np.flatnonzero(
+                learned <= best_prediction + np.maximum(0.025, 1.25 * uncertainty)
+            )
+            acquisition = learned - 0.65 * uncertainty
+            for raw in competitive[np.argsort(acquisition[competitive], kind="stable")]:
+                i = int(raw)
+                if i in batch_ids:
+                    continue
+                ns = set(shortlist[i])
+                if any(m - len(ns & old) < 3 for old in batch_sets):
+                    continue
+                batch_ids.append(i)
+                batch_sets.append(ns)
+                break
+        if len(batch_ids) < batch_size:
+            take_from(lorder, batch_size - len(batch_ids), diverse=False, limit=batch_size)
+>>>>>>> REPLACE
+
+</DIFF>

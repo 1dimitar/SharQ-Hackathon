@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "expand_relay_budget",
+  "patch_description": "Increase the per-OD relay support from roughly one fifth to one third of the nodes, capped at the number of eligible relays. The current budget is only two relays for the 12-node cases, producing a sparse QUBO with 176 quadratic terms. A broader shortlist gives the solver more viable two-hop alternatives when the top-ranked relays are not part of a good overall topology, while still avoiding the broad support of including every relay. This is a targeted test of the suggested support-size sweep; the existing relay ranking and weights remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:46:10.002718",
+  "llm_cost": 0.0009571,
+  "llm_model": "gpt-6-luna"
+}

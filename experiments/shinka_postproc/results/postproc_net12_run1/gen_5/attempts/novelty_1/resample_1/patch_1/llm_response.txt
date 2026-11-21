@@ -1,0 +1,42 @@
+<NAME>
+bottleneck_guided_swaps
+</NAME>
+
+<DESCRIPTION>
+Use the LP’s link loads and dual prices to prioritize 2-exchanges involving links most likely to limit the objective. The detail call provides information for a network already scored, so this focuses the existing descent without spending LP calls on a broad, randomly ordered neighborhood first. A small random component in the ordering preserves exploration among similarly promising exchanges.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def swaps(net):
+        arcs = list(net)
+        pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+        rng.shuffle(pairs)
+        cur = set(net)
+=======
+    def swaps(net):
+        arcs = list(net)
+        cur = set(net)
+        detail = tools.lp_detail(net)
+        loads = detail.get("loads", {})
+        prices = detail.get("prices", {})
+        # Dual-positive links are the strongest targets; among other links,
+        # prioritize those carrying the largest fraction of the current load.
+        def priority(arc):
+            return (float(prices.get(arc, 0.0)), float(loads.get(arc, 0.0)))
+
+        order = sorted(range(len(arcs)), key=lambda p: priority(arcs[p]), reverse=True)
+        pairs = [(p, q) for x, p in enumerate(order) for q in order[x + 1:]]
+        # Randomize equivalent-priority moves so repeated descents do not always
+        # spend their LP budget on the same neighborhood prefix.
+        rng.shuffle(pairs)
+        pairs.sort(
+            key=lambda pair: (
+                max(priority(arcs[pair[0]])[0], priority(arcs[pair[1]])[0]),
+                max(priority(arcs[pair[0]])[1], priority(arcs[pair[1]])[1]),
+            ),
+            reverse=True,
+        )
+>>>>>>> REPLACE
+
+</DIFF>

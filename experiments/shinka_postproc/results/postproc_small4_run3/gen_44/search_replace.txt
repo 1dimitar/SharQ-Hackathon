@@ -1,0 +1,191 @@
+<NAME>
+adaptive_source_quotas
+</NAME>
+
+<DESCRIPTION>
+Adapt the LP batch allocation among energy, learned prediction, routing proxy, novelty, and exploration using each source’s recent rate of beating the selected parent. Every source starts with a protected slot when enough candidates are available; remaining slots are allocated in proportion to smoothed success rates. This preserves the existing multi-signal portfolio while allowing the search to favor signals that are working on the current pool, without committing to one heuristic or tuning quotas to a particular network size.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    batch_size = max(7, min(13, n // 2 + 1))
+    idle = 0
+=======
+    batch_size = max(7, min(13, n // 2 + 1))
+    # Smoothed parent-improvement rates drive adaptive source quotas.
+    source_names = ("energy", "learned", "routing", "novelty", "explore")
+    source_rates = {name: 0.12 for name in source_names}
+    idle = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        selected_set = set()
+
+        def take(i):
+            i = int(i)
+            if i in selected_set:
+                return False
+            selected.append(i)
+            selected_set.add(i)
+            return True
+
+        energy_quota = max(3, int(round(0.45 * batch_size)))
+        # Keep inexpensive two-link improvements represented in every batch.
+        for i in e_order:
+            if kinds[i] == 0:
+                take(i)
+                if len(selected) >= min(2, energy_quota):
+                    break
+        for i in e_order:
+            if len(selected) >= energy_quota:
+                break
+            take(i)
+
+        learned_target = max(energy_quota, batch_size - 3)
+        for i in learned_order:
+            if len(selected) >= learned_target:
+                break
+            take(i)
+
+        for i in p_order:
+            if take(i):
+                break
+
+        # Reserve a call for structural coverage among plausible proposals.
+        shortlist = learned_order[:min(count, max(4 * batch_size, count // 3))]
+        available = [int(i) for i in shortlist if int(i) not in selected_set]
+        if available and len(selected) < batch_size:
+            anchors = [records[net][3] for net in population[:2 * n]]
+            anchors.extend(mask(fresh[i]) for i in selected)
+            candidate_masks = {i: mask(fresh[i]) for i in available}
+            novel = max(
+                available,
+                key=lambda i: (
+                    min(distance_masks(candidate_masks[i], old) for old in anchors),
+                    -combined[i],
+                ),
+            )
+            take(novel)
+
+        # A small randomized nonlocal component prevents model lock-in.
+        if len(selected) < batch_size:
+            tail = [
+                int(i) for i in learned_order[:max(batch_size, count // 2)]
+                if int(i) not in selected_set and kinds[i] != 0
+            ]
+            if tail:
+                take(tail[int(rng.integers(len(tail)))])
+        for i in learned_order:
+            if len(selected) >= batch_size:
+                break
+            take(i)
+=======
+        selected = []
+        selected_set = set()
+        source_of = {}
+
+        def take(i, source):
+            i = int(i)
+            if i in selected_set:
+                return False
+            selected.append(i)
+            selected_set.add(i)
+            source_of[i] = source
+            return True
+
+        # Give each signal one protected opportunity, then distribute the
+        # remaining calls according to its smoothed improvement rate.
+        weights = np.asarray(
+            [max(0.025, source_rates[name]) for name in source_names],
+            dtype=float,
+        )
+        remaining_slots = max(0, batch_size - len(source_names))
+        shares = remaining_slots * weights / weights.sum()
+        quotas = {
+            name: 1 + int(math.floor(shares[j]))
+            for j, name in enumerate(source_names)
+        }
+        leftovers = batch_size - sum(quotas.values())
+        fractional_order = np.argsort(-(shares - np.floor(shares)))
+        for j in fractional_order[:leftovers]:
+            quotas[source_names[int(j)]] += 1
+
+        def take_ordered(order, source, quota):
+            added = 0
+            for i in order:
+                if added >= quota or len(selected) >= batch_size:
+                    break
+                if take(i, source):
+                    added += 1
+
+        # Keep inexpensive energy-ranked two-link proposals represented.
+        energy_order = [int(i) for i in e_order]
+        simple = [i for i in energy_order if kinds[i] == 0]
+        take_ordered(simple, "energy", min(2, quotas["energy"]))
+        take_ordered(energy_order, "energy", quotas["energy"])
+
+        take_ordered(learned_order, "learned", quotas["learned"])
+        take_ordered(p_order, "routing", quotas["routing"])
+
+        # Reserve a structurally novel proposal when the plausible shortlist
+        # contains one that is sufficiently distinct from the archive.
+        shortlist = learned_order[:min(count, max(4 * batch_size, count // 3))]
+        available = [
+            int(i) for i in shortlist
+            if int(i) not in selected_set
+        ]
+        anchors = [records[net][3] for net in population[:2 * n]]
+        anchors.extend(mask(fresh[i]) for i in selected)
+        candidate_masks = {i: mask(fresh[i]) for i in available}
+        for _ in range(quotas["novelty"]):
+            available = [i for i in available if i not in selected_set]
+            if not available or len(selected) >= batch_size:
+                break
+            novel = max(
+                available,
+                key=lambda i: (
+                    min(
+                        (distance_masks(candidate_masks[i], old) for old in anchors),
+                        default=0,
+                    ),
+                    -combined[i],
+                ),
+            )
+            if take(novel, "novelty"):
+                anchors.append(candidate_masks[novel])
+
+        # Randomized nonlocal proposals provide a distinct exploration source.
+        tail = [
+            int(i) for i in learned_order[:max(batch_size, count // 2)]
+            if kinds[int(i)] != 0 and int(i) not in selected_set
+        ]
+        if tail:
+            for pos in rng.permutation(len(tail))[:quotas["explore"]]:
+                if len(selected) >= batch_size:
+                    break
+                take(tail[int(pos)], "explore")
+
+        # Backfill unavailable or overlapping source quotas with learned moves.
+        take_ordered(learned_order, "learned", batch_size - len(selected))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            score = certify(
+                fresh[i], energies[i], features[i], proxies[i], parent=parent
+            )
+            if score < winner_score:
+                winner, winner_score = fresh[i], score
+=======
+            score = certify(
+                fresh[i], energies[i], features[i], proxies[i], parent=parent
+            )
+            source = source_of.get(i, "learned")
+            source_rates[source] = (
+                0.90 * source_rates[source]
+                + 0.10 * float(score < parent_score)
+            )
+            if score < winner_score:
+                winner, winner_score = fresh[i], score
+>>>>>>> REPLACE
+</DIFF>

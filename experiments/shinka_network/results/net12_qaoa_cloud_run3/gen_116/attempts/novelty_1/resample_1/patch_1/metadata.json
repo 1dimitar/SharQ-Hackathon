@@ -1,0 +1,14 @@
+{
+  "generation": 116,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_relay_pressure",
+  "patch_description": "Raise the pressure exponent in the relay-ranking denominator from 1 to 1.25. This makes heavily loaded nodes less likely to be retained as relays, while leaving the existing reward discount unchanged. The edit is confined to candidate selection, so it preserves the current quadratic-term budget and tests the recommended stronger pressure-aware ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:22:42.771558",
+  "llm_cost": 0.0008335,
+  "llm_model": "gpt-6-luna"
+}

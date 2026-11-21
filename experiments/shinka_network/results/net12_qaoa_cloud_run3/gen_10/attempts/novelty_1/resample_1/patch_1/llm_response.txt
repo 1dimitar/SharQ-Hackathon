@@ -1,0 +1,19 @@
+<NAME>
+adaptive_degree_penalty
+</NAME>
+
+<DESCRIPTION>
+The current penalty weight of 1 is small relative to the many two-hop couplings that can reward a topology with incorrect degrees. The low pre-repair feasible rate (17%) suggests that degree violations are frequently attractive to the QUBO. Increase the penalty with network size, since each link participates in more two-hop interactions as n grows, while keeping it within a moderate range. This should encourage more feasible samples and reduce reliance on repair, without changing the cost terms that distinguish valid topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+=======
+    # Degree penalties are supplied by the evaluator. Increase their strength
+    # with network size to counter the growing number of two-hop interactions.
+    penalty_weight = min(30.0, max(8.0, 0.8 * n))
+>>>>>>> REPLACE
+
+</DIFF>

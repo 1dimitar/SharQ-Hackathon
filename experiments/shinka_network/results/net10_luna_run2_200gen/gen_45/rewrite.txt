@@ -1,0 +1,92 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic cost terms for a directed network QUBO."""
+    d = np.asarray(demand, dtype=float)
+    n = len(d)
+
+    # Ignore negative entries if supplied; traffic is nonnegative by definition.
+    d = np.maximum(d, 0.0)
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    row = np.sum(d, axis=1)
+    col = np.sum(d, axis=0)
+    incident = row + col
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+
+    # Direct traffic remains the principal link-selection signal. The small
+    # endpoint term reflects the fact that high-throughput nodes need useful
+    # access to the rest of the topology.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(d[i, j]) / scale
+            endpoint = 0.5 * (
+                float(row[i]) + float(col[j])
+            ) / max_incident
+            linear[(i, j)] = -(0.90 * direct + 0.10 * endpoint)
+
+    # Two-hop path rewards approximate traffic coverage. Sharing the coefficient
+    # over four candidate paths limits overcounting when several routes are
+    # simultaneously available.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+
+            pressure = float(incident[j]) / max_incident
+            # Bounded inverse discount: low-pressure transit nodes retain more
+            # value, while the multiplier never falls below 0.75.
+            transit_factor = max(0.75, 1.0 / (1.0 + 0.40 * pressure))
+
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(d[i, k])
+                if traffic <= 0.0:
+                    continue
+
+                # Links with appreciable direct demand are less attractive as
+                # additional transit carriers.
+                edge_pressure = (
+                    float(d[i, j]) + float(d[j, k])
+                ) / scale
+                edge_factor = 1.0 / (1.0 + 0.25 * edge_pressure)
+
+                quadratic[((i, j), (j, k))] = (
+                    -0.56 * (traffic / scale) * transit_factor
+                    * edge_factor / 4.0
+                )
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

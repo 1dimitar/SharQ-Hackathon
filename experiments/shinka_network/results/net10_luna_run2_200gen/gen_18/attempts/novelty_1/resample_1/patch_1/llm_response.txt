@@ -1,0 +1,29 @@
+<NAME>
+gated_twohop_support
+</NAME>
+
+<DESCRIPTION>
+Gate each two-hop reward by how plausible its two component links are, using the geometric mean of their normalized direct demands. Retain a 25% floor so a useful transit link is not discarded merely because it carries little direct demand. This keeps the existing OD-demand routing signal while reducing rewards for paths whose component links have little demand support; the number of quadratic terms is unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -indirect_fraction
+                    * float(demand[i, k]) / scale
+                    * transit_factor / 4.0
+                )
+=======
+                component_support = np.sqrt(
+                    max(0.0, float(demand[i, j]) / scale)
+                    * max(0.0, float(demand[j, k]) / scale)
+                )
+                plausibility = 0.25 + 0.75 * min(1.0, component_support)
+                weight = (
+                    -indirect_fraction
+                    * float(demand[i, k]) / scale
+                    * transit_factor
+                    * plausibility / 4.0
+                )
+>>>>>>> REPLACE
+</DIFF>

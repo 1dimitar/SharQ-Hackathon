@@ -1,0 +1,72 @@
+<NAME>
+dual_guided_screening
+</NAME>
+
+<DESCRIPTION>
+Use the LP’s link prices to rank proposed moves by whether they remove expensive links and add less expensive ones, while retaining surrogate energy as a tie-breaker. Positive dual prices identify links currently contributing to the congestion bound, so this gives the LP batch a more directly relevant signal than energy alone. The existing diversity selection and batch limit remain unchanged, preserving exploration and the fixed LP budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+=======
+        base_e = energy(parent)
+        # A two-switch is promising when it replaces high-price links with
+        # low-price links. Prices are local guidance, so use surrogate energy
+        # as a secondary ranking signal rather than discarding it.
+        prices = detail.get("prices", {}) if detail else {}
+        price_map = {
+            tuple(map(int, arc)): float(price)
+            for arc, price in prices.items()
+        }
+        parent_arcs = set(parent)
+        ranked = []
+        for net in fresh:
+            new_arcs = set(net)
+            removed = parent_arcs - new_arcs
+            added = new_arcs - parent_arcs
+            dual_saving = sum(price_map.get(a, 0.0) for a in removed) - sum(
+                price_map.get(a, 0.0) for a in added
+            )
+            ranked.append((-dual_saving, energy(net) - base_e, net))
+        ranked.sort(key=lambda item: (item[0], item[1]))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+=======
+        for _, _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best dual- and surrogate-ranked moves.
+        for _, _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, _, net in ranked if net not in selected]
+>>>>>>> REPLACE
+
+</DIFF>

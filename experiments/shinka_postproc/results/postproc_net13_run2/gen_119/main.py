@@ -1,0 +1,358 @@
+"""Starting program of post-processing run 2 (network13): run 1's best program (gen 49, combined
+score 0.9901 on network12), copied from results/postproc_net12_run1/best/main.py. Only the fixed
+wrapper below the EVOLVE block changed (tools.energy uses each pool's own Hamiltonian).
+"""
+
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    """Evolve valid networks by degree-preserving edge inheritance."""
+    n = tools.n
+    scores = {}
+    energies = {}
+    best_net = None
+    best_score = float("inf")
+    archive = []
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def energy(net):
+        if net not in energies:
+            try:
+                energies[net] = float(tools.energy(net))
+            except Exception:
+                energies[net] = 0.0
+        return energies[net]
+
+    def add_to_archive(net):
+        """Keep good networks and structurally distinct alternatives."""
+        if net in archive:
+            return
+        archive.append(net)
+        if len(archive) <= 90:
+            return
+
+        ranked = sorted(archive, key=lambda x: scores.get(x, float("inf")))
+        kept = []
+        for candidate in ranked:
+            if all(distance(candidate, old) >= 3 for old in kept):
+                kept.append(candidate)
+            if len(kept) >= 32:
+                break
+        for candidate in ranked:
+            if len(kept) >= 64:
+                break
+            if candidate not in kept:
+                kept.append(candidate)
+        archive[:] = kept
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in scores:
+            scores[net] = tools.lp(net)
+        value = scores[net]
+        if value < best_score:
+            best_score, best_net = value, net
+        add_to_archive(net)
+        return value
+
+    # Build an initial population from repaired QAOA samples. Use the
+    # Hamiltonian energy to choose a broad, promising subset for LP scoring.
+    repaired = set()
+    for candidate in candidates:
+        try:
+            net = canon(tools.repair(candidate))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    for net in ordered:
+        if all(distance(net, old) >= 3 for old in starts):
+            starts.append(net)
+        if len(starts) >= 18:
+            break
+    for net in ordered:
+        if len(starts) >= 30:
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            continue
+
+    if not archive:
+        return list(starts[0]) if starts else []
+
+    def select_member(pop, count):
+        """Rank-biased selection, with some probability for archive breadth."""
+        if not pop:
+            return None
+        if rng.random() < 0.78:
+            limit = min(count, len(pop))
+            return pop[int(rng.integers(limit))]
+        return pop[int(rng.integers(len(pop)))]
+
+    def inherit(parent, donor, hot, import_count):
+        """
+        Copy donor arcs into the parent. Each insertion is a 2-switch:
+        replacing (u,w),(x,v) with (u,v),(x,w) preserves all degrees.
+        """
+        current = set(parent)
+        donor_arcs = list(donor)
+        rng.shuffle(donor_arcs)
+        imported = 0
+
+        for u, v in donor_arcs:
+            if imported >= import_count:
+                break
+            if (u, v) in current:
+                continue
+
+            options = []
+            outgoing = [b for a, b in current if a == u]
+            incoming = [a for a, b in current if b == v]
+
+            for w in outgoing:
+                for x in incoming:
+                    if x == w or (x, w) in current:
+                        continue
+                    removed = ((u, w), (x, v))
+                    # Prefer switches that remove expensive parent links,
+                    # while retaining randomness among equally good options.
+                    dual = sum(float(hot.get(a, 0.0)) for a in removed)
+                    options.append((dual, w, x))
+
+            if not options:
+                continue
+
+            options.sort(key=lambda item: item[0], reverse=True)
+            # Randomize among the best few feasible switches to keep offspring diverse.
+            chosen = options[int(rng.integers(min(3, len(options))))]
+            _, w, x = chosen
+            current.remove((u, w))
+            current.remove((x, v))
+            current.add((u, v))
+            current.add((x, w))
+            imported += 1
+
+        return tuple(sorted(current)) if imported else None
+
+    def mutate(net, hot, steps):
+        """Apply a short sequence of degree-preserving switches."""
+        current = set(net)
+        for _ in range(steps):
+            arcs = list(current)
+            if len(arcs) < 2:
+                break
+
+            # Often choose a link with positive dual price as one endpoint
+            # of the exchange, but retain unrestricted exchanges for exploration.
+            hot_arcs = [a for a in arcs if float(hot.get(a, 0.0)) > 0.0]
+            if hot_arcs and rng.random() < 0.65:
+                first = hot_arcs[int(rng.integers(len(hot_arcs)))]
+                rest = [a for a in arcs if a != first]
+                if not rest:
+                    continue
+                second = rest[int(rng.integers(len(rest)))]
+                (a, b), (c, d) = first, second
+            else:
+                p, q = rng.choice(len(arcs), size=2, replace=False)
+                (a, b), (c, d) = arcs[int(p)], arcs[int(q)]
+
+            if a == d or c == b or (a, d) in current or (c, b) in current:
+                continue
+            current.remove((a, b))
+            current.remove((c, d))
+            current.add((a, d))
+            current.add((c, b))
+
+        result = tuple(sorted(current))
+        return result if result != net else None
+
+    attempts = 0
+    while tools.lp_calls_left > 0:
+        attempts += 1
+        pop = sorted(archive, key=lambda x: scores.get(x, float("inf")))
+        if not pop:
+            break
+
+        parent = select_member(pop, 12)
+        donor = select_member(pop, 24)
+        if parent is None:
+            break
+
+        try:
+            detail = tools.lp_detail(parent)
+            hot = {
+                tuple(map(int, arc)): float(price)
+                for arc, price in detail.get("prices", {}).items()
+            }
+        except Exception:
+            hot = {}
+
+        # Propose a small offspring family by importing different numbers of
+        # donor links, with a few independently mutated children as exploration.
+        offspring = set()
+        for _ in range(10):
+            if donor is None or donor == parent or rng.random() < 0.22:
+                child = mutate(parent, hot, 1 + int(rng.integers(6)))
+            else:
+                child = inherit(parent, donor, hot, 1 + int(rng.integers(9)))
+                if child is None and rng.random() < 0.7:
+                    child = mutate(parent, hot, 1 + int(rng.integers(5)))
+
+            if child is None or child == parent:
+                continue
+            try:
+                if tools.is_valid(child):
+                    offspring.add(child)
+            except Exception:
+                continue
+
+        # Recombine with a different donor if the selected pair was exhausted.
+        if not offspring and len(pop) > 1:
+            donor = pop[int(rng.integers(len(pop)))]
+            if donor != parent:
+                child = inherit(parent, donor, hot, 1 + int(rng.integers(12)))
+                if child is not None and child != parent:
+                    try:
+                        if tools.is_valid(child):
+                            offspring.add(child)
+                    except Exception:
+                        pass
+
+        fresh = [
+            net for net in offspring
+            if net not in scores and not tools.is_cached(net)
+        ]
+        if not fresh:
+            if attempts > 12000:
+                break
+            continue
+
+        # Screen the offspring family using the Hamiltonian surrogate, while
+        # occasionally selecting a random child to avoid over-trusting it.
+        ranked = sorted(fresh, key=energy)
+        if len(ranked) > 1 and rng.random() < 0.18:
+            selected = ranked[int(rng.integers(len(ranked)))]
+        else:
+            selected = ranked[0]
+
+        try:
+            evaluate(selected)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+        # Periodically score a second, structurally distinct child when budget
+        # remains; this increases population diversity without making every
+        # generation an expensive batch.
+        if (attempts % 9 == 0) and tools.lp_calls_left > 0:
+            alternatives = [
+                net for net in ranked
+                if net != selected and distance(net, selected) >= 2
+            ]
+            if alternatives:
+                extra = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+                    evaluate(extra)
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

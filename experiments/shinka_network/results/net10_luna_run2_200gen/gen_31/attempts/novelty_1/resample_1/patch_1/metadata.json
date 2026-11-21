@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mild_concave_direct",
+  "patch_description": "Blend the normalized direct-demand reward with a small square-root component (90% linear, 10% concave). This gives moderate-demand links a little more influence without replacing the strong direct-demand signal. The existing two-hop terms and penalty weight are unchanged, isolating the effect of the linear adjustment.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:45.690436",
+  "llm_cost": 0.0008864000000000001,
+  "llm_model": "gpt-6-luna"
+}

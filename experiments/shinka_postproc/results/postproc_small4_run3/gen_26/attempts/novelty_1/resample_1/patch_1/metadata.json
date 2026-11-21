@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "multisignal_archive",
+  "patch_description": "The current archive is selected almost entirely by LP score, so it can lose promising regions that look good under the pool\u2019s QUBO energy or are structurally different from the current elites. Cache energy evaluations, then reserve archive capacity for LP elites, energy-ranked networks within a modest LP-quality band, and greedy distance-based novel networks. Fill any remaining places by LP rank. This keeps strong certified solutions while giving distinct search regions a better chance to become parents; the archive size and quotas scale with n.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:53:53.178482",
+  "llm_cost": 0.0025854,
+  "llm_model": "gpt-6-luna"
+}

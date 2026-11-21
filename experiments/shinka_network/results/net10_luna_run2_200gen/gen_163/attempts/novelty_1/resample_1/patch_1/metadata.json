@@ -1,0 +1,14 @@
+{
+  "generation": 163,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_twohop_support",
+  "patch_description": "Increase the two-hop path reward from 0.46 to 0.56 while leaving the demand-dependent path support and pressure discount unchanged. Direct-link rewards remain in place, but stronger support for useful two-hop routes should help the QUBO represent traffic that cannot be served directly under the degree constraints. This is a targeted test supported by prior results in which a 0.56 path strength outperformed 0.46, though the surrounding path formula differed.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:01.277991",
+  "llm_cost": 0.0008585000000000001,
+  "llm_model": "gpt-6-luna"
+}

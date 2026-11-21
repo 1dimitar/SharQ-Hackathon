@@ -1,0 +1,186 @@
+<NAME>
+routing_response_qubo
+</NAME>
+
+<DESCRIPTION>
+This replaces hand-selected two-hop rewards with a deterministic routing-response model. An absorbing, length-discounted random walk estimates multihop traffic and link loads using a matrix inverse. Its objective combines squared link loads with routing efficiency.
+
+Each possible link is switched on and off in a fractional reference network. The resulting objective changes and gradient changes provide binary marginal costs and pair interactions. Degree-dependent components are removed, and only a compact set of strong interactions is retained. Curvature damping and a modest direct-demand anchor limit extrapolation error.
+
+The approach targets congestion and multihop routing directly, while keeping approximately four couplings per link overall. It uses no solvers, randomness, or external data.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Deterministic routing-response QUBO surrogate for QOBLIB 08."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _degree_projection(values, sources, targets, n):
+    """Project link vectors onto the zero-row/zero-column-sum subspace."""
+    values = np.asarray(values, dtype=float)
+    matrix = np.zeros(values.shape[:-1] + (n, n), dtype=float)
+    matrix[..., sources, targets] = values
+
+    row = matrix.sum(axis=-1)
+    col = matrix.sum(axis=-2)
+    offset = row.sum(axis=-1, keepdims=True) / (2.0 * (n - 1))
+    row = row - offset
+    col = col - offset
+
+    denominator = float(n * (n - 2))
+    left = ((n - 1) * row + col) / denominator
+    right = (row + (n - 1) * col) / denominator
+    return values - left[..., sources] - right[..., targets]
+
+
+def _reference_network(traffic):
+    """Construct a positive, demand-adapted fractional degree-two network."""
+    n = len(traffic)
+    affinity = 0.35 + 0.65 * (
+        0.75 * traffic + 0.25 * np.sqrt(traffic)
+    )
+    np.fill_diagonal(affinity, 0.0)
+
+    # Positive off-diagonal entries make Sinkhorn balancing well conditioned.
+    for _ in range(48):
+        affinity *= 2.0 / affinity.sum(axis=1, keepdims=True)
+        affinity *= 2.0 / affinity.sum(axis=0, keepdims=True)
+
+    uniform = np.full((n, n), 2.0 / (n - 1), dtype=float)
+    np.fill_diagonal(uniform, 0.0)
+    return 0.5 * affinity + 0.5 * uniform
+
+
+def _routing_response(networks, resolvents, traffic, columns, factor,
+                      load_scale):
+    """
+    Return routing objectives and their gradients for a batch of networks.
+
+    R[s,d] / R[d,d] is the partition function for discounted walks that
+    first terminate at d. Differentiating its logarithm gives expected
+    link traversals, summed over all traffic commodities.
+    """
+    n = len(traffic)
+    diagonal = np.arange(n)
+    transposed = np.swapaxes(resolvents, -1, -2)
+
+    inverse_entries = 1.0 / np.maximum(resolvents, 1e-15)
+    first = traffic[None, :, :] * inverse_entries
+    second = traffic[None, :, :] * inverse_entries * inverse_entries
+
+    inverse_diagonal = inverse_entries[:, diagonal, diagonal]
+    first[:, diagonal, diagonal] = -columns[None, :] * inverse_diagonal
+    second[:, diagonal, diagonal] = (
+        -columns[None, :] * inverse_diagonal * inverse_diagonal
+    )
+
+    # Expected flow divided by the fractional capacity of each link.
+    stress = factor * (transposed @ first @ transposed)
+
+    congestion = (
+        0.5 * np.sum(networks * stress * stress, axis=(-2, -1))
+        / load_scale
+    )
+    log_partition = (
+        np.sum(
+            traffic[None, :, :] * np.log(np.maximum(resolvents, 1e-15)),
+            axis=(-2, -1),
+        )
+        - np.sum(
+            columns[None, :]
+            * np.log(resolvents[:, diagonal, diagonal]),
+            axis=-1,
+        )
+    )
+    scores = congestion - 0.25 * log_partition
+
+    # Reverse-mode derivative of the squared-load objective.
+    flow_adjoint = networks * stress / load_scale
+    adjoint_transposed = np.swapaxes(flow_adjoint, -1, -2)
+    resolvent_adjoint = factor * (
+        first @ transposed @ adjoint_transposed
+        + adjoint_transposed @ transposed @ first
+        - second * (resolvents @ flow_adjoint @ resolvents)
+    )
+    gradient = (
+        0.5 * stress * stress / load_scale
+        + factor * (transposed @ resolvent_adjoint @ transposed)
+        - 0.25 * stress
+    )
+    return scores, gradient, stress
+
+
+def _remove_degree_gauge(linear, curvature, sources, targets, n):
+    """
+    Remove degree-only components without changing energies on valid graphs.
+
+    Generated diagonal quadratic terms are folded into binary linear terms.
+    """
+    uniform = np.full(len(sources), 2.0 / (n - 1), dtype=float)
+
+    for _ in range(7):
+        shift = curvature @ uniform
+        projected = _degree_projection(curvature, sources, targets, n)
+        projected = _degree_projection(
+            projected.T, sources, targets, n
+        ).T
+        projected = 0.5 * (projected + projected.T)
+
+        linear = linear + shift + 0.5 * np.diag(projected)
+        np.fill_diagonal(projected, 0.0)
+        linear = _degree_projection(linear, sources, targets, n)
+        curvature = projected
+
+    return linear, curvature
+
+
+def _select_interactions(curvature, budget):
+    """Keep strong interactions, with modest coverage of individual links."""
+    m = len(curvature)
+    upper_first, upper_second = np.triu_indices(m, 1)
+    strengths = np.abs(curvature[upper_first, upper_second])
+    maximum = float(strengths.max()) if strengths.size else 0.0
+    if maximum <= 1e-13:
+        return upper_first[:0], upper_second[:0]
+
+    threshold = 0.035 * maximum
+    selected = set()
+
+    # Avoid spending the entire coupling budget on a few high-pressure links.
+    for edge in range(m):
+        neighbors = np.argsort(
+            -np.abs(curvature[edge]), kind="mergesort"
+        )[:2]
+        for other in neighbors:
+            other = int(other)
+            if edge == other or abs(curvature[edge, other]) < threshold:
+                continue
+            a, b = (edge, other) if edge < other else (other, edge)
+            selected.add(a * m + b)
+
+    order = np.argsort(-strengths, kind="mergesort")
+    for position in order:
+        if len(selected) >= budget or strengths[position] < threshold:
+            break
+        a = int(upper_first[position])
+        b = int(upper_second[position])
+        selected.add(a * m + b)
+
+    encoded = np.array(sorted(selected), dtype=np.int64)
+    return encoded // m, encoded % m
+
+
+def surrogate_terms(demand):
+    """Build sparse binary routing-response and load-balancing terms."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    if traffic.ndim != 2 or traffic.shape[0] != traffic.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    n = len(traffic)
+    np.fill_diagonal(traffic, 0.0)
+    sources, targets = np.where(~np.eye

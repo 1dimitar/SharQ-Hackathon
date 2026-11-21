@@ -1,0 +1,79 @@
+<NAME>
+lp_rewarded_operators
+</NAME>
+
+<DESCRIPTION>
+Adapt the number of sampled swaps, rotations, and kicks using their LP-confirmed improvement rates. Each evaluated move contributes one trial, and a move that beats its parent contributes a win. Smoothed rates and bounded scaling preserve a baseline for every operator, while directing more sampling toward move types that have actually improved the objective per LP call. Operator type is inferred from the number of changed arcs, so ordinary two-switches, three-link rotations, and broader kicks are tracked separately.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_score = float("inf")
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    best_score = float("inf")
+    parent_stalls = {}
+    # Smoothed LP-confirmed improvement rates for swaps, rotations, and kicks.
+    operator_wins = [1.0, 1.0, 1.0]
+    operator_trials = [4.0, 4.0, 4.0]
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+        # Scale sampled move counts by LP-confirmed improvements per evaluation.
+        rates = [operator_wins[i] / operator_trials[i] for i in range(3)]
+        mean_rate = sum(rates) / 3.0
+        factors = [
+            min(1.6, max(0.6, rate / max(mean_rate, 1e-12)))
+            for rate in rates
+        ]
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(int(70 * factors[0])):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+=======
+            rotation_trials = min(
+                350, int(70 * (1 + stalls // 3) * factors[1])
+            )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(24):
+=======
+        for _ in range(int(24 * factors[2])):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+=======
+            try:
+                score = evaluate(net)
+                changed = len(set(net) ^ set(parent))
+                kind = 0 if changed <= 4 else (1 if changed <= 6 else 2)
+                operator_trials[kind] += 1.0
+                if score < parent_score:
+                    operator_wins[kind] += 1.0
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+>>>>>>> REPLACE
+</DIFF>

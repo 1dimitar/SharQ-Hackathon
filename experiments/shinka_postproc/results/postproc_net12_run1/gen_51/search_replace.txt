@@ -1,0 +1,73 @@
+<NAME>
+parent_stagnation_rotations
+</NAME>
+
+<DESCRIPTION>
+Escalate three-edge rotations selectively for parents whose neighborhoods repeatedly fail to improve that parent. The existing global kick size does not distinguish a repeatedly exhausted basin from a newly selected parent; a per-parent failure count does. After several unsuccessful batches, this increases the move-generation effort (including rotations involving priced links), while successful parents reset their count. The escalation is capped to keep proposal-generation time bounded.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stale = 0
+    kick_size = 2
+    iteration = 0
+=======
+    stale = 0
+    kick_size = 2
+    parent_failures = {}
+    iteration = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        moves = set(make_moves(parent, hot, kick_size))
+=======
+        # Escalate the rotation effort only for parents whose own neighborhoods
+        # have repeatedly failed, rather than penalizing every basin globally.
+        parent_kick = min(20, kick_size + min(12, parent_failures.get(parent, 0) // 2))
+        moves = set(make_moves(parent, hot, parent_kick))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                m for m in make_moves(parent, set(), kick_size)
+=======
+                m for m in make_moves(parent, set(), parent_kick)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        previous_best = best_score
+        improved = False
+        for net in batch:
+=======
+        previous_best = best_score
+        improved = False
+        parent_improved = False
+        for net in batch:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+=======
+                if value < parent_score:
+                    parent_improved = True
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if improved:
+            stale = 0
+            kick_size = 2
+=======
+        if parent_improved:
+            parent_failures[parent] = 0
+        else:
+            parent_failures[parent] = parent_failures.get(parent, 0) + 1
+
+        if improved:
+            stale = 0
+            kick_size = 2
+>>>>>>> REPLACE
+</DIFF>

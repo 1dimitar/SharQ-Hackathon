@@ -1,0 +1,102 @@
+<NAME>
+multisignal_archive
+</NAME>
+
+<DESCRIPTION>
+The current archive is selected almost entirely by LP score, so it can lose promising regions that look good under the pool’s QUBO energy or are structurally different from the current elites. Cache energy evaluations, then reserve archive capacity for LP elites, energy-ranked networks within a modest LP-quality band, and greedy distance-based novel networks. Fill any remaining places by LP rank. This keeps strong certified solutions while giving distinct search regions a better chance to become parents; the archive size and quotas scale with n.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+=======
+    energy_cache = {}
+
+    def energy(net):
+        if net not in energy_cache:
+            try:
+                energy_cache[net] = float(tools.energy(net))
+            except Exception:
+                energy_cache[net] = 0.0
+        return energy_cache[net]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def archive():
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        # Preserve distinct regions before filling with the very best networks.
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= min(24, max(8, link_count)):
+                break
+        for net in ranked:
+            if len(out) >= 32:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+=======
+    def archive():
+        ranked = sorted(
+            (net for net in seen if math.isfinite(seen[net])),
+            key=seen.get,
+        )
+        if not ranked:
+            return [best_net] if best_net is not None else []
+
+        # Allocate places to certified elites, good energy-ranked alternatives,
+        # and structurally novel networks. All limits scale with instance size.
+        limit = min(48, max(24, 2 * n))
+        elite_quota = max(1, limit // 2)
+        energy_quota = max(1, limit // 4)
+        out = ranked[:elite_quota]
+        out_set = set(out)
+
+        energy_pool = [
+            net for net in ranked
+            if net not in out_set and seen[net] <= best_score * 1.08
+        ]
+        energy_pool.sort(key=energy)
+        energy_added = 0
+        for net in energy_pool:
+            if all(distance(net, old) >= 2 for old in out):
+                out.append(net)
+                out_set.add(net)
+                energy_added += 1
+                if energy_added >= energy_quota:
+                    break
+
+        # Greedily retain candidates far from the archive already selected.
+        # The quality band prevents novelty alone from admitting very weak nets.
+        novel_pool = [
+            net for net in ranked
+            if net not in out_set and seen[net] <= best_score * 1.08
+        ]
+        while novel_pool and len(out) < limit:
+            net = max(
+                novel_pool,
+                key=lambda x: (
+                    min(distance(x, old) for old in out),
+                    -seen[x],
+                ),
+            )
+            out.append(net)
+            out_set.add(net)
+            novel_pool.remove(net)
+
+        for net in ranked:
+            if len(out) >= limit:
+                break
+            if net not in out_set:
+                out.append(net)
+                out_set.add(net)
+        return out
+>>>>>>> REPLACE
+
+</DIFF>

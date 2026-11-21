@@ -1,0 +1,49 @@
+<NAME>
+edge_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Discount two-hop rewards when either component link already has substantial direct demand. The current transit-node discount does not account for pressure on the links themselves; adding an edge-pressure factor makes paths using busy links less attractive. This tests the stronger `1 + 0.75 * edge_pressure` suppression while leaving the other terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            first_link = (source, middle)
+            transit_discount = 1.0 / (1.0 + float(pressure[middle]))
+
+            for target in range(n):
+=======
+            first_link = (source, middle)
+
+            for target in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                gate = min(1.0, traffic / gate_scale) if gate_scale > 0.0 else 1.0
+                reward = (
+                    -indirect_fraction
+                    * (traffic / scale)
+                    * gate
+                    * transit_discount
+                    / 4.0
+                )
+=======
+                gate = min(1.0, traffic / gate_scale) if gate_scale > 0.0 else 1.0
+                edge_pressure = (
+                    float(d[source, middle]) + float(d[middle, target])
+                ) / scale
+                transit_discount = (
+                    1.0
+                    / (1.0 + float(pressure[middle]))
+                    / (1.0 + 0.75 * edge_pressure)
+                )
+                reward = (
+                    -indirect_fraction
+                    * (traffic / scale)
+                    * gate
+                    * transit_discount
+                    / 4.0
+                )
+>>>>>>> REPLACE
+
+</DIFF>

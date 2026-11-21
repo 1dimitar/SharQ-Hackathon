@@ -1,0 +1,210 @@
+<NAME>
+balanced_portal_transport
+</NAME>
+
+<DESCRIPTION>
+This replaces selected two-hop rewards with a **balanced gateway-pair model**. A demand-biased diffusion estimates downstream accessibility over paths of all lengths. Each possible pair of outgoing gateways is then evaluated by routing the node’s demand through those gateways, blending shortest-access routing with a capacity-balanced transport calculation. The same calculation is applied to incoming gateways.
+
+These pair costs have an exact quadratic representation under the supplied degree constraints. They reward complementary gateways rather than accumulating independent path bonuses, targeting both redundant connectivity and traffic concentration. Coefficients are centered before sparsification, with a mean-field correction for omitted interactions. Performance improvement remains to be verified by the evaluator.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return a diffusion-based, capacity-aware gateway-pair QUBO."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = len(traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    if maximum <= 0.0:
+        return {edge: 0.0 for edge in links}, {}, 1.35
+
+    t = traffic / maximum
+    appeal = 0.75 * t + 0.25 * np.sqrt(t)
+    linear = {edge: -0.35 * float(appeal[edge]) for edge in links}
+    quadratic = {}
+
+    def add_quadratic(first, second, value):
+        if abs(value) <= 1e-12:
+            return
+        key = (first, second) if first < second else (second, first)
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    # A degree-balanced fractional backbone. Its stationary distribution is
+    # approximately uniform, preventing demand hubs from becoming free
+    # universal gateways in the downstream-accessibility model.
+    kernel = np.exp(2.4 * appeal)
+    np.fill_diagonal(kernel, 0.0)
+    for _ in range(36):
+        kernel /= np.maximum(kernel.sum(axis=1, keepdims=True), 1e-15)
+        kernel /= np.maximum(kernel.sum(axis=0, keepdims=True), 1e-15)
+
+    uniform = (np.ones((n, n)) - np.eye(n)) / (n - 1)
+    transition = 0.84 * kernel + 0.16 * uniform
+    transition /= transition.sum(axis=1, keepdims=True)
+
+    def access_distances(p):
+        # R[j,k]/R[k,k] is the discounted hitting probability of k
+        # from j. Thus this includes supported routes of every length,
+        # without enumerating or rewarding incomplete path fragments.
+        discount = 0.82
+        resolvent = np.linalg.solve(
+            np.eye(n) - discount * p, np.eye(n)
+        )
+        hitting = resolvent / np.diag(resolvent)[None, :]
+        hitting = np.clip(hitting, 1e-12, 1.0)
+        distance = -np.log(hitting)
+        off_diagonal = distance[~np.eye(n, dtype=bool)]
+        distance /= max(float(np.median(off_diagonal)), 1e-12)
+        np.fill_diagonal(distance, 0.0)
+        return distance
+
+    forward_distance = access_distances(transition)
+
+    reverse_transition = transition.T.copy()
+    reverse_transition /= reverse_transition.sum(axis=1, keepdims=True)
+    reverse_distance = access_distances(reverse_transition)
+
+    # Expected occupancy is used only when projecting omitted interactions
+    # onto linear terms, not as an additional degree penalty.
+    occupancy = np.minimum(1.0, 2.0 * kernel)
+
+    def pair_transport_costs(weights, distance, branches):
+        """Cost of serving one node through each possible gateway pair."""
+        m = len(branches)
+        costs = np.zeros((m, m), dtype=float)
+        total = float(weights.sum())
+        if total <= 1e-15:
+            return costs
+
+        profiles = distance[branches]
+        individual_cost = profiles @ weights
+        half = 0.5 * total
+
+        for a in range(m):
+            da = profiles[a]
+            for b in range(a + 1, m):
+                db = profiles[b]
+
+                # Uncongested downstream routing through the better exit.
+                uncongested = float(np.dot(weights, np.minimum(da, db)))
+
+                # Exact continuous two-bin transport with half the traffic
+                # assigned to each gateway. Relative costs determine the
+                # optimal allocation; only the boundary demand may split.
+                difference = da - db
+                order = np.argsort(difference, kind="stable")
+                ordered_weights = weights[order]
+                before = np.cumsum(ordered_weights) - ordered_weights
+                assigned = np.minimum(
+                    ordered_weights, np.maximum(0.0, half - before)
+                )
+                balanced = float(
+                    individual_cost[b] + np.dot(assigned, difference[order])
+                )
+
+                # Equal splitting is a congestion stress test rather than
+                # a claim about the eventual LP routing.
+                value = 0.68 * uncongested + 0.32 * balanced
+                costs[a, b] = costs[b, a] = value
+
+        return costs
+
+    # Each valid node selects exactly one unordered pair of outgoing links
+    # and one unordered pair of incoming links.
+    for inbound, od, distance in (
+        (False, t, forward_distance),
+        (True, t.T, reverse_distance),
+    ):
+        for center in range(n):
+            weights = od[center]
+            if float(weights.sum()) <= 1e-15:
+                continue
+
+            branches = [v for v in range(n) if v != center]
+            m = len(branches)
+            costs = pair_transport_costs(weights, distance, branches)
+
+            # Gauge decomposition:
+            # C[a,b] = grand + additive[a] + additive[b] + residual[a,b].
+            # On a valid degree-two selection, dropping grand is exact.
+            grand = float(costs.sum()) / (m * (m - 1))
+            additive = (
+                costs.sum(axis=1) - (m - 1) * grand
+            ) / (m - 2)
+            residual = (
+                costs
+                - grand
+                - additive[:, None]
+                - additive[None, :]
+            )
+            np.fill_diagonal(residual, 0.0)
+
+            edge_list = [
+                (v, center) if inbound else (center, v)
+                for v in branches
+            ]
+
+            component_weight = 0.48
+            for a, edge in enumerate(edge_list):
+                linear[edge] += component_weight * float(additive[a])
+
+            # Keep the strongest interactions incident on each gateway.
+            # This yields O(n^2 sqrt(n)) couplings rather than a dense
+            # interaction graph over all directed links.
+            keep_per_gateway = min(m - 1, max(4, int(np.ceil(np.sqrt(n)))))
+            retained = np.zeros((m, m), dtype=bool)
+            for a in range(m):
+                strength = np.abs(residual[a]).copy()
+                strength[a] = -1.0
+                chosen = np.argsort(-strength, kind="stable")[
+                    :keep_per_gateway
+                ]
+                retained[a, chosen] = True
+            retained |= retained.T
+            np.fill_diagonal(retained, False)
+
+            for a in range(m):
+                first = edge_list[a]
+                for b in range(a + 1, m):
+                    second = edge_list[b]
+                    coefficient = component_weight * float(residual[a, b])
+                    if retained[a, b]:
+                        add_quadratic(first, second, coefficient)
+                    else:
+                        # First-order projection of an omitted interaction
+                        # around the balanced fractional backbone.
+                        linear[first] += coefficient * float(occupancy[second])
+                        linear[second] += coefficient * float(occupancy[first])
+
+    # No degree penalties are included here; the evaluator supplies them.
+    return linear, quadratic, 1.35
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

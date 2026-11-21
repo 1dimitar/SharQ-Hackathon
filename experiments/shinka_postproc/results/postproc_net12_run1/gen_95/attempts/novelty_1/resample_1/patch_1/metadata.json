@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stagnation_archive_kicks",
+  "patch_description": "After sustained stagnation, deliberately sample a non-elite archive parent and build a short random walk of valid degree-preserving switches from it. This explores archive regions that ordinary parent selection and single-switch neighborhoods may undersample, while keeping the kick bounded to a few steps and drawing each step from the existing LP/price-guided switch generator. The kicked topology is included in the existing batch screening, so it consumes an LP call only if it survives the normal freshness and validity checks.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:18:31.435318",
+  "llm_cost": 0.0021089,
+  "llm_model": "gpt-6-luna"
+}

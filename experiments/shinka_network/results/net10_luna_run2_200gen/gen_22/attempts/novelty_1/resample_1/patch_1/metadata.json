@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_pressure_discount",
+  "patch_description": "Keep the two-hop path coefficient fixed at 0.12, but discount its reward when either route edge already has substantial direct demand. This separates the path reward from the edge-pressure adjustment: a two-hop combination is less attractive when it may add load to links that are already valuable for direct traffic. The 0.25 discount strength is a conservative test of the suggested lower setting, and the change preserves the existing quadratic-term count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:33.911156",
+  "llm_cost": 0.000947,
+  "llm_model": "gpt-6-luna"
+}

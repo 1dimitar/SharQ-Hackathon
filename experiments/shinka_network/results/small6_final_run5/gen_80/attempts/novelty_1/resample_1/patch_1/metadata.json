@@ -1,0 +1,14 @@
+{
+  "generation": 80,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit-balanced-sparse",
+  "patch_description": "The current program combines direct-demand rewards with up to four two-hop route rewards, a Sinkhorn-style service model, and reciprocal-link penalties. Its samples are usually feasible, but the many independent route rewards can overvalue alternatives without accounting for their competition.\n\nThis version keeps the direct-link baseline, limits route rewards to the two strongest candidates (allowing a third only for heavy demands when it is competitive), and discounts those rewards using aggregate demand-weighted use of transit nodes. It also adds sparse penalties for pairs of neighbors with overlapping service profiles, plus modest linear rewards for links that can serve a node\u2019s traffic. The aim is to keep the energy guide useful for both sampling and ranking link exchanges without making the coupling graph unnecessarily dense. The degree penalty remains external and is scaled mildly with network size.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:05:08.603964",
+  "llm_cost": 0.0060993,
+  "llm_model": "gpt-6-luna"
+}

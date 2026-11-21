@@ -1,0 +1,201 @@
+<NAME>
+adaptive_signal_quotas
+</NAME>
+
+<DESCRIPTION>
+Track whether energy-ranked, routing-ranked, and dual/load-focused selections produce successive LP improvements. Use smoothed success rates to modestly adjust their next-round quotas, while bounding each adjustment and retaining the existing operator, novelty, and random exploration slots. This lets LP budget shift toward signals that are useful on the current instance and pool without allowing a small number of early wins to eliminate other search directions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stalls = {}
+    best_net = None
+    best_score = float("inf")
+=======
+    stalls = {}
+    signal_stats = {
+        name: [0, 0] for name in
+        ("energy", "route", "operator", "focused", "novelty", "random")
+    }
+    selection_tags = {}
+    best_net = None
+    best_score = float("inf")
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        selected_set = set()
+
+        def take(order, count, min_separation=0):
+            added = 0
+            for net in order:
+                if net in selected_set:
+                    continue
+                if min_separation and any(
+                    distance(net, old) < min_separation for old in selected
+                ):
+                    continue
+                selected.append(net)
+                selected_set.add(net)
+                added += 1
+                if added >= count or len(selected) >= batch_size:
+                    break
+
+        # Keep the routing screen bounded to energy-promising proposals, then
+        # reserve a small part of the batch for its independent ranking.
+        route_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+        ranked_route = sorted(route_pool, key=routing_estimate)
+
+        # Exploit the energy model first, but avoid a batch of near-identical nets.
+        take(ranked_energy, max(1, batch_size * 2 // 5), min_separation=2)
+        take(ranked_route, max(1, batch_size // 4), min_separation=2)
+
+        # Reserve trials for each structurally different move operator.
+        by_operator = {op: [] for op in range(4)}
+        for net in fresh:
+            for op in proposals[net][0]:
+                by_operator[op].append(net)
+        for op in (1, 2, 3, 0):
+            order = sorted(by_operator[op], key=energy)
+            take(order, 1)
+
+        # Use dual/load exposure as a separate ranking signal.
+        focused = sorted(
+            fresh,
+            key=lambda net: (
+                -proposals[net][3],
+                -proposals[net][1],
+                energy(net),
+            ),
+        )
+        take(focused, max(1, batch_size // 5))
+
+        # Diversify among good proposals, preferring distance from the archive.
+        quality_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+=======
+        selected = []
+        selected_set = set()
+        selection_tags.clear()
+
+        def take(order, count, signal, min_separation=0):
+            added = 0
+            for net in order:
+                if net in selected_set:
+                    continue
+                if min_separation and any(
+                    distance(net, old) < min_separation for old in selected
+                ):
+                    continue
+                selected.append(net)
+                selected_set.add(net)
+                selection_tags[net] = signal
+                added += 1
+                if added >= count or len(selected) >= batch_size:
+                    break
+
+        # Bound adaptation so noisy early outcomes cannot starve a ranking signal.
+        def quota_factor(signal):
+            attempts, successes = signal_stats[signal]
+            rate = (successes + 1.0) / (attempts + 20.0)
+            rates = [
+                (signal_stats[name][1] + 1.0) /
+                (signal_stats[name][0] + 20.0)
+                for name in ("energy", "route", "focused")
+            ]
+            baseline = sum(rates) / len(rates)
+            return float(np.clip((rate / max(baseline, 1e-12)) ** 0.5, 0.7, 1.3))
+
+        # Keep the routing screen bounded to energy-promising proposals, then
+        # reserve a small part of the batch for its independent ranking.
+        route_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+        ranked_route = sorted(route_pool, key=routing_estimate)
+
+        # Allocate the main ranking slots using their observed LP improvement rates.
+        energy_quota = max(1, int(round(batch_size * 2 / 5 * quota_factor("energy"))))
+        route_quota = max(1, int(round(batch_size / 4 * quota_factor("route"))))
+        focus_quota = max(1, int(round(batch_size / 5 * quota_factor("focused"))))
+        take(ranked_energy, energy_quota, "energy", min_separation=2)
+        take(ranked_route, route_quota, "route", min_separation=2)
+
+        # Reserve trials for each structurally different move operator.
+        by_operator = {op: [] for op in range(4)}
+        for net in fresh:
+            for op in proposals[net][0]:
+                by_operator[op].append(net)
+        for op in (1, 2, 3, 0):
+            order = sorted(by_operator[op], key=energy)
+            take(order, 1, "operator")
+
+        # Use dual/load exposure as a separate ranking signal.
+        focused = sorted(
+            fresh,
+            key=lambda net: (
+                -proposals[net][3],
+                -proposals[net][1],
+                energy(net),
+            ),
+        )
+        take(focused, focus_quota, "focused")
+
+        # Diversify among good proposals, preferring distance from the archive.
+        quality_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            selected.append(candidate)
+            selected_set.add(candidate)
+
+        if len(selected) < batch_size:
+            tail = [net for net in fresh if net not in selected_set]
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+
+        return selected[:batch_size]
+=======
+            selected.append(candidate)
+            selected_set.add(candidate)
+            selection_tags[candidate] = "novelty"
+
+        if len(selected) < batch_size:
+            tail = [net for net in fresh if net not in selected_set]
+            rng.shuffle(tail)
+            for net in tail[:batch_size - len(selected)]:
+                selected.append(net)
+                selected_set.add(net)
+                selection_tags[net] = "random"
+
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    break
+
+        for parent, score in parent_scores.items():
+=======
+        reference_score = best_score
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score = evaluate(net)
+                signal = selection_tags.get(net)
+                if signal in signal_stats:
+                    signal_stats[signal][0] += 1
+                    if score < reference_score:
+                        signal_stats[signal][1] += 1
+                        reference_score = score
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    break
+
+        for parent, score in parent_scores.items():
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,78 @@
+<NAME>
+dual_relief_screen
+</NAME>
+
+<DESCRIPTION>
+Use the parent network’s LP dual prices to rank proposed moves by the bottleneck pressure they may remove. For each proposal, estimate relief from removed priced links and subtract a small, scale-normalized penalty for direct demand on newly added links. This complements the energy model and the existing count of changed hot links, while keeping the estimate cheap and requiring no additional LP calls. It is a heuristic rather than a prediction of the new routing, so it only changes which proposals get LP budget—not which networks are accepted.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        def add(net, operator):
+            if net is None or net == parent or not tools.is_valid(net):
+                return
+            changed_hot = len((set(net) ^ current) & hot)
+            entry = proposals.get(net)
+            if entry is None:
+                proposals[net] = [set(), changed_hot, set()]
+                entry = proposals[net]
+            entry[0].add(operator)
+            entry[1] = max(entry[1], changed_hot)
+            entry[2].add(parent)
+=======
+        price_map = {
+            tuple(map(int, link)): float(price)
+            for link, price in prices.items()
+        }
+        positive_prices = [max(0.0, price) for price in price_map.values()]
+        mean_price = (
+            sum(positive_prices) / len(positive_prices)
+            if positive_prices else 0.0
+        )
+        loads = detail.get("loads", {})
+        load_values = [float(value) for value in loads.values()]
+        load_scale = max(
+            sum(load_values) / len(load_values) if load_values else 0.0,
+            1.0,
+        )
+
+        def add(net, operator):
+            if net is None or net == parent or not tools.is_valid(net):
+                return
+            net_edges = set(net)
+            changed_hot = len((net_edges ^ current) & hot)
+            removed = current - net_edges
+            added = net_edges - current
+            dual_gain = sum(max(0.0, price_map.get(edge, 0.0)) for edge in removed)
+            direct_pressure = sum(
+                max(0.0, float(demand[i, j])) for i, j in added
+            )
+            dual_gain -= mean_price * direct_pressure / load_scale
+            entry = proposals.get(net)
+            if entry is None:
+                proposals[net] = [set(), changed_hot, set(), dual_gain]
+                entry = proposals[net]
+            entry[0].add(operator)
+            entry[1] = max(entry[1], changed_hot)
+            entry[2].add(parent)
+            entry[3] = max(entry[3], dual_gain)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        focused = sorted(
+            fresh,
+            key=lambda net: (
+                -proposals[net][1],
+                energy(net),
+            ),
+        )
+=======
+        focused = sorted(
+            fresh,
+            key=lambda net: (
+                -proposals[net][3],
+                -proposals[net][1],
+                energy(net),
+            ),
+        )
+>>>>>>> REPLACE
+</DIFF>

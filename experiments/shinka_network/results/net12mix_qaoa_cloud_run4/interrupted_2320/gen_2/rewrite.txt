@@ -1,0 +1,118 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build sparse cost terms for a directed 2-in/2-out network QUBO."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+
+    # Traffic is nonnegative in this problem. Scaling by the largest entry keeps
+    # coefficients well behaved across differently sized demand instances.
+    t = np.maximum(t, 0.0)
+    dmax = float(t.max()) if t.size else 0.0
+    if dmax <= 0.0:
+        dmax = 1.0
+    d = t / dmax
+
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    activity = row + col
+    activity_max = float(activity.max()) if activity.size else 0.0
+    if activity_max > 0.0:
+        activity = activity / activity_max
+
+    # Direct links remain the main signal. The small gravity component favors
+    # links from major sources toward major sinks as potential connectors.
+    row_max = float(row.max()) if row.size else 0.0
+    col_max = float(col.max()) if col.size else 0.0
+    if row_max > 0.0:
+        rn = row / row_max
+    else:
+        rn = np.zeros(n, dtype=float)
+    if col_max > 0.0:
+        cn = col / col_max
+    else:
+        cn = np.zeros(n, dtype=float)
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            gravity = float(np.sqrt(rn[i] * cn[j]))
+            linear[(i, j)] = -0.90 * float(d[i, j]) - 0.06 * gravity
+
+    quadratic = {}
+
+    # For each OD pair, retain only its two most promising relay nodes.
+    # This limits the number of couplings and avoids uniformly rewarding
+    # arbitrary two-hop paths. A relay is favored when it has lower overall
+    # traffic activity and when both constituent links have some direct-demand
+    # support.
+    if n >= 3:
+        for i in range(n):
+            for k in range(n):
+                if i == k:
+                    continue
+                od = float(d[i, k])
+                if od <= 0.0:
+                    continue
+
+                candidates = []
+                for j in range(n):
+                    if j == i or j == k:
+                        continue
+
+                    # Relaying through a busy node is less attractive.
+                    relay_room = 1.0 - 0.65 * float(activity[j])
+
+                    # Existing traffic on the two legs makes them more
+                    # plausible members of a useful route.
+                    leg_support = float(np.sqrt(
+                        (0.08 + d[i, j]) * (0.08 + d[j, k])
+                    ))
+                    rank = relay_room * (0.65 + 0.35 * leg_support)
+                    candidates.append((rank, j, relay_room, leg_support))
+
+                candidates.sort(reverse=True)
+                for rank, j, relay_room, leg_support in candidates[:2]:
+                    e1 = (i, j)
+                    e2 = (j, k)
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+
+                    # Deliberately much weaker than direct-link rewards:
+                    # it favors short routes while limiting redundant path
+                    # bonuses and overemphasis on any single OD demand.
+                    value = (
+                        -0.18 * od
+                        * (0.55 + 0.45 * relay_room)
+                        * (0.70 + 0.30 * leg_support)
+                    )
+                    quadratic[key] = quadratic.get(key, 0.0) + value
+
+    # Degree constraints are added by the evaluator, not here. Keep their
+    # penalty comfortably stronger than the rescaled cost coefficients.
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

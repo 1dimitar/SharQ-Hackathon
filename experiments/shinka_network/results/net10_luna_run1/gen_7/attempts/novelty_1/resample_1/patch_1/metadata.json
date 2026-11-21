@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_balanced_paths",
+  "patch_description": "This keeps direct-demand rewards as a useful baseline, but adds a calibrated two-hop relay signal rather than rewarding every possible relay equally. Relay bonuses are moderated relative to direct-link rewards and favor intermediates with lower overall demand pressure, which may be better positioned to carry transit traffic. The terms remain sparse: they use only valid directed two-hop paths, within the allowed cubic bound. A stronger external degree penalty helps keep the low-energy region focused on valid topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:16.094258",
+  "llm_cost": 0.0024100000000000002,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "two_node_cut_balance",
+  "patch_description": "Add a compact congestion regularizer based on two-node cuts. In a valid topology, the pair {i,j} has 4 \u2212 x_ij \u2212 x_ji links crossing its boundary in each direction. If D is its larger incoming or outgoing external demand, D/(4 \u2212 x_ij \u2212 x_ji) is a congestion lower bound. Its square has an exact quadratic expansion, with linear coefficient 7D\u00b2/144 and reciprocal-link coefficient 13D\u00b2/144.\n\nThis adds pressure against reciprocal bottlenecks, particularly between busy nodes, while retaining the existing demand-aware route model. Normalize by maximum incident demand for size-independent weights, and remove degree-invariant node offsets from the added linear terms so they do not unnecessarily bias sampling. The change adds at most n(n\u22121)/2 couplings, without adding degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:41:52.705679",
+  "llm_cost": 0.078108,
+  "llm_model": "gpt-6.1-sol"
+}

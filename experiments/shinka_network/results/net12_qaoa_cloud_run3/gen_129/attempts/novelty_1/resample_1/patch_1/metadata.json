@@ -1,0 +1,14 @@
+{
+  "generation": 129,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "soft_route_exposure",
+  "patch_description": "The earlier programs reward direct demand and selected two-hop paths. This design keeps those signals but treats relay choice as a small, normalized allocation: each OD pair distributes its route reward across only its strongest relays, with pressure-adjusted path plausibility. It also aggregates those allocations into a modest link-level exposure signal, so links useful to many plausible routes receive some credit without letting transit centrality overwhelm direct demand. A stronger degree penalty is intended to reduce invalid samples before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:41:10.918423",
+  "llm_cost": 0.0029452000000000002,
+  "llm_model": "gpt-6-luna"
+}

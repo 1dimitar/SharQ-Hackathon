@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "high_demand_relay_cutoff",
+  "patch_description": "Concentrate a small amount of additional two-hop support on the most demanding OD pairs. Set the cutoff at the 90th percentile of positive off-diagonal demands, and give qualifying pairs one extra candidate relay, capped at the available number of relays. The existing relay ranking and reward formulas remain unchanged; the extra-relay cap is fixed at one. This tests whether focusing support on the strongest traffic improves topology quality without broadly increasing the number of QUBO couplings.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:50:05.275857",
+  "llm_cost": 0.0012358,
+  "llm_model": "gpt-6-luna"
+}

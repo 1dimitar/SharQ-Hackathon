@@ -1,0 +1,50 @@
+<NAME>
+balanced_twohop_routing
+</NAME>
+
+<DESCRIPTION>
+Add a discounted two-hop routing reward only for paths whose endpoints have meaningful demand, scaled by the source’s total demand and destination’s total inbound demand. This favors link pairs that can carry traffic indirectly without letting a single large demand dominate every coupling, as can happen with a raw two-hop reward. The cubic number of candidate paths stays within the term limit. Increase the degree penalty weight to make valid degree-2 topologies more competitive before repair, addressing the low feasible rate in the feedback.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    d = np.asarray(demand, dtype=float)
+    scale = float(d.max()) or 1.0
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+
+    # Direct service remains the strongest signal; two-hop paths get a
+    # discounted reward, normalized by the traffic pressure at their endpoints.
+    linear = {
+        (i, j): -float(d[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            for k in range(n):
+                if k == j or k == i:
+                    continue
+                traffic = float(d[i, k])
+                if traffic <= 0.0:
+                    continue
+                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))
+                value = -0.20 * (traffic / scale) * (scale / pressure)
+                if value:
+                    quadratic[((i, j), (j, k))] = value
+
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

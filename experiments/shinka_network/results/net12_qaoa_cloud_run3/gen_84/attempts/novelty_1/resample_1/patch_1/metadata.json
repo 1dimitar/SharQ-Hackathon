@@ -1,0 +1,14 @@
+{
+  "generation": 84,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "restore_affinity_floor",
+  "patch_description": "Restore a small positive floor in the relay affinity. The current score can rank several relays equally when one or both constituent legs have no direct demand, and those relays can still receive the same quadratic reward as useful two-leg paths. A modest floor preserves the balanced-leg ranking while avoiding a zero-affinity tie; this also restores the version of the affinity formula associated with the strongest reported combined score (0.85). Pressure discounts, ranking, and relay budgets remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:38:04.957771",
+  "llm_cost": 0.0009697000000000001,
+  "llm_model": "gpt-6-luna"
+}

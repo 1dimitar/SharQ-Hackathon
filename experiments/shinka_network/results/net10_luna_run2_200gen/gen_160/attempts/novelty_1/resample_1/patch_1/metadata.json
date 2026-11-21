@@ -1,0 +1,14 @@
+{
+  "generation": 160,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped-path-balance",
+  "patch_description": "The current approach uses a direct-demand reward and a fixed-strength reward for every eligible two-hop path; across many intermediates, those path rewards can collectively overvalue one OD pair. This version keeps the direct reward, but proportionally caps each OD pair\u2019s total two-hop support at 0.75 of that reward. It allocates the capped support among paths using intermediate-node pressure and constituent-link demand, with stronger discounts for busy nodes and heavily demanded links. The path strength is 0.50, and the degree penalty is raised from 1.0 to 1.35 to encourage more valid samples. Only two-hop path terms are generated, keeping the quadratic-term count below the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:10.983420",
+  "llm_cost": 0.0024054,
+  "llm_model": "gpt-6-luna"
+}

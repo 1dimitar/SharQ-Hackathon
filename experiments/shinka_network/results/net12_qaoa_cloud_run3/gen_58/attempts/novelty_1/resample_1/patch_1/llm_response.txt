@@ -1,0 +1,66 @@
+<NAME>
+bottleneck_relay_ranking
+</NAME>
+
+<DESCRIPTION>
+Rank relay candidates by the usefulness of both legs, using `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)`. This favors relays with two serviceable legs over those whose apparent value comes from only one strong leg. The ranking retains the existing relay-pressure and edge-pressure discounts, and leaves the relay budget and path-reward formula unchanged, so the change targets which paths are selected without increasing QUBO density.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+                candidates.append((weight, j))
+
+            # More negative weights are the strongest path rewards; use the
+            # node index as a deterministic tie-breaker.
+            candidates.sort()
+            for weight, j in candidates[:relay_budget]:
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first_leg = float(traffic[i, j]) / scale
+                second_leg = float(traffic[j, k]) / scale
+                bottleneck_affinity = (
+                    min(first_leg, second_leg)
+                    + 0.25 * max(first_leg, second_leg)
+                )
+                edge_pressure = first_leg + second_leg
+                pressure_discount = (
+                    float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure)
+                )
+                rank = bottleneck_affinity / pressure_discount
+                candidates.append((rank, j, edge_pressure))
+
+            # Favor relays with two useful legs; break ties deterministically.
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for rank, j, edge_pressure in candidates[:relay_budget]:
+                weight = (
+                    -path_strength * path_support
+                    / (
+                        float(node_pressure[j])
+                        * (1.0 + 0.5 * edge_pressure)
+                    )
+                )
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+
+</DIFF>

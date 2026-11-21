@@ -1,0 +1,85 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return direct-link and capacity-weighted two-hop QUBO terms."""
+    t = np.asarray(demand, dtype=float)
+    n = int(t.shape[0])
+
+    # Ignore negative entries if supplied; normalize for unit invariance.
+    d = np.maximum(t, 0.0).copy()
+    np.fill_diagonal(d, 0.0)
+    scale = float(np.max(d)) or 1.0
+    d /= scale
+
+    row = np.sum(d, axis=1)
+    col = np.sum(d, axis=0)
+    activity = row + col
+    mean_activity = float(np.mean(activity)) or 1.0
+
+    # Nodes with high activity are likely to be costly transit points.
+    # A smooth inverse-capacity factor keeps every node usable.
+    transit = 1.0 / (0.5 + activity / mean_activity)
+    transit /= float(np.mean(transit)) or 1.0
+
+    # Direct value is augmented by source/destination activity, but the
+    # demand term remains dominant.
+    rscale = float(np.max(row)) or 1.0
+    cscale = float(np.max(col)) or 1.0
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            endpoint = 0.5 * (row[i] / rscale + col[j] / cscale)
+            linear[(i, j)] = -(0.82 * d[i, j] + 0.18 * endpoint)
+
+    # For each OD pair, split its two-hop potential across eligible
+    # intermediates in proportion to their estimated transit capacity.
+    # This avoids rewarding every possible realization of the same traffic
+    # as though it were independently useful.
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            value = float(d[i, k])
+            if i == k or value <= 0.0:
+                continue
+
+            mids = [j for j in range(n) if j != i and j != k]
+            denom = sum(float(transit[j]) for j in mids)
+            if denom <= 0.0:
+                continue
+
+            for j in mids:
+                # A modest indirect signal complements, rather than
+                # overwhelms, the direct-link preference.
+                share = float(transit[j]) / denom
+                weight = -0.72 * value * share
+                key = ((i, j), (j, k))
+                if weight != 0.0:
+                    quadratic[key] = weight
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

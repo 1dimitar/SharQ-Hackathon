@@ -1,0 +1,56 @@
+<NAME>
+bounded_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Add a short path-relinking phase to `propose`. It chooses a strong, sufficiently different scored network as a guide, then greedily applies valid two-switches that increase overlap with the guide. The intermediate networks create directed routes between promising regions that ordinary local neighborhoods may not reach. The path is bounded to five steps, and the existing validity, surrogate-ranking, and LP-budget filters still decide which proposals are scored.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+=======
+        # Relink toward a strong, distant archive member. Each step increases
+        # shared-arc overlap, producing useful intermediate networks rather
+        # than an undirected random perturbation.
+        guides = [
+            net for net in sorted(scores, key=scores.get)[:12]
+            if net != parent and distance(net, parent) >= 6
+        ]
+        if guides:
+            guide = guides[int(rng.integers(len(guides)))]
+            guide_edges = set(guide)
+            path_net = parent
+            for _ in range(5):
+                path_arcs = list(path_net)
+                path_edges = set(path_net)
+                overlap = len(path_edges & guide_edges)
+                advancing = []
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        step = two_switch(path_net, p, q)
+                        if step is not None:
+                            gain = len(set(step) & guide_edges) - overlap
+                            if gain > 0:
+                                advancing.append((gain, step))
+                if not advancing:
+                    break
+                max_gain = max(gain for gain, _ in advancing)
+                choices = [step for gain, step in advancing if gain == max_gain]
+                path_net = choices[int(rng.integers(len(choices)))]
+                moves.add(path_net)
+
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_perturbation",
+  "patch_description": "Increase the supply and strength of perturbation proposals modestly at n=13 and n=15, where the current program has its largest remaining gaps. For every size, repeated stalls progressively increase exploration; after an improvement, the existing stall reset naturally returns the search to lighter perturbations. This changes candidate generation rather than LP-batch allocation, preserving the current evaluation mix and LP budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:36:51.929215",
+  "llm_cost": 0.0031072,
+  "llm_model": "gpt-6-luna"
+}

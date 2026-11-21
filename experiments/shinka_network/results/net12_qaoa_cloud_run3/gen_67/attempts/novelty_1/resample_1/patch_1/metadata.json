@@ -1,0 +1,14 @@
+{
+  "generation": 67,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "gentler_relay_pressure",
+  "patch_description": "Soften the pressure discount on relay nodes while leaving candidate ranking and selection unchanged. Raising normalized node pressure to 0.75 makes the reward less sensitive to pressure differences, so a relay is not rejected as strongly just because its incident demand is relatively high. This tests the gentler-pressure variant in isolation; the existing edge-pressure discount and all other terms remain intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:12:47.403572",
+  "llm_cost": 0.0010496,
+  "llm_model": "gpt-6-luna"
+}

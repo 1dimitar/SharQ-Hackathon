@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_batch_screen",
+  "patch_description": "The current batch evaluates the eight lowest-energy moves even when they are near-duplicates, which can spend LP calls exploring essentially the same topology. This change forms a competitive energy shortlist, then greedily selects moves that are far from already selected moves while applying a modest penalty to worse energy ranks. It retains the existing random tail for exploration and uses the same LP-call budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:38:35.949955",
+  "llm_cost": 0.0014715000000000002,
+  "llm_model": "gpt-6-luna"
+}

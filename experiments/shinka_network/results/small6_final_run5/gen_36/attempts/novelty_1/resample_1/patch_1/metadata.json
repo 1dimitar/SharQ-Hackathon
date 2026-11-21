@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_exposure_centering",
+  "patch_description": "Partially remove the excessive \u201cbackground reward\u201d received by links participating in many rewarded routes. Such links can look attractive even when their route partners are merely common choices, potentially biasing both samples and exchange rankings toward concentrated structures.\n\nEstimate partner-selection probabilities with a deterministic, approximately degree-balanced fractional adjacency matrix. Accumulate each link\u2019s expected reward from negative route couplings, then offset only exposure above the upper quartile with a small, capped linear correction. Actual completed paths retain their full quadratic rewards.\n\nThis adds no couplings or degree penalties. Partner probabilities account for network size, while the cap limits disruption of the existing direct-service objective.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:18:16.574868",
+  "llm_cost": 0.07675599999999999,
+  "llm_model": "gpt-6.1-sol"
+}

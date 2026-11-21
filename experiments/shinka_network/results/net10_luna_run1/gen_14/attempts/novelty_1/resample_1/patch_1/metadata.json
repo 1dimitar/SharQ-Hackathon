@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust-direct",
+  "patch_description": "The strongest prior result came from direct-demand rewards without quadratic terms; the larger path and pair bonuses did not improve the best sampled topology. This version keeps direct demand dominant, blending maximum normalization with a clipped normalization so a few exceptional demands are less likely to suppress useful signal elsewhere. It adds only a small transit-usefulness adjustment and weak two-hop bonuses for the two most promising relays per OD pair. The degree penalty remains external, with a weight of 1.5.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:17:22.113115",
+  "llm_cost": 0.0019711,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_support",
+  "patch_description": "Limit each positive-demand OD pair to its strongest relay candidates instead of coupling every possible two-hop path. Rank relays using the existing pressure-discounted path weight, retaining `max(1, n // 5)` candidates per pair. This produces about 264 quadratic terms at n=12, rather than 880, while preserving the most promising two-hop interactions and keeping the interaction graph sparser for QAOA partitioning.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:29:58.343396",
+  "llm_cost": 0.0009496000000000001,
+  "llm_model": "gpt-6-luna"
+}

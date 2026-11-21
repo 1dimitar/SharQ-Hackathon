@@ -1,0 +1,101 @@
+<NAME>
+stagnation_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+When incumbent progress stalls, this adds a small, bounded search from a rarely selected archive parent that is structurally distant from the incumbent. It combines longer random kicks with a few immediate switches focused on positive-price links, then sends those proposals through the existing validity, energy, and diversity screening. Tracking parent visits helps the search explore archive regions that ordinary parent selection may neglect, without changing the LP budget or making the extra generation unbounded.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+=======
+    iteration = 0
+    stagnant_batches = 0
+    parent_visits = {}
+    while tools.lp_calls_left > 0:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        refs = [best_net]
+        if second != best_net:
+            refs.append(second)
+        batch = select_batch(proposals, refs, min(9, int(tools.lp_calls_left)))
+=======
+        # After repeated stalls, probe a distant, rarely selected archive
+        # region. Keep generation bounded and mix guided switches with kicks.
+        explorer = None
+        if stagnant_batches >= 2 and iteration % 2 == 0 and len(parents) > 1:
+            alternatives = [p for p in parents if p != best_net]
+            if alternatives:
+                explorer = min(
+                    alternatives,
+                    key=lambda p: (
+                        parent_visits.get(p, 0),
+                        -len(set(p) ^ set(best_net)),
+                    ),
+                )
+                try:
+                    detail = tools.lp_detail(explorer)
+                    prices = detail.get("prices", {})
+                    hot = {
+                        tuple(map(int, link))
+                        for link, price in prices.items()
+                        if float(price) > 0
+                    }
+                except Exception:
+                    hot = set()
+                if hot:
+                    proposals.update(two_switches(explorer, hot)[:24])
+                for _ in range(18):
+                    child = kick(explorer, 2 + int(rng.integers(5)))
+                    if child != explorer:
+                        proposals.add(child)
+
+        refs = [best_net]
+        if second != best_net:
+            refs.append(second)
+        batch = select_batch(proposals, refs, min(9, int(tools.lp_calls_left)))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        old_best = best_score
+        calls_used = 0
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            score_net(net)
+            calls_used += 1
+
+        # Share credit across the parents whose neighborhoods generated this
+        # batch; reward only actual incumbent improvements, not merely good
+        # surrogate-ranked proposals.
+        for parent in set((first, second)):
+=======
+        old_best = best_score
+        calls_used = 0
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            score_net(net)
+            calls_used += 1
+
+        if best_score < old_best:
+            stagnant_batches = 0
+        else:
+            stagnant_batches = min(12, stagnant_batches + 1)
+
+        # Track how often each archive region is selected so stall kicks can
+        # favor underexplored parents on subsequent iterations.
+        selected_parents = set((first, second))
+        if explorer is not None:
+            selected_parents.add(explorer)
+        for parent in selected_parents:
+            parent_visits[parent] = parent_visits.get(parent, 0) + 1
+
+        # Share credit across the parents whose neighborhoods generated this
+        # batch; reward only actual incumbent improvements, not merely good
+        # surrogate-ranked proposals.
+        for parent in set((first, second)):
+>>>>>>> REPLACE
+
+</DIFF>

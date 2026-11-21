@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_guided_switch_search",
+  "patch_description": "Uses repaired candidates as diverse starting points, then spends LP calls on degree-preserving 2-switches and occasional 3-link rotations. LP dual prices prioritize moves that remove bottleneck links, while surrogate energy and randomized proposals preserve exploration. A compact elite archive supplies restart points; bounded batches avoid spending too much time generating and sorting proposals.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:50:54.496214",
+  "llm_cost": 0.0025836,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "enumerate_hot_rotations",
+  "patch_description": "The current hot-arc rotation block samples partner arcs randomly, so it can repeatedly miss useful rotations or fail to change a particular bottleneck arc. Enumerate compatible two-partner rotations for each hot arc instead, then retain a small, size-scaled set per hot arc with low added direct demand. Every retained rotation removes its selected hot arc, while the existing energy, routing, and LP stages still decide whether it is actually beneficial. This makes bottleneck-focused proposals more deliberate without using extra LP calls; the amount retained scales with n.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:34:10.715019",
+  "llm_cost": 0.0029443000000000004,
+  "llm_model": "gpt-6-luna"
+}

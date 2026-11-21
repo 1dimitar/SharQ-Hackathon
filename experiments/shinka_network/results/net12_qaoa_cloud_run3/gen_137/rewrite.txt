@@ -1,0 +1,159 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Estimate routing pressure and construct a sparse load-balancing QUBO."""
+    t = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = len(t)
+    np.fill_diagonal(t, 0.0)
+
+    maximum = float(np.max(t)) if t.size else 0.0
+    if maximum > 0.0:
+        q = t / maximum
+    else:
+        q = t.copy()
+
+    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+    linear = {}
+    for i, j in links:
+        v = float(q[i, j])
+        # Direct service is valuable, but the concave term avoids ignoring
+        # moderate flows when selecting a fixed number of links.
+        linear[(i, j)] = -(0.76 * v + 0.24 * np.sqrt(v))
+
+    if n < 3 or maximum <= 0.0:
+        return linear, {}, 1.5
+
+    rows = np.sum(q, axis=1)
+    cols = np.sum(q, axis=0)
+    node_load = np.maximum(rows, cols)
+    node_scale = max(float(np.max(node_load)), 1.0e-12)
+    pressure = 0.55 + 0.45 * node_load / node_scale
+
+    # Assign each OD's traffic fractionally across a few plausible two-hop
+    # routes. This creates approximate link loads rather than treating each
+    # path bonus independently.
+    estimated = q.copy()
+    relay_budget = min(n - 2, 2 if n < 10 else 3)
+    for i in range(n):
+        for k in range(n):
+            d = float(q[i, k])
+            if i == k or d <= 0.0:
+                continue
+            relays = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                a, b = float(q[i, j]), float(q[j, k])
+                # Geometric affinity requires both legs to be credible;
+                # lightly favor relays with lower aggregate pressure.
+                affinity = np.sqrt((a + 0.015) * (b + 0.015))
+                suitability = affinity / (0.7 + 0.3 * pressure[j])
+                relays.append((suitability, j))
+            relays.sort(key=lambda x: (-x[0], x[1]))
+            chosen = relays[:relay_budget]
+            if not chosen:
+                continue
+            weights = [x[0] for x in chosen]
+            total = sum(weights)
+            if total <= 0.0:
+                continue
+            # Only part of an OD flow is presumed to use relay paths: direct
+            # link selection remains meaningful and path estimates stay mild.
+            routed = 0.22 * d
+            for (suitability, j), w in zip(chosen, weights):
+                share = routed * w / total
+                estimated[i, j] += share
+                estimated[j, k] += share
+
+    # Sparse congestion interactions among links sharing a tail or a head.
+    # Interactions are based on estimated load and deliberately selected
+    # independently in each incidence group, keeping the graph compact.
+    load_max = max(float(np.max(estimated)), 1.0e-12)
+    load = estimated / load_max
+    quadratic = {}
+
+    def add_pair(e1, e2, strength):
+        if e1 == e2:
+            return
+        key = (e1, e2) if e1 < e2 else (e2, e1)
+        quadratic[key] = quadratic.get(key, 0.0) + strength
+
+    keep = min(4, max(2, n // 4))
+    congestion = 0.22
+    for node in range(n):
+        groups = (
+            [(node, j) for j in range(n) if j != node],
+            [(i, node) for i in range(n) if i != node],
+        )
+        for group in groups:
+            group.sort(key=lambda e: (-float(load[e[0], e[1]]), e))
+            selected = group[:keep]
+            for a in range(len(selected)):
+                for b in range(a + 1, len(selected)):
+                    la = float(load[selected[a][0], selected[a][1]])
+                    lb = float(load[selected[b][0], selected[b][1]])
+                    if la * lb > 1.0e-5:
+                        add_pair(selected[a], selected[b], congestion * la * lb)
+
+    # Add a few attractive path couplings, but keep their combined influence
+    # subordinate to direct rewards and congestion balancing.
+    path_weight = 0.10
+    for i in range(n):
+        for k in range(n):
+            d = float(q[i, k])
+            if i == k or d <= 0.0:
+                continue
+            options = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                a, b = float(q[i, j]), float(q[j, k])
+                affinity = np.sqrt((a + 0.015) * (b + 0.015))
+                score = affinity / (0.7 + 0.3 * pressure[j])
+                options.append((score, j))
+            options.sort(key=lambda x: (-x[0], x[1]))
+            for score, j in options[:relay_budget]:
+                if score <= 0.0:
+                    continue
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                reward = -path_weight * (0.7 * d + 0.3 * np.sqrt(d))
+                quadratic[key] = quadratic.get(key, 0.0) + reward / relay_budget
+
+    # Keep coefficients comparable; evaluator adds degree penalties separately.
+    largest = max(
+        [abs(float(v)) for v in linear.values()]
+        + [abs(float(v)) for v in quadratic.values()]
+        + [0.0]
+    )
+    if largest > 0.0:
+        linear = {k: float(v) / largest for k, v in linear.items()}
+        quadratic = {
+            k: float(v) / largest for k, v in quadratic.items()
+            if abs(v) > 1.0e-12
+        }
+
+    return linear, quadratic, 1.5
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

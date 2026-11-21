@@ -1,0 +1,14 @@
+{
+  "generation": 177,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped-path-support",
+  "patch_description": "The current two-hop rewards can accumulate across all possible relays for each OD pair, making indirect support dominate the direct-link signal. This version keeps the direct reward mostly linear in demand and caps each OD pair\u2019s *aggregate* two-hop reward at 75% of its direct reward, scaling its candidate paths proportionally when necessary. Relay pressure and component-edge demand still determine the relative ranking of paths. The cap controls cumulative influence without increasing the quadratic-term count; the degree penalty remains evaluator-supplied.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:55.429390",
+  "llm_cost": 0.0019484,
+  "llm_model": "gpt-6-luna"
+}

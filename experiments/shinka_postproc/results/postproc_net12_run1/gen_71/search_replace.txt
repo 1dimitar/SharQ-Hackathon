@@ -1,0 +1,88 @@
+<NAME>
+diverse_random_seed_quota
+</NAME>
+
+<DESCRIPTION>
+Reserve up to eight initial LP evaluations for random valid topologies, providing a hedge when repaired QAOA samples miss a strong region. Use the remaining initial evaluations on energy-ranked QAOA repairs, preferring networks that differ from already selected starts, then backfill from the energy ranking. This limits redundant initialization while preserving QAOA-led search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for net in sorted(repaired, key=lambda x: tools.energy(x)):
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+=======
+    # Reserve a small, explicit initialization quota for random valid networks.
+    random_starts = set()
+    n = tools.n
+    for _ in range(8):
+        first = None
+        for _attempt in range(100):
+            perm = rng.permutation(n)
+            if all(int(perm[i]) != i for i in range(n)):
+                first = perm
+                break
+        if first is None:
+            continue
+
+        second = None
+        for _attempt in range(100):
+            perm = rng.permutation(n)
+            if all(int(perm[i]) != i and int(perm[i]) != int(first[i])
+                   for i in range(n)):
+                second = perm
+                break
+        if second is None:
+            continue
+
+        net = norm(
+            [(i, int(first[i])) for i in range(n)]
+            + [(i, int(second[i])) for i in range(n)]
+        )
+        if tools.is_valid(net):
+            random_starts.add(net)
+
+    # Start with diverse, energy-ranked QAOA repairs; backfill from the ranking
+    # when the pool does not contain enough distinct topologies.
+    ordered = sorted(repaired, key=lambda x: tools.energy(x))
+    starts = []
+    for net in ordered:
+        if all(len(set(net).symmetric_difference(set(old))) >= 4
+               for old in starts):
+            starts.append(net)
+        if len(starts) >= 24:
+            break
+    for net in ordered:
+        if len(starts) >= 32:
+            break
+        if net not in starts:
+            starts.append(net)
+
+    # Score the random quota first so it cannot be displaced by QAOA repairs.
+    for net in random_starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+>>>>>>> REPLACE
+</DIFF>

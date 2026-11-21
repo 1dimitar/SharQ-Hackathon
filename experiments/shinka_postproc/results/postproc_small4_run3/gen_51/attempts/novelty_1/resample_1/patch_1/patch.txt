@@ -1,0 +1,992 @@
+--- a/original.py
++++ b/original.py
+@@ -1,541 +1,587 @@
+ """Starting program of post-processing run 2 (network13): run 1's best program (gen 49, combined
+ score 0.9901 on network12), copied from results/postproc_net12_run1/best/main.py. Only the fixed
+ wrapper below the EVOLVE block changed (tools.energy uses each pool's own Hamiltonian).
+ """
+ 
+ """Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import json
+ import time
+ 
+ import numpy as np
+ 
+ # EVOLVE-BLOCK-START
++import math
++
++
+ def improve(demand, candidates, tools, rng):
+-    """Search repaired QAOA networks with a diverse archive and move portfolio."""
++    """Calibrated routing screens with an explicitly diversified move portfolio."""
+     n = int(tools.n)
+-    arc_count = 2 * n
++    m = 2 * n
++    started = time.perf_counter()
++    D = np.asarray(demand, dtype=float).copy()
++    np.fill_diagonal(D, 0.0)
++    traffic = max(float(D.sum()), 1.0)
++    scale = traffic / max(m, 1)
++
+     seen = {}
+-    energy_cache = {}
+-    detail_cache = {}
++    details = {}
++    masks = {}
++    energies = {}
+     stalls = {}
++    visits = {}
++    training_x = []
++    training_y = []
++    recent = []
+     best_net = None
+     best_score = float("inf")
++    continuation = None
++    model = None
++    last_fit = 0
+ 
+     def canon(arcs):
+-        return tuple(sorted(tuple(map(int, a)) for a in arcs))
++        return tuple(sorted((int(a), int(b)) for a, b in arcs))
++
++    def mask(net):
++        value = 0
++        for a, b in net:
++            value |= 1 << (a * n + b)
++        return value
++
++    def separation(a, b):
++        return (a ^ b).bit_count() // 2
+ 
+     def energy(net):
+-        if net not in energy_cache:
+-            try:
+-                energy_cache[net] = float(tools.energy(net))
+-            except Exception:
+-                energy_cache[net] = 0.0
+-        return energy_cache[net]
+-
+-    def evaluate(net):
++        if net not in energies:
++            value = float(tools.energy(net))
++            energies[net] = value if math.isfinite(value) else 0.0
++        return energies[net]
++
++    def routing_features(nets):
++        """Batched feasible equal-next-hop shortest-path routing features."""
++        count = len(nets)
++        if not count:
++            return np.empty((0, 9), dtype=float)
++
++        arcs = np.asarray(nets, dtype=np.int64)
++        heads = arcs[:, :, 1].reshape(count, n, 2)
++        bi = np.arange(count)[:, None]
++        rows = np.arange(n)
++
++        dist = np.full((count, n, n), n + 1, dtype=np.int16)
++        dist[:, rows, rows] = 0
++        dist[bi, arcs[:, :, 0], arcs[:, :, 1]] = 1
++        for k in range(n):
++            np.minimum(
++                dist, dist[:, :, k, None] + dist[:, None, k, :],
++                out=dist,
++            )
++
++        reachable = dist <= n
++        unreachable = (~reachable).sum(axis=(1, 2)).astype(float)
++        d0 = dist[bi, heads[:, :, 0], :]
++        d1 = dist[bi, heads[:, :, 1], :]
++        ok0 = (dist == d0 + 1) & reachable
++        ok1 = (dist == d1 + 1) & reachable
++        denominator = np.maximum(ok0.astype(float) + ok1, 1.0)
++        fraction0 = ok0 / denominator
++        fraction1 = ok1 / denominator
++
++        incoming = np.argsort(heads.reshape(count, m), axis=1, kind="stable")
++        flow = np.broadcast_to(D, (count, n, n)).copy()
++        loads = np.zeros((count, n, 2), dtype=float)
++        diameter = int(np.max(np.where(reachable, dist, 0)))
++        for level in range(diameter, 0, -1):
++            active = flow * (dist == level)
++            f0 = active * fraction0
++            f1 = active * fraction1
++            loads[:, :, 0] += f0.sum(axis=2)
++            loads[:, :, 1] += f1.sum(axis=2)
++            edgeflow = np.stack((f0, f1), axis=2).reshape(count, m, n)
++            flow += np.take_along_axis(
++                edgeflow, incoming[:, :, None], axis=1
++            ).reshape(count, n, 2, n).sum(axis=2)
++
++        linkloads = loads.reshape(count, m) / scale
++        sorted_loads = np.sort(linkloads, axis=1)
++        weighted_dist = dist * D[None, :, :]
++        return np.column_stack((
++            [energy(net) for net in nets],
++            weighted_dist.sum(axis=(1, 2)) / traffic,
++            sorted_loads[:, -1],
++            sorted_loads[:, -min(4, m):].mean(axis=1),
++            np.sqrt(np.mean(linkloads * linkloads, axis=1)),
++            weighted_dist.sum(axis=2).max(axis=1) / scale,
++            weighted_dist.sum(axis=1).max(axis=1) / scale,
++            D[arcs[:, :, 0], arcs[:, :, 1]].sum(axis=1) / traffic,
++            unreachable,
++        ))
++
++    def evaluate(net, feat):
+         nonlocal best_net, best_score
+-        net = canon(net)
+         if net not in seen:
+-            seen[net] = float(tools.lp(net))
++            detail = tools.lp_detail(net)
++            score = float(detail["score"])
++            seen[net] = score
++            details[net] = detail
++            masks[net] = mask(net)
++            recent.append(net)
++            if math.isfinite(score):
++                training_x.append(np.asarray(feat, dtype=float))
++                training_y.append(score / scale)
+         score = seen[net]
+         if score < best_score:
+             best_net, best_score = net, score
+         return score
+ 
+-    def distance(a, b):
+-        return len(set(a) ^ set(b))
+-
+-    # Repair is free, so use the whole pool to find a compact, varied starting set.
++    def predict(X):
++        """Periodically refit a small standardized ridge model."""
++        nonlocal model, last_fit
++        count = len(training_y)
++        if count < max(3 * n, 36):
++            return None, None
++
++        if model is None or count - last_fit >= max(2 * n, 24):
++            # Bound fitting overhead in longer-budget runs while retaining
++            # broad history and the most relevant recent observations.
++            if count <= 8 * n * n:
++                A = np.asarray(training_x)
++                y = np.asarray(training_y)
++            else:
++                tail = 4 * n * n
++                ids = np.unique(np.concatenate((
++                    np.linspace(0, count - tail - 1, tail, dtype=int),
++                    np.arange(count - tail, count),
++                )))
++                A = np.asarray([training_x[int(i)] for i in ids])
++                y = np.asarray([training_y[int(i)] for i in ids])
++
++            mean = A.mean(axis=0)
++            sd = np.maximum(A.std(axis=0), 1e-8)
++            Z = np.clip((A - mean) / sd, -12.0, 12.0)
++            intercept = float(y.mean())
++            eye = np.eye(Z.shape[1])
++            gram = Z.T @ Z + 8.0 * eye
++            try:
++                solution = np.linalg.solve(
++                    gram, np.column_stack((Z.T @ (y - intercept), eye))
++                )
++                coef = solution[:, 0]
++                inverse = solution[:, 1:]
++                residual = y - intercept - Z @ coef
++                variance = float(residual @ residual) / max(
++                    1, len(y) - Z.shape[1] - 1
++                )
++                model = (mean, sd, intercept, coef, inverse, variance, len(y))
++                last_fit = count
++            except np.linalg.LinAlgError:
++                return None, None
++
++        mean, sd, intercept, coef, inverse, variance, size = model
++        W = np.clip((X - mean) / sd, -12.0, 12.0)
++        prediction = intercept + W @ coef
++        leverage = np.einsum("ij,jk,ik->i", W, inverse, W)
++        uncertainty = np.sqrt(
++            max(variance, 0.0) * np.clip(leverage + 1.0 / size, 0.0, 1.0)
++        )
++        return prediction, uncertainty
++
+     repaired = set()
+     for candidate in candidates:
+         try:
+             net = canon(tools.repair(candidate))
+             if tools.is_valid(net):
+                 repaired.add(net)
+         except Exception:
+             continue
+-
+     if not repaired:
+-        try:
+-            net = canon(tools.repair([]))
+-            if tools.is_valid(net):
+-                repaired.add(net)
+-        except Exception:
++        net = canon(tools.repair([]))
++        if not tools.is_valid(net):
+             return []
+-
+-    ordered = sorted(repaired, key=energy)
+-    start_limit = min(len(ordered), max(2 * n, 20))
++        repaired.add(net)
++
++    initial = sorted(repaired)
++    initial_X = routing_features(initial)
++    eorder = list(np.argsort(initial_X[:, 0], kind="stable"))
++    proxy = initial_X[:, 1] + 0.10 * initial_X[:, 3] + initial_X[:, 8]
++    porder = list(np.argsort(proxy, kind="stable"))
++    initial_masks = [mask(net) for net in initial]
+     starts = []
+-    for net in ordered:
+-        if all(distance(net, old) >= 4 for old in starts):
+-            starts.append(net)
+-        if len(starts) >= start_limit:
+-            break
+-    for net in ordered:
+-        if len(starts) >= start_limit:
+-            break
+-        if net not in starts:
+-            starts.append(net)
+-
+-    for net in starts:
++    used = set()
++    positions = [0, 0]
++    limit = min(2 * n + 4, len(initial))
++    turn = 0
++
++    while len(starts) < limit and len(used) < len(initial):
++        which = 1 if turn % 3 == 2 else 0
++        turn += 1
++        order = porder if which else eorder
++        while positions[which] < len(order) and int(order[positions[which]]) in used:
++            positions[which] += 1
++        if positions[which] >= len(order):
++            continue
++        i = int(order[positions[which]])
++        used.add(i)
++        if all(separation(initial_masks[i], initial_masks[j]) >= 3 for j in starts):
++            starts.append(i)
++
++    if not starts:
++        starts = [int(eorder[0])]
++    for i in starts:
+         if tools.lp_calls_left <= 0:
+             break
+-        try:
+-            evaluate(net)
+-        except Exception as exc:
+-            if type(exc).__name__ == "BudgetExhausted":
++        evaluate(initial[i], initial_X[i])
++    if best_net is None:
++        return list(initial[starts[0]])
++
++    def archive():
++        ranked = sorted(
++            (net for net, score in seen.items() if math.isfinite(score)),
++            key=seen.get,
++        )
++        result = ranked[:max(4, n // 2)]
++        chosen = set(result)
++        reference = [masks[x] for x in result]
++        for net in ranked:
++            if len(result) >= 3 * n:
+                 break
+-
+-    if not seen:
+-        return list(starts[0]) if starts else []
+-
+-    def archive():
+-        """Retain strong networks while reserving places for distinct regions."""
+-        ranked = sorted(seen, key=seen.get)
+-        result = []
+-        for net in ranked:
+-            if all(distance(net, old) >= 4 for old in result):
++            if net in chosen or seen[net] > best_score * 1.09:
++                continue
++            value = masks[net]
++            if all(separation(value, old) >= max(3, n // 3) for old in reference):
+                 result.append(net)
+-            if len(result) >= 24:
+-                break
+-        for net in ranked:
+-            if len(result) >= 32:
+-                break
+-            if net not in result:
+-                result.append(net)
++                chosen.add(net)
++                reference.append(value)
+         return result
+ 
+-    def choose_parent(pop):
+-        if len(pop) == 1:
+-            return pop[0]
+-        if rng.random() < 0.55:
+-            choices = pop[:min(8, len(pop))]
+-        else:
+-            choices = pop
+-        weights = np.asarray(
+-            [1.0 / (1.0 + 0.25 * stalls.get(net, 0)) for net in choices],
+-            dtype=float,
+-        )
+-        weights /= weights.sum()
+-        return choices[int(rng.choice(len(choices), p=weights))]
+-
+-    def detail_for(net):
+-        if net not in detail_cache:
+-            try:
+-                detail_cache[net] = tools.lp_detail(net)
+-            except Exception:
+-                detail_cache[net] = None
+-        return detail_cache[net]
+-
+-    route_cache = {}
+-
+-    def routing_estimate(net):
+-        """Estimate congestion under several deterministic shortest-path routings."""
+-        if net in route_cache:
+-            return route_cache[net]
+-
+-        adjacency = [[] for _ in range(n)]
+-        reverse = [[] for _ in range(n)]
+-        for u, v in net:
+-            adjacency[u].append(v)
+-            reverse[v].append(u)
+-
+-        # Distances to each destination allow every routed commodity to follow
+-        # a shortest path while varying only the choice among tied next hops.
+-        distances = []
+-        for destination in range(n):
+-            dist = [-1] * n
+-            dist[destination] = 0
+-            queue = [destination]
+-            for node in queue:
+-                for predecessor in reverse[node]:
+-                    if dist[predecessor] < 0:
+-                        dist[predecessor] = dist[node] + 1
+-                        queue.append(predecessor)
+-            distances.append(dist)
+-
+-        peaks = []
+-        for variant in range(3):
+-            loads = np.zeros((n, n), dtype=float)
+-            feasible = True
+-            for source in range(n):
+-                for destination in range(n):
+-                    amount = float(demand[source, destination])
+-                    if source == destination or amount <= 0:
+-                        continue
+-                    dist = distances[destination]
+-                    node = source
+-                    steps = 0
+-                    while node != destination:
+-                        choices = [
+-                            v for v in adjacency[node]
+-                            if dist[v] >= 0 and dist[v] == dist[node] - 1
+-                        ]
+-                        if not choices:
+-                            feasible = False
+-                            break
+-                        nxt = min(
+-                            choices,
+-                            key=lambda v: (
+-                                (v * v + (variant + 1) * v
+-                                 + source * (variant + 2)
+-                                 + destination * (variant + 3)) % (n + 1),
+-                                v,
+-                            ),
+-                        )
+-                        loads[node, nxt] += amount
+-                        node = nxt
+-                        steps += 1
+-                        if steps > n:
+-                            feasible = False
+-                            break
+-                    if not feasible:
+-                        break
+-                if not feasible:
+-                    break
+-            if not feasible:
+-                route_cache[net] = float("inf")
+-                return route_cache[net]
+-            peaks.append(float(np.max(loads)))
+-
+-        # The worst tie-breaking is a robustness signal; the mean tempers its noise.
+-        estimate = 0.65 * max(peaks) + 0.35 * sum(peaks) / len(peaks)
+-        route_cache[net] = estimate
+-        return estimate
+-
+-    def exchange(net, p, q):
+-        """A directed 2-switch; it preserves all in- and out-degrees."""
+-        if p == q:
++    def switch(net, p, q, current=None):
++        a, b = net[p]
++        c, d = net[q]
++        if a == c or b == d or a == d or c == b:
+             return None
+-        arcs = list(net)
+-        (a, b), (c, d) = arcs[p], arcs[q]
+-        if a == d or c == b:
+-            return None
+-        current = set(net)
++        if current is None:
++            current = set(net)
+         if (a, d) in current or (c, b) in current:
+             return None
+-        current.remove((a, b))
+-        current.remove((c, d))
+-        current.add((a, d))
+-        current.add((c, b))
+-        return tuple(sorted(current))
+-
+-    def proposals_for(parent, target, pop):
+-        """Generate a mixed local portfolio around one archive member."""
+-        arcs = list(parent)
++        return tuple(sorted(
++            (current - {(a, b), (c, d)}) | {(a, d), (c, b)}
++        ))
++
++    def generate(parent, target):
++        """Enumerate switches, sample rotations, and construct real relinking steps."""
+         current = set(parent)
+-        detail = detail_for(parent) or {}
++        detail = details.get(parent, {})
+         prices = detail.get("prices", {})
+-        hot = {
+-            tuple(map(int, link))
+-            for link, price in prices.items()
+-            if float(price) > 0.0
+-        }
+-
++        hot = {tuple(edge) for edge, value in prices.items() if float(value) > 1e-10}
+         if not hot:
+             loads = detail.get("loads", {})
+-            ranked_loads = sorted(
+-                ((float(load), tuple(map(int, link)))
+-                 for link, load in loads.items()),
+-                reverse=True,
+-            )
+-            hot = {link for _, link in ranked_loads[:max(3, n // 2)]}
+-
+-        # Each proposal records its operator, bottleneck exposure, and origins.
++            hot = set(sorted(loads, key=loads.get, reverse=True)[:max(2, n // 4)])
++
++        # Each value is [operator bitmask, touches bottleneck].
+         proposals = {}
+ 
+-        price_map = {
+-            tuple(map(int, link)): float(price)
+-            for link, price in prices.items()
+-        }
+-        positive_prices = [max(0.0, price) for price in price_map.values()]
+-        mean_price = (
+-            sum(positive_prices) / len(positive_prices)
+-            if positive_prices else 0.0
+-        )
+-        loads = detail.get("loads", {})
+-        load_values = [float(value) for value in loads.values()]
+-        load_scale = max(
+-            sum(load_values) / len(load_values) if load_values else 0.0,
+-            1.0,
+-        )
+-
+-        def add(net, operator):
+-            if net is None or net == parent or not tools.is_valid(net):
++        def add(child, operator, focused=False):
++            if child is None or child == parent or child in seen:
+                 return
+-            net_edges = set(net)
+-            changed_hot = len((net_edges ^ current) & hot)
+-            removed = current - net_edges
+-            added = net_edges - current
+-            dual_gain = sum(max(0.0, price_map.get(edge, 0.0)) for edge in removed)
+-            direct_pressure = sum(
+-                max(0.0, float(demand[i, j])) for i, j in added
+-            )
+-            dual_gain -= mean_price * direct_pressure / load_scale
+-            entry = proposals.get(net)
+-            if entry is None:
+-                proposals[net] = [set(), changed_hot, set(), dual_gain]
+-                entry = proposals[net]
+-            entry[0].add(operator)
+-            entry[1] = max(entry[1], changed_hot)
+-            entry[2].add(parent)
+-            entry[3] = max(entry[3], dual_gain)
+-
+-        # Operator 0: all switches involving a priced or highly loaded link.
+-        for p in range(len(arcs)):
+-            for q in range(p + 1, len(arcs)):
+-                if hot and arcs[p] not in hot and arcs[q] not in hot:
++            old = proposals.get(child)
++            if old is None:
++                proposals[child] = [1 << operator, int(focused)]
++            else:
++                old[0] |= 1 << operator
++                old[1] = max(old[1], int(focused))
++
++        for p in range(m):
++            for q in range(p + 1, m):
++                add(
++                    switch(parent, p, q, current), 0,
++                    parent[p] in hot or parent[q] in hot,
++                )
++
++        stalled = min(stalls.get(parent, 0), 5)
++        hot_ids = [i for i, edge in enumerate(parent) if edge in hot]
++        for trial in range((5 + stalled) * n):
++            if hot_ids and trial % 3 == 0:
++                p = hot_ids[int(rng.integers(len(hot_ids)))]
++                q = int(rng.integers(m))
++                r = int(rng.integers(m))
++                if len({p, q, r}) < 3:
+                     continue
+-                add(exchange(parent, p, q), 0)
+-
+-        # Keep non-bottleneck switches in the portfolio to escape dual degeneracy.
+-        random_switches = max(30, 3 * n)
+-        for _ in range(random_switches):
+-            p = int(rng.integers(len(arcs)))
+-            q = int(rng.integers(len(arcs) - 1))
+-            if q >= p:
+-                q += 1
+-            add(exchange(parent, p, q), 0)
+-
+-        # Operator 1: three-link rotations cross barriers that a single switch misses.
+-        rotation_trials = max(20, 2 * n)
+-        for _ in range(rotation_trials):
+-            ids = rng.choice(len(arcs), size=3, replace=False)
+-            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+-            old = {(a, b), (c, d), (e, f)}
+-            remaining = current - old
+-            for new in (
+-                {(a, d), (c, f), (e, b)},
+-                {(a, f), (c, b), (e, d)},
+-            ):
+-                if len(new) != 3 or any(x == y for x, y in new):
++                ids = (p, q, r)
++            else:
++                ids = rng.choice(m, size=3, replace=False)
++            old = [parent[int(i)] for i in ids]
++            tails = [a for a, b in old]
++            heads = [b for a, b in old]
++            if len(set(tails)) < 3 or len(set(heads)) < 3:
++                continue
++            rest = current.difference(old)
++            for shift in (1, 2):
++                new = {(tails[k], heads[(k + shift) % 3]) for k in range(3)}
++                if any(a == b for a, b in new) or new & rest:
+                     continue
+-                if new & remaining:
++                add(tuple(sorted(rest | new)), 1, bool(set(old) & hot))
++
++        # Direct relinking considers every outgoing/incoming partner, not just
++        # the first arc encountered at either endpoint.
++        target_set = set(target) if target is not None else set()
++        if target is not None:
++            for a, d in sorted(target_set - current):
++                ps = [i for i, edge in enumerate(parent) if edge[0] == a]
++                qs = [i for i, edge in enumerate(parent) if edge[1] == d]
++                for p in ps:
++                    for q in qs:
++                        add(
++                            switch(parent, p, q, current), 3,
++                            parent[p] in hot or parent[q] in hot,
++                        )
++
++        for trial in range(n + stalled * max(1, n // 3)):
++            state = parent
++            guided = target is not None and trial % 2 == 0
++            steps = 2 + int(rng.integers(max(2, n // 3))) + stalled // 2
++            for _ in range(steps):
++                state_set = set(state)
++                options = []
++                for _ in range(5 if guided else 2):
++                    p, q = rng.choice(m, size=2, replace=False)
++                    child = switch(state, int(p), int(q), state_set)
++                    if child is not None:
++                        options.append(child)
++                if not options:
+                     continue
+-                add(tuple(sorted(remaining | new)), 1)
+-
+-        # Operator 2: short random walks provide larger, degree-preserving kicks.
+-        for _ in range(max(10, n)):
+-            kicked = parent
+-            for _ in range(2 + int(rng.integers(4))):
+-                if len(kicked) < 2:
+-                    break
+-                p, q = rng.choice(len(kicked), size=2, replace=False)
+-                result = exchange(kicked, int(p), int(q))
+-                if result is not None:
+-                    kicked = result
+-            add(kicked, 2)
+-
+-        # Operator 3: relink toward another good topology using switches that
+-        # explicitly introduce links from the target.
+-        if target is not None:
+-            target_edges = list(set(target) - current)
+-            rng.shuffle(target_edges)
+-            for a, d in target_edges[:max(2 * n, 12)]:
+-                source_edge = next((edge for edge in arcs if edge[0] == a), None)
+-                dest_edge = next((edge for edge in arcs if edge[1] == d), None)
+-                if source_edge is None or dest_edge is None:
+-                    continue
+-                p = arcs.index(source_edge)
+-                q = arcs.index(dest_edge)
+-                add(exchange(parent, p, q), 3)
+-
+-        # Add a few relinking switches even when the target's missing edges did
+-        # not line up as a direct 2-switch.
+-        if target is not None and len(target) >= 2:
+-            for _ in range(max(8, n)):
+-                p, q = rng.choice(len(arcs), size=2, replace=False)
+-                add(exchange(parent, int(p), int(q)), 3)
++                if guided:
++                    state = max(options, key=lambda x: len(target_set.intersection(x)))
++                else:
++                    state = options[int(rng.integers(len(options)))]
++            add(state, 3 if guided else 2)
+ 
+         return proposals
+ 
+-    def select_batch(proposals, pop, batch_size):
+-        """Stratify LP trials across quality, bottleneck focus, and exploration."""
+-        fresh = [net for net in proposals if net not in seen]
+-        if not fresh:
+-            return []
+-
+-        ranked_energy = sorted(fresh, key=energy)
+-        selected = []
+-        selected_set = set()
+-
+-        def take(order, count, min_separation=0):
+-            added = 0
+-            for net in order:
+-                if net in selected_set:
+-                    continue
+-                if min_separation and any(
+-                    distance(net, old) < min_separation for old in selected
+-                ):
+-                    continue
+-                selected.append(net)
+-                selected_set.add(net)
+-                added += 1
+-                if added >= count or len(selected) >= batch_size:
+-                    break
+-
+-        # Keep the routing screen bounded to energy-promising proposals, then
+-        # reserve a small part of the batch for its independent ranking.
+-        route_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+-        ranked_route = sorted(route_pool, key=routing_estimate)
+-
+-        # Exploit the energy model first, but avoid a batch of near-identical nets.
+-        take(ranked_energy, max(1, batch_size * 2 // 5), min_separation=2)
+-        take(ranked_route, max(1, batch_size // 4), min_separation=2)
+-
+-        # Reserve trials for each structurally different move operator.
+-        by_operator = {op: [] for op in range(4)}
+-        for net in fresh:
+-            for op in proposals[net][0]:
+-                by_operator[op].append(net)
+-        for op in (1, 2, 3, 0):
+-            order = sorted(by_operator[op], key=energy)
+-            take(order, 1)
+-
+-        # Use dual/load exposure as a separate ranking signal.
+-        focused = sorted(
+-            fresh,
+-            key=lambda net: (
+-                -proposals[net][3],
+-                -proposals[net][1],
+-                energy(net),
+-            ),
+-        )
+-        take(focused, max(1, batch_size // 5))
+-
+-        # Diversify among good proposals, preferring distance from the archive.
+-        quality_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+-        while len(selected) < batch_size and quality_pool:
+-            remaining = [net for net in quality_pool if net not in selected_set]
+-            if not remaining:
+-                break
+-            def novelty(net):
+-                reference = list(pop) + selected
+-                return min((distance(net, old) for old in reference), default=arc_count)
+-            candidate = max(
+-                remaining,
+-                key=lambda net: (novelty(net), -energy(net)),
+-            )
+-            selected.append(candidate)
+-            selected_set.add(candidate)
+-
+-        if len(selected) < batch_size:
+-            tail = [net for net in fresh if net not in selected_set]
+-            rng.shuffle(tail)
+-            selected.extend(tail[:batch_size - len(selected)])
+-
+-        return selected[:batch_size]
+-
+-    idle_rounds = 0
+-    while tools.lp_calls_left > 0:
++    idle = 0
++    while tools.lp_calls_left > 0 and time.perf_counter() - started < 140:
+         pop = archive()
+         if not pop:
+             break
+ 
+-        parent1 = choose_parent(pop)
+-        alternatives = [net for net in pop if net != parent1]
+-        parent2 = choose_parent(alternatives) if alternatives else None
+-
+-        proposals = proposals_for(parent1, parent2, pop)
+-        if parent2 is not None:
+-            proposals.update(proposals_for(parent2, parent1, pop))
+-
+-        batch_size = max(6, min(12, n // 2))
+-        batch = select_batch(proposals, pop, batch_size)
+-
+-        if not batch:
+-            idle_rounds += 1
+-            if idle_rounds >= max(20, 2 * n):
++        if continuation is not None and rng.random() < 0.62:
++            parent = continuation
++        else:
++            u = rng.random()
++            if u < 0.45:
++                choices = pop[:min(4, len(pop))]
++            elif u < 0.80:
++                choices = pop[:min(n, len(pop))]
++            else:
++                choices = pop
++            weights = np.asarray([
++                1.0 / math.sqrt(1.0 + visits.get(net, 0))
++                for net in choices
++            ])
++            weights /= weights.sum()
++            parent = choices[int(rng.choice(len(choices), p=weights))]
++        continuation = None
++        visits[parent] = visits.get(parent, 0) + 1
++
++        alternatives = [net for net in pop if net != parent]
++        if alternatives:
++            if stalls.get(parent, 0) >= 2 and rng.random() < 0.5:
++                pm = masks[parent]
++                sample = alternatives
++                target = max(sample, key=lambda x: separation(pm, masks[x]))
++            else:
++                target = alternatives[int(rng.integers(len(alternatives)))]
++        else:
++            target = None
++
++        proposals = generate(parent, target)
++        if not proposals:
++            stalls[parent] = stalls.get(parent, 0) + 1
++            idle += 1
++            if idle >= 3 * n:
+                 break
+             continue
+-        idle_rounds = 0
+-
+-        parent_scores = {parent1: seen.get(parent1, float("inf"))}
+-        if parent2 is not None:
+-            parent_scores[parent2] = seen.get(parent2, float("inf"))
+-
+-        for net in batch:
++        idle = 0
++
++        ordered = sorted(proposals, key=energy)
++        shortlist = ordered[:min(3 * n, len(ordered))]
++        included = set(shortlist)
++
++        # Preserve access to rotations, kicks, and relinking before screening.
++        for operator in (1, 2, 3):
++            pool = [
++                net for net in ordered
++                if net not in included and proposals[net][0] & (1 << operator)
++            ]
++            for net in pool[:max(2, n // 3)]:
++                shortlist.append(net)
++                included.add(net)
++
++        rest = [net for net in ordered if net not in included]
++        number = min(max(0, 7 * n - len(shortlist)), len(rest))
++        if number:
++            weights = np.asarray([1.0 + proposals[net][1] for net in rest])
++            weights /= weights.sum()
++            ids = rng.choice(len(rest), size=number, replace=False, p=weights)
++            shortlist.extend(rest[int(i)] for i in ids)
++
++        X = routing_features(shortlist)
++        predicted, uncertainty = predict(X)
++        route_proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
++        eo = np.argsort(X[:, 0], kind="stable")
++        po = np.argsort(route_proxy, kind="stable")
++        if predicted is None:
++            er = np.empty(len(shortlist))
++            pr = np.empty(len(shortlist))
++            er[eo] = np.arange(len(shortlist))
++            pr[po] = np.arange(len(shortlist))
++            lo = np.argsort(er + pr, kind="stable")
++        else:
++            lo = np.argsort(predicted, kind="stable")
++
++        batch_size = max(10, n // 2 + 2)
++        batch_ids = []
++        batch_members = set()
++        short_masks = [mask(net) for net in shortlist]
++
++        def take(order, count, diverse=True):
++            if count <= 0 or len(batch_ids) >= batch_size:
++                return
++            added = 0
++            for raw in order:
++                i = int(raw)
++                if i in batch_members:
++                    continue
++                if diverse and any(
++                    separation(short_masks[i], short_masks[j]) < 3
++                    for j in batch_ids
++                ):
++                    continue
++                batch_ids.append(i)
++                batch_members.add(i)
++                added += 1
++                if added >= count or len(batch_ids) >= batch_size:
++                    break
++
++        # Fixed reservations keep later exploration operators from being
++        # silently truncated by earlier quality selections.
++        take(lo, max(2, batch_size // 3))
++        take(eo, max(1, batch_size // 5))
++        take(po, 1)
++
++        for operator in (1, 2):
++            op_order = [
++                int(i) for i in lo
++                if proposals[shortlist[int(i)]][0] & (1 << operator)
++            ]
++            take(op_order, 1)
++
++        references = [masks[net] for net in pop]
++        references.extend(masks[net] for net in recent[-4 * n:])
++        promising = list(dict.fromkeys(
++            [int(i) for i in lo[:max(n, len(shortlist) // 2)]]
++            + [int(i) for i in po[:n]]
++        ))
++        novelty = sorted(
++            promising,
++            key=lambda i: min(
++                separation(short_masks[i], ref) for ref in references
++            ),
++            reverse=True,
++        )
++        take(novelty, 1)
++        take(rng.permutation(len(shortlist)), 1)
++
++        if predicted is not None and len(batch_ids) < batch_size:
++            optimistic = predicted - uncertainty
++            take(np.argsort(optimistic, kind="stable"), 1)
++
++        if len(batch_ids) < batch_size:
++            take(lo, batch_size - len(batch_ids), diverse=False)
++
++        local_best = None
++        local_score = seen[parent]
++        for i in batch_ids:
+             if tools.lp_calls_left <= 0:
+                 break
+-            try:
+-                evaluate(net)
+-            except Exception as exc:
+-                if type(exc).__name__ == "BudgetExhausted":
+-                    break
+-
+-        for parent, score in parent_scores.items():
+-            improved = any(
+-                parent in proposals.get(net, [None, None, set()])[2]
+-                and seen.get(net, float("inf")) < score
+-                for net in batch
+-            )
+-            stalls[parent] = 0 if improved else stalls.get(parent, 0) + 1
++            net = shortlist[i]
++            score = evaluate(net, X[i])
++            if score < local_score:
++                local_best, local_score = net, score
++
++        if local_best is not None:
++            stalls[parent] = 0
++            continuation = local_best
++        else:
++            stalls[parent] = stalls.get(parent, 0) + 1
++
++        # Unscored move energies need not accumulate throughout long runs.
++        if len(energies) > max(20000, 80 * n * n):
++            energies = {net: energies[net] for net in seen if net in energies}
+ 
+     return list(best_net) if best_net is not None else []
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+     """Fixed entry point called by the evaluator: one run on one candidate pool."""
+     import importlib.util
+     import signal
+     from pathlib import Path
+ 
+     import oracle
+ 
+     pool = json.load(open(pool_path))
+     import qoblib_tools as qt
+ 
+     if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+         spec = importlib.util.spec_from_file_location(
+             f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+         ham = importlib.util.module_from_spec(spec)
+         spec.loader.exec_module(ham)
+         surrogate_terms = ham.surrogate_terms
+     else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+         from hamiltonian import surrogate_terms
+ 
+     n = int(pool["instance"][-2:])
+     demand = qt.load_network_demand(n)
+     linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+     tools = oracle.Tools(demand, lp_budget, (
+         {tuple(map(int, a)): float(w) for a, w in linear.items()},
+         {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+     ))
+     candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+     if control:  # same number of random valid networks instead of QAOA output
+         crng = np.random.default_rng(10_000 + seed)
+         candidates = [qt.random_topology(n, crng) for _ in candidates]
+     def _timeout(signum, frame):
+         raise oracle.RunTimeout()
+ 
+     start = time.perf_counter()
+     returned, error, timed_out = None, None, False
+     signal.signal(signal.SIGALRM, _timeout)
+     signal.alarm(int(time_limit))
+     try:
+         returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+     except oracle.BudgetExhausted:
+         pass
+     except oracle.RunTimeout:
+         timed_out = True
+     except Exception as exc:  # noqa: BLE001
+         error = f"{type(exc).__name__}: {exc}"
+     finally:
+         signal.alarm(0)
+     best_score, best_arcs = tools.certified_best()
+     if returned is not None:
+         try:
+             ret = [tuple(map(int, a)) for a in returned]
+             if qt.is_valid_topology(n, ret):
+                 s = qt.route_min_congestion(demand, ret).objective
+                 if s < best_score:
+                     best_score, best_arcs = s, tuple(sorted(ret))
+         except Exception:  # noqa: BLE001
+             pass
+     return {
+         "pool": pool_path, "control": control, "n": n, "error": error,
+         "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+         "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+     }

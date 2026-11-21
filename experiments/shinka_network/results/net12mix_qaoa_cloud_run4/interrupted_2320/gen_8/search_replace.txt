@@ -1,0 +1,44 @@
+<NAME>
+discounted_path_terms
+</NAME>
+
+<DESCRIPTION>
+Add weak, discounted rewards for two-hop routes alongside the direct-demand rewards. A pair of links on a useful two-hop route is then coupled in the interaction graph, helping the partitioned solver consider route structure. The discount is deliberately small: the feedback says a strong, uniform two-hop reward performed worse than the direct-demand baseline, and the routing LP—not the surrogate—determines whether a route is actually useful. The degree penalty remains external, so it is not duplicated here.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(np.max(demand)) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A small route-completion reward couples the two links of a promising
+    # two-hop route. Discount it to avoid overwhelming the direct-link signal.
+    quadratic = {}
+    path_discount = 0.08
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic > 0.0:
+                    quadratic[((i, j), (j, k))] = -path_discount * traffic / scale
+
+    penalty_weight = 1.5
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

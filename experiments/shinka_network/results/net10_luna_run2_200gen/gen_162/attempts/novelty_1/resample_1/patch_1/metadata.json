@@ -1,0 +1,14 @@
+{
+  "generation": 162,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_route_support",
+  "patch_description": "The current two-hop reward is assigned independently across every possible intermediate, so its aggregate influence for an OD pair can overwhelm the direct-link signal. Collect the candidate two-hop weights per OD pair, then proportionally scale them when their total magnitude exceeds 0.75 of that pair\u2019s direct-link reward. This preserves the relative preference among intermediates while restraining indirect-route rewards that might otherwise distort topology choices.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:57.929213",
+  "llm_cost": 0.0011984,
+  "llm_model": "gpt-6-luna"
+}

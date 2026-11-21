@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_diversification",
+  "patch_description": "This uses a sparse, demand-specific routing proxy rather than rewarding every possible two-hop path. For each origin-destination pair, it selects only the two most promising relay nodes, scoring them by relay traffic balance and the demand that the relay can plausibly serve. The resulting negative couplings reward useful direct-link combinations while limiting the interaction graph to at most about \\(2n^2\\) terms. A smaller linear endpoint-exposure reward encourages links to nodes with substantial traffic, helping account for transit demand without overwhelming direct demand.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:42:49.877206",
+  "llm_cost": 0.0010856,
+  "llm_model": "gpt-6-luna"
+}

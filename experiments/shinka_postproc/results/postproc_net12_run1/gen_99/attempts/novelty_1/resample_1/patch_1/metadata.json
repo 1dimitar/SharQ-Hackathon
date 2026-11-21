@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "stagnation_archive_kicks",
+  "patch_description": "When incumbent progress stalls, this adds a small, bounded search from a rarely selected archive parent that is structurally distant from the incumbent. It combines longer random kicks with a few immediate switches focused on positive-price links, then sends those proposals through the existing validity, energy, and diversity screening. Tracking parent visits helps the search explore archive regions that ordinary parent selection may neglect, without changing the LP budget or making the extra generation unbounded.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:20:43.738539",
+  "llm_cost": 0.0027688,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "uncertainty-guided-network-search",
+  "patch_description": "The current search evaluates fixed-size batches ranked mainly by Hamiltonian energy and local link pressure. This version keeps those useful signals but gives each batch separate capacity for model-guided candidates, high-uncertainty candidates, and diverse exploration. A ridge model learns from LP-scored networks using compact randomized topology and demand features; its prediction uncertainty is estimated from the regularized feature covariance and residual error.\n\nThe search starts from 26 diverse repaired samples, uses size-dependent batches of 7\u20139 LP trials, and maintains a 36-network archive. It mixes focused 2-switches, random switches, rotations, multi-switch kicks, and short path-relinking sequences. These choices aim to make LP calls more informative while reducing dependence on any one Hamiltonian\u2019s energy ranking or one local neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:16:54.730007",
+  "llm_cost": 0.0082533,
+  "llm_model": "gpt-6-luna"
+}

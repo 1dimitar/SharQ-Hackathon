@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_aware_two_hop",
+  "patch_description": "Add a restrained reward for useful two-hop routes, coupling the links that form each path. The reward is proportional to the traffic that path can serve, but is reduced when its intermediate node has high total demand, discouraging reliance on already busy relays. This is more selective than an unweighted two-hop reward, which can overvalue paths indiscriminately. The number of added terms is at most n(n\u22121)(n\u22122), within the limit. Increase the degree penalty to make invalid topologies less attractive during sampling.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:01.741209",
+  "llm_cost": 0.0016594,
+  "llm_model": "gpt-6-luna"
+}

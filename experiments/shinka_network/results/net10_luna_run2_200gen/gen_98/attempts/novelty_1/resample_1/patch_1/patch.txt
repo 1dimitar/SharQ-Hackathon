@@ -1,0 +1,163 @@
+--- a/original.py
++++ b/original.py
+@@ -1,88 +1,123 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build direct-link and pressure-discounted two-hop cost terms."""
+-    matrix = np.asarray(demand, dtype=float)
+-    n = len(matrix)
++    """Build sparse path-reward and incident-link congestion QUBO terms."""
++    traffic = np.asarray(demand, dtype=float)
++    n = len(traffic)
+ 
+-    # Work with nonnegative, off-diagonal traffic. This also makes the
+-    # all-zero-demand case well-defined.
+-    traffic = np.maximum(matrix, 0.0).copy()
++    # Ignore diagonal entries and negative values; make zero-demand inputs safe.
++    traffic = np.maximum(traffic, 0.0).copy()
+     np.fill_diagonal(traffic, 0.0)
+     scale = float(np.max(traffic)) if traffic.size else 0.0
+     if scale <= 0.0:
+         scale = 1.0
++    d = traffic / scale
+ 
+-    # Favor direct service of high-demand OD pairs.
+-    linear = {
+-        (i, j): -float(traffic[i, j]) / scale
+-        for i in range(n)
+-        for j in range(n)
+-        if i != j
+-    }
++    row = np.sum(d, axis=1)
++    col = np.sum(d, axis=0)
++    incident = row + col
++    mean_incident = float(np.mean(incident)) if n else 0.0
++    if mean_incident <= 1e-12:
++        mean_incident = 1.0
+ 
+-    # Discount transit nodes with high total incident demand.
+-    incident = np.sum(traffic, axis=0) + np.sum(traffic, axis=1)
+-    mean_incident = float(np.mean(incident)) if incident.size else 0.0
+-    if mean_incident <= 0.0:
+-        mean_incident = 1.0
+-    node_pressure = np.maximum(0.75, incident / mean_incident)
++    # Direct links remain valuable, but temper the largest demands so that
++    # choosing a link is not driven entirely by a single OD pair.
++    linear = {}
++    for i in range(n):
++        for j in range(n):
++            if i != j:
++                x = float(d[i, j])
++                linear[(i, j)] = -(0.82 * x + 0.18 * np.sqrt(x))
+ 
+-    # Reward a selected two-link path in proportion to the OD traffic it
+-    # could serve, while discounting busy intermediate nodes and paths whose
+-    # component links already have substantial direct demand.
+     quadratic = {}
+-    path_strength = 0.62
++
++    # Build a small path portfolio per OD pair. Transit candidates are ranked
++    # by their ability to support the OD flow and by available incident capacity.
++    # At most two intermediate nodes are selected for each OD pair.
+     for i in range(n):
+         for k in range(n):
+             if i == k:
+                 continue
+-            through_demand = float(traffic[i, k])
+-            if through_demand <= 0.0:
++            flow = float(d[i, k])
++            if flow <= 0.0:
+                 continue
+ 
+-            normalized_demand = through_demand / scale
++            candidates = []
+             for j in range(n):
+                 if j == i or j == k:
+                     continue
++                support = float(d[i, j] + d[j, k])
++                pressure = max(0.55, float(incident[j]) / mean_incident)
++                # Favor transit nodes with demand-supported connections, while
++                # avoiding nodes already under substantial incident pressure.
++                merit = (0.20 + support) / pressure
++                candidates.append((merit, j))
+ 
+-                edge_pressure = (
+-                    float(traffic[i, j]) + float(traffic[j, k])
+-                ) / scale
+-                weight = (
+-                    -path_strength * normalized_demand
+-                    / (float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure))
+-                )
++            candidates.sort(reverse=True)
++            for rank, (_, j) in enumerate(candidates[:2]):
++                # Split the path reward across alternatives; its strength
++                # diminishes for the less-supported candidate.
++                support = float(d[i, j] + d[j, k])
++                pressure = max(0.55, float(incident[j]) / mean_incident)
++                strength = 0.30 / (1.0 + 0.35 * rank)
++                weight = -strength * (0.65 * flow + 0.35 * np.sqrt(flow))
++                weight /= pressure * (1.0 + 0.25 * support)
+ 
+-                # The product is symmetric in its two binary factors; store
+-                # the key in canonical order for a stable representation.
+                 e1, e2 = (i, j), (j, k)
+                 key = (e1, e2) if e1 < e2 else (e2, e1)
+-                quadratic[key] = weight
++                quadratic[key] = quadratic.get(key, 0.0) + weight
+ 
+-    # Degree penalties are supplied by the evaluator.
++    # Penalize concentration of high-demand links at either endpoint. This is
++    # a distinct load-balancing signal: it does not assume a particular route.
++    # There are O(n^3) such terms, and each coefficient is bounded.
++    congestion_strength = 0.16
++    for center in range(n):
++        for a in range(n):
++            if a == center:
++                continue
++            for b in range(a + 1, n):
++                if b == center:
++                    continue
++
++                # Two links leaving the same node.
++                u, v = float(d[center, a]), float(d[center, b])
++                if u > 0.0 and v > 0.0:
++                    key = ((center, a), (center, b))
++                    quadratic[key] = quadratic.get(key, 0.0) + (
++                        congestion_strength * np.sqrt(u * v)
++                    )
++
++                # Two links entering the same node.
++                u, v = float(d[a, center]), float(d[b, center])
++                if u > 0.0 and v > 0.0:
++                    key = ((a, center), (b, center))
++                    quadratic[key] = quadratic.get(key, 0.0) + (
++                        congestion_strength * np.sqrt(u * v)
++                    )
++
++    # Degree penalties are added by the evaluator.
+     penalty_weight = 1.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

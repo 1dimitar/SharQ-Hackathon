@@ -1,0 +1,14 @@
+{
+  "generation": 77,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "novelty_aware_parent_selection",
+  "patch_description": "Keep a strong preference for the best archive members, while using the remaining selection probability to explore archive regions that are both structurally underexplored and represented by parents selected less often. The existing visit and improvement statistics still influence selection, so novelty alone cannot dominate productive search regions. This targets a weakness in the current selector: it discounts stalled parents, but otherwise gives non-elite archive members similar chances regardless of whether their regions have been explored.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:40:26.664569",
+  "llm_cost": 0.0019762,
+  "llm_model": "gpt-6-luna"
+}

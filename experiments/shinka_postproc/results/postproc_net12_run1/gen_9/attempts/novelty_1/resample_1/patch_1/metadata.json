@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "directional_swap_order",
+  "patch_description": "Rank exchanges by the priced load removed from the network, then discount moves that add links with high direct demand. This gives bottleneck-focused descent a directional estimate of both sides of a swap, while retaining the existing randomized tie order. The estimate is only used to order LP evaluations; the LP still decides whether a move improves the network.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:35:38.265332",
+  "llm_cost": 0.0010753,
+  "llm_model": "gpt-6-luna"
+}

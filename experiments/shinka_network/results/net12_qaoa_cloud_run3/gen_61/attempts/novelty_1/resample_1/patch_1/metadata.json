@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_budgeted_surrogate",
+  "patch_description": "Separates demand normalization, node-pressure estimation, and relay selection into small helpers. It keeps the QUBO sparse by selecting a limited number of plausible relays per OD pair, while using the suggested 0.65/0.35 direct-link blend to retain more reward for moderate demands. Relay rewards are discounted by both candidate quality and transit pressure, and accumulated by link pair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:11.569241",
+  "llm_cost": 0.0010717,
+  "llm_model": "gpt-6-luna"
+}

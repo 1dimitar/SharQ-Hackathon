@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "antithetic_routing_portfolio",
+  "patch_description": "Add a tie-robust routing signal without replacing the existing equal-split proxy. Reuse each shortlisted network\u2019s shortest-path distances to route three scenarios: equal splitting and two complementary, demand-oriented 75/25 splits at shortest-path ties. These scenarios are deterministic and do not depend on node numbering.\n\nAppend the upper-quartile peak load and worst scenario\u2019s top-link average to the online predictor. Reserve one batch position for this robust ranking, preserving the existing energy, learned-quality, original-routing, novelty, and random selections. All three routings share a batched propagation pass and require no additional LP calls.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:43:18.716591",
+  "llm_cost": 0.10751400000000001,
+  "llm_model": "gpt-6.1-sol"
+}

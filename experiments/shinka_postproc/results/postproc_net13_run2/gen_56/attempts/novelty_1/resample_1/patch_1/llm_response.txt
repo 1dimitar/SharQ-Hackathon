@@ -1,0 +1,81 @@
+<NAME>
+archive_edge_recombination
+</NAME>
+
+<DESCRIPTION>
+Add a bounded archive-guided proposal operator. It examines degree-preserving two-switches and favors switches whose new links occur in strong, structurally diverse archived networks—especially when both links co-occur in the same archive member. Reserve at most one slot in each LP batch for the best fresh guided proposal, so these proposals receive a fair test without displacing the existing search or overwhelming it with recombination.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+    parent_visits = {}
+    parent_successes = {}
+=======
+    parent_stalls = {}
+    parent_visits = {}
+    parent_successes = {}
+    archive_guided = set()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            if cand != net:
+                moves.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+            if cand != net:
+                moves.add(cand)
+
+        # Add a small number of switches supported by strong archive members.
+        guide_sets = [set(x) for x in archive()[:12]]
+        edge_support = {}
+        for guide in guide_sets:
+            for edge in guide:
+                edge_support[edge] = edge_support.get(edge, 0) + 1
+
+        guided = []
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                cand = switch(net, p, q)
+                if cand is None:
+                    continue
+                new_edges = set(cand) - current
+                if len(new_edges) != 2:
+                    continue
+                e1, e2 = tuple(new_edges)
+                s1, s2 = edge_support.get(e1, 0), edge_support.get(e2, 0)
+                if not s1 or not s2:
+                    continue
+                together = sum(e1 in guide and e2 in guide for guide in guide_sets)
+                support = s1 + s2 + 3 * together
+                guided.append((-support, cand))
+
+        for _, cand in sorted(guided)[:8]:
+            moves.add(cand)
+            archive_guided.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        target = min(6, batch_size)
+        # Keep the shortlist surrogate-promising, then spread LP calls across
+        # distinct topologies instead of selecting near-identical local moves.
+        shortlist = ranked[:min(len(ranked), max(18, 3 * batch_size))]
+        if shortlist:
+            selected.append(shortlist[0][1])
+=======
+        selected = []
+        target = min(6, batch_size)
+        # Keep the shortlist surrogate-promising, then spread LP calls across
+        # distinct topologies instead of selecting near-identical local moves.
+        shortlist = ranked[:min(len(ranked), max(18, 3 * batch_size))]
+        guide_options = [item for item in ranked if item[1] in archive_guided]
+        if guide_options:
+            selected.append(guide_options[0][1])
+        if shortlist and shortlist[0][1] not in selected:
+            selected.append(shortlist[0][1])
+>>>>>>> REPLACE
+</DIFF>

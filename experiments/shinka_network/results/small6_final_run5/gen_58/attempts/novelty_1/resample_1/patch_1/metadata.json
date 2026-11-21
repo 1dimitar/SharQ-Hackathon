@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "supported_sparse_routes",
+  "patch_description": "This version keeps the direct-link reward compact and uses at most two candidate two-hop routes per OD pair. Each route\u2019s reward is explicitly scaled by normalized demand on both component links, while row/column shares and transit-node pressure help rank alternatives. A small positive direct-versus-route interaction discourages redundant choices. The construction generates at most four quadratic terms per OD pair, remaining within the \\(4n^3\\) limit, and uses no randomness.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:37:13.660451",
+  "llm_cost": 0.0034901,
+  "llm_model": "gpt-6-luna"
+}

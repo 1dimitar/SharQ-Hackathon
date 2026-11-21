@@ -1,0 +1,68 @@
+<NAME>
+bottleneck_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Rank each OD pair’s candidate relays by the strength of its weaker leg, with a smaller contribution from the stronger leg. This favors paths where both links can plausibly serve traffic rather than paths with one attractive and one weak link. Retain the existing relay-pressure and edge-overlap discounts, but keep only the best four relay combinations per OD pair. This reduces interaction-graph size and focuses QUBO communities on the most promising two-hop routes, while preserving the existing path-strength and demand-support scales.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            support = 0.72 * d + 0.28 * np.sqrt(d)
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                relay_discount = 1.0 / (0.62 + 0.76 * float(pressure[j]))
+                edge_overlap_discount = 1.0 / (
+                    1.0 + 0.20 * (float(q[i, j]) + float(q[j, k]))
+                )
+                weight = (
+                    -path_strength
+                    * support
+                    * relay_discount
+                    * edge_overlap_discount
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            support = 0.72 * d + 0.28 * np.sqrt(d)
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first_leg = float(q[i, j])
+                second_leg = float(q[j, k])
+                # Prefer relays with two useful legs, not just one strong leg.
+                affinity = min(first_leg, second_leg) + 0.25 * max(
+                    first_leg, second_leg
+                )
+                relay_discount = 1.0 / (0.62 + 0.76 * float(pressure[j]))
+                edge_overlap_discount = 1.0 / (
+                    1.0 + 0.20 * (first_leg + second_leg)
+                )
+                quality = affinity * relay_discount * edge_overlap_discount
+                candidates.append((quality, j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for quality, j in candidates[:min(4, len(candidates))]:
+                relay_discount = 1.0 / (0.62 + 0.76 * float(pressure[j]))
+                edge_overlap_discount = 1.0 / (
+                    1.0 + 0.20 * (float(q[i, j]) + float(q[j, k]))
+                )
+                weight = (
+                    -path_strength
+                    * support
+                    * relay_discount
+                    * edge_overlap_discount
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+
+</DIFF>

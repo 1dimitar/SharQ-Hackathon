@@ -1,0 +1,14 @@
+{
+  "generation": 152,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "branch_diversity_tune",
+  "patch_description": "Slightly strengthen the existing penalty for selecting two links with overlapping OD profiles, changing its multiplier from 0.24 to 0.27. This is a controlled test of complementary neighbor coverage: when a node has two links serving similar traffic, those links may provide less useful routing flexibility and concentrate load. The change is small and leaves route selection, coupling sparsity, and other terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:08:53.200099",
+  "llm_cost": 0.0026246000000000004,
+  "llm_model": "gpt-6-luna"
+}

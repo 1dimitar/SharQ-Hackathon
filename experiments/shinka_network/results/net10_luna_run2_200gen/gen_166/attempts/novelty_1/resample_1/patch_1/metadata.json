@@ -1,0 +1,14 @@
+{
+  "generation": 166,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_floor_065",
+  "patch_description": "Lowers the relay-pressure floor from 0.75 to 0.65 while leaving the existing direct-link and two-hop calculations unchanged. This tests whether supporting paths through lower-pressure relay nodes improves the sampled topologies, as suggested. Demand values are also sanitized so non-finite inputs cannot produce invalid QUBO weights.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:21.947248",
+  "llm_cost": 0.0014019000000000002,
+  "llm_model": "gpt-6-luna"
+}

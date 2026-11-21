@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ranked_relay_budget",
+  "patch_description": "Restrict each OD pair\u2019s two-hop reward to the three most promising relays for n=12 (using the established `min(n-2, max(2, n//4))` budget). Rank relays by the magnitude of the existing reward, so the selected terms preserve the current scoring rule while dropping weaker interactions. This reduces QUBO density from 880 terms to roughly 264 for n=12, which should make the interaction graph more manageable for partitioned QAOA. The budget also remains bounded for smaller n.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:53:02.090274",
+  "llm_cost": 0.0015598,
+  "llm_model": "gpt-6-luna"
+}

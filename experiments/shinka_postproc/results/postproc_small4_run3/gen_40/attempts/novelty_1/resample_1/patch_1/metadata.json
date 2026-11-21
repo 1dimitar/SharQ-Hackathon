@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "routing_aware_screen",
+  "patch_description": "Replace the removal-pressure ranking with a cheap routing-based screen. The current pressure sum favors larger perturbations simply because they remove more links, without estimating whether their replacements actually help traffic.\n\nFirst rank moves by the demand-weighted shortest-path lower bound. Then estimate equal-cost shortest-path link loads for a small shortlist combining good energy, good hop count, and random moves. Reserve two LP slots for low estimated congestion, while retaining energy-led exploitation and random exploration. This introduces an independent, demand-aware signal without fitting an online model or letting bottleneck guidance dominate. All shortlist sizes scale with n; the routing estimate is only a heuristic, and certification remains exclusively through tools.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:38:52.793692",
+  "llm_cost": 0.066434,
+  "llm_model": "gpt-6.1-sol"
+}

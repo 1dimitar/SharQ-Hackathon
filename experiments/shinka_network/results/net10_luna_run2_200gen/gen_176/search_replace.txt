@@ -1,0 +1,51 @@
+<NAME>
+capped_twohop_support
+</NAME>
+
+<DESCRIPTION>
+For each positive-demand OD pair, the existing loop can add a reward for every possible two-hop route. Together, those alternatives may outweigh the direct-link reward even when no individual route is compelling. Collect the pair’s two-hop terms and proportionally scale them only when their total magnitude exceeds 0.75 of that pair’s direct-link reward. This preserves the relative ranking of candidate intermediate nodes while limiting aggregate two-hop support. The quadratic term count is unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            od_terms = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                od_terms.append((key, weight))
+
+            total_support = sum(abs(weight) for _, weight in od_terms)
+            support_cap = 0.75 * abs(linear[(i, k)])
+            factor = min(1.0, support_cap / total_support) if total_support > 0.0 else 1.0
+            for key, weight in od_terms:
+                quadratic[key] = quadratic.get(key, 0.0) + factor * weight
+>>>>>>> REPLACE
+
+</DIFF>

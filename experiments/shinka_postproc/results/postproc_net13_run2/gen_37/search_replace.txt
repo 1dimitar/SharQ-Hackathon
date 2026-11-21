@@ -1,0 +1,165 @@
+<NAME>
+adaptive_operator_feedback
+</NAME>
+
+<DESCRIPTION>
+Track generated proposals, LP evaluations, improvements, and improvement magnitude for three move families: two-switches, rotations, and kicks/path relinking. Use the observed LP outcomes to adapt how many sampled proposals each family generates, while retaining a minimum share for every family. This puts the feedback on the expensive, exact objective rather than surrogate energy alone, and avoids allowing a temporarily lucky operator to eliminate exploration of the others.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    # Per operator: generated proposals, LP-evaluated proposals, improvements,
+    # and accumulated relative improvement. Every operator retains an exploration floor.
+    operator_stats = [[0.0, 0.0, 0.0, 0.0] for _ in range(3)]
+
+    def operator_probs():
+        rates = [
+            (1.0 + stats[2] + 20.0 * stats[3]) / (2.0 + stats[1])
+            for stats in operator_stats
+        ]
+        total = sum(rates)
+        floor = 0.12
+        return [floor + (1.0 - 3.0 * floor) * rate / total for rate in rates]
+
+    def canon(arcs):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def choose_starts(repaired, limit):
+=======
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def add_move(moves, move_kinds, cand, kind):
+        if cand is not None:
+            operator_stats[kind][0] += 1.0
+            moves.add(cand)
+            move_kinds.setdefault(cand, kind)
+
+    def choose_starts(repaired, limit):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+        move_kinds = {}
+        probs = operator_probs()
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                cand = switch(net, p, q)
+                if cand is not None:
+                    moves.add(cand)
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+                cand = switch(net, p, q)
+                add_move(moves, move_kinds, cand, 0)
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        random_swap_trials = max(12, int(70 * 3.0 * probs[0]))
+        for _ in range(random_swap_trials):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            cand = switch(net, p, q)
+            if cand is not None:
+                moves.add(cand)
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+=======
+            cand = switch(net, p, q)
+            add_move(moves, move_kinds, cand, 0)
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+=======
+            rotation_trials = min(
+                350, max(12, int(70 * 3.0 * probs[1])) * (1 + stalls // 3)
+            )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                    cand = tuple(sorted((current - old) | new))
+                    moves.add(cand)
+
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        for _ in range(24):
+=======
+                    cand = tuple(sorted((current - old) | new))
+                    add_move(moves, move_kinds, cand, 1)
+
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        kick_trials = max(8, int(24 * 3.0 * probs[2]))
+        for _ in range(kick_trials):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        # Path-relink toward a few strong, distinct networks already found.
+=======
+            cand = tuple(sorted(cur))
+            if cand != net:
+                add_move(moves, move_kinds, cand, 2)
+
+        # Path-relink toward a few strong, distinct networks already found.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                        moves.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+                        add_move(moves, move_kinds, cand, 2)
+
+        return [m for m in moves if m != net and tools.is_valid(m)], move_kinds
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        moves = make_moves(parent, detail)
+        batch = screen_batch(moves, parent)
+=======
+        moves, move_kinds = make_moves(parent, detail)
+        batch = screen_batch(moves, parent)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                batch = screen_batch(make_moves(parent, detail), parent)
+
+        if not batch:
+=======
+                moves, move_kinds = make_moves(parent, detail)
+                batch = screen_batch(moves, parent)
+
+        if not batch:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            try:
+                evaluate(net)
+            except Exception as exc:
+=======
+            try:
+                score = evaluate(net)
+                kind = move_kinds.get(net, 2)
+                stats = operator_stats[kind]
+                stats[1] += 1.0
+                if score < parent_score:
+                    stats[2] += 1.0
+                    stats[3] += (parent_score - score) / max(1.0, parent_score)
+            except Exception as exc:
+>>>>>>> REPLACE
+</DIFF>

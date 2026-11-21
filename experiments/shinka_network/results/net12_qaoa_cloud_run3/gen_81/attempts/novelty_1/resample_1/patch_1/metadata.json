@@ -1,0 +1,14 @@
+{
+  "generation": 81,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay",
+  "patch_description": "This makes the targeted relay-selection change: it ranks two-hop relays using `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)` instead of a geometric mean. The new affinity favors relays supported by both legs rather than one strong and one weak leg. Pressure discounts, relay budgets, path rewards, and degree-penalty weight remain unchanged, keeping the comparison focused and the quadratic-term count bounded.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:28:26.171892",
+  "llm_cost": 0.0014673,
+  "llm_model": "gpt-6-luna"
+}

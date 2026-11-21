@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "uncertainty_reserved_screen",
+  "patch_description": "Augment the existing ridge predictor with inexpensive uncertainty estimates from its regularized inverse Gram matrix. Reserve one LP trial for a competitive proposal with a favorable lower confidence bound, rather than allocating every remaining trial to predicted mean quality.\n\nKeep the existing learned-quality, energy, routing, novelty, and random allocations. Increase batch capacity only when necessary to accommodate the uncertainty trial without crowding those allocations out. Cap uncertainty at the observed residual scale and restrict acquisition to the better-predicted half of the shortlist, reducing the risk of chasing poorly supported outliers. This adds no routing computations or LP calls beyond the fixed total budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:08:59.181267",
+  "llm_cost": 0.08898600000000001,
+  "llm_model": "gpt-6.1-sol"
+}

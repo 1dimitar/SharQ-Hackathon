@@ -1,0 +1,46 @@
+<NAME>
+stall_adaptive_relink
+</NAME>
+
+<DESCRIPTION>
+When a parent stalls, increase the number and depth of chained switch walks, and bias relinking toward a structurally distant archive member. This gives stalled searches a stronger way to leave their current neighborhood while retaining the existing, lighter behavior for productive parents. The extra effort is capped and scales with \(n\).
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        rotation_trials = 5 * n + min(stalls.get(parent, 0), 8) * n
+=======
+        stalls_here = min(stalls.get(parent, 0), 4)
+        rotation_trials = 5 * n + min(stalls.get(parent, 0), 8) * n
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        target = pop[int(rng.integers(len(pop)))]
+        target_set = set(target)
+        for trial in range(2 * n):
+=======
+        target = pop[int(rng.integers(len(pop)))]
+        if stalls_here >= 2 and len(pop) > 1:
+            alternatives = [x for x in pop if x != parent]
+            parent_set = set(parent)
+            distances = [m - len(parent_set.intersection(x)) for x in alternatives]
+            farthest = max(distances)
+            distant = [x for x, d in zip(alternatives, distances) if d == farthest]
+            target = distant[int(rng.integers(len(distant)))]
+        target_set = set(target)
+        walk_trials = 2 * n + stalls_here * max(1, n // 3)
+        for trial in range(walk_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            count = 2 + int(rng.integers(max(2, n // 3)))
+=======
+            count = 2 + int(rng.integers(max(2, n // 3))) + stalls_here // 2
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                if trial < n:
+=======
+                if trial < walk_trials // 2:
+>>>>>>> REPLACE
+</DIFF>

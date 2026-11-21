@@ -1,0 +1,14 @@
+{
+  "generation": 113,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_balance",
+  "patch_description": "Combines the current program\u2019s direct-link reward and estimated-load balancing with the inspiration programs\u2019 pressure-aware relay selection. Instead of coupling every relay option or every pair of incident links, it selects only a few promising relays per demand pair and adds congestion couplings among the busiest incident links. This keeps the interaction graph sparser while retaining both routing and load-balancing signals.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:22:19.170754",
+  "llm_cost": 0.002097,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_route_pressure",
+  "patch_description": "Reorganizes term construction into demand preparation, iterative soft route-load estimation, and sparse QUBO assembly. The route estimate accounts for both endpoint demand and predicted transit pressure, then contributes only a small portfolio of two-hop couplings per OD pair. This keeps the model compact while making the transit-node discounts reflect the routes the demand matrix is likely to need.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:26:09.067630",
+  "llm_cost": 0.004272,
+  "llm_model": "gpt-6-luna"
+}

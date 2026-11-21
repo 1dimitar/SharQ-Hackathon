@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "parent_stagnation_rotations",
+  "patch_description": "Escalate three-edge rotations selectively for parents whose neighborhoods repeatedly fail to improve that parent. The existing global kick size does not distinguish a repeatedly exhausted basin from a newly selected parent; a per-parent failure count does. After several unsuccessful batches, this increases the move-generation effort (including rotations involving priced links), while successful parents reset their count. The escalation is capped to keep proposal-generation time bounded.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:54:51.424382",
+  "llm_cost": 0.0021752,
+  "llm_model": "gpt-6-luna"
+}

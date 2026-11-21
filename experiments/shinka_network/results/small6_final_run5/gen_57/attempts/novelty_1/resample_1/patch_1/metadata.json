@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "leg_support_gate",
+  "patch_description": "Gate each selected two-hop route reward by the normalized demand on both constituent links. Their geometric mean makes a route with weak support on either leg less attractive, while the bounded factor (0.55 to 1.0) preserves the existing route reward and avoids eliminating plausible alternatives. This changes no couplings or sparsity and keeps the existing demand support and transit-pressure discount intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:35:00.031083",
+  "llm_cost": 0.0021921,
+  "llm_model": "gpt-6-luna"
+}

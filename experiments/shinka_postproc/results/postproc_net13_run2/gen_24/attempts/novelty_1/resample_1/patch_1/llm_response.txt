@@ -1,0 +1,54 @@
+<NAME>
+productivity_aware_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Track how often each archived network is selected and how often its neighborhood produces a better-scoring network. Select parents with a weighted exploration rule that still favors high-ranked solutions, but gives underexplored and productive parents more opportunities than repeatedly selected, unproductive ones. This targets search effort at promising regions while retaining coverage of the archive.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stalls = {}
+    # Smoothed success rates for two-switch, rotation, and kick proposals.
+=======
+    stalls = {}
+    parent_visits = {}
+    parent_wins = {}
+    # Smoothed success rates for two-switch, rotation, and kick proposals.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        if rng.random() < 0.65:
+            return pop[int(rng.integers(min(5, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        # Rank preserves exploitation; visit and win counts balance exposure
+        # against neighborhoods that have recently yielded improvements.
+        if not pop:
+            return best_net
+        weights = []
+        for rank, net in enumerate(pop):
+            visits = parent_visits.get(net, 0)
+            wins = parent_wins.get(net, 0)
+            rank_bonus = 0.5 * math.exp(-rank / 6.0)
+            exploration = 1.0 / math.sqrt(1.0 + visits)
+            productivity = (wins + 1.0) / (visits + 2.0)
+            weights.append(0.15 + rank_bonus + exploration + productivity)
+        weights = np.asarray(weights, dtype=float)
+        weights /= weights.sum()
+        parent = pop[int(rng.choice(len(pop), p=weights))]
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        return parent
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                if score < parent_score:
+                    reward[kind] += 1.0
+=======
+                if score < parent_score:
+                    reward[kind] += 1.0
+                    parent_wins[parent] = parent_wins.get(parent, 0) + 1
+>>>>>>> REPLACE
+</DIFF>

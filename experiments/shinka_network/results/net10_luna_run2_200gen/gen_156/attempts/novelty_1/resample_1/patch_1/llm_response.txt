@@ -1,0 +1,16 @@
+<NAME>
+concave_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Make a modest shift toward the square-root component in the direct-link reward, from 15% to 25%. This gives moderate-demand direct links more influence while retaining a strong preference for high-demand links. It is a targeted test that leaves the current two-hop path design unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+=======
+            linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,109 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link and capped two-hop surrogate costs."""
+    d = np.asarray(demand, dtype=float)
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0).copy()
+
+    n = int(d.shape[0])
+    if d.ndim != 2 or d.shape[1] != n:
+        raise ValueError("demand must be a square matrix")
+
+    np.fill_diagonal(d, 0.0)
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = d / scale
+
+    # Direct links receive the most dependable signal: their own OD demand.
+    linear = {
+        (i, j): -float(z[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # Incident traffic approximates how much pressure a node may experience
+    # if used as a transit point.
+    incident = np.sum(z, axis=0) + np.sum(z, axis=1)
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 1e-12:
+        mean_incident = 1.0
+    pressure = np.maximum(0.60, incident / mean_incident)
+
+    # For each OD pair, compute candidate path rewards, then cap their
+    # aggregate at a fraction of the pair's direct-link reward.
+    path_strength = 0.50
+    max_indirect_fraction = 0.75
+    quadratic = {}
+
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+
+            through = float(z[i, k])
+            if through <= 0.0:
+                continue
+
+            # A small concave component retains signal for moderate demands.
+            through_signal = 0.80 * through + 0.20 * np.sqrt(through)
+            candidates = []
+            total_raw = 0.0
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = float(z[i, j] + z[j, k])
+
+                # Discount paths through busy intermediates and links with
+                # substantial direct demand, while retaining alternatives.
+                quality = 1.0 / (
+                    (0.80 + 0.35 * float(pressure[j]))
+                    * (1.0 + 1.10 * edge_pressure)
+                )
+                raw = path_strength * through_signal * quality
+                if raw > 0.0:
+                    candidates.append((j, raw))
+                    total_raw += raw
+
+            if total_raw <= 0.0:
+                continue
+
+            cap = max_indirect_fraction * through
+            factor = min(1.0, cap / total_raw)
+
+            for j, raw in candidates:
+                weight = -raw * factor
+                if weight != 0.0:
+                    # The two links uniquely identify this directed path.
+                    quadratic[((i, j), (j, k))] = float(weight)
+
+    # Degree penalties are applied separately by the evaluator.
+    penalty_weight = 1.35
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

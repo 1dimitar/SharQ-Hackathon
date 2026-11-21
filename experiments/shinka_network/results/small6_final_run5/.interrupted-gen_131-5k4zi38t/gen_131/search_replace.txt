@@ -1,0 +1,25 @@
+<NAME>
+weighted_route_congestion
+</NAME>
+
+<DESCRIPTION>
+The current route-frequency correction counts every selected two-hop alternative equally, even though its coupling strength already reflects demand support. Replace the unit count with the magnitude of the negative route coupling. This makes the existing correction target links that participate in many *high-support* routes, rather than links that appear frequently only because of numerous weak alternatives. The rest of the sparsity, cutoff, and penalty logic remains unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for (first, second), weight in quadratic.items():
+        if weight < 0.0:
+            route_frequency[first[0], first[1]] += 1.0
+            route_frequency[second[0], second[1]] += 1.0
+=======
+    for (first, second), weight in quadratic.items():
+        if weight < 0.0:
+            # Weight route usage by its demand support so congestion debiasing
+            # focuses on links favored by substantial traffic, not just many
+            # weak alternative paths.
+            usage = -float(weight)
+            route_frequency[first[0], first[1]] += usage
+            route_frequency[second[0], second[1]] += usage
+>>>>>>> REPLACE
+</DIFF>

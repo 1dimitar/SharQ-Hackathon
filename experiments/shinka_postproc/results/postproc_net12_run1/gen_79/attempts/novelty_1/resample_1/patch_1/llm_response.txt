@@ -1,0 +1,67 @@
+<NAME>
+archive_kicks
+</NAME>
+
+<DESCRIPTION>
+Periodically branch from an underexplored non-elite archive member rather than repeatedly sampling the same strong states. Apply a short sequence of degree-preserving two-switches, preferring switches that touch bottleneck links but falling back to unrestricted switches when needed. This adds bounded exploration of distinct basins while preserving validity and the existing LP-call screening process.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+
+        # Branch from the current annealing state or another archive member.
+        if len(archive) > 1 and rng.random() < 0.30:
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+=======
+    iteration = 0
+    archive_uses = {}
+    while tools.lp_calls_left > 0:
+        iteration += 1
+
+        # Occasionally kick an infrequently explored non-elite archive basin.
+        if len(archive) > 2 and iteration % 12 == 0:
+            pool = archive[2:]
+            source, source_score = min(
+                pool, key=lambda item: archive_uses.get(item[0], 0)
+            )
+            source = set(source)
+            hot = bottleneck_links(tuple(sorted(source)))
+            for _ in range(int(rng.integers(2, 6))):
+                arcs = list(source)
+                pairs = [
+                    (i, j) for i in range(len(arcs)) for j in range(i + 1, len(arcs))
+                    if arcs[i] in hot or arcs[j] in hot
+                ]
+                if not pairs:
+                    pairs = [(i, j) for i in range(len(arcs))
+                             for j in range(i + 1, len(arcs))]
+                if not pairs:
+                    break
+                i, j = pairs[int(rng.integers(len(pairs)))]
+                a, b = arcs[i]
+                c, d = arcs[j]
+                x, y = (a, d), (c, b)
+                if (a != c and a != d and c != b and x != y
+                        and x not in source and y not in source):
+                    source.remove((a, b))
+                    source.remove((c, d))
+                    source.update((x, y))
+            source = tuple(sorted(source))
+            if not tools.is_valid(source):
+                source, source_score = min(pool, key=lambda item: item[1])
+        elif len(archive) > 1 and rng.random() < 0.30:
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+        archive_uses[source] = archive_uses.get(source, 0) + 1
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,50 @@
+<NAME>
+bottleneck_first_swaps
+</NAME>
+
+<DESCRIPTION>
+Use the LP’s dual prices to prioritize two-switches that remove a bottleneck link. Those moves are the most promising way to reduce the maximum link load, while the remaining switches are still tried afterward so the search does not lose access to useful non-bottleneck moves. This keeps the existing first-improvement descent and LP budget behavior, but spends its early evaluations on more targeted neighbors.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def swaps(net):
+        arcs = list(net)
+        pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+        rng.shuffle(pairs)
+        cur = set(net)
+        for p, q in pairs:
+            (a, b), (c, d) = arcs[p], arcs[q]
+            if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                continue
+            yield tuple(sorted((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+=======
+    def swaps(net):
+        arcs = list(net)
+        cur = set(net)
+        try:
+            prices = tools.lp_detail(net).get("prices", {})
+            priced = {tuple(a) for a, price in prices.items() if price > 0}
+        except Exception:
+            priced = set()
+
+        # Try exchanges that remove a positive-price link first, then retain
+        # the complete neighborhood as a fallback.
+        urgent, other = [], []
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                pair = (p, q)
+                if arcs[p] in priced or arcs[q] in priced:
+                    urgent.append(pair)
+                else:
+                    other.append(pair)
+        rng.shuffle(urgent)
+        rng.shuffle(other)
+        for p, q in urgent + other:
+            (a, b), (c, d) = arcs[p], arcs[q]
+            if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                continue
+            yield tuple(sorted((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+>>>>>>> REPLACE
+
+</DIFF>

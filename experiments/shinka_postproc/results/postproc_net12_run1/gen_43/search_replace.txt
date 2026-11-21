@@ -1,0 +1,45 @@
+<NAME>
+exhaustive_hot_switches
+</NAME>
+
+<DESCRIPTION>
+The current move generator samples only a limited number of two-edge exchanges, so it can miss useful switches involving bottleneck links. Enumerating every pair of current links is inexpensive for a 2-in/2-out network (only 276 pairs when there are 24 links) and ensures that all valid switches involving at least one hot link enter the proposal pool. The existing batch ranking and diversity selection still limit the number of costly LP evaluations, while the randomized three-edge rotations preserve broader exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Sample exchanges, biasing one selected edge toward a priced link.
+        attempts = max(100, 35 * kick_size)
+        for _ in range(attempts):
+            if not arcs:
+                break
+            if hot and rng.random() < 0.72:
+                hot_ids = [i for i, arc in enumerate(arcs) if arc in hot]
+                p = int(rng.choice(hot_ids)) if hot_ids else int(rng.integers(len(arcs)))
+            else:
+                p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            a, b = arcs[p]
+            c, d = arcs[q]
+            # Swap destinations: out- and in-degrees are preserved.
+            if a == d or c == b or (a, d) in current or (c, b) in current:
+                continue
+            moves.add(canon((current - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+=======
+        # Enumerate all degree-preserving switches, prioritizing the bottleneck
+        # neighborhood. For this sparse fixed-degree network the pair count is small.
+        for p in range(len(arcs)):
+            a, b = arcs[p]
+            for q in range(p + 1, len(arcs)):
+                c, d = arcs[q]
+                if hot and arcs[p] not in hot and arcs[q] not in hot:
+                    continue
+                # Swap destinations: out- and in-degrees are preserved.
+                if a == d or c == b or (a, d) in current or (c, b) in current:
+                    continue
+                moves.add(canon((current - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+>>>>>>> REPLACE
+
+</DIFF>

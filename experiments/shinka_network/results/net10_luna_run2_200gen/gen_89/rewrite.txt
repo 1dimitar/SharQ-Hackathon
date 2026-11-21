@@ -1,0 +1,171 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Return finite, nonnegative, off-diagonal demand and its normalization."""
+    matrix = np.asarray(demand, dtype=float)
+    matrix = np.nan_to_num(matrix, nan=0.0, posinf=0.0, neginf=0.0)
+    matrix = np.maximum(matrix, 0.0).copy()
+    np.fill_diagonal(matrix, 0.0)
+
+    scale = float(np.max(matrix)) if matrix.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    return matrix, matrix / scale
+
+
+def _direct_costs(normalized):
+    """Build the direct-link reward map."""
+    n = normalized.shape[0]
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                # Retain the direct-demand signal while giving moderate
+                # demands a small concave contribution.
+                value = 0.84 * normalized[i, j] + 0.16 * np.sqrt(normalized[i, j])
+                linear[(i, j)] = -float(value)
+    return linear
+
+
+def _path_evidence(normalized, incident_pressure, i, j, k):
+    """Estimate the usefulness of routing i -> k through j."""
+    first = float(normalized[i, j])
+    second = float(normalized[j, k])
+    support = np.sqrt(first * second)
+
+    # The small floor allows unobserved but feasible routes, without giving
+    # every intermediate an equal share of an OD pair's reward.
+    evidence = 0.025 + support
+    edge_load_discount = np.sqrt((1.0 + first) * (1.0 + second))
+    transit_discount = 0.7 + float(incident_pressure[j])
+    return evidence / (edge_load_discount * transit_discount)
+
+
+def _two_hop_costs(normalized):
+    """Build two-hop rewards with a bounded budget for each OD pair."""
+    n = normalized.shape[0]
+    rows = np.sum(normalized, axis=1)
+    cols = np.sum(normalized, axis=0)
+    incident = rows + cols
+
+    mean_incident = float(np.mean(incident)) if incident.size else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+    incident_pressure = incident / mean_incident
+
+    quadratic = {}
+    indirect_fraction = 0.30
+
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            od_demand = float(normalized[i, k])
+            if od_demand <= 0.0:
+                continue
+
+            mids = [j for j in range(n) if j != i and j != k]
+            if not mids:
+                continue
+
+            evidence = [
+                _path_evidence(normalized, incident_pressure, i, j, k)
+                for j in mids
+            ]
+            total = float(sum(evidence))
+            if total <= 0.0:
+                continue
+
+            # Cap the total indirect reward relative to the direct reward
+            # for this OD pair, rather than rewarding every possible path
+            # independently.
+            direct_value = 0.84 * od_demand + 0.16 * np.sqrt(od_demand)
+            budget = indirect_fraction * float(direct_value)
+
+            for j, score in zip(mids, evidence):
+                first_link = (i, j)
+                second_link = (j, k)
+                key = (first_link, second_link)
+                if key[1] < key[0]:
+                    key = (key[1], key[0])
+                quadratic[key] = -budget * float(score) / total
+
+    return quadratic
+
+
+def _diversity_costs(normalized):
+    """Penalize pairs of same-endpoint links with similar demand profiles."""
+    n = normalized.shape[0]
+    quadratic = {}
+
+    row_norm = np.sqrt(np.sum(normalized * normalized, axis=1))
+    col_norm = np.sqrt(np.sum(normalized * normalized, axis=0))
+    row_profiles = np.divide(
+        normalized,
+        row_norm[:, None],
+        out=np.zeros_like(normalized),
+        where=row_norm[:, None] > 0.0,
+    )
+    col_profiles = np.divide(
+        normalized,
+        col_norm[None, :],
+        out=np.zeros_like(normalized),
+        where=col_norm[None, :] > 0.0,
+    )
+
+    strength = 0.018
+    for node in range(n):
+        neighbors = [v for v in range(n) if v != node]
+        for a in range(len(neighbors)):
+            j = neighbors[a]
+            for b in range(a + 1, len(neighbors)):
+                k = neighbors[b]
+
+                # Two outgoing links to destinations with similar demand
+                # profiles provide less destination diversity.
+                similarity = float(np.dot(col_profiles[j], col_profiles[k]))
+                if similarity > 1e-12:
+                    quadratic[((node, j), (node, k))] = strength * similarity
+
+                # Likewise, similar origin profiles can make incoming links
+                # to the same node less useful as independent alternatives.
+                similarity = float(np.dot(row_profiles[j], row_profiles[k]))
+                if similarity > 1e-12:
+                    quadratic[((j, node), (k, node))] = strength * similarity
+
+    return quadratic
+
+
+def surrogate_terms(demand):
+    """Build direct, capped two-hop, and diversity surrogate costs."""
+    _, normalized = _prepare_demand(demand)
+    linear = _direct_costs(normalized)
+
+    quadratic = _two_hop_costs(normalized)
+    quadratic.update(_diversity_costs(normalized))
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,63 @@
+<NAME>
+balanced_twohop
+</NAME>
+
+<DESCRIPTION>
+Keep direct-demand links as the primary signal, but add a deliberately modest bonus when two selected links form a two-hop route for an OD pair. The bonus is divided across possible intermediates and damped for high-traffic relay nodes, so it is less likely to overvalue chains that funnel traffic through an already busy node. These couplings also give the partitioner useful path structure without exceeding the quadratic-term budget. Increase the external degree-penalty weight to encourage valid 2-in/2-out topologies before repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    d = np.asarray(demand, dtype=float)
+
+    # Direct links carry their own OD demand; keep this as the dominant signal.
+    linear = {
+        (i, j): -float(d[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A relay's total incident traffic is a rough proxy for how costly it is
+    # to route additional traffic through that node.
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    mean_incident = float(np.mean(row + col)) or 1.0
+    relay_factor = [
+        1.0 / (1.0 + 0.5 * float(row[j] + col[j]) / mean_incident)
+        for j in range(n)
+    ]
+
+    # Reward a two-link path for traffic that could use it. Spread the signal
+    # over candidate relays and damp it at high-traffic relays to avoid
+    # over-concentrating transit flow.
+    quadratic = {}
+    if n > 2:
+        for i in range(n):
+            for k in range(n):
+                if i == k:
+                    continue
+                path_demand = float(d[i, k]) / scale
+                if path_demand == 0.0:
+                    continue
+                for j in range(n):
+                    if j == i or j == k:
+                        continue
+                    a, b = (i, j), (j, k)
+                    key = (a, b) if a < b else (b, a)
+                    quadratic[key] = quadratic.get(key, 0.0) - (
+                        0.12 * path_demand * relay_factor[j] / (n - 2)
+                    )
+
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

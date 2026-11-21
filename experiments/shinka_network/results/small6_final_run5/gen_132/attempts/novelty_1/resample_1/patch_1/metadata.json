@@ -1,0 +1,14 @@
+{
+  "generation": 132,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "complementary_neighbor_service",
+  "patch_description": "Add a compact reward for choosing two neighbors that serve different parts of a node\u2019s traffic. Existing route rewards evaluate paths independently, so two attractive neighbors can receive rewards despite offering largely redundant coverage.\n\nEstimate onward-link probabilities from the direct scores, calibrated to two links per node. A neighbor serves itself immediately. For each neighbor pair, measure the additional demand coverage beyond its better individual member, discounting overlapping coverage. Apply the same construction to incoming links using reversed traffic.\n\nKeep only n//2 pairs per node and direction, with strength 0.24 relative to the mean direct reward. This adds at most n\u00b2 couplings, preserves the existing route and cut signals, and provides a bounded, demand-specific preference for complementary neighborhoods. The expected benefit is better typical samples and more informative exchange rankings; evaluation is needed to establish whether it improves the score.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:51:09.931812",
+  "llm_cost": 0.057294,
+  "llm_model": "gpt-6.1-sol"
+}

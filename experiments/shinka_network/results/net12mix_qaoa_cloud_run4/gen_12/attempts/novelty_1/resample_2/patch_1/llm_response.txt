@@ -1,0 +1,66 @@
+<NAME>
+normalized_relay_rewards
+</NAME>
+
+<DESCRIPTION>
+Distribute each OD pair’s indirect-path reward across its possible relays rather than giving every relay the same unnormalised reward. Weight the allocation by relay capacity and by whether the two links in the candidate path align with substantial endpoint traffic. This keeps the total reward for an OD pair bounded while still favoring plausible two-hop routes, and reduces the incentive for the QUBO to accumulate many overlapping relay rewards.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Favor relays with substantial, balanced traffic entering and leaving them.
+    incoming = np.sum(demand, axis=0)
+    outgoing = np.sum(demand, axis=1)
+    relay = np.sqrt(np.maximum(incoming, 0.0) * np.maximum(outgoing, 0.0))
+    relay_max = float(relay.max()) or 1.0
+    relay = (relay / relay_max) ** 1.5
+
+    # A selected two-link path can carry traffic that has no direct link.
+    # Keep this reward modest so it complements rather than overwhelms direct demand.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                weight = 0.15 * (float(demand[i, k]) / scale) * float(relay[j])
+                if weight:
+                    quadratic[((i, j), (j, k))] = -weight
+=======
+    # Favor relays with substantial, balanced traffic entering and leaving them.
+    incoming = np.sum(demand, axis=0)
+    outgoing = np.sum(demand, axis=1)
+    relay = np.sqrt(np.maximum(incoming, 0.0) * np.maximum(outgoing, 0.0))
+    relay_max = float(relay.max()) or 1.0
+    relay = (relay / relay_max) ** 1.5
+
+    # Allocate a bounded indirect reward for each OD pair among its candidate
+    # relays. Endpoint suitability favors relays whose two incident links are
+    # themselves plausible direct connections, without letting one OD pair's
+    # reward be duplicated across every possible relay.
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            if k == i or demand[i, k] <= 0:
+                continue
+            candidates = []
+            total = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                endpoint = np.sqrt(max(float(demand[i, j]), 0.0) *
+                                    max(float(demand[j, k]), 0.0))
+                endpoint_factor = 0.25 + 0.75 * endpoint / (endpoint + scale)
+                allocation = float(relay[j]) * endpoint_factor
+                candidates.append((j, allocation))
+                total += allocation
+            if total <= 0.0:
+                continue
+            for j, allocation in candidates:
+                weight = 0.15 * (float(demand[i, k]) / scale) * allocation / total
+                if weight:
+                    quadratic[((i, j), (j, k))] = -weight
+>>>>>>> REPLACE
+</DIFF>

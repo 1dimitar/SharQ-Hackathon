@@ -1,0 +1,277 @@
+<NAME>
+adaptive_neighborhood_effort
+</NAME>
+
+<DESCRIPTION>
+Track whether focused switches, random switches, or three-edge rotations produce improvements. Periodically adjust their proposal counts modestly according to recent improvement rates, while enforcing a minimum number of proposals for each move type. This lets the search spend more generation effort on productive neighborhoods without eliminating exploration of the others. Path-relink moves are grouped with random switches for this lightweight adaptation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def make_moves(net, hot, kick_size):
+        """Construct valid degree-preserving switches and destination rotations."""
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+
+        # Sample exchanges, biasing one selected edge toward a priced link.
+        attempts = max(100, 35 * kick_size)
+        for _ in range(attempts):
+            if not arcs:
+                break
+            if hot and rng.random() < 0.72:
+                hot_ids = [i for i, arc in enumerate(arcs) if arc in hot]
+                p = int(rng.choice(hot_ids)) if hot_ids else int(rng.integers(len(arcs)))
+            else:
+                p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            a, b = arcs[p]
+            c, d = arcs[q]
+            # Swap destinations: out- and in-degrees are preserved.
+            if a == d or c == b or (a, d) in current or (c, b) in current:
+                continue
+            moves.add(canon((current - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+
+        # Three-edge rotations allow moves that cannot be obtained in one switch.
+        rotations = max(10, 8 * kick_size)
+        for _ in range(rotations):
+            if len(arcs) < 3:
+                break
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            new = {(a, d), (c, f), (e, b)}
+            if hot and not (old & hot):
+                continue
+            if len(new) != 3 or any(x == y for x, y in new):
+                continue
+            if new & (current - old):
+                continue
+            moves.add(canon((current - old) | new))
+
+        moves.discard(net)
+        return [m for m in moves if tools.is_valid(m)]
+=======
+    def make_moves(net, hot, kick_size, effort):
+        """Generate separately trackable focused, random, and rotation moves."""
+        arcs = list(net)
+        current = set(net)
+        moves = {}
+        hot_ids = [i for i, arc in enumerate(arcs) if arc in hot]
+
+        # Keep minimum exploration in every neighborhood while adapting effort.
+        focused_attempts = max(20, int(max(100, 35 * kick_size) * 0.72 * effort["focused"]))
+        random_attempts = max(20, int(max(100, 35 * kick_size) * 0.28 * effort["random"]))
+
+        def add_switch(p, q, source):
+            a, b = arcs[p]
+            c, d = arcs[q]
+            if a == d or c == b or (a, d) in current or (c, b) in current:
+                return
+            proposal = canon((current - {(a, b), (c, d)}) | {(a, d), (c, b)})
+            if proposal != net:
+                moves.setdefault(proposal, source)
+
+        for _ in range(focused_attempts):
+            if len(arcs) < 2:
+                break
+            p = int(rng.choice(hot_ids)) if hot_ids else int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            add_switch(p, q, "focused")
+
+        for _ in range(random_attempts):
+            if len(arcs) < 2:
+                break
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            add_switch(p, q, "random")
+
+        rotations = max(8, int(max(10, 8 * kick_size) * effort["rotation"]))
+        for _ in range(rotations):
+            if len(arcs) < 3:
+                break
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            new = {(a, d), (c, f), (e, b)}
+            if hot and not (old & hot):
+                continue
+            if len(new) != 3 or any(x == y for x, y in new):
+                continue
+            if new & (current - old):
+                continue
+            proposal = canon((current - old) | new)
+            if proposal != net:
+                moves.setdefault(proposal, "rotation")
+
+        return {m: source for m, source in moves.items() if tools.is_valid(m)}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    stale = 0
+    kick_size = 2
+    parent_failures = {}
+    iteration = 0
+=======
+    stale = 0
+    kick_size = 2
+    parent_failures = {}
+    effort = {"focused": 1.0, "random": 1.0, "rotation": 1.0}
+    adapt_trials = {"focused": 0, "random": 0, "rotation": 0}
+    adapt_wins = {"focused": 0, "random": 0, "rotation": 0}
+    adapt_count = 0
+    iteration = 0
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Escalate the rotation effort only for parents whose own neighborhoods
+        # have repeatedly failed, rather than penalizing every basin globally.
+        parent_kick = min(20, kick_size + min(12, parent_failures.get(parent, 0) // 2))
+        moves = set(make_moves(parent, hot, parent_kick))
+
+        # Path-relink toward other strong archive members by installing one
+        # of their missing links with a degree-preserving two-switch.
+        parent_edges = set(parent)
+        targets = [net for net in archive if net != parent]
+        if targets:
+            rng.shuffle(targets)
+            for target in targets[:4]:
+                missing = [edge for edge in target if edge not in parent_edges]
+                rng.shuffle(missing)
+                for a, b in missing[:12]:
+                    for x in range(n):
+                        if (a, x) not in parent_edges:
+                            continue
+                        for y in range(n):
+                            if (y, b) not in parent_edges:
+                                continue
+                            old = {(a, x), (y, b)}
+                            new = {(a, b), (y, x)}
+                            if len(old) != 2 or len(new) != 2:
+                                continue
+                            if any(u == v for u, v in new):
+                                continue
+                            if new & (parent_edges - old):
+                                continue
+                            proposal = canon((parent_edges - old) | new)
+                            if proposal != parent:
+                                moves.add(proposal)
+        moves = [m for m in moves if tools.is_valid(m)]
+
+        fresh = [
+            m for m in moves
+            if m not in scores and not tools.is_cached(m)
+        ]
+        if not fresh and hot:
+            fresh = [
+                m for m in make_moves(parent, set(), parent_kick)
+                if m not in scores and not tools.is_cached(m)
+            ]
+=======
+        # Escalate effort only for parents whose own neighborhoods repeatedly fail.
+        parent_kick = min(20, kick_size + min(12, parent_failures.get(parent, 0) // 2))
+        move_sources = make_moves(parent, hot, parent_kick, effort)
+
+        # Path-relink toward strong archive members; count these as random switches.
+        parent_edges = set(parent)
+        targets = [net for net in archive if net != parent]
+        if targets:
+            rng.shuffle(targets)
+            for target in targets[:4]:
+                missing = [edge for edge in target if edge not in parent_edges]
+                rng.shuffle(missing)
+                for a, b in missing[:12]:
+                    for x in range(n):
+                        if (a, x) not in parent_edges:
+                            continue
+                        for y in range(n):
+                            if (y, b) not in parent_edges:
+                                continue
+                            old = {(a, x), (y, b)}
+                            new = {(a, b), (y, x)}
+                            if len(old) != 2 or len(new) != 2:
+                                continue
+                            if any(u == v for u, v in new):
+                                continue
+                            if new & (parent_edges - old):
+                                continue
+                            proposal = canon((parent_edges - old) | new)
+                            if proposal != parent:
+                                move_sources.setdefault(proposal, "random")
+        move_sources = {
+            m: source for m, source in move_sources.items() if tools.is_valid(m)
+        }
+
+        fresh = [
+            m for m in move_sources
+            if m not in scores and not tools.is_cached(m)
+        ]
+        if not fresh and hot:
+            move_sources = make_moves(parent, set(), parent_kick, effort)
+            fresh = [
+                m for m in move_sources
+                if m not in scores and not tools.is_cached(m)
+            ]
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+            value = evaluate(net)
+            if math.isfinite(value):
+                remember(net)
+                if value < parent_score:
+                    parent_improved = True
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+                # Also retain promising basin members even when not global best.
+                if value <= parent_score * 1.015:
+                    remember(net)
+
+        if parent_improved:
+=======
+            value = evaluate(net)
+            if math.isfinite(value):
+                move_type = move_sources.get(net, "random")
+                if move_type in adapt_trials:
+                    adapt_trials[move_type] += 1
+                    adapt_count += 1
+                    if value < parent_score:
+                        adapt_wins[move_type] += 1
+                remember(net)
+                if value < parent_score:
+                    parent_improved = True
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+                # Also retain promising basin members even when not global best.
+                if value <= parent_score * 1.015:
+                    remember(net)
+
+        if adapt_count >= 30:
+            rates = {
+                kind: (adapt_wins[kind] + 1.0) / (adapt_trials[kind] + 4.0)
+                for kind in adapt_trials
+            }
+            mean_rate = sum(rates.values()) / len(rates)
+            for kind in effort:
+                target = rates[kind] / max(mean_rate, 1e-9)
+                effort[kind] = min(1.6, max(0.65, 0.8 * effort[kind] + 0.2 * target))
+                adapt_trials[kind] = 0
+                adapt_wins[kind] = 0
+            adapt_count = 0
+
+        if parent_improved:
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,94 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
+
+    Args:
+        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+            (zero diagonal).
+
+    Returns:
+        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+            (x_ij = 1 if the directed link i -> j is built), i != j.
+        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+            after rescaling these terms so the largest |weight| is 1.
+
+    Lower energy must mean a better topology. Baseline: reward each link by the demand
+    it carries directly.
+    """
+    n = len(demand)
+    dmax = float(np.max(demand)) or 1.0
+    row = np.sum(demand, axis=1)
+    col = np.sum(demand, axis=0)
+    node_scale = float(max(np.max(row), np.max(col))) or 1.0
+
+    # Preserve the strong direct-demand signal, with a small preference for
+    # links incident to high-throughput sources and destinations.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            endpoint_pressure = (float(row[i]) + float(col[j])) / (2.0 * node_scale)
+            linear[(i, j)] = -(
+                0.90 * float(demand[i, j]) / dmax
+                + 0.10 * endpoint_pressure
+            )
+
+    # A selected pair i->j, j->k can serve i->k traffic in two hops.
+    # Keep this synergy deliberately weaker than the direct-link reward.
+    # A busy transit node has less spare capacity for additional routed flow.
+    # Normalize by the maximum incident demand so pressure remains meaningful
+    # even when the demand distribution is highly uneven.
+    node_pressure = np.maximum(row, col)
+    max_node_pressure = float(np.max(node_pressure)) or 1.0
+
+    quadratic = {}
+    pressure_floor = 0.85
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            transit_pressure = float(node_pressure[j]) / max_node_pressure
+            transit_factor = 1.0 - (1.0 - pressure_floor) * transit_pressure
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic > 0.0:
+                    # Retain the edge congestion discount while also reducing
+                    # the value of routes through heavily used transit nodes.
+                    edge_pressure = (
+                        float(demand[i, j]) + float(demand[j, k])
+                    ) / dmax
+                    quadratic[((i, j), (j, k))] = (
+                        -0.15 * (traffic / dmax) * transit_factor
+                        / (1.0 + 0.25 * edge_pressure)
+                    )
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

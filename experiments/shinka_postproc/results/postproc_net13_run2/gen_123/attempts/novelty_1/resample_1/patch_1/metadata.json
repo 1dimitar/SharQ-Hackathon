@@ -1,0 +1,14 @@
+{
+  "generation": 123,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_slot",
+  "patch_description": "Reserve one LP evaluation in each screened batch for a candidate from an underrepresented archive region. Instead of measuring novelty only against the nearest scored network, rank fresh moves by their average distance from several distinct elite representatives. Use surrogate energy as a tie-breaker, and avoid duplicating candidates already selected through the guided path. This adds a deliberate exploration route while keeping the rest of the batch\u2019s existing energy-based selection unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:26:33.807481",
+  "llm_cost": 0.0027251000000000003,
+  "llm_model": "gpt-6-luna"
+}

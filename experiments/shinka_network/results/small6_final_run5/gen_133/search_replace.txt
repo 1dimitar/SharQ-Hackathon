@@ -1,0 +1,48 @@
+<NAME>
+cut_aware_reciprocity
+</NAME>
+
+<DESCRIPTION>
+Make the existing reciprocal-link penalty sensitive to the traffic that must cross the pair’s two-node cut. A reciprocal pair uses two links internally, reducing the links available for external traffic; penalizing it more when external demand is high should improve valid-topology rankings and two-link-exchange guidance. The penalty is moderated by the existing mutual-demand discount, and this changes no coupling keys or term count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    expansion_scale = float(np.clip((n / 12.0) ** 0.15, 0.90, 1.11))
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual_support = float(
+                np.sqrt(normalized[i, j] * normalized[j, i])
+            )
+            weight = (
+                0.16 * expansion_scale * (1.0 - 0.75 * mutual_support)
+            )
+            key = ((i, j), (j, i))
+            quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+=======
+    expansion_scale = float(np.clip((n / 12.0) ** 0.15, 0.90, 1.11))
+    row_load = traffic.sum(axis=1)
+    col_load = traffic.sum(axis=0)
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual_support = float(
+                np.sqrt(normalized[i, j] * normalized[j, i])
+            )
+            internal = float(traffic[i, j] + traffic[j, i])
+            external_load = max(
+                0.0,
+                float(row_load[i] + row_load[j] - internal),
+                float(col_load[i] + col_load[j] - internal),
+            )
+            cut_pressure = min(1.0, external_load / max_incident)
+            weight = (
+                0.16
+                * expansion_scale
+                * (1.0 - 0.75 * mutual_support)
+                * (0.80 + 0.40 * cut_pressure)
+            )
+            key = ((i, j), (j, i))
+            quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+>>>>>>> REPLACE
+
+</DIFF>

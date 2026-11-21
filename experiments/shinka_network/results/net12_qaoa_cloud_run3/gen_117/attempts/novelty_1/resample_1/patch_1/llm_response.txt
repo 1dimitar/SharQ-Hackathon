@@ -1,0 +1,16 @@
+<NAME>
+weaker_leg_rank
+</NAME>
+
+<DESCRIPTION>
+Reduce the strong-leg contribution in the relay affinity from 0.30 to 0.25. This ranks candidate relays more by the strength of their weaker leg, favoring two-hop routes that are useful on both links rather than routes with one strong and one weak leg. The change preserves the existing pressure adjustment, relay budget, and reward formula.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = min(a, b) + 0.30 * max(a, b)
+=======
+                affinity = min(a, b) + 0.25 * max(a, b)
+>>>>>>> REPLACE
+
+</DIFF>

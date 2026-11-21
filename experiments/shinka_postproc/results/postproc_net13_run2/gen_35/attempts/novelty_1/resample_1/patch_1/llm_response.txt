@@ -1,0 +1,92 @@
+<NAME>
+archive_novelty_screen
+</NAME>
+
+<DESCRIPTION>
+The current batch screen prioritizes surrogate energy and only enforces distance between proposals in the same batch. That can spend LP calls on moves from regions already well represented in the archive. This edit keeps most batch capacity for promising, mutually diverse low-energy moves, then reserves two slots for proposals with the greatest minimum topology distance from the archive. Those novel proposals may reveal useful regions the current archive has not explored; remaining capacity still favors surrogate quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=9):
+        """Balance low-energy proposals with topology novelty against the archive."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # Preserve exploitation: take the best-energy proposals, spread across topologies.
+        quality_slots = max(1, batch_size - 2)
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(quality_slots, batch_size):
+                break
+
+        # Spend up to two calls on proposals far from all archived networks.
+        # Novelty is measured by symmetric-difference distance in directed links.
+        remaining = [net for _, net in ranked if net not in selected]
+        refs = archive()
+        while remaining and len(selected) < batch_size and len(selected) < quality_slots + 2:
+            novelty = {
+                net: min((distance(net, old) for old in refs), default=0)
+                for net in remaining
+            }
+            net = max(remaining, key=lambda x: (novelty[x], -energy(x)))
+            selected.append(net)
+            remaining.remove(net)
+
+        # Use any leftover capacity for the strongest surrogate-ranked proposals.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

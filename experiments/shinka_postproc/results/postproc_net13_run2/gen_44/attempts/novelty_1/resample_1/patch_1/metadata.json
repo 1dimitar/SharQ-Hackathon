@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "stalled_path_relinking",
+  "patch_description": "When a parent has stalled, generate a short path toward a distant, high-quality archive member. Each path step inserts a target link using a degree-preserving two-switch, while avoiding removal of links already shared with the target. Screen a few valid intermediate networks and reserve part of the LP batch for them. This provides a directed escape from a local basin without replacing the existing bottleneck-focused neighborhood search or spending LP calls on every path step.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:14:45.656305",
+  "llm_cost": 0.0024369,
+  "llm_model": "gpt-6-luna"
+}

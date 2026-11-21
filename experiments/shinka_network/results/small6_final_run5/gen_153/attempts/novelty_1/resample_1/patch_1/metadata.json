@@ -1,0 +1,14 @@
+{
+  "generation": 153,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_diversity",
+  "patch_description": "This design keeps the useful direct-demand signal and sparse two-hop routing cues from the earlier programs, but changes how it models interactions. Two-hop alternatives are ranked as a normalized set, so a demand is not rewarded as though every plausible route carries all its traffic. Separately, a small number of positive couplings penalize pairs of links whose neighboring nodes have strongly overlapping traffic profiles. This adds a compact branch-diversity signal intended to discourage redundant choices without filling the QUBO with generic path couplings.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:11:41.924890",
+  "llm_cost": 0.0048024,
+  "llm_model": "gpt-6-luna"
+}

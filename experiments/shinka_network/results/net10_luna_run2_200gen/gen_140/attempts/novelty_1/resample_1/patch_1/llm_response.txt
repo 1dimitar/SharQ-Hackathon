@@ -1,0 +1,16 @@
+<NAME>
+relay_pressure_floor_085
+</NAME>
+
+<DESCRIPTION>
+Raise the relay-pressure floor from 0.75 to 0.85, leaving all other terms unchanged. This independently tests the recommended higher-floor setting: it reduces the relative reward for routes through otherwise low-pressure relays, which may help avoid over-relying on them and improve the typical topology without changing the number of quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_pressure = np.maximum(0.75, incident / mean_incident)
+=======
+    node_pressure = np.maximum(0.85, incident / mean_incident)
+>>>>>>> REPLACE
+
+</DIFF>

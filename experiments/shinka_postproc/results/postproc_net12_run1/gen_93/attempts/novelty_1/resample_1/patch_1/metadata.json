@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "local_parent_yield",
+  "patch_description": "Measure each parent\u2019s productivity by the best LP score found among its own batch relative to that parent, rather than only by improvement to the global incumbent. A parent can lead to useful local progress without setting a new global record; the current global-only statistic treats those discoveries as failures and may stop selecting productive regions. This change gives the existing parent-selection weights a more informative local-yield signal, while leaving the global-stagnation and rotation logic unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:18:09.522252",
+  "llm_cost": 0.0029568000000000003,
+  "llm_model": "gpt-6-luna"
+}

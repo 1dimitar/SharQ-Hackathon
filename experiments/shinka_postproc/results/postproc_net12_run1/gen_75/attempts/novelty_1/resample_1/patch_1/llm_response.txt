@@ -1,0 +1,232 @@
+<NAME>
+repair_crossover_evolution
+</NAME>
+
+<DESCRIPTION>
+Replaces neighborhood descent and dual-guided swaps with a repair-based evolutionary search. It seeds a diverse population from repaired QAOA samples, then repeatedly combines edge sets from different parents and perturbs partial networks; the free repair tool turns these partial proposals into valid topologies. Surrogate energy screens offspring before LP evaluation, while population diversity and occasional random restarts help preserve distinct search regions. This explores combinations of candidate networks that a local switch search may not reach directly.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    def norm(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def diversity(a, b):
+        return len(set(a).symmetric_difference(b))
+
+    scored = {}
+    population = []
+    best_net = None
+    best_score = float("inf")
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = norm(net)
+        if net in scored:
+            return scored[net]
+        if not tools.is_valid(net):
+            return float("inf")
+        if tools.lp_calls_left <= 0:
+            return float("inf")
+        value = float(tools.lp(net))
+        scored[net] = value
+        if value < best_score:
+            best_score, best_net = value, net
+        return value
+
+    # Repair all samples without spending LP calls, then retain varied seeds.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = norm(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+
+    if not repaired:
+        try:
+            net = norm(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+    if not repaired:
+        return []
+
+    energy_order = sorted(repaired, key=lambda net: tools.energy(net))
+    seeds = []
+    for net in energy_order:
+        if all(diversity(net, old) >= 4 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= 18:
+            break
+    for net in energy_order:
+        if len(seeds) >= 36:
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    # Seed an evolutionary population, balancing low energy and topology variety.
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+    if not scored:
+        return seeds[0]
+
+    def update_population(net):
+        if net in population:
+            return
+        if len(population) < 24:
+            population.append(net)
+            return
+        # Replace a weak, redundant member only when the newcomer offers value
+        # or adds meaningful structural diversity.
+        nearest = min(population, key=lambda p: diversity(net, p))
+        if diversity(net, nearest) >= 4 and (
+            scored[net] < scored[nearest] * 1.01
+            or len(population) < 24
+        ):
+            population.remove(nearest)
+            population.append(net)
+        else:
+            worst = max(population, key=lambda p: scored[p])
+            if scored[net] < scored[worst]:
+                population.remove(worst)
+                population.append(net)
+
+    for net in sorted(scored, key=scored.get):
+        update_population(net)
+
+    n = tools.n
+    all_edges = [(i, j) for i in range(n) for j in range(n) if i != j]
+
+    def parent():
+        # Small tournaments usually select good parents but keep the population active.
+        count = min(4, len(population))
+        ids = rng.choice(len(population), size=count, replace=False)
+        return min((population[int(i)] for i in ids), key=lambda p: scored[p])
+
+    def propose():
+        p1 = parent()
+        p2 = parent()
+        if len(population) > 1:
+            for _ in range(3):
+                if p2 != p1:
+                    break
+                p2 = parent()
+
+        s1, s2 = set(p1), set(p2)
+        chosen = set()
+
+        # Recombine parental edges. Randomized inheritance avoids simply copying
+        # the fitter parent's structure and repair restores degree constraints.
+        for edge in s1 | s2:
+            if edge in s1 and edge in s2:
+                if rng.random() < 0.72:
+                    chosen.add(edge)
+            elif rng.random() < (0.58 if edge in s1 else 0.42):
+                chosen.add(edge)
+
+        # Occasionally preserve a larger chunk of one parent, or inject noise.
+        if rng.random() < 0.35:
+            base = s1 if rng.random() < 0.5 else s2
+            for edge in base:
+                if rng.random() < 0.32:
+                    chosen.add(edge)
+        if rng.random() < 0.25:
+            for ix in rng.choice(len(all_edges), size=min(8, len(all_edges)),
+                                 replace=False):
+                chosen.add(all_edges[int(ix)])
+
+        try:
+            child = norm(tools.repair(list(chosen)))
+            if tools.is_valid(child):
+                return child
+        except Exception:
+            pass
+        return None
+
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        offspring = set()
+
+        # Generate a batch of repaired offspring and screen cheaply by energy.
+        attempts = 0
+        target = 36
+        while len(offspring) < target and attempts < target * 5:
+            attempts += 1
+            child = propose()
+            if child is not None and child not in scored and not tools.is_cached(child):
+                offspring.add(child)
+
+        # A restart proposal is useful when recombination repeatedly collapses
+        # onto already explored structures.
+        if not offspring and iteration % 4 == 0:
+            for _ in range(12):
+                child = propose()
+                if child is not None and child not in scored and not tools.is_cached(child):
+                    offspring.add(child)
+
+        if not offspring:
+            # Perturb a parent through partial edge deletion, then let repair refill it.
+            base = parent()
+            for _ in range(30):
+                keep = [e for e in base if rng.random() < 0.72]
+                try:
+                    child = norm(tools.repair(keep))
+                    if tools.is_valid(child) and child not in scored and not tools.is_cached(child):
+                        offspring.add(child)
+                except Exception:
+                    pass
+                if len(offspring) >= 12:
+                    break
+        if not offspring:
+            continue
+
+        ordered = sorted(offspring, key=lambda net: tools.energy(net))
+        # Mix surrogate-favored offspring with structurally novel alternatives.
+        batch = ordered[:8]
+        remaining = [x for x in ordered if x not in set(batch)]
+        while remaining and len(batch) < 12:
+            pick = max(
+                remaining,
+                key=lambda x: min(diversity(x, y) for y in batch)
+                - 0.15 * (tools.energy(x) - tools.energy(ordered[0])) /
+                max(1.0, abs(tools.energy(ordered[0]))),
+            )
+            batch.append(pick)
+            remaining.remove(pick)
+
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+                update_population(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    break
+                raise
+
+        # Keep exploration from collapsing into a single lineage.
+        if iteration % 13 == 0 and len(population) > 3:
+            population.sort(key=lambda p: scored[p])
+            tail = population[ min(5, len(population) - 1): ]
+            if tail:
+                rng.shuffle(tail)
+                population[-len(tail):] = tail
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

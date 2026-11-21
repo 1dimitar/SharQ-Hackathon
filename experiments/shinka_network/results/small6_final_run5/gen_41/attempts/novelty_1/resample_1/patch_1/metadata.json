@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_three_hop",
+  "patch_description": "Add one small three-hop route signal only when the best two-hop route has weak leg affinity, or when the top two two-hop options are similarly ranked and neither is strong. Require positive demand on every three-hop leg, and discount the route by pressure at both transit nodes. The two pairwise couplings provide a sparse QUBO approximation to the three-link path without broad route expansion; keeping the reward modest limits spurious incentives from pairwise terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:21:44.242849",
+  "llm_cost": 0.0025307000000000003,
+  "llm_model": "gpt-6-luna"
+}

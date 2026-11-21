@@ -1,0 +1,75 @@
+<NAME>
+diverse_lp_batches
+</NAME>
+
+<DESCRIPTION>
+The current batch can spend several LP calls on very similar networks, especially when the energy ranking clusters related moves together. Preserve the existing energy/dual-benefit ordering, but greedily choose up to seven proposals that are structurally distinct by edge-set symmetric difference before filling the batch with the highest-ranked remaining proposals. Keep the existing random tail for exploration. This gives costly LP evaluations a broader sample of the neighborhood without discarding the current rankings.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Rank cheaply using the surrogate, and explicitly reserve slots for
+        # candidates with favorable LP dual-price changes.
+        fresh.sort(key=lambda net: (tools.energy(net), -price_benefit(net)))
+        selected = fresh[:8]
+        selected_set = set(selected)
+
+        dual_ranked = sorted(
+            (net for net in fresh if net not in selected_set),
+            key=price_benefit,
+            reverse=True,
+        )
+        selected.extend(net for net in dual_ranked[:3]
+                        if price_benefit(net) > 1e-10)
+        selected_set = set(selected)
+
+        remaining = [net for net in fresh if net not in selected_set]
+        if remaining:
+            count = min(3, len(remaining))
+            ids = rng.choice(len(remaining), size=count, replace=False)
+            selected.extend(remaining[int(i)] for i in ids)
+=======
+        # Rank cheaply using the surrogate and dual benefit, then make the
+        # expensive LP batch structurally diverse before filling by rank.
+        fresh.sort(key=lambda net: (tools.energy(net), -price_benefit(net)))
+        shortlist = fresh[:min(64, len(fresh))]
+        selected = []
+        pool = list(shortlist)
+
+        # Greedily retain ranked moves that differ substantially from those
+        # already selected. The rank term breaks ties in favor of better moves.
+        while pool and len(selected) < 7:
+            if not selected:
+                chosen = pool[0]
+            else:
+                ranked = {net: i for i, net in enumerate(shortlist)}
+                diverse = [
+                    net for net in pool
+                    if min(distance(net, old) for old in selected) >= 6
+                ]
+                if not diverse:
+                    break
+                chosen = max(
+                    diverse,
+                    key=lambda net: (
+                        min(distance(net, old) for old in selected)
+                        - 0.15 * ranked[net]
+                    ),
+                )
+            selected.append(chosen)
+            pool.remove(chosen)
+
+        # Fill the main batch with the best unselected proposals.
+        for net in fresh:
+            if len(selected) >= 8:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        remaining = [net for net in fresh if net not in set(selected)]
+        if remaining:
+            count = min(3, len(remaining))
+            ids = rng.choice(len(remaining), size=count, replace=False)
+            selected.extend(remaining[int(i)] for i in ids)
+>>>>>>> REPLACE
+</DIFF>

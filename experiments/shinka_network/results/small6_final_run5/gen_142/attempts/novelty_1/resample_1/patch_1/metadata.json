@@ -1,0 +1,14 @@
+{
+  "generation": 142,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "degree_penalty_ramp",
+  "patch_description": "The current penalty weight rises only from 1.20 at n=12 to 1.224 at n=16, where the raw feasible-sample rate drops as low as 86%. Increase the evaluator-supplied degree penalty to a moderate size-dependent ramp, reaching 1.348 at n=16. This targets invalid samples without adding degree terms to the QUBO or changing its cost factors.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:00:02.561057",
+  "llm_cost": 0.0033158,
+  "llm_model": "gpt-6-luna"
+}

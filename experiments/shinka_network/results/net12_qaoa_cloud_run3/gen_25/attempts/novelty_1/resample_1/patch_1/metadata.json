@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "balanced_sparse_relays",
+  "patch_description": "Keep only a small set of two-hop rewards per demand pair. Rank relays using a harmonic-mean affinity for the two legs, so one strong leg cannot compensate fully for a weak one, while retaining the existing pressure discounts in the reward. Reduce the degree penalty to 2.0 so the sparser objective has more influence during search; the evaluator still supplies the degree penalties and repairs samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:46:02.028625",
+  "llm_cost": 0.013899,
+  "llm_model": "gpt-6.1-terra"
+}

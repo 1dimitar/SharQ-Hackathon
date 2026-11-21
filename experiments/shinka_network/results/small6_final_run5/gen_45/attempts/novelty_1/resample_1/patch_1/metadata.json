@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "leg_supported_sparse_qubo",
+  "patch_description": "Separates input preparation, direct-link scoring, route construction, and structural terms into small helpers. Two-hop route selection and reward now both use a bounded support factor from the demand on the route\u2019s constituent legs, while retaining sparse route selection, reciprocal-link penalties, and the original degree-penalty interface.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:25:06.589591",
+  "llm_cost": 0.0034525,
+  "llm_model": "gpt-6-luna"
+}

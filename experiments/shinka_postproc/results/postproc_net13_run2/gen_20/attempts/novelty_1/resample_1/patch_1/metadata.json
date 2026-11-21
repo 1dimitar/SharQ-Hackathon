@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_screen",
+  "patch_description": "Make LP-batch selection account for the evaluated archive, not just diversity within the current batch. First form a shortlist of surrogate-promising moves, then greedily choose moves that are far from both the archive\u2019s best networks and already selected moves. This preserves surrogate guidance while steering some of the limited LP budget toward structurally distinct regions that may contain better basins.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:55:47.039193",
+  "llm_cost": 0.0023883000000000003,
+  "llm_model": "gpt-6-luna"
+}

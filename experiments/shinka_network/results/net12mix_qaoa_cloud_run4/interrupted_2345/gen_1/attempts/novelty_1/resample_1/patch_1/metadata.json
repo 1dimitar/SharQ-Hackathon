@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "conservative_two_hop",
+  "patch_description": "Keep direct-demand rewards as the dominant signal, but add a conservative interaction reward for selecting both links of a two-hop route. The reward is divided across possible intermediate nodes so a high-demand pair is not counted repeatedly as though every possible route were used. These wedge interactions also give the QUBO a routing-informed interaction graph, unlike the current purely linear model. Increasing the degree penalty modestly may help reduce the low valid-sample rate, while leaving degree penalties out of the returned terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:40:54.992286",
+  "llm_cost": 0.0017863999999999998,
+  "llm_model": "gpt-6-luna"
+}

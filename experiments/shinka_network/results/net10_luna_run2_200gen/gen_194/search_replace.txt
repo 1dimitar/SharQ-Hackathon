@@ -1,0 +1,54 @@
+<NAME>
+cap_aggregate_path_rewards
+</NAME>
+
+<DESCRIPTION>
+For each OD pair, the current code can reward up to \(n-2\) alternative two-hop paths independently. Their combined influence may overwhelm the direct-link preference even when each individual path reward is modest. Accumulate the candidate two-hop rewards for that OD pair, then proportionally scale them when their total magnitude exceeds 0.75 times the direct-link reward. This retains the relative ranking of relay choices while limiting their aggregate influence.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            path_terms = []
+            total_magnitude = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                path_terms.append((key, weight))
+                total_magnitude += abs(weight)
+
+            # Keep all two-hop alternatives for this OD pair collectively
+            # subordinate to its direct-link signal, without changing their ranking.
+            direct_magnitude = abs(linear[(i, k)])
+            limit = 0.75 * direct_magnitude
+            factor = min(1.0, limit / total_magnitude) if total_magnitude > 0.0 else 1.0
+            for key, weight in path_terms:
+                quadratic[key] = weight * factor
+>>>>>>> REPLACE
+</DIFF>

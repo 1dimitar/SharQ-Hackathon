@@ -1,0 +1,15 @@
+<NAME>
+moderate_path_reward
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward strength from 0.25 to 0.20. This is a targeted adjustment toward a more conservative path signal: two-hop rewards can otherwise overwhelm the direct-link demand signal, even with pressure discounts. A prior evaluation of this strength had a smaller mean best-topology gap than the current program, so this change prioritizes improving the best sampled topology while retaining the existing selective, positive-demand-gated paths.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.25
+=======
+    path_strength = 0.20
+>>>>>>> REPLACE
+</DIFF>

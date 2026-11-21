@@ -1,0 +1,31 @@
+<NAME>
+mild_concave_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Add a small concave component to the normalized direct-demand reward. The dominant 95% linear term preserves the useful signal favoring large OD demands, while the 5% square-root term gives moderate demands a little more influence. This may encourage links that serve additional OD pairs and improve typical routed load without substantially changing the preference for the largest demands. The existing quadratic terms remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Favor direct service of high-demand OD pairs.
+    linear = {
+        (i, j): -float(traffic[i, j]) / scale
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+=======
+    # Keep direct-demand preference dominant, with a small concave component
+    # that gives moderate-demand OD pairs some influence as well.
+    linear = {
+        (i, j): -(
+            0.95 * float(traffic[i, j]) / scale
+            + 0.05 * np.sqrt(float(traffic[i, j]) / scale)
+        )
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+>>>>>>> REPLACE
+</DIFF>

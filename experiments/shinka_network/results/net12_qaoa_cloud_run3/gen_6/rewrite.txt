@@ -1,0 +1,135 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build a direct-service, relay-path, and load-balancing surrogate."""
+    traffic = np.asarray(demand, dtype=float).copy()
+    n = len(traffic)
+
+    # Ignore negative entries and self traffic.
+    traffic = np.maximum(traffic, 0.0)
+    np.fill_diagonal(traffic, 0.0)
+
+    max_traffic = float(np.max(traffic)) if traffic.size else 0.0
+    if max_traffic <= 0.0:
+        max_traffic = 1.0
+    t = traffic / max_traffic
+
+    # Direct links are valuable, with a concave term retaining influence
+    # for moderate demands.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            value = float(t[i, j])
+            linear[(i, j)] = -(0.72 * value + 0.28 * np.sqrt(value))
+
+    incoming = np.sum(t, axis=0)
+    outgoing = np.sum(t, axis=1)
+    incident = np.maximum(incoming, outgoing)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    pressure = incident / max_incident
+
+    quadratic = {}
+    estimated_load = t.copy()
+
+    # Allocate a bounded total reward for each OD pair across its possible
+    # relays, rather than giving every relay the same large reward.
+    path_reward_total = 0.34
+    transit_fraction = 0.28
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+
+            relay_scores = []
+            relays = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                relays.append(j)
+                # High-pressure nodes are less attractive as transit points.
+                relay_scores.append(1.0 / (0.35 + float(pressure[j])))
+
+            score_sum = float(sum(relay_scores))
+            if score_sum <= 0.0:
+                continue
+
+            value = float(t[i, k])
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            for j, score in zip(relays, relay_scores):
+                share = score / score_sum
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    path_reward_total * support * share
+                )
+
+                # A rough expected transit load, used only to form the
+                # second-order load-balancing terms below.
+                transit = transit_fraction * value * share
+                estimated_load[i, j] += transit
+                estimated_load[j, k] += transit
+
+    peak_load = float(np.max(estimated_load)) if estimated_load.size else 0.0
+    if peak_load > 0.0:
+        estimated_load /= peak_load
+
+    # Penalize selecting two individually busy links from the same source
+    # or into the same destination. These are soft load-balancing terms;
+    # the evaluator supplies the degree constraints.
+    congestion_strength = 0.12
+    min_burden = 0.015
+
+    def add_congestion_pair(edge_a, edge_b):
+        a = float(estimated_load[edge_a[0], edge_a[1]])
+        b = float(estimated_load[edge_b[0], edge_b[1]])
+        if a < min_burden or b < min_burden:
+            return
+        weight = congestion_strength * a * b
+        key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+        quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    for i in range(n):
+        links = [(i, j) for j in range(n) if j != i]
+        for a in range(len(links)):
+            for b in range(a + 1, len(links)):
+                add_congestion_pair(links[a], links[b])
+
+    for j in range(n):
+        links = [(i, j) for i in range(n) if i != j]
+        for a in range(len(links)):
+            for b in range(a + 1, len(links)):
+                add_congestion_pair(links[a], links[b])
+
+    # Normalize the objective coefficients to a stable scale.
+    max_weight = 0.0
+    for weight in linear.values():
+        max_weight = max(max_weight, abs(float(weight)))
+    for weight in quadratic.values():
+        max_weight = max(max_weight, abs(float(weight)))
+
+    if max_weight > 0.0:
+        linear = {key: float(value) / max_weight for key, value in linear.items()}
+        quadratic = {
+            key: float(value) / max_weight
+            for key, value in quadratic.items()
+            if value != 0.0
+        }
+    else:
+        linear = {key: 0.0 for key in linear}
+        quadratic = {}
+
+    # Degree penalties are added by the evaluator, not included in these terms.
+    penalty_weight = 2.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END

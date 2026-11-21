@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_archive_search",
+  "patch_description": "Reorganizes the search as a diverse archive of LP-scored networks rather than a single descent from the current best. It screens repaired starts and degree-preserving swaps with the surrogate, prioritizes swaps involving bottleneck or heavily loaded links, and uses a small diverse LP batch per parent. This helps preserve promising alternative topologies while avoiding repeated LP evaluations of near-duplicate moves.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:39:00.417835",
+  "llm_cost": 0.0032718,
+  "llm_model": "gpt-6-luna"
+}

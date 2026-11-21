@@ -1,0 +1,15 @@
+<NAME>
+path_strength_050
+</NAME>
+
+<DESCRIPTION>
+Run an isolated sweep of the two-hop path strength, increasing it from 0.46 to 0.50 while leaving the direct-link reward, pressure calculation, and edge discount unchanged. This tests whether a modestly stronger preference for useful two-hop routes improves both the best and typical sampled topologies without confounding the result with other changes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.46
+=======
+    path_strength = 0.50
+>>>>>>> REPLACE
+</DIFF>

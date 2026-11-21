@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_balance",
+  "patch_description": "This combines demand-weighted direct-link rewards with relay credit allocated across eligible two-hop routes, rather than giving every relay the full reward for an OD pair. It also adds a sparse, endpoint-local concentration penalty: pairs of links serving the same source or destination are discouraged when both correspond to a large share of that node\u2019s demand. The relay interactions reward useful paths, while the endpoint couplings encourage spreading heavily concentrated traffic; both interaction families stay within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:58:53.195118",
+  "llm_cost": 0.0024616,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 115,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_two_hop_strength",
+  "patch_description": "Increase the two-hop reward strength from 0.25 to 0.46 while keeping the demand transform and route-quality calculation unchanged. The current setting may underweight useful transit paths relative to direct-link rewards, especially for topologies where degree constraints prevent directly connecting every high-demand pair. A moderate increase should give the sampler more incentive to select links that form viable two-hop routes, without making the path reward as dominant as the previously tested 0.56 setting. This leaves the positive-demand-only path terms and their existing pressure discounts intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:57.338246",
+  "llm_cost": 0.0008387000000000001,
+  "llm_model": "gpt-6-luna"
+}

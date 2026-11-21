@@ -1,0 +1,14 @@
+{
+  "generation": 86,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "replica_tempering",
+  "patch_description": "Instead of building large neighborhoods and screening a small batch with surrogate energy, this approach spends the LP budget on a continuous set of single proposals. Four Metropolis-style search chains use different temperatures: cooler chains refine good networks, while hotter chains accept uphill moves and explore other regions. Proposals usually swap destinations on two links, preferentially involving an LP-identified bottleneck; occasional three-link rotations and short compound moves help escape two-switch traps. Repaired QAOA samples seed the chains, with surrogate energy used only to diversify and rank initial starts. The best LP-scored network is retained throughout.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:46:52.309753",
+  "llm_cost": 0.0048416,
+  "llm_model": "gpt-6-luna"
+}

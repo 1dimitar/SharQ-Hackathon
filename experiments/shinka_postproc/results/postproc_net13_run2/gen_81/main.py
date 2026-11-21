@@ -1,0 +1,464 @@
+"""Starting program of post-processing run 2 (network13): run 1's best program (gen 49, combined
+score 0.9901 on network12), copied from results/postproc_net12_run1/best/main.py. Only the fixed
+wrapper below the EVOLVE block changed (tools.energy uses each pool's own Hamiltonian).
+"""
+
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+import math
+import numpy as np
+
+
+def improve(demand, candidates, tools, rng):
+    """Search repaired networks with a dual-guided, adaptive simulated-annealing walk."""
+    seen = {}
+    energy_cache = {}
+    best_net = None
+    best_score = float("inf")
+    walker = None
+    walker_score = float("inf")
+    stalls = {}
+
+    # Smoothed LP-confirmed success rates; a fixed probability floor retains exploration.
+    op_trials = [4.0, 4.0, 4.0]  # switch, rotation, kick
+    op_wins = [1.0, 1.0, 1.0]
+    op_gain = [0.0, 0.0, 0.0]
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def edges(net):
+        return set(net)
+
+    def distance(a, b):
+        return len(edges(a) ^ edges(b))
+
+    def energy(net):
+        if net not in energy_cache:
+            try:
+                energy_cache[net] = float(tools.energy(net))
+            except Exception:
+                energy_cache[net] = 0.0
+        return energy_cache[net]
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def choose_starts(repaired, limit):
+        ordered = sorted(repaired, key=energy)
+        chosen = []
+        for net in ordered:
+            if all(distance(net, old) >= 4 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= limit:
+                break
+        for net in ordered:
+            if len(chosen) >= limit:
+                break
+            if net not in chosen:
+                chosen.append(net)
+        return chosen
+
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    starts = choose_starts(repaired, min(22, len(repaired)))
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            continue
+
+    if not seen:
+        return list(starts[0]) if starts else []
+
+    walker = best_net
+    walker_score = best_score
+
+    def archive():
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= 20:
+                break
+        for net in ranked:
+            if len(out) >= 36:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    def select_parent(pop, iteration):
+        nonlocal walker, walker_score
+        if not pop:
+            return walker
+        # Keep a persistent annealing trajectory, but periodically restart from the archive.
+        if walker is not None and rng.random() < 0.72:
+            return walker
+        k = min(len(pop), 18)
+        # Rank-biased archive sampling, with enough probability on less-explored regions.
+        weights = np.asarray(
+            [1.0 / ((i + 1) ** 0.72) for i in range(k)], dtype=float
+        )
+        weights /= weights.sum()
+        return pop[int(rng.choice(k, p=weights))]
+
+    def two_switch(net, p, q):
+        arcs = list(net)
+        (a, b), (c, d) = arcs[p], arcs[q]
+        if a == d or c == b:
+            return None
+        cur = set(net)
+        if (a, d) in cur or (c, b) in cur:
+            return None
+        cur.remove((a, b))
+        cur.remove((c, d))
+        cur.add((a, d))
+        cur.add((c, b))
+        return tuple(sorted(cur))
+
+    def get_hot(detail):
+        prices = {}
+        hot = set()
+        if detail:
+            try:
+                prices = {
+                    tuple(map(int, a)): float(v)
+                    for a, v in detail.get("prices", {}).items()
+                }
+                hot = {a for a, v in prices.items() if v > 0.0}
+            except Exception:
+                prices, hot = {}, set()
+            if not hot:
+                try:
+                    loads = detail.get("loads", {})
+                    ranked = sorted(
+                        loads.items(), key=lambda item: float(item[1]), reverse=True
+                    )
+                    hot = {tuple(map(int, a)) for a, _ in ranked[:7]}
+                except Exception:
+                    hot = set()
+        return prices, hot
+
+    def operator_probs():
+        rates = [
+            (op_wins[i] + 1.0 + min(2.0, op_gain[i]))
+            / (op_trials[i] + 5.0)
+            for i in range(3)
+        ]
+        mean = max(1e-12, sum(rates) / 3.0)
+        weights = [0.16 + min(2.0, max(0.45, r / mean)) for r in rates]
+        total = sum(weights)
+        return [w / total for w in weights]
+
+    def make_moves(parent, detail):
+        arcs = list(parent)
+        current = set(parent)
+        prices, hot = get_hot(detail)
+        moves = {}
+
+        def add(net, kind):
+            if net is None or net == parent:
+                return
+            if net not in moves:
+                try:
+                    if tools.is_valid(net):
+                        moves[net] = kind
+                except Exception:
+                    pass
+
+        # Include the complete hot-link 2-switch neighborhood.
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                if hot and arcs[p] not in hot and arcs[q] not in hot:
+                    continue
+                add(two_switch(parent, p, q), 0)
+
+        # Random 2-switches broaden search beyond the dual-active set.
+        for _ in range(45):
+            if len(arcs) < 2:
+                break
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            add(two_switch(parent, p, q), 0)
+
+        # Three-link rotations; most trials are unrestricted to hedge against
+        # incomplete or degenerate dual-price signals.
+        if len(arcs) >= 3:
+            trials = 75 + min(100, 12 * stalls.get(parent, 0))
+            for _ in range(trials):
+                ids = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and rng.random() < 0.55 and not (old & hot):
+                    continue
+                for new in (
+                    {(a, d), (c, f), (e, b)},
+                    {(a, f), (c, b), (e, d)},
+                ):
+                    if any(x == y for x, y in new) or new & (current - old):
+                        continue
+                    add(tuple(sorted((current - old) | new)), 1)
+
+        # Multi-switch perturbations for escaping local basins.
+        for _ in range(18):
+            cur = set(parent)
+            steps = 2 + int(rng.integers(4))
+            for _ in range(steps):
+                now = list(cur)
+                if len(now) < 2:
+                    break
+                p, q = rng.choice(len(now), size=2, replace=False)
+                (a, b), (c, d) = now[int(p)], now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            add(tuple(sorted(cur)), 2)
+
+        return moves, prices
+
+    def rank_moves(moves, parent, prices):
+        fresh = []
+        parent_edges = set(parent)
+        base_energy = energy(parent)
+        for net, kind in moves.items():
+            if net in seen:
+                continue
+            try:
+                if tools.is_cached(net):
+                    continue
+            except Exception:
+                pass
+            removed = parent_edges - set(net)
+            added = set(net) - parent_edges
+            dual_gain = sum(prices.get(a, 0.0) for a in removed)
+            dual_gain -= sum(prices.get(a, 0.0) for a in added)
+            fresh.append((net, kind, energy(net) - base_energy, dual_gain))
+
+        if not fresh:
+            return []
+
+        # Rank each free signal separately; this avoids a brittle scale-dependent
+        # weighted sum of Hamiltonian energy and dual prices.
+        by_energy = sorted(range(len(fresh)), key=lambda i: fresh[i][2])
+        by_dual = sorted(range(len(fresh)), key=lambda i: fresh[i][3], reverse=True)
+        erank = [0.0] * len(fresh)
+        drank = [0.0] * len(fresh)
+        den = max(1, len(fresh) - 1)
+        for rank, i in enumerate(by_energy):
+            erank[i] = rank / den
+        for rank, i in enumerate(by_dual):
+            drank[i] = rank / den
+
+        records = []
+        for i, (net, kind, _, _) in enumerate(fresh):
+            # A little randomized tie-breaking prevents repeated deterministic choices.
+            value = 0.62 * erank[i] + 0.28 * drank[i] + 0.10 * float(rng.random())
+            records.append((value, net, kind))
+        records.sort(key=lambda x: x[0])
+
+        selected = []
+        # Choose the best screened move and a second, structurally distinct contender.
+        for _, net, kind in records:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append((net, kind))
+            if len(selected) >= 2:
+                break
+        if len(selected) < 2:
+            for _, net, kind in records:
+                if all(net != old for old, _ in selected):
+                    selected.append((net, kind))
+                    break
+        # Occasionally substitute a near-tail proposal to retain non-surrogate exploration.
+        if len(records) > 12 and len(selected) == 2 and rng.random() < 0.12:
+            tail = records[8:min(30, len(records))]
+            if tail:
+                _, net, kind = tail[int(rng.integers(len(tail)))]
+                if net not in [x for x, _ in selected]:
+                    selected[-1] = (net, kind)
+        return selected
+
+    iteration = 0
+    temperature = 650.0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        pop = archive()
+        parent = select_parent(pop, iteration)
+        if parent is None:
+            break
+
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+
+        moves, prices = make_moves(parent, detail)
+        batch = rank_moves(moves, parent, prices)
+
+        if not batch:
+            # Try a different archived region if this neighborhood is exhausted.
+            alternatives = [x for x in pop if x != parent]
+            if alternatives:
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+                    detail = tools.lp_detail(parent)
+                except Exception:
+                    detail = None
+                moves, prices = make_moves(parent, detail)
+                batch = rank_moves(moves, parent, prices)
+
+        if not batch:
+            stalls[parent] = stalls.get(parent, 0) + 1
+            if iteration > 10000:
+                break
+            continue
+
+        parent_score = seen.get(parent, float("inf"))
+        improved_parent = False
+        for net, kind in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score = evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+            op_trials[kind] += 1.0
+            if score < parent_score:
+                gain = (parent_score - score) / max(1.0, abs(parent_score))
+                op_wins[kind] += 1.0
+                op_gain[kind] += min(2.0, 100.0 * gain)
+
+            if score < parent_score:
+                improved_parent = True
+
+            # SA acceptance updates the persistent walker; the global best is
+            # always retained separately and is never lost to an uphill move.
+            current_score = walker_score
+            if walker is None or score < current_score:
+                walker, walker_score = net, score
+            else:
+                delta = score - current_score
+                if rng.random() < math.exp(-min(50.0, delta / max(1.0, temperature))):
+                    walker, walker_score = net, score
+
+        if improved_parent:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        # Cool slowly and periodically reheat to cross barriers after stagnation.
+        temperature = max(90.0, temperature * 0.9994)
+        if iteration % 240 == 0:
+            if max(stalls.values(), default=0) >= 5:
+                temperature = min(650.0, temperature * 1.45)
+            else:
+                temperature = max(120.0, temperature * 1.18)
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

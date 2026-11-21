@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "weighted_route_debias",
+  "patch_description": "Replace the raw count of route-reward couplings incident to each link with their total reward magnitude. A link appearing in a few high-demand routes can contribute more to predicted load than one appearing in many weak routes; counting both equally can misidentify which links are overfavoured. The resulting demand-based linear correction targets links that accumulate unusually strong route support, while keeping the existing sparse QUBO structure and coupling count unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:06:53.550980",
+  "llm_cost": 0.0027691,
+  "llm_model": "gpt-6-luna"
+}

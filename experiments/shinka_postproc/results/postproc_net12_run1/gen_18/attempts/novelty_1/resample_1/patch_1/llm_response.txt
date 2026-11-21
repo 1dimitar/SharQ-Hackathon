@@ -1,0 +1,46 @@
+<NAME>
+diverse_batch_screen
+</NAME>
+
+<DESCRIPTION>
+The current batch evaluates the eight lowest-energy moves even when they are near-duplicates, which can spend LP calls exploring essentially the same topology. This change forms a competitive energy shortlist, then greedily selects moves that are far from already selected moves while applying a modest penalty to worse energy ranks. It retains the existing random tail for exploration and uses the same LP-call budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # Spend most calls on surrogate-promising candidates, reserving some for diversity.
+            fresh.sort(key=lambda m: tools.energy(m))
+            batch = fresh[:8]
+            tail = fresh[8:]
+            if tail:
+                count = min(3, len(tail))
+                batch.extend(tail[int(i)] for i in rng.choice(len(tail), size=count, replace=False))
+=======
+            # Build a competitive shortlist, then avoid spending the LP batch on
+            # near-duplicate topologies. Energy rank still matters, but diversity
+            # helps explore distinct network structures.
+            fresh.sort(key=lambda m: tools.energy(m))
+            shortlist = fresh[:min(48, len(fresh))]
+            batch = []
+            ranks = {m: i for i, m in enumerate(shortlist)}
+            while shortlist and len(batch) < 8:
+                if not batch:
+                    chosen = shortlist[0]
+                else:
+                    chosen = max(
+                        shortlist,
+                        key=lambda m: (
+                            min(len(set(m).symmetric_difference(set(old)))
+                                for old in batch) - 0.20 * ranks[m]
+                        ),
+                    )
+                batch.append(chosen)
+                shortlist.remove(chosen)
+
+            selected = set(batch)
+            tail = [m for m in fresh if m not in selected]
+            if tail:
+                count = min(3, len(tail))
+                batch.extend(tail[int(i)] for i in rng.choice(len(tail), size=count, replace=False))
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_beam_restarts",
+  "patch_description": "Reorganizes the search into three stages: diverse repaired starts, a compact archive of strong networks, and repeated dual-ranked neighborhood batches. Two-switches are ranked explicitly by the prices relieved on removed links, then by surrogate-energy change and added demand. Small batches limit LP spending on weak moves, while archive-based restarts and adaptive kicks help escape local minima.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:39:21.149195",
+  "llm_cost": 0.0032766,
+  "llm_model": "gpt-6-luna"
+}

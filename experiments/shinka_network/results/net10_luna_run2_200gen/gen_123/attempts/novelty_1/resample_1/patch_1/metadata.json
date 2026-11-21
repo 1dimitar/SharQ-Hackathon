@@ -1,0 +1,14 @@
+{
+  "generation": 123,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_normalized_relay_pressure",
+  "patch_description": "Change only the relay-pressure normalization, keeping route scoring and all other terms fixed. Normalize incident demand by its maximum rather than its mean, and use a 0.55 floor. This makes the pressure scale consistent across demand matrices and gives quieter nodes a measured preference as relays without allowing extremely low-demand nodes to dominate route selection. Comparing this isolated change against the current mean-based, 0.75-floor version will show whether the altered relay preference helps both the best and typical sampled topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:46.890822",
+  "llm_cost": 0.0012747000000000001,
+  "llm_model": "gpt-6-luna"
+}

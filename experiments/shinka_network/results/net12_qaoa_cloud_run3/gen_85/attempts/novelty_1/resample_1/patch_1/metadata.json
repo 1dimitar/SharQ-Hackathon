@@ -1,0 +1,14 @@
+{
+  "generation": 85,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_selection",
+  "patch_description": "The current program creates a quadratic term for every possible relay on every positive-demand OD pair, producing 880 couplings and many competing path rewards. Restricting each OD pair to a small set of promising relays reduces this to roughly the scale of the earlier 264-term programs, which performed better and creates a more focused interaction graph for partitioning.\n\nRank relays using the suggested balanced-leg affinity, `min(a, b) + 0.25 * max(a, b)`, discounted by node pressure. This favors paths whose two legs both have useful demand, while still allowing some preference for a strong individual leg. Preserve the existing path-support and pressure-discounted coupling weight for selected relays.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:39:03.052100",
+  "llm_cost": 0.0008514,
+  "llm_model": "gpt-6-luna"
+}

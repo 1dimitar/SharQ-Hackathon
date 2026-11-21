@@ -1,0 +1,17 @@
+<NAME>
+raise_indirect_budget
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward budget from 0.25 to 0.62 while leaving the existing path support and pressure discounts unchanged. This tests whether the current QUBO underweights indirect service relative to direct-link rewards: with only two outgoing links per node, useful two-hop routes can be important alternatives to direct links. Keeping the support allocation fixed isolates the effect of reward strength and does not increase the number of quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.25
+=======
+    quadratic = {}
+    path_strength = 0.62
+>>>>>>> REPLACE
+</DIFF>

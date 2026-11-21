@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_shadow",
+  "patch_description": "This combines the baseline\u2019s direct-demand preference with a sparse, demand-weighted model of useful two-hop routes. Rather than rewarding every possible two-hop path equally, it selects only a few promising relays per origin\u2013destination pair and discounts relays whose nodes already carry substantial traffic. A small endpoint-gravity term gives links some value as network connectors, while keeping direct demand dominant. The resulting chain couplings encourage plausible transit structure without letting the path bonuses overwhelm direct-link choices.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:43.521790",
+  "llm_cost": 0.0026038,
+  "llm_model": "gpt-6-luna"
+}

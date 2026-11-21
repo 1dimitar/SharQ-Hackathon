@@ -1,0 +1,26 @@
+<NAME>
+congestion_aware_paths
+</NAME>
+
+<DESCRIPTION>
+Discount two-hop alternatives that use links with substantial direct demand. Those links are more likely to be busy already, so reallocating the fixed indirect-reward budget toward less-loaded alternatives better reflects the congestion the routing objective measures. Also raise the evaluator-supplied degree penalty slightly from 1.0 to 1.1 to discourage the small fraction of infeasible pre-repair samples without making a large change to the cost balance.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                score = (0.18 + 0.82 * support) * float(node_capacity[j])
+=======
+                edge_load = a + b
+                score = (
+                    (0.18 + 0.82 * support)
+                    * float(node_capacity[j])
+                    / (1.0 + 0.8 * edge_load)
+                )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    return linear, quadratic, 1.0
+=======
+    return linear, quadratic, 1.1
+>>>>>>> REPLACE
+</DIFF>

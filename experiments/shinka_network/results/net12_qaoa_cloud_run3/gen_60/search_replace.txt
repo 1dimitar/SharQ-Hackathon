@@ -1,0 +1,16 @@
+<NAME>
+relay_budget_third
+</NAME>
+
+<DESCRIPTION>
+Increase the per-OD relay budget from roughly one fifth to one third of the available relays. This adds a modest number of plausible two-hop alternatives, which may help the sampled topologies balance transit load better than the current sparse support. The change keeps the existing path ranking and reward rule fixed, as recommended, and remains within the quadratic-term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    relay_budget = min(n - 2, max(1, n // 5))
+=======
+    relay_budget = min(n - 2, n // 3)
+>>>>>>> REPLACE
+
+</DIFF>

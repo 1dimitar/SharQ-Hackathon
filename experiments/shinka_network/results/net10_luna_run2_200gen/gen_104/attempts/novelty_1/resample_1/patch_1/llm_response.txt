@@ -1,0 +1,102 @@
+<NAME>
+shadow_price_routes
+</NAME>
+
+<DESCRIPTION>
+This approach builds a congestion-aware menu of two-hop routes. For each origin-destination pair, it distributes a bounded routing reward across candidate relays, favoring relays and constituent links with lower estimated traffic pressure. Direct links retain a separate service reward. Unlike a uniform two-hop bonus, the route rewards compete for a fixed per-pair budget, so adding more candidate paths does not inflate their total influence. The construction uses at most \(n(n-1)(n-2)\) quadratic terms.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear and quadratic cost terms plus the degree penalty weight."""
+    raw = np.asarray(demand, dtype=float)
+    n = int(raw.shape[0])
+
+    d = np.maximum(raw, 0.0).copy()
+    np.fill_diagonal(d, 0.0)
+    maximum = float(np.max(d)) if d.size else 0.0
+    if maximum > 0.0:
+        d /= maximum
+
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    incident = row + col
+    positive_incident = incident[incident > 0.0]
+    mean_incident = (
+        float(np.mean(positive_incident)) if positive_incident.size else 1.0
+    )
+
+    # A high incident-load estimate implies less spare capacity for relaying.
+    relay_capacity = 1.0 / np.sqrt(1.0 + incident / mean_incident)
+
+    # Direct service reward, with a concave component that preserves some
+    # signal for useful moderate-demand links.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(d[i, j])
+                linear[(i, j)] = -(0.82 * value + 0.18 * np.sqrt(value))
+
+    quadratic = {}
+    indirect_fraction = 0.38
+
+    # For each OD pair, spread a fixed indirect-service budget over relay
+    # candidates. Relay quality includes node capacity and the pressure on
+    # each of the two links needed to realize the route.
+    for i in range(n):
+        for k in range(n):
+            traffic = float(d[i, k])
+            if i == k or traffic <= 0.0:
+                continue
+
+            candidates = []
+            total_quality = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = float(d[i, j] + d[j, k])
+                quality = float(relay_capacity[j]) / np.sqrt(1.0 + edge_pressure)
+                if quality > 0.0:
+                    candidates.append((j, quality))
+                    total_quality += quality
+
+            if total_quality <= 0.0:
+                continue
+
+            pair_budget = indirect_fraction * traffic
+            for j, quality in candidates:
+                share = quality / total_quality
+                quadratic[((i, j), (j, k))] = -pair_budget * share
+
+    # Degree penalties are supplied by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

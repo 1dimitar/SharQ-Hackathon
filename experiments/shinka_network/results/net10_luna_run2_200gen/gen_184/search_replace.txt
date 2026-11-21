@@ -1,0 +1,24 @@
+<NAME>
+concave_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Give moderate-demand direct links more influence by blending normalized demand with its square root. This narrows the gap between high- and moderate-demand link rewards, which may improve the quality of typical sampled topologies while retaining a substantial reward for directly serving heavy traffic. The existing two-hop terms remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+=======
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = max(0.0, float(demand[i, j])) / scale
+                linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,21 @@
+<NAME>
+stronger_edge_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the edge-pressure discount in the two-hop reward from 0.5 to 0.85, leaving all other terms unchanged. This more strongly favors alternate paths that avoid OD pairs whose direct edges already carry substantial demand, which may improve load balance and reduce the maximum link load. It also directly tests the suggested discount tuning without changing the number of quadratic terms or their structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

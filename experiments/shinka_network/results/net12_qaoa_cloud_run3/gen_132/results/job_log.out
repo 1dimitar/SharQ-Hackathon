@@ -1,0 +1,11 @@
+network12_s0: done in 379s, score 0.860
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) │
+╰──────────────────────────────────────────────────────────────────────────────╯
+network12_s1: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 30s
+network12_s1: done in 858s, score 0.843
+correct: True | error: None | 1240s
+combined_score: 0.8514767037609932
+network12_s0: score 0.860, best 298643 vs reference 276474 (gap +8.0%), median gap +25.9%, 17% of 100 qaoa_partitioned solutions valid before repair, 79 distinct topologies, 220 quadratic terms, 6012 circuits
+network12_s1: score 0.843, best 310167 vs reference 276474 (gap +12.2%), median gap +25.9%, 11% of 100 qaoa_partitioned solutions valid before repair, 94 distinct topologies, 220 quadratic terms, 6012 circuits
+Largest gap: network12_s1 (+12.2%).

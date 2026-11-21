@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "two_hop_synergy",
+  "patch_description": "Keep direct-demand rewards as the dominant signal, while adding a modest reward when two selected links form a two-hop route for a demand pair. This gives the QUBO some awareness of traffic that can be served indirectly without letting the two-hop approximation overwhelm the baseline that already performs well. A small endpoint-throughput contribution also favors links connected to nodes with substantial traffic. The quadratic-term count is at most \\(n(n-1)(n-2)\\), within the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:39.015868",
+  "llm_cost": 0.0008671,
+  "llm_model": "gpt-6-luna"
+}

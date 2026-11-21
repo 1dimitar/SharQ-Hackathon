@@ -1,0 +1,342 @@
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    """Learn an edge model from good networks and sample valid topologies."""
+    n = tools.n
+
+    def canon(arcs):
+        return tuple(sorted(tuple(a) for a in arcs))
+
+    scores = {}
+    archive = []
+    archive_set = set()
+    best_net = None
+    best_score = float("inf")
+    dual_penalty = {}
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in scores:
+            if tools.lp_calls_left <= 0:
+                return float("inf")
+            try:
+                scores[net] = float(tools.lp(net))
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return float("inf")
+                scores[net] = float("inf")
+        value = scores[net]
+        if value < best_score:
+            best_score, best_net = value, net
+            update_duals(net)
+        return value
+
+    def update_duals(net):
+        """Penalize links whose positive dual prices identify bottlenecks."""
+        nonlocal dual_penalty
+        try:
+            info = tools.lp_detail(net)
+            prices = info.get("prices", {})
+            positive = [(tuple(a), float(p)) for a, p in prices.items()
+                        if float(p) > 0]
+            if positive:
+                scale = max(p for _, p in positive)
+                dual_penalty = {
+                    a: min(1.6, 0.9 * p / scale) for a, p in positive
+                }
+        except Exception:
+            pass
+
+    def remember(net):
+        net = canon(net)
+        if net in archive_set or not math.isfinite(scores.get(net, float("inf"))):
+            return
+        archive.append(net)
+        archive_set.add(net)
+
+        # Keep a strong elite and a diverse set of alternative basins.
+        archive.sort(key=lambda x: scores[x])
+        kept = archive[:10]
+        for other in archive[10:]:
+            if len(kept) >= 40:
+                break
+            edges = set(other)
+            if all(len(edges ^ set(old)) >= 6 for old in kept):
+                kept.append(other)
+        for other in archive[10:]:
+            if len(kept) >= 40:
+                break
+            if other not in kept:
+                kept.append(other)
+        archive[:] = kept
+        archive_set.clear()
+        archive_set.update(archive)
+
+    # Free repairs provide both initial LP seeds and a weak prior over edges.
+    repairs = set()
+    for candidate in candidates:
+        try:
+            net = canon(tools.repair(candidate))
+            if tools.is_valid(net):
+                repairs.add(net)
+        except Exception:
+            continue
+    if not repairs:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repairs.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repairs, key=tools.energy)
+    seeds = []
+    for net in ordered:
+        if all(len(set(net) ^ set(old)) >= 6 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= 14:
+            break
+    for net in ordered:
+        if len(seeds) >= 26:
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        evaluate(net)
+        remember(net)
+
+    if best_net is None:
+        return list(seeds[0]) if seeds else []
+
+    # The prior captures links shared by repaired QAOA candidates.
+    prior_count = {}
+    for net in repairs:
+        for edge in net:
+            prior_count[edge] = prior_count.get(edge, 0) + 1
+    prior_total = max(1, len(repairs))
+
+    def edge_logits(temperature=1.0, uniform=False):
+        """Build sampling logits from elite edge frequencies and the prior."""
+        if uniform:
+            return {(i, j): 0.0 for i in range(n) for j in range(n) if i != j}
+
+        elites = archive[:min(18, len(archive))]
+        counts = {}
+        total_weight = 0.0
+        for rank, net in enumerate(elites):
+            weight = math.exp(-rank / 5.0)
+            total_weight += weight
+            for edge in net:
+                counts[edge] = counts.get(edge, 0.0) + weight
+
+        result = {}
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    continue
+                freq = counts.get((i, j), 0.0) / max(total_weight, 1e-12)
+                prior = prior_count.get((i, j), 0) / prior_total
+                # Smooth the empirical model to retain broad exploration.
+                prob = 0.07 + 0.72 * freq + 0.21 * prior
+                prob = min(0.88, max(0.04, prob))
+                logit = math.log(prob / (1.0 - prob))
+                logit -= dual_penalty.get((i, j), 0.0)
+                result[(i, j)] = logit / temperature
+        return result
+
+    def weighted_matching(logits, forbidden):
+        """Sample a perfect matching by randomized backtracking."""
+        assignment = [-1] * n
+        used = [False] * n
+        visits = [0]
+        limit = 30000
+
+        def search(left):
+            if not left:
+                return True
+            visits[0] += 1
+            if visits[0] > limit:
+                return False
+
+            # Minimum-remaining-values row choice reduces backtracking.
+            chosen = None
+            options_for_chosen = None
+            for row in left:
+                opts = [col for col in range(n)
+                        if col != row and not used[col]
+                        and (row, col) not in forbidden]
+                if not opts:
+                    return False
+                if options_for_chosen is None or len(opts) < len(options_for_chosen):
+                    chosen, options_for_chosen = row, opts
+                    if len(opts) == 1:
+                        break
+
+            # Gumbel ordering samples high-logit edges first but still allows
+            # alternatives if a partial matching would otherwise dead-end.
+            ordered_opts = sorted(
+                options_for_chosen,
+                key=lambda col: logits.get((chosen, col), 0.0)
+                + float(rng.gumbel()),
+                reverse=True,
+            )
+            rest = [row for row in left if row != chosen]
+            for col in ordered_opts:
+                assignment[chosen] = col
+                used[col] = True
+                if search(rest):
+                    return True
+                used[col] = False
+                assignment[chosen] = -1
+            return False
+
+        if search(list(range(n))):
+            return assignment
+        return None
+
+    def sample_network(mode):
+        if mode == 0:
+            logits = edge_logits(temperature=0.72)
+        elif mode == 1:
+            logits = edge_logits(temperature=1.25)
+        elif mode == 2:
+            logits = edge_logits(temperature=2.2)
+        else:
+            logits = edge_logits(uniform=True)
+
+        first = weighted_matching(logits, set())
+        if first is None:
+            return None
+        forbidden = {(i, first[i]) for i in range(n)}
+        second = weighted_matching(logits, forbidden)
+        if second is None:
+            # A flatter distribution can avoid a rare unlucky dead-end.
+            flat = edge_logits(temperature=3.0)
+            second = weighted_matching(flat, forbidden)
+        if second is None:
+            return None
+        return canon(
+            [(i, first[i]) for i in range(n)]
+            + [(i, second[i]) for i in range(n)]
+        )
+
+    # Batch-screen free proposals with the Hamiltonian, then spend LP calls on
+    # promising and structurally distinct samples.
+    generation = 0
+    while tools.lp_calls_left > 0:
+        generation += 1
+        proposals = set()
+        attempts = 0
+        while len(proposals) < 34 and attempts < 180:
+            attempts += 1
+            r = float(rng.random())
+            mode = 0 if r < 0.48 else (1 if r < 0.72 else (2 if r < 0.90 else 3))
+            net = sample_network(mode)
+            if net is not None and net not in proposals and net not in scores:
+                if tools.is_valid(net):
+                    proposals.add(net)
+
+        if not proposals:
+            # Re-seed the model with an archive member's alternate pairings via
+            # another flat draw rather than repeatedly retrying a failed batch.
+            net = sample_network(3)
+            if net is None or net in scores:
+                break
+            proposals.add(net)
+
+        ranked = sorted(proposals, key=tools.energy)
+        batch = []
+        for net in ranked:
+            if all(len(set(net) ^ set(old)) >= 4 for old in batch):
+                batch.append(net)
+            if len(batch) >= 5:
+                break
+        for net in ranked:
+            if len(batch) >= 6:
+                break
+            if net not in batch:
+                batch.append(net)
+
+        # Occasionally reserve one evaluation for an energy-independent sample.
+        if len(ranked) > len(batch) and generation % 4 == 0:
+            remaining = [net for net in ranked if net not in batch]
+            if remaining:
+                batch.append(remaining[int(rng.integers(len(remaining)))])
+
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            value = evaluate(net)
+            if math.isfinite(value):
+                remember(net)
+
+    return list(best_net) if best_net is not None else (list(seeds[0]) if seeds else [])
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import signal
+
+    import oracle
+    from hamiltonian import surrogate_terms
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

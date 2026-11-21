@@ -1,0 +1,14 @@
+{
+  "generation": 106,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_extra_relays",
+  "patch_description": "Reserve a second relay interaction for only the highest-demand OD pairs, using the 90th percentile of positive off-diagonal demands as the cutoff. All other OD pairs retain one relay. This keeps the existing ranking and reward formulas, limits each OD pair to at most two relays, and focuses the extra quadratic terms on traffic most likely to affect the maximum link load.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:11:19.035938",
+  "llm_cost": 0.0009972000000000002,
+  "llm_model": "gpt-6-luna"
+}

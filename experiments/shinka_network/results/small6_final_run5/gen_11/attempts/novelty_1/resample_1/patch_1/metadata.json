@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "endpoint_affinity",
+  "patch_description": "Weight two-hop routes by evidence that both of their legs are independently useful: a geometric mean of the two leg demands rewards balanced support and avoids letting one heavily demanded leg mask an unsupported one. Use this affinity both when ranking candidate transit nodes and when scaling route couplings. Also make the direct-versus-indirect redundancy penalty stronger for better-supported legs. The bounded multipliers preserve the existing pressure-aware model while making its preferences more demand-specific.",
+  "error_msg": "SEARCH text not found in editable regions\n\nLooking for 3-line block starting with: 'affinity = 0.25 + edge_pressure'\n\nFull search pattern:\n```\naffinity = 0.25 + edge_pressure\n                rank = affinity / (transit_pressure ** 0.75)\n                discount = transit_pressure * (1.0 + 0.5 * edge_pressure)\n```\n\nFound similar code block at line 51 (\u2713 editable):\n\nDifferences between search pattern and actual code:\n```diff\n-  affinity = 0.25 + edge_pressure\n-                  rank = affinity / (transit_pressure ** 0.75)\n-                  discount = transit_pressure * (1.0 + 0.5 * edge_pressure)\n+                  affinity = 0.25 + edge_pressure\n+                  rank = affinity / (pressure ** 0.75)\n+                  discount = pressure * (1.0 + 0.5 * edge_pressure)\n```\n\nEditable regions where you can make changes:\n  Region 1 (lines 5-91):\n    import numpy as np\n    \n    \n    ... (77 more lines)\n                    add_route(j, -0.30 * float(support) / discount)\n    \n        return linear, quadratic, 1.25\n\nQuick fixes:\n\u2022 Check indentation - search text must match exactly including spaces/tabs\n\u2022 Look for typos in the search text\n\u2022 Try searching for just the first line instead of the full block",
+  "timestamp": "2026-11-22T01:53:01.489937",
+  "llm_cost": 0.0020473,
+  "llm_model": "gpt-6-luna"
+}

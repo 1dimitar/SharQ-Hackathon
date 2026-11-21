@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "operator_stall_adaptation",
+  "patch_description": "Track whether each move operator produces an improvement for a given parent, rather than using the parent\u2019s overall stall count to guide neighborhood effort. Increase random-switch, rotation, and archive-recombination sampling independently when that operator has repeatedly failed to improve the parent; reset its counter when one of its evaluated moves does improve it. This lets the search spend more proposals on underexplored or promising alternatives without letting one operator\u2019s failures inflate effort for every neighborhood type. Trial counts are capped to keep proposal generation bounded.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:53:35.804155",
+  "llm_cost": 0.0033757,
+  "llm_model": "gpt-6-luna"
+}

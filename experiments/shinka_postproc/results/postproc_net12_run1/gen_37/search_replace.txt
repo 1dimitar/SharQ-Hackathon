@@ -1,0 +1,70 @@
+<NAME>
+dual_benefit_slots
+</NAME>
+
+<DESCRIPTION>
+Use the LP dual prices directionally when screening moves: a switch is promising when it removes highly priced links and adds low-priced ones. Keep the existing energy-ranked batch, but reserve a few additional LP evaluations for moves with the strongest positive price benefit. This preserves the surrogate’s useful signal while ensuring promising dual-guided moves are not crowded out by energy ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Surrogate energy is the primary screen. Among close options, prefer
+        # moves that actually remove a dual-priced link.
+        old_links = set(source)
+        fresh.sort(key=lambda net: (
+            tools.energy(net),
+            not bool((old_links - set(net)) & focus),
+        ))
+        selected = fresh[:9]
+
+        targeted = [
+            net for net in fresh[9:]
+            if (old_links - set(net)) & focus
+        ]
+        selected.extend(targeted[:3])
+
+        # Preserve a little exploration even when the surrogate ranking is poor.
+        remaining = [net for net in fresh if net not in set(selected)]
+=======
+        # Keep the energy-ranked batch, but reserve slots for moves whose
+        # removed links have greater dual price than their replacement links.
+        old_links = set(source)
+        fresh.sort(key=lambda net: (
+            tools.energy(net),
+            not bool((old_links - set(net)) & focus),
+        ))
+        selected = fresh[:9]
+
+        prices = {}
+        try:
+            detail = tools.lp_detail(source)
+            prices = {
+                tuple(map(int, link)): float(price)
+                for link, price in detail.get("prices", {}).items()
+            }
+        except Exception:
+            pass
+
+        def price_benefit(net):
+            removed = old_links - set(net)
+            added = set(net) - old_links
+            return sum(prices.get(link, 0.0) for link in removed) - sum(
+                prices.get(link, 0.0) for link in added
+            )
+
+        # Reserve three batch places for the strongest positive dual signals,
+        # even when those moves rank poorly under the QUBO surrogate.
+        selected_set = set(selected)
+        dual_ranked = sorted(
+            (net for net in fresh if net not in selected_set),
+            key=lambda net: price_benefit(net),
+            reverse=True,
+        )
+        selected.extend(
+            net for net in dual_ranked[:3] if price_benefit(net) > 1e-10
+        )
+
+        # Preserve a little exploration even when the surrogate ranking is poor.
+        remaining = [net for net in fresh if net not in set(selected)]
+>>>>>>> REPLACE
+</DIFF>

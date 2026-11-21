@@ -1,0 +1,39 @@
+<NAME>
+endpoint_pressure_mix
+</NAME>
+
+<DESCRIPTION>
+Blend the direct-demand signal with a normalized endpoint-pressure signal at a 90/10 ratio. Direct traffic remains the dominant cue, while the smaller term favors links incident to nodes with substantial total incoming or outgoing traffic, which may need additional connectivity to handle transit. Keep the existing two-hop terms unchanged so this tests the mixture without also changing their contribution.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    scale = float(np.max(demand)) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A two-hop route can use any selected pair i -> j -> k.  With
+=======
+    scale = float(np.max(demand)) or 1.0
+    node_load = np.sum(demand, axis=0) + np.sum(demand, axis=1)
+    endpoint = np.add.outer(np.sum(demand, axis=1), np.sum(demand, axis=0))
+    endpoint_scale = float(np.max(endpoint)) or 1.0
+    linear = {
+        (i, j): -(
+            0.9 * float(demand[i, j]) / scale
+            + 0.1 * float(endpoint[i, j]) / endpoint_scale
+        )
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A two-hop route can use any selected pair i -> j -> k.  With
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    node_load = np.sum(demand, axis=0) + np.sum(demand, axis=1)
+    mean_load = float(np.mean(node_load)) or 1.0
+=======
+    mean_load = float(np.mean(node_load)) or 1.0
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,55 @@
+<NAME>
+diverse_batch_progress
+</NAME>
+
+<DESCRIPTION>
+The current LP batch is chosen almost entirely by surrogate energy, so its calls can cluster around near-duplicate topologies and miss useful alternatives. Select energy-ranked proposals while first enforcing a minimum edge-set distance; then fill remaining slots by energy rank. Also fix the progress check: `evaluate` updates `best_score`, so comparing the returned value against `best_score` immediately afterward can never detect a new best. Comparing against the score before evaluation lets the search reset its stale counter when it actually improves.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Energy is a cheap ordering signal, not a hard filter: include a few
+        # randomized alternatives so the LP sees more than surrogate minima.
+        fresh.sort(key=tools.energy)
+        batch_size = min(9, len(fresh))
+        batch = fresh[:batch_size]
+        if len(fresh) > batch_size and rng.random() < 0.65:
+            tail = fresh[batch_size:]
+            batch.append(tail[int(rng.integers(len(tail)))])
+
+        improved = False
+        for net in batch:
+=======
+        # Rank cheaply by energy, but diversify the expensive LP batch by
+        # requiring distinct edge sets before filling any remaining slots.
+        fresh.sort(key=tools.energy)
+        batch_size = min(9, len(fresh))
+        batch = []
+        for net in fresh:
+            if all(len(set(net) ^ set(old)) >= 4 for old in batch):
+                batch.append(net)
+            if len(batch) >= batch_size:
+                break
+        for net in fresh:
+            if len(batch) >= batch_size:
+                break
+            if net not in batch:
+                batch.append(net)
+
+        # Compare against the incumbent from before this batch: evaluate()
+        # updates best_score itself, so checking afterward would miss progress.
+        previous_best = best_score
+        improved = False
+        for net in batch:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                if value < best_score:
+                    improved = True
+                # Also retain promising basin members even when not global best.
+=======
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+                # Also retain promising basin members even when not global best.
+>>>>>>> REPLACE
+</DIFF>

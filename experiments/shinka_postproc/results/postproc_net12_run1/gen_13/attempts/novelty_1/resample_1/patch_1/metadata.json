@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ranked_bottleneck_search",
+  "patch_description": "Combines the prior programs\u2019 repaired QAOA starts and bottleneck-aware swaps, but spends LP calls more selectively: it ranks valid 2-exchanges using dual prices, link loads, demand, and surrogate energy, then evaluates only a shortlist plus a few exploratory moves. A small elite archive and annealed restarts help escape local optima while tracking the best scored network throughout.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:37:13.047722",
+  "llm_cost": 0.0028299,
+  "llm_model": "gpt-6-luna"
+}

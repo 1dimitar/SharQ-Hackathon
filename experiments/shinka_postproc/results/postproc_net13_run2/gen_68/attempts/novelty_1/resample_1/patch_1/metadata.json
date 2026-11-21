@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reserve_novel_batch_slot",
+  "patch_description": "The current batch screen is dominated by low-energy moves, so it can spend the LP budget repeatedly sampling nearby variants. Reserve one slot in each full batch for the fresh move whose minimum symmetric difference from the current archive is greatest; break ties by surrogate rank. This preserves most surrogate-guided evaluations while giving structurally distinct proposals a chance to reveal improvements the surrogate misses.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:32:00.746357",
+  "llm_cost": 0.003115,
+  "llm_model": "gpt-6-luna"
+}

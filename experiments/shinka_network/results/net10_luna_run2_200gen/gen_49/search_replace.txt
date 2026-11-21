@@ -1,0 +1,75 @@
+<NAME>
+pressure_weighted_paths
+</NAME>
+
+<DESCRIPTION>
+Replace the current uniform-mixed two-hop reward with a per-OD allocation across eligible paths. Keep the positive-demand OD gate, but distribute each OD pair’s indirect reward according to path suitability: paths through lower-pressure transit nodes and using edges with less direct demand receive a larger share. Normalizing the suitability weights per OD avoids rewarding every possible intermediate as if it independently carried the full traffic, while retaining broad path coverage. This directly tests the pressure-discounted allocation recommendation without changing the linear terms or degree penalty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+
+            demand_fraction = float(normalized[i, k])
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                current_transit = 2.0 * mean_load / (mean_load + float(node_load[j]))
+                shared_transit = mean_load / (mean_load + float(node_load[j]))
+
+                # 85% current-style degree-aware reward and 15% shared-path
+                # reward from the inspiration implementation.
+                current_part = 0.85 * (0.60 / 4.0) * current_transit
+                shared_part = 0.15 * (0.48 / float(n - 2)) * (
+                    0.65 + 0.70 * shared_transit
+                )
+                edge_pressure = 0.5 * (
+                    float(normalized[i, j]) + float(normalized[j, k])
+                )
+                pressure_discount = 1.0 + 0.25 * edge_pressure
+                weight = -demand_fraction * (current_part + shared_part) / pressure_discount
+                quadratic[((i, j), (j, k))] = weight
+
+    return linear, quadratic, 1.05
+=======
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+
+            demand_fraction = float(normalized[i, k])
+            paths = []
+            suitability = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                # Favor paths through less-loaded transit nodes and edges
+                # with spare direct-demand capacity.
+                transit_pressure = float(node_load[j]) / mean_load
+                edge_pressure = float(normalized[i, j] + normalized[j, k])
+                value = 1.0 / (
+                    (0.5 + transit_pressure) * (1.0 + edge_pressure)
+                )
+                paths.append(j)
+                suitability.append(value)
+
+            total_suitability = sum(suitability)
+            if total_suitability <= 0.0:
+                continue
+
+            for j, value in zip(paths, suitability):
+                share = value / total_suitability
+                weight = -0.55 * demand_fraction * share
+                quadratic[((i, j), (j, k))] = weight
+
+    return linear, quadratic, 1.05
+>>>>>>> REPLACE
+
+</DIFF>

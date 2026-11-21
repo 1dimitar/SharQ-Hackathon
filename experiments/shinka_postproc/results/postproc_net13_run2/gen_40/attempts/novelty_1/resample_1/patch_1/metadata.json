@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_ucb",
+  "patch_description": "Replace the fixed elite-versus-uniform parent choice with adaptive selection based on archive novelty, observed improvement, and under-exploration. Each parent\u2019s attempts and cumulative relative score gains are tracked; parents that have produced useful improvements receive a modest productivity bonus, while rarely selected and structurally distinct archive members retain a chance to be explored. Update these statistics after each evaluated neighborhood. This makes parent selection responsive to actual LP results rather than relying only on rank or random selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:12:11.355367",
+  "llm_cost": 0.0030537999999999997,
+  "llm_model": "gpt-6-luna"
+}

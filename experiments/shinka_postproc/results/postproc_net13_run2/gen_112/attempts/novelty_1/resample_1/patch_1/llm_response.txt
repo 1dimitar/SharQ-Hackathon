@@ -1,0 +1,179 @@
+<NAME>
+operator_adaptive_effort
+</NAME>
+
+<DESCRIPTION>
+Track stalls separately for focused switches, random switches, rotations, and destination-matching proposals. When an operator repeatedly fails to produce an improvement on a parent, gradually increase its proposal effort, with caps to keep runtime bounded. Focused search also broadens its load-heavy link set as it stalls. Recording which operator generated each selected move lets successful operators reset their own stall counter rather than treating every operator as equally successful or unsuccessful.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    visits = {}
+    stalls = {}
+    best_net = None
+=======
+    visits = {}
+    stalls = {}
+    operator_stalls = {}
+    last_sources = {}
+    best_net = None
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def propose(parent, detail):
+        """Generate bottleneck-focused switches and a modest rotation sample."""
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+    def propose(parent, detail):
+        """Generate adaptive bottleneck-focused and exploratory proposals."""
+        nonlocal last_sources
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+        source_by_move = {}
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            hot = {link for _, link in by_load[:6]}
+
+        # Exhaustive two-switches touching at least one priced/load-heavy arc.
+=======
+            hot = {link for _, link in by_load[:6]}
+        elif detail and detail.get("loads"):
+            # If price-guided moves stall, progressively include more heavily
+            # loaded links in the focused neighborhood.
+            by_load = sorted(
+                ((float(value), tuple(map(int, link)))
+                 for link, value in detail["loads"].items()),
+                reverse=True,
+            )
+            extra = min(12, 2 + 2 * operator_stalls.get((parent, "focused"), 0))
+            hot.update(link for _, link in by_load[:extra])
+
+        # Exhaustive two-switches touching at least one priced/load-heavy arc.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                move = two_switch(parent, p, q)
+                if move is not None:
+                    moves.add(move)
+
+        # A small unrestricted sample prevents dependence on dual prices alone.
+        for _ in range(55):
+=======
+                move = two_switch(parent, p, q)
+                if move is not None:
+                    moves.add(move)
+                    source_by_move.setdefault(move, "focused")
+
+        # Expand unrestricted exploration only when this operator has stalled.
+        random_stall = operator_stalls.get((parent, "random"), 0)
+        for _ in range(55 + 20 * min(8, random_stall)):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            move = two_switch(parent, p, q)
+            if move is not None:
+                moves.add(move)
+
+        # Destination rotations preserve all in/out degrees and can cross
+=======
+            move = two_switch(parent, p, q)
+            if move is not None:
+                moves.add(move)
+                source_by_move.setdefault(move, "random")
+
+        # Destination rotations preserve all in/out degrees and can cross
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if len(arcs) >= 3:
+            for _ in range(65):
+=======
+        if len(arcs) >= 3:
+            rotation_stall = operator_stalls.get((parent, "rotation"), 0)
+            for _ in range(65 + 20 * min(8, rotation_stall)):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    moves.add(tuple(sorted((current - old) | new)))
+
+        # Bounded matching proposals: permuting destinations across distinct
+=======
+                    move = tuple(sorted((current - old) | new))
+                    moves.add(move)
+                    source_by_move.setdefault(move, "rotation")
+
+        # Bounded matching proposals: permuting destinations across distinct
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(12):
+            k = 3 + int(rng.integers(4))
+=======
+        relink_stall = operator_stalls.get((parent, "relink"), 0)
+        for _ in range(12 + 2 * min(8, relink_stall)):
+            k = 3 + int(rng.integers(4))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            if best_assignment is not None:
+                moves.add(tuple(sorted(remainder | best_assignment)))
+
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+=======
+            if best_assignment is not None:
+                move = tuple(sorted(remainder | best_assignment))
+                moves.add(move)
+                source_by_move.setdefault(move, "relink")
+
+        valid_moves = [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+        last_sources = {net: source_by_move.get(net, "focused") for net in valid_moves}
+        return valid_moves
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        if best_score < previous_best:
+=======
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        # Adapt each proposal family from its own selected/evaluated outcomes.
+        tested = {}
+        for net in batch:
+            operator = last_sources.get(net)
+            if operator is not None:
+                tested.setdefault(operator, []).append(net)
+        for operator, tested_nets in tested.items():
+            key = (parent, operator)
+            if any(scores.get(net, float("inf")) < parent_score for net in tested_nets):
+                operator_stalls[key] = 0
+            else:
+                operator_stalls[key] = min(12, operator_stalls.get(key, 0) + 1)
+
+        if best_score < previous_best:
+>>>>>>> REPLACE
+</DIFF>

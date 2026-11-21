@@ -1,0 +1,16 @@
+<NAME>
+cap_indirect_bonus
+</NAME>
+
+<DESCRIPTION>
+Narrow the relative-quality range for two-hop rewards. With the current support formula, low-demand OD pairs receive a larger relative bonus than high-demand pairs; capping that bonus more tightly should keep the indirect terms focused on substantial traffic rather than letting many weak paths shape the typical sampled topology. This preserves the direct-demand signal and the existing term count, while testing a more conservative route-quality bound.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            relative_quality = min(1.4, max(0.8, relative_quality))
+=======
+            relative_quality = min(1.25, max(0.9, relative_quality))
+>>>>>>> REPLACE
+
+</DIFF>

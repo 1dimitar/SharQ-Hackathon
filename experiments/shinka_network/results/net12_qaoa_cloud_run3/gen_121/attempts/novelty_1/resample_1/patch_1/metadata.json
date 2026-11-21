@@ -1,0 +1,14 @@
+{
+  "generation": 121,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "soften_relay_pressure",
+  "patch_description": "Soften the pressure discount used to rank relay candidates by raising node pressure to 0.75. This gives demand-supported relays with moderate pressure a better chance of being selected, rather than concentrating relay choices on the least-loaded nodes. The direct-link rewards and relay rewards remain unchanged, so this tests pressure sensitivity without changing the reward structure or number of quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:31:32.237798",
+  "llm_cost": 0.0010400000000000001,
+  "llm_model": "gpt-6-luna"
+}

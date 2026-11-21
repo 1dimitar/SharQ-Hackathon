@@ -1,0 +1,52 @@
+<NAME>
+congestion_aware_twohop
+</NAME>
+
+<DESCRIPTION>
+Keep direct demand as the primary signal and add a modest reward for two-link paths that serve positive-demand origin-destination pairs. Discount paths through nodes with high combined incoming and outgoing demand, which are more likely to become transit bottlenecks and can concentrate traffic. These O(n^3) interactions connect links that form useful routes while remaining below the quadratic-term limit. Increasing the degree penalty makes valid degrees more influential in the QUBO before samples are repaired.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+
+    # Keep direct traffic as the primary signal.
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Reward two-hop paths for demanded OD pairs, with a discount for
+    # intermediates that already have high aggregate incoming/outgoing demand.
+    demand_array = np.asarray(demand, dtype=float)
+    node_load = demand_array.sum(axis=0) + demand_array.sum(axis=1)
+    mean_load = float(node_load.mean()) or 1.0
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == j or k == i:
+                    continue
+                od_demand = float(demand_array[i, k])
+                if od_demand <= 0.0:
+                    continue
+                hub_factor = 1.0 + float(node_load[j]) / mean_load
+                quadratic[((i, j), (j, k))] = (
+                    -0.25 * od_demand / (scale * hub_factor)
+                )
+
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

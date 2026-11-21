@@ -1,0 +1,89 @@
+<NAME>
+adaptive_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+The current search repeatedly explores one-switch neighborhoods, even after they stop producing progress. Add adaptive multi-switch kicks when the best score has stagnated, while choosing kick origins from the diverse archive as well as the incumbent. Kicks preserve the in/out degree constraints by applying valid two-switches. Their size grows with stagnation and resets after an improvement, balancing focused local search with broader exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+
+        # Branch from the current annealing state or another archive member.
+        if len(archive) > 1 and rng.random() < 0.30:
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+
+        focus = bottleneck_links(source)
+=======
+    def kick(net, count):
+        """Apply up to count random degree-preserving two-switches."""
+        for _ in range(count):
+            arcs = list(net)
+            if len(arcs) < 2:
+                break
+            order = rng.permutation(len(arcs))
+            changed = False
+            for x in range(len(order)):
+                p = int(order[x])
+                a, b = arcs[p]
+                for y in range(x + 1, len(order)):
+                    q = int(order[y])
+                    c, d = arcs[q]
+                    new1, new2 = (a, d), (c, b)
+                    arc_set = set(net)
+                    if a == c or a == d or c == b or new1 == new2:
+                        continue
+                    if new1 in arc_set or new2 in arc_set:
+                        continue
+                    net = tuple(sorted((arc_set - {(a, b), (c, d)}) | {new1, new2}))
+                    changed = True
+                    break
+                if changed:
+                    break
+            if not changed:
+                break
+        return net
+
+    iteration = 0
+    stagnation = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        previous_best = best_score
+
+        # On stagnation, kick from a diverse archive member; grow kick size
+        # gradually, then return to the incumbent when the search improves.
+        if len(archive) > 1 and rng.random() < (0.30 if stagnation < 4 else 0.60):
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+
+        if stagnation >= 3:
+            kick_size = min(8, 2 + stagnation // 4)
+            source = kick(source, int(rng.integers(1, kick_size + 1)))
+            source_score = scores.get(source, source_score)
+
+        focus = bottleneck_links(source)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+=======
+        if best_score < previous_best:
+            stagnation = 0
+        else:
+            stagnation += 1
+
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,22 @@
+<NAME>
+soften_transit_pressure
+</NAME>
+
+<DESCRIPTION>
+Use maximum incident traffic rather than mean incident traffic to normalize transit-node pressure, and floor the inverse-pressure factor at 0.75. This makes the discount less sensitive to the average node load and limits how strongly busy nodes lose two-hop-path reward. It tests the recommended pressure-normalization change while keeping the existing demand-based path rewards and linear terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_traffic = row + col
+    positive = node_traffic[node_traffic > 0.0]
+    mean_traffic = float(np.mean(positive)) if positive.size else 1.0
+    transit_factor = 1.0 / (1.0 + node_traffic / max(mean_traffic, 1.0e-12))
+=======
+    node_traffic = row + col
+    pressure_scale = max(float(np.max(node_traffic)), 1.0e-12)
+    transit_factor = np.maximum(
+        0.75, 1.0 / (1.0 + node_traffic / pressure_scale)
+    )
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,75 @@
+<NAME>
+operator_stall_scaling
+</NAME>
+
+<DESCRIPTION>
+Track stalls separately for random switches and rotations, and scale each operator’s sampling effort according to its own history rather than only the parent’s overall stall count. This gives an underexplored or persistently unproductive neighborhood room to broaden, while keeping both trial counts capped to control proposal-generation time. The batch result updates the operator stall counters for the operators used in that round.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    operator_stalls = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        random_trials = min(
+            280, 70 * (1 + operator_stalls.get((net, "random"), 0) // 4)
+        )
+        for _ in range(random_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            stalls = parent_stalls.get(net, 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+=======
+            stalls = operator_stalls.get((net, "rotation"), 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 4))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+=======
+        parent_score = seen.get(parent, float("inf"))
+        previous_parent_stalls = parent_stalls.get(parent, 0)
+        for net in batch:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+=======
+        improved = batch_best < parent_score
+        if improved:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = previous_parent_stalls + 1
+
+        # Feed outcome back to each operator independently. Random switches
+        # are always sampled; rotations are considered active when the parent
+        # has at least three links (true for the degree-constrained instances).
+        for operator in ("random", "rotation"):
+            key = (parent, operator)
+            if improved:
+                operator_stalls[key] = 0
+            else:
+                operator_stalls[key] = operator_stalls.get(key, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+>>>>>>> REPLACE
+</DIFF>

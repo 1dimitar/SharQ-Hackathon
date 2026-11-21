@@ -1,0 +1,68 @@
+<NAME>
+adaptive_operator_budget
+</NAME>
+
+<DESCRIPTION>
+Use the observed LP success rate of each move type to guide which proposals receive scarce LP evaluations, while smoothing the estimates and retaining an exploration floor. The current code adapts the *proposal-generation* mixture, but then selects the LP batch almost entirely by surrogate rank; as a result, a move type can generate proposals without receiving a fair share of evaluations. This change first reserves batch slots for the strongest surrogate-ranked proposal from each operator, in proportion to its smoothed success rate, then fills remaining slots by overall rank. The existing exploratory tail remains intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Adaptive operator probabilities, with a floor for exploration.
+        rates = [reward[i] / attempts[i] for i in range(3)]
+        probs = np.asarray(rates, dtype=float) + 0.25
+        probs /= probs.sum()
+=======
+        # Smoothed operator success rates guide both generation and LP allocation.
+        # The prior prevents a few early outcomes from dominating; the additive
+        # floor guarantees meaningful exploration of every move type.
+        rates = [(reward[i] + 1.0) / (attempts[i] + 4.0) for i in range(3)]
+        probs = np.asarray(rates, dtype=float)
+        probs = 0.15 + 0.55 * probs / max(1e-12, float(probs.sum()))
+        probs /= probs.sum()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        batch = []
+        # Diverse high-ranked choices plus one deliberately exploratory choice.
+        for _, net, _ in ranked:
+            if all(dist(net, old) >= 2 for old in batch):
+                batch.append(net)
+            if len(batch) >= 3:
+                break
+        if len(ranked) > 3 and rng.random() < 0.35:
+            tail = [x for x in ranked[3:] if x[1] not in batch]
+            if tail:
+                batch.append(tail[int(rng.integers(len(tail)))][1])
+=======
+        batch = []
+        # Give productive operators a fair chance to spend LP calls: reserve
+        # up to one slot for each operator, sampled in adaptive-rate order.
+        operator_order = list(rng.choice(3, size=3, replace=False, p=probs))
+        for kind in operator_order:
+            choices = [item for item in ranked if item[2] == kind]
+            if choices and len(batch) < 3:
+                net = choices[0][1]
+                if all(dist(net, old) >= 2 for old in batch):
+                    batch.append(net)
+
+        # Fill remaining slots with the best overall diverse surrogate choices.
+        for _, net, _ in ranked:
+            if len(batch) >= 3:
+                break
+            if net not in batch and all(dist(net, old) >= 2 for old in batch):
+                batch.append(net)
+        # If diversity constraints leave capacity, use the next best alternatives.
+        for _, net, _ in ranked:
+            if len(batch) >= 3:
+                break
+            if net not in batch:
+                batch.append(net)
+
+        if len(ranked) > 3 and rng.random() < 0.35:
+            tail = [x for x in ranked[3:] if x[1] not in batch]
+            if tail:
+                batch.append(tail[int(rng.integers(len(tail)))][1])
+>>>>>>> REPLACE
+
+</DIFF>

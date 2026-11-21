@@ -1,0 +1,74 @@
+<NAME>
+congestion_aware_twohop
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, but make two-hop path couplings sensitive to the estimated load on their component links. A chain that can carry meaningful demand is rewarded when its links have light direct demand; the reward is reduced, and can become a penalty, when the chain would send traffic through already heavily demanded links. This retains useful routing structure without applying the same unconditional two-hop reward to every path. The chain terms number at most n(n−1)(n−2), within the quadratic-term limit. Raising the degree penalty also makes exact-degree solutions more attractive before repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+def surrogate_terms(demand):
+    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
+
+    Args:
+        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+            (zero diagonal).
+
+    Returns:
+        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+            (x_ij = 1 if the directed link i -> j is built), i != j.
+        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+            after rescaling these terms so the largest |weight| is 1.
+
+    Lower energy must mean a better topology. Baseline: reward each link by the demand
+    it carries directly.
+    """
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+def surrogate_terms(demand):
+    """Build direct-link rewards and congestion-aware two-hop path couplings."""
+    d = np.maximum(np.asarray(demand, dtype=float), 0.0)
+    n = len(d)
+    scale = float(d.max()) or 1.0
+    q = d / scale
+
+    # Preserve the direct-traffic signal from the baseline.
+    linear = {
+        (i, j): -float(q[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j and q[i, j] != 0.0
+    }
+
+    # A two-hop route is useful, but using already busy links to carry it
+    # increases congestion. Penalize that interaction through the links'
+    # direct-demand estimates rather than rewarding every chain equally.
+    quadratic = {}
+    for a in range(n):
+        for b in range(n):
+            if b == a:
+                continue
+            for c in range(n):
+                if c == a or c == b:
+                    continue
+                path_demand = float(q[a, c])
+                if path_demand == 0.0:
+                    continue
+                edge_load = 0.5 * (float(q[a, b]) + float(q[b, c]))
+                weight = path_demand * (-0.30 + 0.55 * edge_load)
+                if abs(weight) > 1e-12:
+                    e1, e2 = (a, b), (b, c)
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+                    quadratic[key] = weight
+
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

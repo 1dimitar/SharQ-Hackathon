@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "affinity_coverage",
+  "patch_description": "The current surrogate uses a 75/25 direct-demand blend, 2\u20134 affinity-selected paths plus one low-pressure alternative, and a fixed 0.46 path reward. Its negative-only interactions can overvalue redundant coverage.\n\nThis version retains sparse path selection but ranks intermediates using both total and balanced leg demand. It adds a damped second-order correction for direct-versus-two-hop redundancy, so completing a triangle is less attractive when the direct link already serves its endpoint demand. Path rewards decrease mildly with network size, while the degree-penalty weight increases from 1.25 to 1.45. These changes target topology and exchange ranking without adding degree penalties or rewarding reciprocal links. Performance improvements require evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:52:25.726642",
+  "llm_cost": 0.042532,
+  "llm_model": "gpt-6.1-sol"
+}

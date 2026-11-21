@@ -1,0 +1,14 @@
+{
+  "generation": 112,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_selective_paths",
+  "patch_description": "Keeps the direct-link and selective two-hop structure, but caps each OD pair\u2019s total two-hop reward relative to its direct-link reward. Path rewards are shared among promising intermediates, with a mild preference for less-loaded transit nodes and links; this reduces the chance that indirect rewards overwhelm direct-demand information. The quadratic term count remains bounded by \\(4n(n-2)\\), and the evaluator\u2019s degree penalty is left unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:37.845448",
+  "llm_cost": 0.0018866,
+  "llm_model": "gpt-6-luna"
+}

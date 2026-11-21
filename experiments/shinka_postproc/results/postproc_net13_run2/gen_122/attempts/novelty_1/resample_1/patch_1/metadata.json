@@ -1,0 +1,14 @@
+{
+  "generation": 122,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "novelty_weighted_parent_selection",
+  "patch_description": "Parent selection currently adjusts an elite/uniform mixture only by visit counts, stalls, and successes. Since the archive already contains structurally diverse networks, explicitly weighting members by their distance from the elite group gives underexplored regions a better chance of producing proposals, while retaining the existing quality and productivity biases. The novelty multiplier is bounded, so it encourages exploration without allowing distant, weak archive members to dominate selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:25:02.311668",
+  "llm_cost": 0.0028476000000000005,
+  "llm_model": "gpt-6-luna"
+}

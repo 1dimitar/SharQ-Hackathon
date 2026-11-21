@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_archive_search",
+  "patch_description": "Combines the current program\u2019s energy-ranked repaired seeds, diverse archive, and occasional crossover with the other implementation\u2019s bottleneck-price-guided move ranking. Each parent\u2019s LP detail is fetched once, and two-link exchanges are ranked using both the energy surrogate and an estimate of relief on priced links versus demand on inserted links. Small batches of promising moves are evaluated, with occasional exploration picks to hedge against imperfect proxies. The archive is capped for bounded search overhead while the best-scoring network is tracked independently.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:45:16.700880",
+  "llm_cost": 0.0024676000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,49 @@
+<NAME>
+balanced_pressure
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, but add a congestion proxy based on the product of each link’s origin row traffic and destination column traffic. This discourages pairing high-pressure origins with high-pressure destinations, approximating a more balanced distribution of load across links without applying the ineffective blanket two-hop reward.
+
+Add a small reciprocal-link bonus when demand is large in both directions, which can make direct service of bidirectional traffic more attractive. The reciprocal terms are sparse—one per unordered node pair—and the stronger degree penalty is intended to improve the rate of valid topologies before repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    demand_scale = float(demand.max()) or 1.0
+    row_sums = np.asarray(demand, dtype=float).sum(axis=1)
+    col_sums = np.asarray(demand, dtype=float).sum(axis=0)
+    row_scale = float(row_sums.max()) or 1.0
+    col_scale = float(col_sums.max()) or 1.0
+
+    # A selected link is a potential carrier of both origin and destination
+    # traffic. Penalize pairings that place high-pressure endpoints together.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(demand[i, j]) / demand_scale
+            pressure = (float(row_sums[i]) / row_scale) * (float(col_sums[j]) / col_scale)
+            linear[(i, j)] = -direct + 0.30 * pressure
+
+    # A modest synergy favors direct links for substantial two-way demand.
+    quadratic = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            reciprocal = min(float(demand[i, j]), float(demand[j, i])) / demand_scale
+            if reciprocal > 0.0:
+                quadratic[((i, j), (j, i))] = -0.12 * reciprocal
+
+    penalty_weight = 6.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

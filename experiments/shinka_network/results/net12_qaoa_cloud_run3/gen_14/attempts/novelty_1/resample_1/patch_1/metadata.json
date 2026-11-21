@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_qubo",
+  "patch_description": "This version retains the direct-link reward that performed well, while modestly increasing the two-hop multiplier rather than making a large change to both components. It chooses a small set of plausible relays for each OD pair, ranking them by the traffic affinity of both legs and discounting heavily loaded relay nodes. That keeps the interaction graph sparse and avoids rewarding every possible two-hop route equally. The evaluator still supplies the degree penalty, so the returned penalty weight is kept moderate.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:30:33.659539",
+  "llm_cost": 0.0019635,
+  "llm_model": "gpt-6-luna"
+}

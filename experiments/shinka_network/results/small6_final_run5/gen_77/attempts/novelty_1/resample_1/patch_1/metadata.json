@@ -1,0 +1,14 @@
+{
+  "generation": 77,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "bilateral_balanced_path_support",
+  "patch_description": "Make path selection distinguish two usable legs from one strong leg paired with a weak one. Replace part of the additive affinity with a harmonic-mean term, mildly modulated by each leg\u2019s importance to both its source\u2019s outgoing traffic and its destination\u2019s incoming traffic.\n\nApply a small, bounded version of the same endpoint-share signal to direct-link rewards. Normalizing shares by n\u22121 keeps their interpretation stable across sizes; uniform demands retain the existing scores. This targets misleading route rewards without increasing the coupling budget or changing reward strength, sparsity rules, or degree penalties. The intended benefit is better topology and exchange ranking, rather than simply stronger attraction toward two-hop paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:01:51.047434",
+  "llm_cost": 0.068798,
+  "llm_model": "gpt-6.1-sol"
+}

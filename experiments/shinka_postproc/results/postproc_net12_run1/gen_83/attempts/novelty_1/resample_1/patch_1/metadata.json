@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "underexplored_archive_kicks",
+  "patch_description": "When the search stagnates, select less-visited non-elite archive members more often instead of repeatedly exploring the incumbent\u2019s basin. Add a small, bounded set of degree-preserving multi-switch kicks to each neighborhood; bias some switches toward priced links but leave others unrestricted. These proposals still pass through the existing energy and diversity screening before any LP calls, so dual information helps generate moves without being the sole selection criterion.",
+  "error_msg": "SEARCH text not found in editable regions\n\nLooking for 17-line block starting with: '# A few rotations provide jumps between basins not reachable by a'\n\nFull search pattern:\n```\n# A few rotations provide jumps between basins not reachable by a\n        # single switch. Increase their number as the search becomes stagnant.\n        tries = min(100, 12 + 5 * kick)\n        for _ in range(tries):\n            if len(arcs) < 3:\n                break\n            ids = rng.choice(len(arcs), size=3, replace=False)\n            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)\n            old = {(a, b), (c, d), (e, f)}\n            new = {(a, d), (c, f), (e, b)}\n            if len(new) != 3 or any(x == y for x, y in new):\n                continue\n            if new & (current - old):\n                continue\n            result.add(canon((current - old) | new))\n\n        result.discard(parent)\n```\n\nFound similar code block at line 126 (\u2713 editable):\n\nDifferences between search pattern and actual code:\n```diff\n-  # A few rotations provide jumps between basins not reachable by a\n+  \n+          # A few rotations provide jumps between basins not reachable by a\n-          result.discard(parent)\n```\n\nEditable regions where you can make changes:\n  Region 1 (lines 8-257):\n    import math\n    \n    \n    ... (242 more lines)\n                    kick = min(14, kick + 1)\n    \n        return list(best_net) if best_net is not None else []\n\nQuick fixes:\n\u2022 Check indentation - search text must match exactly including spaces/tabs\n\u2022 Look for typos in the search text\n\u2022 Try searching for just the first line instead of the full block",
+  "timestamp": "2026-11-21T21:12:10.248297",
+  "llm_cost": 0.0030646,
+  "llm_model": "gpt-6-luna"
+}

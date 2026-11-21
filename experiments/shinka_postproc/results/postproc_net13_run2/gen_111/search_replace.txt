@@ -1,0 +1,85 @@
+<NAME>
+archive_relink
+</NAME>
+
+<DESCRIPTION>
+Replace archive edge-support proposals with genuine path-relinking steps toward a randomly varied, strong, distant archive target. Each step uses a degree-preserving two-switch that increases overlap with the target; the promising first steps are marked in `archive_guided`. The existing batch screen already gives a marked move a slot before filling the rest of the batch, so these intermediates receive reserved LP evaluations without displacing all ordinary neighborhood exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Add a small number of switches supported by strong archive members.
+        guide_sets = [set(x) for x in archive()[:12]]
+        edge_support = {}
+        for guide in guide_sets:
+            for edge in guide:
+                edge_support[edge] = edge_support.get(edge, 0) + 1
+
+        guided = []
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                cand = switch(net, p, q)
+                if cand is None:
+                    continue
+                new_edges = set(cand) - current
+                if len(new_edges) != 2:
+                    continue
+                e1, e2 = tuple(new_edges)
+                s1, s2 = edge_support.get(e1, 0), edge_support.get(e2, 0)
+                if not s1 or not s2:
+                    continue
+                together = sum(e1 in guide and e2 in guide for guide in guide_sets)
+                support = s1 + s2 + 3 * together
+                guided.append((-support, cand))
+
+        for _, cand in sorted(guided)[:8]:
+            moves.add(cand)
+            archive_guided.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+        # Path-relink toward a randomly varied strong archive member. Mark
+        # advancing intermediates so screen_batch reserves an LP slot for one.
+        ranked_targets = sorted(seen, key=seen.get)[:16]
+        targets = [
+            target for target in ranked_targets
+            if target != net and distance(net, target) >= 6
+        ]
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+            target_edges = set(target)
+            path_net = net
+
+            for step in range(4):
+                path_arcs = list(path_net)
+                path_set = set(path_net)
+                overlap = len(path_set & target_edges)
+                advancing = []
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        cand = switch(path_net, p, q)
+                        if cand is None:
+                            continue
+                        gain = len(set(cand) & target_edges) - overlap
+                        if gain > 0:
+                            advancing.append((gain, cand))
+
+                if not advancing:
+                    break
+                best_gain = max(gain for gain, _ in advancing)
+                choices = list(dict.fromkeys(
+                    cand for gain, cand in advancing if gain == best_gain
+                ))
+                rng.shuffle(choices)
+
+                # Offer only a few path intermediates; the screen gives a
+                # marked candidate priority while retaining ordinary proposals.
+                for cand in choices[:2]:
+                    moves.add(cand)
+                    archive_guided.add(cand)
+                path_net = choices[0]
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+
+</DIFF>

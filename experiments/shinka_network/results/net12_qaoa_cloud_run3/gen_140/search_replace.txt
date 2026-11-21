@@ -1,0 +1,42 @@
+<NAME>
+strong_leg_affinity
+</NAME>
+
+<DESCRIPTION>
+Add the recommended leg-affinity factor to each two-hop interaction: a path is more useful when at least one of its links already has meaningful demand, while the small additive safeguard preserves some influence for paths with two weak legs. This may steer relay choices toward links that are better supported by the demand pattern without changing the existing path-support formula, pressure discounts, interaction count, or degree penalty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                edge_pressure = float(normalized[i, j] + normalized[j, k])
+                # A sublinear pressure discount preserves a preference for
+                # lightly loaded relays without making that preference too sharp.
+                relay_discount = (0.75 + float(node_pressure[j]) / 1.75) ** 0.75
+                edge_discount = 1.0 + 0.35 * edge_pressure
+
+                weight = (
+                    -path_strength
+                    * path_support
+                    / (relay_discount * edge_discount)
+                )
+=======
+                edge_pressure = float(normalized[i, j] + normalized[j, k])
+                # Favor paths with a stronger leg, while retaining a small
+                # safeguard for paths whose two legs have little direct demand.
+                leg_a = float(normalized[i, j])
+                leg_b = float(normalized[j, k])
+                leg_affinity = min(leg_a, leg_b) + 0.25 * max(leg_a, leg_b) + 0.01
+
+                # A sublinear pressure discount preserves a preference for
+                # lightly loaded relays without making that preference too sharp.
+                relay_discount = (0.75 + float(node_pressure[j]) / 1.75) ** 0.75
+                edge_discount = 1.0 + 0.35 * edge_pressure
+
+                weight = (
+                    -path_strength
+                    * path_support
+                    * leg_affinity
+                    / (relay_discount * edge_discount)
+                )
+>>>>>>> REPLACE
+</DIFF>

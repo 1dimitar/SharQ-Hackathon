@@ -1,0 +1,56 @@
+<NAME>
+localized_cut_pressure
+</NAME>
+
+<DESCRIPTION>
+Add a bounded, pair-local cut adjustment to the existing two-hop route terms. For each adjacent node pair, estimate the fraction of its combined incident demand that crosses the pair’s boundary. Use the average for the two pairs on a candidate route to slightly discount routes through pairs with greater external load, affecting both route selection and reward strength. This preserves the current sparse route model and term count while giving the energy a localized load signal; the adjustment is bounded so it does not overwhelm direct-demand rewards. The existing overlap correction continues to use the adjusted route weight.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    support = 0.70 * normalized + 0.30 * roots
+    inverse_pressure_rank = pressure ** -0.75
+
+    # Vectorize feature construction while retaining sparse dictionary output.
+=======
+    support = 0.70 * normalized + 0.30 * roots
+    inverse_pressure_rank = pressure ** -0.75
+
+    # Estimate the share of each node-pair's incident demand that crosses
+    # its two-node cut. This is scale-free and remains bounded in [0, 1].
+    incident_total = normalized.sum(axis=0) + normalized.sum(axis=1)
+    pair_incident = incident_total[:, None] + incident_total[None, :]
+    pair_external = pair_incident - 2.0 * (normalized + normalized.T)
+    cut_ratio = np.divide(
+        np.maximum(pair_external, 0.0),
+        pair_incident,
+        out=np.zeros_like(pair_external),
+        where=pair_incident > 1e-12,
+    )
+    cut_ratio = np.clip(cut_ratio, 0.0, 1.0)
+
+    # Vectorize feature construction while retaining sparse dictionary output.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            candidates = [
+                (float(ranks[j, k]), j, float(discounts[j, k]))
+                for j in range(n)
+                if j != i and j != k
+            ]
+=======
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                local_cut = 0.5 * (cut_ratio[i, j] + cut_ratio[j, k])
+                cut_adjustment = 0.92 + 0.16 * local_cut
+                candidates.append(
+                    (
+                        float(ranks[j, k] / cut_adjustment),
+                        j,
+                        float(discounts[j, k] * cut_adjustment),
+                    )
+                )
+>>>>>>> REPLACE
+</DIFF>

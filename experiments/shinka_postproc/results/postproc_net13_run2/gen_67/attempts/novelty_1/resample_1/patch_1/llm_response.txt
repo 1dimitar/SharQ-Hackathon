@@ -1,0 +1,73 @@
+<NAME>
+lp_rewarded_operators
+</NAME>
+
+<DESCRIPTION>
+Adapt the number of sampled swaps, rotations, and multi-switch kicks using their observed improvement rate per LP evaluation. Count only proposals actually sent to the LP, and reward an operator when its proposal beats its parent. Smoothed rates and a probability floor prevent early results from eliminating an operator, while directing more proposal effort toward operators that have proved productive.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_gain = {}
+    edge_cache = {}
+    energy_cache = {}
+=======
+    parent_gain = {}
+    edge_cache = {}
+    energy_cache = {}
+    # Smoothed operator rewards and LP-evaluated proposal counts.
+    operator_wins = [1.0, 1.0, 1.0]
+    operator_trials = [2.0, 2.0, 2.0]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Unfocused switches ensure exploration when the dual signal is incomplete.
+        for _ in range(55):
+=======
+        # Allocate sampled proposals by improvement per LP evaluation. The
+        # additive floor preserves exploration even when an operator has stalled.
+        rates = [(operator_wins[i] + 1.0) / (operator_trials[i] + 2.0)
+                 for i in range(3)]
+        mean_rate = sum(rates) / 3.0
+        factors = [min(1.8, max(0.55, rate / max(mean_rate, 1e-12)))
+                   for rate in rates]
+
+        # Unfocused switches ensure exploration when the dual signal is incomplete.
+        for _ in range(int(55 * factors[0])):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            trials = min(210, 70 * (1 + parent_stalls.get(net, 0) // 3))
+=======
+            trials = min(
+                300,
+                int(70 * (1 + parent_stalls.get(net, 0) // 3) * factors[1]),
+            )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(14):
+=======
+        for _ in range(int(14 * factors[2])):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                score = evaluate(net)
+                parent_evaluations[parent] = parent_evaluations.get(parent, 0) + 1
+                if score < parent_score:
+                    gain = (parent_score - score) / max(1.0, abs(parent_score))
+                    parent_gain[parent] = parent_gain.get(parent, 0.0) + gain
+=======
+                score = evaluate(net)
+                parent_evaluations[parent] = parent_evaluations.get(parent, 0) + 1
+                changed = len(edges(net) ^ edges(parent))
+                # Attribute the evaluated move to its broad operator family.
+                # Two-switches change four directed edges; rotations change six.
+                kind = 0 if changed <= 4 else (1 if changed <= 6 else 2)
+                operator_trials[kind] += 1.0
+                if score < parent_score:
+                    operator_wins[kind] += 1.0
+                    gain = (parent_score - score) / max(1.0, abs(parent_score))
+                    parent_gain[parent] = parent_gain.get(parent, 0.0) + gain
+>>>>>>> REPLACE
+</DIFF>

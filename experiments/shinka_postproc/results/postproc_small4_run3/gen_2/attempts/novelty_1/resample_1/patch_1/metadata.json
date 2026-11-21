@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "portfolio_relink",
+  "patch_description": "Reorganizes the search into a staged pipeline: energy-ranked, diverse repaired starts seed a bounded archive, then each search round generates proposals from multiple archive members. A stratified screening step balances surrogate quality, LP dual-price bottlenecks, structural diversity, and distinct move operators. The mixed operators include degree-preserving switches, rotations, kicks, and relinking toward another archived network. Scores and LP details are cached locally, and the batch size and search effort scale with n.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:54:36.182221",
+  "llm_cost": 0.0054391000000000005,
+  "llm_model": "gpt-6-luna"
+}

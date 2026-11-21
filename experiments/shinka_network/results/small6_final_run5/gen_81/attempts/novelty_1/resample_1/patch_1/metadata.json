@@ -1,0 +1,14 @@
+{
+  "generation": 81,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_gateway_pairs",
+  "patch_description": "This model scores the two neighbors chosen at each node jointly, rather than rewarding selected two-hop paths. A demand-biased fractional network supplies multihop continuation distances. Each possible neighbor pair is then evaluated as a two-gateway routing problem, balancing route length against unequal gateway loads.\n\nOutgoing and incoming gateway costs capture complementary congestion risks. Their additive components become linear terms; only genuine pair interactions remain quadratic. This centering preserves rankings of valid networks while reducing unnecessary coefficient bias. The model uses at most \\(n(n-1)(n-2)+n(n-1)/2\\) couplings, scales its distance estimates with network size, and requires no routing solver. Improved performance remains to be verified by the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:05:11.602249",
+  "llm_cost": 0.07775399999999999,
+  "llm_model": "gpt-6.1-sol"
+}

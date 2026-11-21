@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_adjusted_paths",
+  "patch_description": "Add a modest reward for selected two-hop paths, but discount it when the intermediate node has high total traffic or either path link already serves substantial direct demand. This uses the limited in/out degree as a rough indicator of transit congestion, so it is more selective than a uniform two-hop reward. The number of quadratic terms is at most n(n\u22121)(n\u22122), within the stated limit. The existing direct-demand reward and degree penalty are retained.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:24.611247",
+  "llm_cost": 0.0015396000000000001,
+  "llm_model": "gpt-6-luna"
+}

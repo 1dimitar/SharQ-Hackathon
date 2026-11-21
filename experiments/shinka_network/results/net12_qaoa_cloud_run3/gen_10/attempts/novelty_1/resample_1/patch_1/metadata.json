@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_degree_penalty",
+  "patch_description": "The current penalty weight of 1 is small relative to the many two-hop couplings that can reward a topology with incorrect degrees. The low pre-repair feasible rate (17%) suggests that degree violations are frequently attractive to the QUBO. Increase the penalty with network size, since each link participates in more two-hop interactions as n grows, while keeping it within a moderate range. This should encourage more feasible samples and reduce reliance on repair, without changing the cost terms that distinguish valid topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:30:07.146503",
+  "llm_cost": 0.001635,
+  "llm_model": "gpt-6-luna"
+}

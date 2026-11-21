@@ -1,0 +1,21 @@
+<NAME>
+transit_pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Calibrate the existing incident-demand transit penalty using a pressure floor of 0.75, with pressure measured relative to mean incident demand. Using the inverse square root of floored pressure gives low-incident nodes a modest preference as intermediates while discounting high-pressure nodes. This increases the relative distinction between transit candidates without making the penalty as sharp as a direct inverse-pressure rule.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_capacity = np.sqrt(
+        1.0 / (1.0 + np.maximum(0.0, incident / mean_incident))
+    )
+=======
+    # Calibrate transit suitability to mean incident demand. The floor avoids
+    # over-rewarding unusually quiet nodes, while relative pressure discounts
+    # nodes that are likely to have less spare capacity for transit.
+    node_pressure = np.maximum(0.75, incident / mean_incident)
+    node_capacity = 1.0 / np.sqrt(node_pressure)
+>>>>>>> REPLACE
+</DIFF>

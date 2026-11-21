@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reciprocal_synergy",
+  "patch_description": "Add a modest attractive coupling for reciprocal links when demand is substantial in both directions. The linear terms already reward each direction independently; this coupling captures the extra value of selecting both links together, giving the topology a useful two-way connection without rewarding a strong one-way demand as if it were bidirectional. The harmonic mean makes the bonus depend on both directions, and the coefficient keeps it moderate relative to the existing two-hop terms. This adds at most O(n\u00b2) couplings, well within the term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:47:37.975437",
+  "llm_cost": 0.0016505,
+  "llm_model": "gpt-6-luna"
+}

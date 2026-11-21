@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capacity_weighted_route_potential",
+  "patch_description": "This approach builds a demand-derived routing potential rather than assigning a fixed reward to every candidate two-hop path. It estimates which intermediate nodes are attractive transit points from their spare capacity, distributes each OD pair\u2019s indirect value across its candidate intermediates, and combines that value with direct-link value and endpoint pressure. This aims to discourage the surrogate from over-relying on busy transit nodes while preserving a strong incentive for useful direct links.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:10.853987",
+  "llm_cost": 0.0012965,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "size_aware_route_sparsity",
+  "patch_description": "At larger network sizes, the current route rewards become a less reliable ranking signal, and rewarding four alternatives for every top-quartile demand can add noisy couplings. This edit independently makes route rewards taper more with size and raises the heavy-demand cutoff gradually, while reducing the heavy-pair route count from four to three. The intent is to retain extra route flexibility for the most important demands while keeping the QUBO sparser and its route signal more focused.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:04:45.660460",
+  "llm_cost": 0.0028368000000000004,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,24 @@
+<NAME>
+mutual_link_bonus
+</NAME>
+
+<DESCRIPTION>
+Add a sparse coupling bonus for reciprocal links, scaled by the smaller of the two directional demands. When traffic is substantial in both directions, selecting both direct links can avoid routing those flows through shared intermediate links, which is relevant to the maximum-link-load objective. Using the smaller demand avoids giving a large bonus when traffic is mostly one-way. This adds at most n(n−1)/2 couplings, preserving a compact QUBO.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, 1.25
+=======
+    # Reciprocal links directly serve traffic in both directions and can avoid
+    # forcing either flow through a shared intermediate link.
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual = min(float(normalized[i, j]), float(normalized[j, i]))
+            if mutual > 0.0:
+                quadratic[((i, j), (j, i))] = -0.22 * mutual
+
+    return linear, quadratic, 1.25
+>>>>>>> REPLACE
+
+</DIFF>

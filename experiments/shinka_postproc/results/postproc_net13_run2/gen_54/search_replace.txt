@@ -1,0 +1,57 @@
+<NAME>
+stalled_archive_escape
+</NAME>
+
+<DESCRIPTION>
+Add an occasional, bounded path-relinking escape when a parent has stalled. It chooses a high-quality LP-scored archive member that is sufficiently different, then generates a few degree-preserving two-switches that increase overlap with that target. This supplies structured moves toward promising regions instead of relying only on random kicks, while limiting extra work to stalled parents and keeping the normal validity and surrogate-screening pipeline unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [m for m in moves if m != net and tools.is_valid(m)]
+
+    def screen_batch(moves, parent, batch_size=9):
+=======
+        # Occasionally escape a stalled region by taking short steps toward a
+        # distant high-quality archive member. Each step preserves degrees and
+        # strictly increases overlap with the target.
+        stalls = parent_stalls.get(net, 0)
+        if stalls >= 3 and rng.random() < 0.5:
+            targets = [
+                x for x in sorted(seen, key=seen.get)[:12]
+                if x != net and distance(net, x) >= 6
+            ]
+            if targets:
+                target = targets[int(rng.integers(len(targets)))]
+                target_edges = set(target)
+                path_net = net
+                for _ in range(3):
+                    path_arcs = list(path_net)
+                    path_set = set(path_net)
+                    overlap = len(path_set & target_edges)
+                    improving = []
+                    for p in range(len(path_arcs)):
+                        for q in range(p + 1, len(path_arcs)):
+                            cand = switch(path_net, p, q)
+                            if cand is not None:
+                                gain = len(set(cand) & target_edges) - overlap
+                                if gain > 0:
+                                    improving.append((gain, cand))
+                    if not improving:
+                        break
+                    best_gain = max(gain for gain, _ in improving)
+                    path_net = improving[int(rng.integers(
+                        sum(gain == best_gain for gain, _ in improving)
+                    ))][1] if all(
+                        gain == best_gain for gain, _ in improving
+                    ) else rng.choice([
+                        cand for gain, cand in improving if gain == best_gain
+                    ])
+                    moves.add(path_net)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+
+    def screen_batch(moves, parent, batch_size=9):
+>>>>>>> REPLACE
+
+</DIFF>

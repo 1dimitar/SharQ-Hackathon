@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_archive_exploration",
+  "patch_description": "Balance archive exploration using each parent\u2019s visit count, while retaining the existing elite-selection branch. This reduces repeated sampling of the same regions without discarding good networks. Also increase the number and strength of multi-switch kicks when a parent stalls, giving stalled searches a larger chance to escape local optima. Both changes adapt to the instance size and use no additional LP calls.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:16:39.222521",
+  "llm_cost": 0.0026337,
+  "llm_model": "gpt-6-luna"
+}

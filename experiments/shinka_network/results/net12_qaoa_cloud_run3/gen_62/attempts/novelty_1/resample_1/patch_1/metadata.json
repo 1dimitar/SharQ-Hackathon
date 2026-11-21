@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "direct_heavy_blend",
+  "patch_description": "Increase the emphasis on high-demand direct links by changing only the direct-link blend from 0.75/0.25 to 0.85/0.15. Direct links avoid consuming extra capacity on relay edges, while the current quadratic relay terms already provide incentives for indirect service. This controlled change tests whether reducing the influence of moderate-demand direct links improves the sampled topologies without changing the relay model.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:08.006223",
+  "llm_cost": 0.0007907,
+  "llm_model": "gpt-6-luna"
+}

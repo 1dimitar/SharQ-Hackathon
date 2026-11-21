@@ -1,0 +1,21 @@
+<NAME>
+stronger_edge_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the edge-pressure coefficient from 0.5 to 0.75 while leaving the direct-link rewards, transit-node discount, and path strength unchanged. This tests whether more strongly discouraging two-hop paths that use links with substantial direct demand improves load balance, without changing the rest of the surrogate. The edit adds no quadratic terms and is inexpensive to evaluate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * normalized_demand
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                weight = (
+                    -path_strength * normalized_demand
+                    / (float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

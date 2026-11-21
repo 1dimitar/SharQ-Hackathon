@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "broaden_initial_seeds",
+  "patch_description": "The current initialization scores at most 22 repaired candidates, despite having a large candidate pool and a 2,000-call budget. Increase the number of structurally diverse repairs considered first, then expand the low-energy fill set. This spends only a small fraction of the LP budget on starts, while giving the search a better chance of finding a strong basin before neighborhood exploration begins.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:16:32.518757",
+  "llm_cost": 0.0020524000000000002,
+  "llm_model": "gpt-6-luna"
+}

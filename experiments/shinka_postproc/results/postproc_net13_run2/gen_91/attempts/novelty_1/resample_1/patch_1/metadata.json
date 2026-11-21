@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_shake_search",
+  "patch_description": "This design replaces broad neighborhood enumeration and archive relinking with a bounded, adaptive shake search. It still uses repaired QAOA samples for diverse starting points and LP dual prices to identify bottleneck links, but generates only a small set of randomized degree-preserving mutations per round. Surrogate energy cheaply screens those mutations before LP evaluation. A temperature-based acceptance rule lets the current walk cross local barriers, while a separate best-so-far record and a compact quality/diversity archive preserve strong solutions and enable restarts. Mutation size grows after stalls, shifting effort toward larger perturbations without repeatedly constructing huge neighborhoods.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:50:23.888428",
+  "llm_cost": 0.0030374,
+  "llm_model": "gpt-6-luna"
+}

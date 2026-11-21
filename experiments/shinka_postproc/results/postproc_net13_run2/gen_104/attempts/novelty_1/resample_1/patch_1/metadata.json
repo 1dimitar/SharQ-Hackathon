@@ -1,0 +1,14 @@
+{
+  "generation": 104,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_bottleneck_search",
+  "patch_description": "This version spends evaluations on a diverse set of repaired seeds, then adaptively searches an archive of strong networks. Each parent maintains separate stall counts for focused switches, rotations, and multi-switch kicks; those counts adjust proposal effort independently. LP batches prioritize moves that alter positive-price links, while retaining surrogate-ranked and diverse alternatives. Cached and previously evaluated networks are filtered out before evaluation, so LP budget is reserved for genuinely new topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:09:46.779321",
+  "llm_cost": 0.0041858,
+  "llm_model": "gpt-6-luna"
+}

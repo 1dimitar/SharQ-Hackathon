@@ -1,0 +1,72 @@
+<NAME>
+sparse_threehop
+</NAME>
+
+<DESCRIPTION>
+Add one carefully gated three-hop alternative for high-demand OD pairs whose best two-hop choices are weak or nearly tied. Rank paths through two distinct intermediates using the geometric mean of their three positive, normalized demand legs, discounted by pressure at both transit nodes. Encode the selected path with three modest pairwise QUBO couplings. This gives the surrogate a sparse signal for traffic that may need a longer route, while avoiding broad three-hop coverage and preserving the existing two-hop terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # Retain one alternative selected by the full-path model's
+            # pressure discount, unless it was already selected by affinity.
+            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+=======
+            # Retain one alternative selected by the full-path model's
+            # pressure discount, unless it was already selected by affinity.
+            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+
+            # For difficult, high-demand pairs, add a single plausible
+            # three-hop option. Pairwise terms approximate the benefit of
+            # selecting all three links without introducing higher-order terms.
+            ambiguous = (
+                len(candidates) > 1
+                and candidates[0][0] < 1.18 * candidates[1][0]
+            )
+            weak = bool(candidates) and candidates[0][0] < 0.55
+            if traffic[i, k] >= cutoff and (weak or ambiguous):
+                best_path = None
+                best_score = 0.0
+                for a in range(n):
+                    if a == i or a == k or normalized[i, a] <= 0.0:
+                        continue
+                    for b in range(n):
+                        if b == i or b == k or b == a:
+                            continue
+                        legs = (
+                            float(normalized[i, a]),
+                            float(normalized[a, b]),
+                            float(normalized[b, k]),
+                        )
+                        if min(legs) <= 0.0:
+                            continue
+                        strength = (legs[0] * legs[1] * legs[2]) ** (1.0 / 3.0)
+                        pressure_discount = (
+                            float(node_pressure[a]) * float(node_pressure[b])
+                        ) ** 0.5
+                        score = strength / pressure_discount
+                        if score > best_score:
+                            best_score = score
+                            best_path = ((i, a), (a, b), (b, k))
+
+                if best_path is not None:
+                    weight = -0.16 * float(support) * best_score
+                    for first_index in range(3):
+                        for second_index in range(first_index + 1, 3):
+                            first = best_path[first_index]
+                            second = best_path[second_index]
+                            key = (first, second) if first < second else (second, first)
+                            quadratic[key] = quadratic.get(key, 0.0) + weight
+>>>>>>> REPLACE
+
+</DIFF>

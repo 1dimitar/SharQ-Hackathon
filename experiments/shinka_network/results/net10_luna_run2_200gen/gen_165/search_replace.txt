@@ -1,0 +1,16 @@
+<NAME>
+path_strength_050
+</NAME>
+
+<DESCRIPTION>
+Raise the two-hop path strength from 0.46 to 0.50 as a narrow sweep toward the previously promising value of 0.56. This keeps the direct-link rewards, path-quality bounds, and pressure discounts fixed, so the evaluation isolates the effect of slightly stronger two-hop support. It may help the QUBO favor useful indirect routes where a direct link is not the best way to carry demand.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.46
+=======
+    path_strength = 0.50
+>>>>>>> REPLACE
+
+</DIFF>

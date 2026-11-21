@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ambiguity_route",
+  "patch_description": "Add at most one extra two-hop route when the candidate just outside the usual selection is nearly tied with the boundary candidate. Such near-ties indicate uncertainty about which transit path will be useful, so modestly rewarding the alternative may improve sampling and give the post-processor a better energy ranking. The extra route gets a reduced weight, while the existing routes retain their previous rank boosts.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:33:05.340366",
+  "llm_cost": 0.002546,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,71 @@
+<NAME>
+elite_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Add degree-preserving path-relinking proposals between the current parent and a network in the evaluated archive. A relinking step inserts an arc from the target by switching the parent’s outgoing arc from its tail with an arc entering its head; this preserves all in/out degrees and moves the topology toward a known-good network. The existing multi-switch kick remains as a fallback, so relinking supplements rather than replaces broader exploration.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def proposal(net, kind, hot):
+=======
+    relink_targets = []
+
+    def proposal(net, kind, hot):
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Multi-switch kick: preserve all degrees and make several valid exchanges.
+        for _ in range(2 + int(rng.integers(5))):
+            nxt = two_switch(tuple(sorted(cur)), rng)
+            if nxt is not None:
+                cur = set(nxt)
+        return tuple(sorted(cur)) if cur != set(net) else None
+=======
+        # First try a degree-preserving step toward another archived network.
+        # Inserting target edge (u, v) swaps u's current outgoing edge with
+        # the current edge entering v, preserving every node's degrees.
+        if relink_targets:
+            targets = list(relink_targets)
+            rng.shuffle(targets)
+            for target in targets[:8]:
+                target_edges = list(set(target) - cur)
+                rng.shuffle(target_edges)
+                for u, v in target_edges[:8]:
+                    outgoing = [edge for edge in cur if edge[0] == u]
+                    incoming = [edge for edge in cur if edge[1] == v]
+                    rng.shuffle(outgoing)
+                    rng.shuffle(incoming)
+                    for a, b in outgoing:
+                        for c, d in incoming:
+                            if (a, b) == (c, d) or c == b or (c, b) in cur:
+                                continue
+                            nxt = cur.copy()
+                            nxt.remove((a, b))
+                            nxt.remove((c, d))
+                            nxt.add((u, v))
+                            nxt.add((c, b))
+                            return tuple(sorted(nxt))
+
+        # Fall back to a multi-switch kick to retain broad exploration.
+        for _ in range(2 + int(rng.integers(5))):
+            nxt = two_switch(tuple(sorted(cur)), rng)
+            if nxt is not None:
+                cur = set(nxt)
+        return tuple(sorted(cur)) if cur != set(net) else None
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        pop = archive()
+        parent = select_parent(pop)
+=======
+        pop = archive()
+        relink_targets = pop
+        parent = select_parent(pop)
+>>>>>>> REPLACE
+</DIFF>

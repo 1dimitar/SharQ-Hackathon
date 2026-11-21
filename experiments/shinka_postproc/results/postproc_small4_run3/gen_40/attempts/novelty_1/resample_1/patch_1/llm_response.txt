@@ -1,0 +1,144 @@
+<NAME>
+routing_aware_screen
+</NAME>
+
+<DESCRIPTION>
+Replace the removal-pressure ranking with a cheap routing-based screen. The current pressure sum favors larger perturbations simply because they remove more links, without estimating whether their replacements actually help traffic.
+
+First rank moves by the demand-weighted shortest-path lower bound. Then estimate equal-cost shortest-path link loads for a small shortlist combining good energy, good hop count, and random moves. Reserve two LP slots for low estimated congestion, while retaining energy-led exploitation and random exploration. This introduces an independent, demand-aware signal without fitting an online model or letting bottleneck guidance dominate. All shortlist sizes scale with n; the routing estimate is only a heuristic, and certification remains exclusively through tools.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        """Mix energy-ranked trials with a normalized link-pressure heuristic."""
+=======
+        """Mix Hamiltonian energy with cheap shortest-path routing estimates."""
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        energy_quota = min(4 if detail else 6, batch_size)
+=======
+        energy_quota = min(5, batch_size)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # A switch can improve the routing bottleneck by removing heavily used,
+        # expensive links. Penalize new links carrying substantial direct demand.
+        if detail and len(selected) < batch_size:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            if max_demand <= 0:
+                max_demand = 1.0
+
+            pressure_ranked = []
+            parent_set = set(parent)
+            for net in fresh:
+                removed = parent_set - set(net)
+                added = set(net) - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            pressure_quota = min(3, batch_size - len(selected))
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+=======
+        # Minimum traffic-hop count / number of links is a congestion lower
+        # bound. Compute it for every move, then route only a small shortlist.
+        if len(selected) < batch_size:
+            count = len(fresh)
+            edge_array = np.asarray(fresh, dtype=int)
+            rows = np.arange(count)[:, None]
+            dist = np.full((count, n, n), n + 1, dtype=np.int16)
+            diagonal = np.arange(n)
+            dist[:, diagonal, diagonal] = 0
+            dist[rows, edge_array[:, :, 0], edge_array[:, :, 1]] = 1
+            for k in range(n):
+                np.minimum(
+                    dist,
+                    dist[:, :, k, None] + dist[:, None, k, :],
+                    out=dist,
+                )
+
+            traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+            np.fill_diagonal(traffic, 0.0)
+            hop_bound = np.sum(dist * traffic[None, :, :], axis=(1, 2)) / (2 * n)
+            unreachable = np.any(
+                (dist > n) & (traffic[None, :, :] > 0), axis=(1, 2)
+            )
+            hop_bound[unreachable] = np.inf
+
+            index = {net: i for i, net in enumerate(fresh)}
+            shortlist = set(int(i) for i in np.argsort(hop_bound)[:2 * n])
+            shortlist.update(index[net] for _, net in ranked[:2 * n])
+            shortlist.update(
+                int(i) for i in rng.choice(count, size=min(n, count), replace=False)
+            )
+            ids = np.asarray(sorted(shortlist), dtype=int)
+            sd = dist[ids]
+            # Canonical edge order groups the two outgoing arcs of each node.
+            neighbors = edge_array[ids, :, 1].reshape(len(ids), n, 2)
+            batch_rows = np.arange(len(ids))[:, None, None]
+            next_dist = sd[batch_rows, neighbors, :]
+            eligible = next_dist + 1 == sd[:, :, None, :]
+            fractions = eligible / np.maximum(
+                1, np.sum(eligible, axis=2, keepdims=True)
+            )
+
+            # Propagate destination-specific traffic in descending distance
+            # layers. Each unit splits equally over shortest-path next hops.
+            mass = np.broadcast_to(traffic, (len(ids), n, n)).copy()
+            loads = np.zeros((len(ids), n, 2), dtype=float)
+            destination = np.arange(n)[None, None, None, :]
+            scatter_rows = np.arange(len(ids))[:, None, None, None]
+            for level in range(min(n - 1, int(sd.max())), 0, -1):
+                departing = np.where(sd == level, mass, 0.0)
+                mass -= departing
+                sent = departing[:, :, None, :] * fractions
+                loads += np.sum(sent, axis=3)
+                np.add.at(
+                    mass,
+                    (scatter_rows, neighbors[:, :, :, None], destination),
+                    sent,
+                )
+
+            # ECMP is not LP-optimal; use it for just two batch slots.
+            # A small hop term breaks ties in favor of routing efficiency.
+            routing_proxy = np.max(loads, axis=(1, 2)) + 0.10 * hop_bound[ids]
+            routing_proxy[unreachable[ids]] = np.inf
+            routing_quota = min(2, batch_size - len(selected))
+            added_routing = 0
+            for pos in np.argsort(routing_proxy):
+                net = fresh[int(ids[int(pos)])]
+                if net not in selected:
+                    selected.append(net)
+                    added_routing += 1
+                if added_routing >= routing_quota:
+                    break
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # A random fresh move complements the energy- and pressure-guided picks.
+=======
+        # A random fresh move complements the energy- and routing-guided picks.
+>>>>>>> REPLACE
+</DIFF>

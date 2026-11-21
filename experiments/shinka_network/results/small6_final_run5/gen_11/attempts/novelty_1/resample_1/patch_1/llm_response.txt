@@ -1,0 +1,52 @@
+<NAME>
+endpoint_affinity
+</NAME>
+
+<DESCRIPTION>
+Weight two-hop routes by evidence that both of their legs are independently useful: a geometric mean of the two leg demands rewards balanced support and avoids letting one heavily demanded leg mask an unsupported one. Use this affinity both when ranking candidate transit nodes and when scaling route couplings. Also make the direct-versus-indirect redundancy penalty stronger for better-supported legs. The bounded multipliers preserve the existing pressure-aware model while making its preferences more demand-specific.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = 0.25 + edge_pressure
+                rank = affinity / (transit_pressure ** 0.75)
+                discount = transit_pressure * (1.0 + 0.5 * edge_pressure)
+=======
+                affinity = 0.25 + edge_pressure
+                leg_affinity = float(np.sqrt(normalized[i, j] * normalized[j, k]))
+                rank = affinity * (0.75 + 0.5 * leg_affinity) / (transit_pressure ** 0.75)
+                discount = transit_pressure * (1.0 + 0.5 * edge_pressure)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            def add_route(j, weight):
+                first, second = (i, j), (j, k)
+                path_key = (first, second) if first < second else (second, first)
+                quadratic[path_key] = quadratic.get(path_key, 0.0) + weight
+
+                # A direct link and an alternate route serve overlapping
+                # traffic; partially cancel the alternate-route bonus.
+                for edge in (first, second):
+                    overlap_key = (direct, edge) if direct < edge else (edge, direct)
+                    quadratic[overlap_key] = (
+                        quadratic.get(overlap_key, 0.0) - 0.30 * weight
+                    )
+=======
+            def add_route(j, weight):
+                first, second = (i, j), (j, k)
+                leg_affinity = float(np.sqrt(normalized[i, j] * normalized[j, k]))
+                weight *= 0.70 + 0.60 * leg_affinity
+                path_key = (first, second) if first < second else (second, first)
+                quadratic[path_key] = quadratic.get(path_key, 0.0) + weight
+
+                # Penalize direct/indirect redundancy more when both route legs
+                # have independent demand support.
+                overlap_fraction = 0.20 + 0.25 * leg_affinity
+                for edge in (first, second):
+                    overlap_key = (direct, edge) if direct < edge else (edge, direct)
+                    quadratic[overlap_key] = (
+                        quadratic.get(overlap_key, 0.0) - overlap_fraction * weight
+                    )
+>>>>>>> REPLACE
+
+</DIFF>

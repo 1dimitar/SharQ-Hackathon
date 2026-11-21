@@ -1,0 +1,14 @@
+{
+  "generation": 126,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_incident_pressure",
+  "patch_description": "Switch relay-pressure normalization from mean incident demand to maximum incident demand, while keeping the existing 0.75 floor and all route-reward settings unchanged. This isolates the normalization choice: most nodes will receive the floor pressure, while the busiest nodes are discounted relative to the single most loaded node. The softer, more concentrated pressure adjustment may avoid over-penalizing useful relays and improve the typical sampled topology.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:03.630924",
+  "llm_cost": 0.0010524,
+  "llm_model": "gpt-6-luna"
+}

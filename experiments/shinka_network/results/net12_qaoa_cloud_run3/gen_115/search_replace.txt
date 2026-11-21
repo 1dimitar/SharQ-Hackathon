@@ -1,0 +1,71 @@
+<NAME>
+selective_relay_budget
+</NAME>
+
+<DESCRIPTION>
+The current relay reward is spread across every possible two-hop route for each OD pair, creating many weak interactions. Instead, rank relays by the support of both legs, discounted by relay pressure; retain two candidates for each positive-demand OD pair and allow a third only for OD pairs at or above the 90th percentile of positive demand. This applies the suggested higher cutoff while keeping the base relay count and cap unchanged. Renormalizing the retained relay scores preserves each OD pair’s bounded reward budget and the existing estimated-load calculation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            relay_scores = []
+            relays = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                relays.append(j)
+                # High-pressure nodes are less attractive as transit points.
+                relay_scores.append(1.0 / (0.35 + float(pressure[j])))
+
+            score_sum = float(sum(relay_scores))
+            if score_sum <= 0.0:
+                continue
+
+            value = float(t[i, k])
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            for j, score in zip(relays, relay_scores):
+=======
+            value = float(t[i, k])
+            relay_candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                # Favor relays whose two legs can plausibly serve this OD,
+                # while discounting nodes with high incident demand.
+                leg_support = np.sqrt(
+                    min(float(t[i, j]), float(t[j, k]))
+                    * (max(float(t[i, j]), float(t[j, k])) + 1.0e-6)
+                )
+                score = leg_support / (0.35 + float(pressure[j]))
+                relay_candidates.append((score, j))
+
+            relay_candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = 3 if value >= important_cutoff else 2
+            selected = relay_candidates[:keep]
+            relay_scores = [score for score, _ in selected]
+            relays = [j for _, j in selected]
+
+            score_sum = float(sum(relay_scores))
+            if score_sum <= 0.0:
+                continue
+
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            for j, score in zip(relays, relay_scores):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    path_reward_total = 0.34
+    transit_fraction = 0.28
+    for i in range(n):
+=======
+    path_reward_total = 0.34
+    transit_fraction = 0.28
+    positive_demands = t[t > 0.0]
+    important_cutoff = (
+        float(np.quantile(positive_demands, 0.90))
+        if positive_demands.size
+        else float("inf")
+    )
+    for i in range(n):
+>>>>>>> REPLACE
+</DIFF>

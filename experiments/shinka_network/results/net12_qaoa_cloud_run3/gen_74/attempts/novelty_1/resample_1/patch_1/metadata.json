@@ -1,0 +1,14 @@
+{
+  "generation": 74,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_v2",
+  "patch_description": "Keeps the direct-link calibration that has performed well, while making relay rewards more selective and demand-adaptive. For each positive-demand OD pair, it ranks candidate two-hop relays using both leg affinity and relay pressure, then retains a small set of alternatives\u2014more for heavier demands. This preserves useful routing interactions without creating a dense coupling graph. The penalty weight is retained at 2.0; degree penalties themselves remain entirely with the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:22:05.497646",
+  "llm_cost": 0.0014749,
+  "llm_model": "gpt-6-luna"
+}

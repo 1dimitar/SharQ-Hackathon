@@ -1,0 +1,132 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic surrogate costs from a demand matrix."""
+    d = np.asarray(demand, dtype=float)
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0).copy()
+    n = int(d.shape[0])
+    if n == 0:
+        return {}, {}, 1.0
+    np.fill_diagonal(d, 0.0)
+
+    scale = float(np.max(d))
+    if scale <= 0.0:
+        scale = 1.0
+    z = d / scale
+
+    rows = np.sum(z, axis=1)
+    cols = np.sum(z, axis=0)
+    incident = rows + cols
+    mean_incident = max(float(np.mean(incident)), 1e-12)
+
+    # Mean normalization gives a more discriminating relay ranking across
+    # instances; the floor prevents quiet nodes from becoming free hubs.
+    pressure = np.maximum(0.85, incident / mean_incident)
+
+    # Favor direct service, with a small concave contribution for medium
+    # demands and a restrained endpoint-throughput signal.
+    endpoint_scale = max(float(np.max(incident)), 1e-12)
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            v = float(z[i, j])
+            endpoint = (float(rows[i]) + float(cols[j])) / (2.0 * endpoint_scale)
+            value = 0.78 * v + 0.14 * np.sqrt(v) + 0.08 * endpoint
+            linear[(i, j)] = -float(value)
+
+    quadratic = {}
+
+    # Penalize redundant choices at a node: neighbors with similar demand
+    # profiles tend to offer less route diversity. Keep this term weak so it
+    # does not overwhelm the direct and route signals.
+    row_norm = np.sqrt(np.sum(z * z, axis=1))
+    col_norm = np.sqrt(np.sum(z * z, axis=0))
+    row_profile = np.divide(
+        z, row_norm[:, None], out=np.zeros_like(z),
+        where=row_norm[:, None] > 1e-12,
+    )
+    col_profile = np.divide(
+        z, col_norm[None, :], out=np.zeros_like(z),
+        where=col_norm[None, :] > 1e-12,
+    )
+    overlap_strength = 0.045
+    for node in range(n):
+        neighbors = [v for v in range(n) if v != node]
+        for a, j in enumerate(neighbors):
+            for k in neighbors[a + 1:]:
+                sim = float(np.dot(row_profile[j], row_profile[k]))
+                if sim > 1e-10:
+                    quadratic[((node, j), (node, k))] = overlap_strength * sim
+                sim = float(np.dot(col_profile[j], col_profile[k]))
+                if sim > 1e-10:
+                    quadratic[((j, node), (k, node))] = overlap_strength * sim
+
+    # Allocate indirect value only to a small set of plausible relays.
+    # This limits spurious route rewards and keeps the QUBO sparse.
+    relay_limit = min(4, max(1, n - 2))
+    route_budget = 0.60
+    for source in range(n):
+        for target in range(n):
+            traffic = float(z[source, target])
+            if source == target or traffic <= 0.0:
+                continue
+
+            candidates = []
+            for middle in range(n):
+                if middle == source or middle == target:
+                    continue
+                first = float(z[source, middle])
+                second = float(z[middle, target])
+                support = np.sqrt(first * second)
+
+                # Demand-supported paths are preferred, but the nonzero
+                # support floor preserves useful paths with no matching
+                # direct OD demands on their component links.
+                support_factor = 0.20 + 0.80 * support / (0.35 + support)
+                relay_factor = 1.0 / (float(pressure[middle]) ** 0.85)
+                edge_load_factor = 1.0 / np.sqrt(
+                    (1.0 + 0.5 * first) * (1.0 + 0.5 * second)
+                )
+                candidates.append(
+                    (support_factor * relay_factor * edge_load_factor, middle)
+                )
+
+            candidates.sort(reverse=True)
+            chosen = candidates[:relay_limit]
+            denom = sum(score for score, _ in chosen)
+            if denom <= 0.0:
+                continue
+
+            budget = route_budget * traffic
+            for score, middle in chosen:
+                key = ((source, middle), (middle, target))
+                quadratic[key] = quadratic.get(key, 0.0) - budget * score / denom
+
+    # Degree penalties are supplied by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

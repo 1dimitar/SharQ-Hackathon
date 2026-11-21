@@ -1,0 +1,21 @@
+<NAME>
+pressure_discount_075
+</NAME>
+
+<DESCRIPTION>
+Apply a mild exponent of 0.75 to the pressure discount in both relay ranking and path reward. This tunes pressure avoidance consistently: highly pressured relays are still discounted, but less sharply than with the current linear denominator. That may preserve useful two-hop alternatives and improve solution diversity without changing the sparse interaction structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = affinity / (0.75 + float(node_pressure[j]))
+=======
+                rank = affinity / ((0.75 + float(node_pressure[j])) ** 0.75)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                weight = -0.25 * support / (0.75 + float(node_pressure[j]))
+=======
+                weight = -0.25 * support / ((0.75 + float(node_pressure[j])) ** 0.75)
+>>>>>>> REPLACE
+</DIFF>

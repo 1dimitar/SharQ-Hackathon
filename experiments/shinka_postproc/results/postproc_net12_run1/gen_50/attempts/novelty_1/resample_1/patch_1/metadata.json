@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_lp_batches",
+  "patch_description": "The current batch can spend several LP calls on very similar networks, especially when the energy ranking clusters related moves together. Preserve the existing energy/dual-benefit ordering, but greedily choose up to seven proposals that are structurally distinct by edge-set symmetric difference before filling the batch with the highest-ranked remaining proposals. Keep the existing random tail for exploration. This gives costly LP evaluations a broader sample of the neighborhood without discarding the current rankings.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:54:43.525509",
+  "llm_cost": 0.0019815,
+  "llm_model": "gpt-6-luna"
+}

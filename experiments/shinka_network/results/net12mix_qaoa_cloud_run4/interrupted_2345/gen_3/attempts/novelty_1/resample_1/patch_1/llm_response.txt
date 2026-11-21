@@ -1,0 +1,114 @@
+<NAME>
+balancedrelay
+</NAME>
+
+<DESCRIPTION>
+The current approach rewards only direct traffic and has no interactions, so it cannot represent useful multi-hop routes. This version keeps direct demand as the dominant link signal, adds a smaller source/destination traffic-pressure signal for potential relay links, and adds demand-weighted two-hop interactions. Relay interactions are downweighted through nodes with high aggregate traffic to discourage concentrating transit at already-busy nodes. The two-hop weight adapts modestly to network size. The evaluator supplies the degree penalties, so the returned penalty weight is increased from 1.0 to 7.5 to encourage valid degree patterns during QUBO sampling.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build approximate link and two-hop routing costs for a directed topology."""
+    t = np.asarray(demand, dtype=float)
+    n = int(t.shape[0])
+
+    if n < 2:
+        return {}, {}, 7.5
+
+    # Demand normalization makes the coefficients stable across instances.
+    t = np.maximum(t, 0.0)
+    max_demand = float(np.max(t)) if t.size else 0.0
+    if max_demand > 0.0:
+        d = t / max_demand
+    else:
+        d = np.zeros_like(t)
+
+    row = np.sum(t, axis=1)
+    col = np.sum(t, axis=0)
+    max_row = float(np.max(row)) if row.size else 0.0
+    max_col = float(np.max(col)) if col.size else 0.0
+    row_n = row / max_row if max_row > 0.0 else np.zeros(n)
+    col_n = col / max_col if max_col > 0.0 else np.zeros(n)
+
+    # A weak prior favors links that connect traffic-generating nodes to
+    # traffic-receiving nodes, which can make them useful as relay links.
+    relay = np.sqrt(np.outer(row_n, col_n))
+    relay_max = float(np.max(relay)) if relay.size else 0.0
+    if relay_max > 0.0:
+        relay /= relay_max
+
+    linear = {}
+    direct_weight = 0.88
+    relay_weight = 0.12
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            utility = direct_weight * d[i, j] + relay_weight * relay[i, j]
+            linear[(i, j)] = -float(utility)
+
+    # Prefer two-hop paths for substantial OD demand, while reducing the
+    # incentive to route through nodes carrying unusually high aggregate
+    # source and destination traffic.
+    pressure = row + col
+    mean_pressure = float(np.mean(pressure)) if pressure.size else 0.0
+    if mean_pressure > 0.0:
+        relative_pressure = pressure / mean_pressure
+        capacity = 1.0 / np.sqrt(0.35 + 0.65 * relative_pressure)
+        cap_max = float(np.max(capacity))
+        if cap_max > 0.0:
+            capacity /= cap_max
+    else:
+        capacity = np.ones(n, dtype=float)
+
+    path_weight = min(0.32, 0.24 * np.sqrt(12.0 / max(float(n), 5.0)))
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                od = float(d[i, k])
+                if od <= 0.0:
+                    continue
+                a = (i, j)
+                b = (j, k)
+                # Canonicalize keys so the returned QUBO is unambiguous.
+                key = (a, b) if a < b else (b, a)
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    path_weight * od * float(capacity[j])
+                )
+
+    # The evaluator adds this degree penalty separately.
+    penalty_weight = 7.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

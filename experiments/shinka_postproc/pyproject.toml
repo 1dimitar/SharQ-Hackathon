@@ -1,0 +1,14 @@
+[project]
+name = "shinka-postproc"
+version = "0.1.0"
+description = "Evolve the classical post-processing of QAOA output for QOBLIB 08 network design with ShinkaEvolve"
+requires-python = ">=3.12,<3.13"
+# Separate project from shinka_network/ and from the notebook environment (qoro-divi needs rich>=15,
+# ShinkaEvolve needs rich<15). Candidate pools are made with the notebook environment (make_pools.py).
+dependencies = [
+    "dimod",
+    "numpy",
+    "requests",
+    "scipy>=1.18.1",
+    "shinka-evolve @ git+https://github.com/SakanaAI/ShinkaEvolve@706276f611bee7c3348ee34aca8c9589ebc2939c",
+]

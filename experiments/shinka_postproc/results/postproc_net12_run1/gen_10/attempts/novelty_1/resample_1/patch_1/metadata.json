@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "price-guided basin search",
+  "patch_description": "This approach uses repaired QAOA candidates to seed a diverse, LP-scored elite, then alternates focused neighborhood search with controlled basin escapes. LP dual prices and high loads identify links worth changing; promising two-link exchanges are ranked cheaply with the surrogate energy, while occasional targeted three-link rotations explore moves unavailable to pair exchanges. Rather than continually sampling random neighbors, the search periodically revisits elite networks and perturbs the incumbent, directing the LP budget toward distinct candidates likely to improve the best known network.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:35:45.003554",
+  "llm_cost": 0.0015368,
+  "llm_model": "gpt-6-luna"
+}

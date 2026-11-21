@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ambiguous_route",
+  "patch_description": "A fixed top-k rule can discard a nearly equally attractive two-hop route, even when the ranking is ambiguous. Keep the existing two-or-three route selection, but add at most one more route when the next candidate\u2019s affinity-to-pressure score is within 8% of the last selected candidate\u2019s score. This provides limited routing flexibility for uncertain OD pairs without broadly increasing the coupling density; the extra route also receives a lower rank factor in the existing scoring loop.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:29:55.477540",
+  "llm_cost": 0.0025487,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "twohop_strength_balance",
+  "patch_description": "Increase the two-hop reward strength from 0.25 to 0.46 while leaving the direct-link rewards and pressure discounts unchanged. The current setting has a relatively strong best-sample gap but a much worse median gap, suggesting that useful multi-hop paths may be under-rewarded for typical samples. This is a measured increase that strengthens those path signals without jumping to the more aggressive 0.56 setting, which had mixed best-sample results.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:50:03.315286",
+  "llm_cost": 0.0008652000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_ranking",
+  "patch_description": "Increase the strong-leg contribution in the relay-ranking affinity from 0.15 to 0.25 while retaining the weak-leg emphasis, pressure discount, and relay budget. This tests the suggested bottleneck-sensitive ranking: a relay is more attractive when both legs are useful, but an especially strong leg can still distinguish otherwise comparable routes. Only the candidate ranking changes; the existing coupling weights and sparse interaction structure remain intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:27.492382",
+  "llm_cost": 0.0007289000000000001,
+  "llm_model": "gpt-6-luna"
+}

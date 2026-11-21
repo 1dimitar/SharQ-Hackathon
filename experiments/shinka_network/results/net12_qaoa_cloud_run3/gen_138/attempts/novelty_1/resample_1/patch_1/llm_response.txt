@@ -1,0 +1,15 @@
+<NAME>
+softer_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Use a weaker pressure discount when ranking candidate relays: divide affinity by pressure to the 0.75 power instead of pressure itself. Aggregate node demand is only a rough proxy for transit congestion, so this may avoid excluding useful relays that carry high demand but provide valuable two-hop routes. The path support, relay budget, and quadratic reward formula remain unchanged; only the pressure sensitivity in candidate ranking is adjusted.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                candidates.append((affinity / pressure, j, pressure))
+=======
+                candidates.append((affinity / (pressure ** 0.75), j, pressure))
+>>>>>>> REPLACE
+</DIFF>

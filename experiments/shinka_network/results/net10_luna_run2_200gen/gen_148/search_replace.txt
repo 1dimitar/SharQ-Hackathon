@@ -1,0 +1,32 @@
+<NAME>
+concave_direct_blend
+</NAME>
+
+<DESCRIPTION>
+Increase the concave component of the direct-link reward from 0.15 to 0.25, reducing the linear component from 0.85 to 0.75. This gives moderate-demand direct links more influence, which may improve typical sampled topologies and their median routing score, while leaving the current two-hop route discounts unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): -(
+            0.85 * float(traffic[i, j]) / scale
+            + 0.15 * np.sqrt(float(traffic[i, j]) / scale)
+        )
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+=======
+    linear = {
+        (i, j): -(
+            0.75 * float(traffic[i, j]) / scale
+            + 0.25 * np.sqrt(float(traffic[i, j]) / scale)
+        )
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+>>>>>>> REPLACE
+
+</DIFF>

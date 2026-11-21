@@ -1,0 +1,14 @@
+{
+  "generation": 106,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vulnerable_cut_signal",
+  "patch_description": "Add a compact two-node-cut congestion signal, scaled toward endpoint pairs whose external demand is large relative to their incident demand. The reciprocal-link coupling represents a pair of nodes sharing a small cut; a compensating linear correction keeps the cut signal from simply rewarding or penalizing links uniformly on degree-balanced topologies. The gain is tied to the mean direct-link coefficient so the added signal remains modest and scales with the existing objective. This tests the suggested vulnerability-weighted cut correction without changing the existing route model.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:23:05.475548",
+  "llm_cost": 0.0032756,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 131,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mean_pressure_floor",
+  "patch_description": "Normalize relay pressure by mean incident demand rather than the maximum, with a 0.75 floor. Maximum-based normalization compresses pressure differences because the busiest node is fixed at 1 while many other nodes hit the floor. Mean normalization makes the discount reflect how busy a relay is relative to the network overall; the higher floor limits excessive preference for quiet nodes. This changes only the route discount, leaving the existing path-quality formula and term count intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:32.791040",
+  "llm_cost": 0.0009271,
+  "llm_model": "gpt-6-luna"
+}

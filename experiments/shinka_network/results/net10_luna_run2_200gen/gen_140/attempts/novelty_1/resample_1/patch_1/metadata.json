@@ -1,0 +1,14 @@
+{
+  "generation": 140,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor_085",
+  "patch_description": "Raise the relay-pressure floor from 0.75 to 0.85, leaving all other terms unchanged. This independently tests the recommended higher-floor setting: it reduces the relative reward for routes through otherwise low-pressure relays, which may help avoid over-relying on them and improve the typical topology without changing the number of quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:36.088841",
+  "llm_cost": 0.0008341,
+  "llm_model": "gpt-6-luna"
+}

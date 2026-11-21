@@ -1,0 +1,142 @@
+<NAME>
+dual_pressure_screen
+</NAME>
+
+<DESCRIPTION>
+The current batch screen ranks nearly all LP trials by QUBO energy, even though that energy is only loosely correlated with the certified objective. This edit reserves part of each batch for a different signal: whether a move removes links that carried high flow or had positive dual prices, while avoiding newly added links with high direct demand. The rest of the batch remains energy-ranked, preserving the existing useful signal and diversity filter. The inexpensive proxy is used only to choose which networks receive LP calls; it does not replace LP scoring. All quantities are normalized, so the heuristic adapts across instance sizes and demand scales.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Mix energy-ranked trials with a normalized link-pressure heuristic."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        energy_quota = min(4 if detail else 6, batch_size)
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= energy_quota:
+                break
+
+        # A switch can improve the routing bottleneck by removing heavily used,
+        # expensive links. Penalize new links carrying substantial direct demand.
+        if detail and len(selected) < batch_size:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            if max_demand <= 0:
+                max_demand = 1.0
+
+            pressure_ranked = []
+            parent_set = set(parent)
+            for net in fresh:
+                removed = parent_set - set(net)
+                added = set(net) - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            pressure_quota = min(3, batch_size - len(selected))
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        batch = screen_batch(moves, parent)
+=======
+        batch = screen_batch(moves, parent, detail=detail)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+                batch = screen_batch(make_moves(parent, detail), parent)
+=======
+                batch = screen_batch(make_moves(parent, detail), parent, detail=detail)
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,215 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build compact direct-link, supported-route, and small-cut costs."""
+    traffic = np.asarray(demand, dtype=float)
+    if traffic.ndim != 2 or traffic.shape[0] != traffic.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    n = int(traffic.shape[0])
+    traffic = np.nan_to_num(
+        traffic, copy=True, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    np.maximum(traffic, 0.0, out=traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    z = traffic / (maximum if maximum > 0.0 else 1.0)
+    root_z = np.sqrt(z)
+
+    # Normalize before summing to avoid overflow and ensure scale invariance.
+    row_sum = z.sum(axis=1)
+    col_sum = z.sum(axis=0)
+    row_share = z / np.maximum(row_sum[:, None], 1e-12)
+    col_share = z / np.maximum(col_sum[None, :], 1e-12)
+
+    incident = np.maximum(row_sum, col_sum)
+    max_incident = float(incident.max()) if incident.size else 0.0
+    pressure = (
+        0.48 + 0.72 * incident / max_incident
+        if max_incident > 0.0
+        else np.ones(n, dtype=float)
+    )
+
+    share_bonus = np.sqrt(row_share * col_share)
+    direct_score = (
+        0.62 * np.power(z, 0.78)
+        + 0.24 * root_z
+        + 0.14 * share_bonus
+    )
+    linear = {
+        (i, j): -float(direct_score[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    # The evaluator supplies all degree-constraint terms.
+    penalty_weight = float(min(1.32, 1.20 + 0.006 * max(0, n - 12)))
+    if maximum <= 0.0:
+        return linear, quadratic, penalty_weight
+
+    cutoff = float(np.quantile(z[z > 0.0], 0.68))
+    first_affinity = 0.56 * np.sqrt(row_share) + 0.44 * root_z
+    second_affinity = 0.56 * np.sqrt(col_share) + 0.44 * root_z
+    rank_pressure = pressure ** 0.88
+    reward_pressure = pressure ** 0.35
+
+    route_size_factor = float(
+        np.clip(np.sqrt(n / 12.0), 0.85, 1.42)
+    )
+    support_matrix = (
+        0.68 * np.power(z, 0.74) + 0.32 * root_z
+    ) * (1.0 - 0.32 * root_z)
+
+    def add_pair(first, second, value):
+        key = (
+            (first, second)
+            if first < second
+            else (second, first)
+        )
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            support = float(support_matrix[i, k])
+            candidates = []
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                balance = float(np.sqrt(
+                    first_affinity[i, j] * second_affinity[j, k]
+                ))
+                a = float(root_z[i, j])
+                b = float(root_z[j, k])
+                edge_evidence = 0.20 * (a + b)
+
+                # A strong first leg cannot replace a weak second leg.
+                bilateral_support = (
+                    2.0 * a * b / max(a + b, 1e-12)
+                )
+                leg_factor = 0.72 + 0.56 * bilateral_support
+                rank = (
+                    0.18 + balance + edge_evidence
+                ) / rank_pressure[j]
+                candidates.append((
+                    float(rank), j, balance, leg_factor
+                ))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+
+            # Additional alternatives are useful chiefly when the route
+            # ranking is genuinely ambiguous for a substantial demand.
+            keep = min(2, len(candidates))
+            if (
+                len(candidates) >= 3
+                and z[i, k] >= cutoff
+                and candidates[2][0] >= 0.93 * candidates[1][0]
+            ):
+                keep = 3
+
+            for position, (_, j, path_affinity, leg_factor) in enumerate(
+                candidates[:keep]
+            ):
+                rank_factor = 1.12 - 0.10 * position
+                affinity_factor = 0.45 + 0.85 * path_affinity
+                route_scale = (
+                    route_size_factor
+                    * support
+                    * rank_factor
+                    * affinity_factor
+                    / reward_pressure[j]
+                )
+
+                first = (i, j)
+                second = (j, k)
+                add_pair(
+                    first,
+                    second,
+                    -0.37 * route_scale * leg_factor,
+                )
+
+                # A direct link reduces the incremental usefulness of
+                # this particular indirect route.
+                redundancy = (
+                    route_size_factor
+                    * 0.085
+                    * support
+                    * (0.45 + 0.55 * root_z[i, k])
+                    * (0.25 + 0.75 * path_affinity)
+                )
+                add_pair((i, k), first, redundancy)
+                add_pair((i, k), second, redundancy)
+
+    # A two-node set has 4-x_ij-x_ji boundary links in each direction.
+    # For binary x,y:
+    # 1/(4-x-y)^2 = 1/16 + 7*(x+y)/144 + 13*x*y/144.
+    cut_linear = np.zeros((n, n), dtype=float)
+    cut_strength = 0.80 / 144.0
+    incident_scale = max(max_incident, 1e-12)
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal_demand = float(z[i, j] + z[j, i])
+            external_demand = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal_demand,
+            )
+            squared_load = (external_demand / incident_scale) ** 2
+            if squared_load <= 0.0:
+                continue
+
+            coefficient = cut_strength * squared_load
+            cut_linear[i, j] = cut_linear[j, i] = (
+                7.0 * coefficient
+            )
+            add_pair(
+                (i, j), (j, i), 13.0 * coefficient
+            )
+
+    # These offsets are constant over valid degree-two topologies.
+    # Removing them reduces unnecessary constraint/objective competition.
+    if n > 1:
+        node_offset = cut_linear.sum(axis=1) / (n - 1)
+        edge_offset = float(cut_linear.sum()) / (n * (n - 1))
+        for i, j in linear:
+            linear[(i, j)] += float(
+                cut_linear[i, j]
+                - node_offset[i]
+                - node_offset[j]
+                + edge_offset
+            )
+
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

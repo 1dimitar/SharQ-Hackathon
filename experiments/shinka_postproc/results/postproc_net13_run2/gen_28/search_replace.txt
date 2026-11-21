@@ -1,0 +1,50 @@
+<NAME>
+archive_path_relink
+</NAME>
+
+<DESCRIPTION>
+Add a short, guided path-relinking phase before screening each parent’s neighborhood. It chooses a strong, topologically distant archive member as a guide, then greedily applies degree-preserving two-switches that reduce the symmetric difference from that guide. Intermediate networks are added to the existing move set, so the established surrogate screening still decides which ones merit LP calls. This explores directed routes between good regions rather than relying only on random kicks, while keeping the added work bounded and requiring no extra LP calls by itself.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        moves = make_moves(parent, detail)
+        batch = screen_batch(moves, parent)
+=======
+        moves = make_moves(parent, detail)
+
+        # Relink toward a strong, distant archive member. Each two-switch
+        # preserves degrees and is chosen to reduce distance to the guide.
+        guides = [x for x in pop if x != parent]
+        if guides:
+            guide = min(
+                guides,
+                key=lambda x: (seen.get(x, float("inf")), -distance(parent, x)),
+            )
+            current = parent
+            for _ in range(4):
+                current_set = set(current)
+                guide_set = set(guide)
+                current_distance = distance(current, guide)
+                best_step = None
+                best_distance = current_distance
+                arcs_now = list(current)
+                for p in range(len(arcs_now)):
+                    for q in range(p + 1, len(arcs_now)):
+                        candidate = switch(current, p, q)
+                        if candidate is None:
+                            continue
+                        candidate_distance = distance(candidate, guide)
+                        if candidate_distance < best_distance:
+                            best_step = candidate
+                            best_distance = candidate_distance
+                if best_step is None:
+                    break
+                moves.add(best_step)
+                current = best_step
+                if best_distance <= 2:
+                    break
+
+        batch = screen_batch(moves, parent)
+>>>>>>> REPLACE
+</DIFF>

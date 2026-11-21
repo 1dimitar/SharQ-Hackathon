@@ -1,0 +1,53 @@
+<NAME>
+two_node_cut_balance
+</NAME>
+
+<DESCRIPTION>
+Add a compact congestion regularizer based on two-node cuts. In a valid topology, the pair {i,j} has 4 − x_ij − x_ji links crossing its boundary in each direction. If D is its larger incoming or outgoing external demand, D/(4 − x_ij − x_ji) is a congestion lower bound. Its square has an exact quadratic expansion, with linear coefficient 7D²/144 and reciprocal-link coefficient 13D²/144.
+
+This adds pressure against reciprocal bottlenecks, particularly between busy nodes, while retaining the existing demand-aware route model. Normalize by maximum incident demand for size-independent weights, and remove degree-invariant node offsets from the added linear terms so they do not unnecessarily bias sampling. The change adds at most n(n−1)/2 couplings, without adding degree penalties.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, 1.15
+=======
+    # A two-node cut has 4 - x_ij - x_ji boundary links in each
+    # direction on a valid topology. Model the squared congestion bound:
+    # (4 - x - y)^(-2) = 1/16 + 7*(x+y)/144 + 13*x*y/144.
+    # Normalization keeps the additional weights bounded as n grows.
+    cut_linear = np.zeros((n, n), dtype=float)
+    incident_scale = max_incident if max_incident > 0.0 else 1.0
+    cut_strength = 0.80 / 144.0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal_demand = float(traffic[i, j] + traffic[j, i])
+            external_demand = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal_demand,
+            )
+            squared_load = (external_demand / incident_scale) ** 2
+            if squared_load <= 0.0:
+                continue
+
+            coefficient = cut_strength * squared_load
+            cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+            add_pair((i, j), (j, i), 13.0 * coefficient)
+
+    # Node potentials and a common edge offset are constant over valid
+    # degree-two networks. Remove them to reduce irrelevant degree bias
+    # without changing the ranking of valid topologies or exchanges.
+    node_offset = cut_linear.sum(axis=1) / (n - 1)
+    edge_offset = float(cut_linear.sum()) / (n * (n - 1))
+    for i, j in linear:
+        linear[(i, j)] += float(
+            cut_linear[i, j] - node_offset[i] - node_offset[j] + edge_offset
+        )
+
+    return linear, quadratic, 1.15
+>>>>>>> REPLACE
+</DIFF>

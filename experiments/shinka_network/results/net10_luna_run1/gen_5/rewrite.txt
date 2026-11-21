@@ -1,0 +1,128 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic cost terms from a directed demand matrix."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+
+    # Demand is traffic, so ignore any negative or non-finite input values.
+    t = np.where(np.isfinite(t), np.maximum(t, 0.0), 0.0)
+    scale = float(np.max(t)) if t.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    d = t / scale
+
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    total = float(d.sum())
+
+    # A modest proxy for an edge's usefulness as a transit link: traffic can
+    # arrive at its tail and leave from its head.
+    transit = np.outer(col, row)
+    transit_scale = float(np.max(transit)) if transit.size else 0.0
+    if transit_scale > 0.0:
+        transit /= transit_scale
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            # Direct service remains dominant; saturation avoids making the
+            # single largest OD pair overwhelmingly determine link selection.
+            direct_value = d[i, j] * (1.0 - 0.18 * d[i, j])
+            value = 0.90 * direct_value + 0.10 * transit[i, j]
+            linear[(i, j)] = -float(value)
+
+    quadratic = {}
+
+    def add_pair(a, b, weight):
+        """Accumulate a canonical unordered binary-variable pair."""
+        if a == b or weight == 0.0:
+            return
+        key = (a, b) if a < b else (b, a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    # Encourage useful two-hop alternatives, but keep their influence small
+    # relative to selecting a direct link for substantial demand.
+    relay_score = np.sqrt(np.maximum(col, 0.0) * np.maximum(row, 0.0))
+    relay_max = float(np.max(relay_score)) if relay_score.size else 0.0
+    if relay_max > 0.0:
+        relay_score /= relay_max
+
+    path_weight = 0.12
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                od = d[i, k]
+                if od > 0.0:
+                    usefulness = 0.65 + 0.35 * relay_score[j]
+                    add_pair((i, j), (j, k), -path_weight * od * usefulness)
+
+    # With exactly two links per node, small pair bonuses help select two
+    # jointly useful outgoing/incoming links rather than relying only on
+    # independent edge scores.
+    pair_weight = 0.025
+    for i in range(n):
+        neighbors = [j for j in range(n) if j != i]
+        for a_idx in range(len(neighbors)):
+            j = neighbors[a_idx]
+            for b_idx in range(a_idx + 1, len(neighbors)):
+                k = neighbors[b_idx]
+                bonus = pair_weight * np.sqrt(d[i, j] * d[i, k])
+                if bonus > 0.0:
+                    add_pair((i, j), (i, k), -bonus)
+
+    for j in range(n):
+        neighbors = [i for i in range(n) if i != j]
+        for a_idx in range(len(neighbors)):
+            i = neighbors[a_idx]
+            for b_idx in range(a_idx + 1, len(neighbors)):
+                k = neighbors[b_idx]
+                bonus = pair_weight * np.sqrt(d[i, j] * d[k, j])
+                if bonus > 0.0:
+                    add_pair((i, j), (k, j), -bonus)
+
+    # Reciprocal links can be useful for bilateral demand, but otherwise
+    # consume two scarce degree slots. Penalize them only mildly.
+    reciprocal_weight = 0.04
+    if total > 0.0:
+        for i in range(n):
+            for j in range(i + 1, n):
+                bilateral = min(d[i, j], d[j, i])
+                local_scale = max(row[i], row[j], col[i], col[j], 1e-12)
+                bilateral_ratio = min(1.0, bilateral / local_scale)
+                penalty = reciprocal_weight * (1.0 - bilateral_ratio)
+                if penalty > 0.0:
+                    add_pair((i, j), (j, i), penalty)
+
+    # A moderate degree penalty keeps annealing samples near valid topologies.
+    penalty_weight = 1.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

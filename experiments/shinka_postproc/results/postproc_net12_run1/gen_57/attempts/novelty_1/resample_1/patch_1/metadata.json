@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_move_effort",
+  "patch_description": "Track whether bottleneck-focused switches, unrestricted switches, and crossover proposals produce new incumbent bests. Adapt their proposal effort based on those measured outcomes, while keeping a minimum exploration share for every move type. This directs LP budget toward move types that are working without permanently abandoning alternatives that may help escape the current basin.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:58:46.579535",
+  "llm_cost": 0.0019084,
+  "llm_model": "gpt-6-luna"
+}

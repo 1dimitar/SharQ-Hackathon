@@ -1,0 +1,14 @@
+{
+  "generation": 147,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_path_support",
+  "patch_description": "Test the recommended upper side of the controlled path-strength sweep by changing only `path_strength` from 0.56 to 0.62. Stronger two-hop support may help the best sampled topologies serve heavy demands without direct links. Since stronger support can also bias typical samples toward indirect routes, evaluate both best and median gaps against the current setting.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:22.804256",
+  "llm_cost": 0.0009099,
+  "llm_model": "gpt-6-luna"
+}

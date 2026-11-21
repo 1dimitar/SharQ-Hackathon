@@ -1,0 +1,16 @@
+<NAME>
+stronger_direct_demand
+</NAME>
+
+<DESCRIPTION>
+Increase the direct-link reward’s emphasis on large demands while retaining some concave reward for moderate flows. This tests whether serving the heaviest traffic directly improves the low-energy topologies, without changing relay or congestion terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            linear[(i, j)] = -(0.72 * value + 0.28 * np.sqrt(value))
+=======
+            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

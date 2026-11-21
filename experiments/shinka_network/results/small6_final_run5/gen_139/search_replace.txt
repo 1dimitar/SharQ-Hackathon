@@ -1,0 +1,44 @@
+<NAME>
+bounded_endpoint_routing
+</NAME>
+
+<DESCRIPTION>
+Rank two-hop candidates partly by the transit node’s pressure relative to the source and destination: a bounded factor favors transit nodes that are less burdened than the endpoints, without allowing pressure to dominate the existing route evidence. Keep two routes by default and add a third only for a high-demand pair whose third candidate is close in rank to the second. This targets route quality while avoiding a broad increase in couplings, which can weaken sample validity and dilute the energy ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = (0.18 + balance + edge_evidence) / (pressure[j] ** 0.88)
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Spend couplings on more alternatives for larger demands, but
+            # keep the graph compact for the numerous small demands.
+            keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+=======
+                endpoint_pressure = float(np.sqrt(pressure[i] * pressure[k]))
+                relative_pressure = float(np.clip(
+                    endpoint_pressure / max(float(pressure[j]), 1e-12),
+                    0.85,
+                    1.15,
+                ))
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / (pressure[j] ** 0.88)
+                    * relative_pressure
+                )
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Two routes are the default. Add a third only when a substantial
+            # demand has genuinely ambiguous alternatives.
+            keep = min(2, len(candidates))
+            if (
+                len(candidates) >= 3
+                and traffic[i, k] >= cutoff
+                and candidates[2][0] >= 0.93 * candidates[1][0]
+            ):
+                keep = 3
+>>>>>>> REPLACE
+
+</DIFF>

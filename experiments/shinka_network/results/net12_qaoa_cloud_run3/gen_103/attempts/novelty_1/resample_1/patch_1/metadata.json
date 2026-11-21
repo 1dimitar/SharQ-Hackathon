@@ -1,0 +1,14 @@
+{
+  "generation": 103,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_load_balance",
+  "patch_description": "This approach treats direct-link demand as a rough estimate of load, then adds positive pairwise couplings between links sharing a source or destination. Those couplings approximate a squared-load congestion penalty: selecting two individually attractive links that would concentrate traffic at the same endpoint becomes less attractive. It differs from rewarding relay paths, and keeps interactions sparse by considering only the strongest candidates at each endpoint. A modest direct-demand reward preserves useful high-volume links without letting it dominate the congestion signal.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:00:10.587430",
+  "llm_cost": 0.0014650000000000002,
+  "llm_model": "gpt-6-luna"
+}

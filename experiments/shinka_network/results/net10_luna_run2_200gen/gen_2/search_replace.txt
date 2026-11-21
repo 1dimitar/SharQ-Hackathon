@@ -1,0 +1,80 @@
+<NAME>
+demand_aware_path_synergy
+</NAME>
+
+<DESCRIPTION>
+Keep the baseline reward for direct demand, and add two restrained quadratic signals: a small reward when two selected links form a two-hop route for a demanded OD pair, and a reciprocal-link reward proportional to the weaker of the two directional demands. The two-hop coefficient is deliberately modest so that merely creating path motifs does not dominate direct-link value, as happened with the naive larger reward. Both signals use only demand data, and the number of terms is O(n³), within the limit. The degree penalty remains external, so its weight is unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+def surrogate_terms(demand):
+    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
+
+    Args:
+        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+            (zero diagonal).
+
+    Returns:
+        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+            (x_ij = 1 if the directed link i -> j is built), i != j.
+        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+            after rescaling these terms so the largest |weight| is 1.
+
+    Lower energy must mean a better topology. Baseline: reward each link by the demand
+    it carries directly.
+    """
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+def surrogate_terms(demand):
+    """Build demand-based direct-link and short-route surrogate terms."""
+    n = len(demand)
+    scale = max(float(np.max(np.abs(demand))), 1e-12)
+
+    # Preserve the useful baseline signal: a direct link is valuable in
+    # proportion to the traffic it carries.
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+    quadratic = {}
+
+    # Give a small bonus to a selected two-link route for an OD pair. Keep
+    # this much weaker than the direct-link reward to avoid overvaluing
+    # path motifs simply because they exist.
+    path_weight = 0.06
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                value = float(demand[i, k])
+                if value > 0.0:
+                    e1, e2 = (i, j), (j, k)
+                    key = tuple(sorted((e1, e2)))
+                    quadratic[key] = quadratic.get(key, 0.0) - path_weight * value / scale
+
+    # A reciprocal pair is especially useful when substantial traffic runs
+    # in both directions; use the weaker direction so one-sided demand does
+    # not create an artificial reciprocity preference.
+    reciprocal_weight = 0.18
+    for i in range(n):
+        for j in range(i + 1, n):
+            value = min(float(demand[i, j]), float(demand[j, i]))
+            if value > 0.0:
+                key = tuple(sorted(((i, j), (j, i))))
+                quadratic[key] = quadratic.get(key, 0.0) - reciprocal_weight * value / scale
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 110,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "multi_elite_novelty",
+  "patch_description": "Use one batch slot to explore a proposal that is structurally distant, on average, from several strong archive members rather than merely distant from the current parent or already selected moves. This helps search reach alternative elite regions when the surrogate ranking repeatedly favors small variations around one basin. Surrogate energy breaks ties, while the remaining batch slots retain the existing ranked selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:12:59.692697",
+  "llm_cost": 0.0026471000000000003,
+  "llm_model": "gpt-6-luna"
+}

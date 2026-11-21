@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_screen",
+  "patch_description": "The current batch selector promotes diversity only among proposals in the same batch. This change also measures each proposal\u2019s distance from the high-quality scored archive, so the search can spend some LP calls exploring regions that are not already represented. It reserves part of each batch for the best surrogate-ranked moves and part for archive-novel moves, while keeping a limited shortlist for novelty selection so that extremely poor-surrogate proposals are not favored solely for being different.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:08:01.494356",
+  "llm_cost": 0.0014432000000000002,
+  "llm_model": "gpt-6-luna"
+}

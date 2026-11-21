@@ -1,0 +1,16 @@
+<NAME>
+stronger_two_hop
+</NAME>
+
+<DESCRIPTION>
+The two-hop terms improved the median gap over the linear-only baseline, suggesting that rewarding useful indirect routes is helping typical samples. The best-sample results are mixed, so make a modest increase to the existing two-hop coefficient rather than changing the term structure: raising `path_strength` from 0.16 to 0.20 gives indirect routes somewhat more influence while retaining demand gating and transit-load discounting.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.16
+=======
+    path_strength = 0.20
+>>>>>>> REPLACE
+
+</DIFF>

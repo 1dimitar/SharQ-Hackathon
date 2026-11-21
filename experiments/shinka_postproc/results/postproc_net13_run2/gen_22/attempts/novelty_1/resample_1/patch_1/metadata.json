@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_dual_search",
+  "patch_description": "This version allocates neighborhood trials using observed improvement rates: successful move types receive more trials, while every type retains a minimum share for exploration. It combines bottleneck-focused two-switches, three-link rotations and multi-switch kicks, ranks proposals using both surrogate energy and dual prices, and diversifies the initial and ongoing search archives. LP calls are spent only on fresh, valid networks, with a small batch size to keep feedback adaptive and runtime within the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:56:55.167974",
+  "llm_cost": 0.0038094,
+  "llm_model": "gpt-6-luna"
+}

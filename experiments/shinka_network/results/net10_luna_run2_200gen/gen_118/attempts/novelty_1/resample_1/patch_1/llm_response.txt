@@ -1,0 +1,15 @@
+<NAME>
+increase_two_hop_strength
+</NAME>
+
+<DESCRIPTION>
+Raise the two-hop reward strength from 0.25 to 0.46. The current surrogate already rewards only positive-demand two-hop routes and discounts pressured intermediates, but its route reward may be too weak to influence topology selection relative to direct-link rewards. This targeted increase follows the suggested strength sweep while staying below 0.56, which may help sampled topologies serve more traffic through useful routes without making the two-hop terms dominant. It does not change the term count or degree-penalty handling.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.25
+=======
+    path_strength = 0.46
+>>>>>>> REPLACE
+</DIFF>

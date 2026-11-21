@@ -1,0 +1,83 @@
+<NAME>
+remove_fragmentary_threehop_rewards
+</NAME>
+
+<DESCRIPTION>
+Remove the three-hop Taylor expansion. A three-link route is not represented faithfully by pairwise terms: rewarding each pair of its links can favor incomplete path fragments, and the current expansion gives those fragments substantial reward. The prior version without this block performed better (0.8922 versus 0.8881), while keeping the more selective two-hop terms. This change restores that simpler model and reduces unnecessary couplings.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # Consider one three-hop alternative only for pairs with weak or
+            # ambiguous two-hop evidence, or unusually large direct demand.
+            best_leg_evidence = max(
+                normalized[i, j] + normalized[j, k]
+                for _, j, _ in candidates
+            ) if candidates else 0.0
+            close_two_hop = (
+                len(candidates) > 1
+                and candidates[1][0] >= 0.82 * candidates[0][0]
+            )
+            difficult = (
+                best_leg_evidence < 0.40
+                or close_two_hop
+                or traffic[i, k] >= high_cutoff
+            )
+
+            if difficult:
+                best_path = None
+                for a in range(n):
+                    if a == i or a == k:
+                        continue
+                    for b in range(n):
+                        if b == i or b == k or b == a:
+                            continue
+                        first_leg = float(normalized[i, a])
+                        middle_leg = float(normalized[a, b])
+                        last_leg = float(normalized[b, k])
+                        if first_leg <= 0.0 or middle_leg <= 0.0 or last_leg <= 0.0:
+                            continue
+
+                        endpoint_affinity = float(np.sqrt(first_leg * last_leg))
+                        path_quality = float(
+                            (first_leg * middle_leg * last_leg) ** (1.0 / 3.0)
+                        )
+                        transit_pressure = float(
+                            node_pressure[a] * node_pressure[b]
+                        )
+                        rank = (
+                            0.08 + 0.45 * endpoint_affinity + 0.55 * middle_leg
+                        ) / (transit_pressure ** 0.35)
+                        candidate = (rank, a, b, path_quality, transit_pressure)
+                        if best_path is None or candidate[0] > best_path[0]:
+                            best_path = candidate
+
+                if best_path is not None:
+                    _, a, b, path_quality, transit_pressure = best_path
+                    path_reward = (
+                        0.12
+                        * float(support)
+                        * (0.50 + path_quality)
+                        / (transit_pressure ** 0.25)
+                    )
+                    path_links = ((i, a), (a, b), (b, k))
+                    occupancy = 0.25
+
+                    # Second-order Taylor terms for a three-edge route reward;
+                    # accumulate them so any existing pair coupling is kept.
+                    for edge in path_links:
+                        linear[edge] -= path_reward * occupancy * occupancy
+                    for p in range(3):
+                        for q in range(p + 1, 3):
+                            edge_a, edge_b = path_links[p], path_links[q]
+                            key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+                            quadratic[key] = (
+                                quadratic.get(key, 0.0)
+                                - path_reward * occupancy
+                            )
+=======
+            # Three-hop routes are omitted: pairwise fragments can reward
+            # incomplete paths without representing the full route.
+>>>>>>> REPLACE
+
+</DIFF>

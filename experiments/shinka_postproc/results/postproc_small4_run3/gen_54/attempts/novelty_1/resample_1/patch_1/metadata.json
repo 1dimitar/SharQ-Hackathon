@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "feature_diverse_archive",
+  "patch_description": "Preserve separate representatives of LP quality, QUBO energy, and routing-proxy quality in the archive, then deliberately sample parents from those groups. The current archive is ranked only by LP score, so good networks favored by a different signal can disappear before they have had a chance to improve. Routing proxy values are recorded only for networks already screened, avoiding extra routing calculations; all group sizes and archive limits scale with n.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:20:29.692780",
+  "llm_cost": 0.0029664,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "hot_arc_removal",
+  "patch_description": "Make bottleneck removal a focused move source rather than relying on random rotations to happen to include a hot link. Track switches and rotations that remove positive-price or highest-load arcs, add sampled three-arc rotations that deliberately include a hot arc, and reserve one LP evaluation per batch for the best-energy fresh focused move. The rest of the batch selection remains unchanged, so hot-arc guidance supplements rather than dominates exploration. All added move counts scale with `n`.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:06:42.145257",
+  "llm_cost": 0.0036762,
+  "llm_model": "gpt-6-luna"
+}

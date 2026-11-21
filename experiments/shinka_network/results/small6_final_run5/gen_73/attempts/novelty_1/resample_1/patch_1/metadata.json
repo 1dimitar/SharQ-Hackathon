@@ -1,0 +1,14 @@
+{
+  "generation": 73,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "localized_pair_cut_excess",
+  "patch_description": "Blend the reciprocal-link heuristic with an exact two-node cut surrogate, without adding quadratic terms.\n\nFor a node pair, let D be its larger incoming/outgoing external demand. With m internal links, its cut has capacity 4\u2212m, giving the congestion lower bound D/(4\u2212m). Subtract the endpoints\u2019 unavoidable singleton bound and retain only positive excess. Its values at m=0,1,2 have an exact quadratic representation in the two reciprocal link variables.\n\nScale each pair\u2019s contribution by a bounded external-to-incident demand ratio. Blend this correction into 35% of the existing reciprocal penalty, preserving the average reciprocal coefficient. Include the corresponding linear terms, removing endpoint potentials that are constant on valid degree-two networks.\n\nThis introduces demand-specific cut information into topology and exchange rankings while retaining most of the successful structural heuristic. Construction remains O(n\u00b2), and the number of quadratic terms is unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:58:27.388245",
+  "llm_cost": 0.10660800000000001,
+  "llm_model": "gpt-6.1-sol"
+}

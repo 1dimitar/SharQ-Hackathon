@@ -1,0 +1,115 @@
+<NAME>
+balanced_relay_selection
+</NAME>
+
+<DESCRIPTION>
+Select a fixed small set of relays per OD pair using balanced-leg affinity, rather than spreading a path reward across every possible relay. The affinity `min(a, b) + 0.25 * max(a, b)` favors relays whose two legs both have useful demand, while pressure discounts still discourage congested transit nodes. Scaling each OD’s reward by the selected relays’ mean affinity avoids giving strong reward to paths with weak legs; keeping the total reward bounded and limiting relay counts also reduces interaction density.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    estimated_load = t.copy()
+
+    # Allocate a bounded total reward for each OD pair across its possible
+    # relays, rather than giving every relay the same large reward.
+    path_reward_total = 0.34
+    transit_fraction = 0.28
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+
+            relay_scores = []
+            relays = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                relays.append(j)
+                # High-pressure nodes are less attractive as transit points.
+                relay_scores.append(1.0 / (0.35 + float(pressure[j])))
+
+            score_sum = float(sum(relay_scores))
+            if score_sum <= 0.0:
+                continue
+
+            value = float(t[i, k])
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            for j, score in zip(relays, relay_scores):
+                share = score / score_sum
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    path_reward_total * support * share
+                )
+
+                # A rough expected transit load, used only to form the
+                # second-order load-balancing terms below.
+                transit = transit_fraction * value * share
+                estimated_load[i, j] += transit
+                estimated_load[j, k] += transit
+
+=======
+    quadratic = {}
+    estimated_load = t.copy()
+
+    # Keep a bounded reward budget per OD, but concentrate it on a few
+    # relays whose two legs both have useful demand support.
+    path_reward_total = 0.34
+    transit_fraction = 0.28
+    positive = t[t > 0.0]
+    important_cutoff = float(np.quantile(positive, 0.80)) if positive.size else 0.0
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                first_leg = float(t[i, j])
+                second_leg = float(t[j, k])
+                low = min(first_leg, second_leg)
+                high = max(first_leg, second_leg)
+                affinity = low + 0.25 * high
+                if affinity <= 0.0:
+                    continue
+
+                # Rank by balanced-leg support, discounted for relay pressure.
+                rank = affinity / (float(pressure[j]) ** 0.70)
+                candidates.append((rank, j, affinity))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = 3 if float(t[i, k]) >= important_cutoff else 2
+            selected = candidates[:keep]
+            if not selected:
+                continue
+
+            score_sum = float(sum(item[0] for item in selected))
+            if score_sum <= 0.0:
+                continue
+
+            value = float(t[i, k])
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            mean_affinity = sum(item[2] for item in selected) / len(selected)
+
+            for rank, j, affinity in selected:
+                share = rank / score_sum
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    path_reward_total * support * mean_affinity * share
+                )
+
+                # Estimate only a modest fraction of the OD flow as transit.
+                transit = transit_fraction * value * mean_affinity * share
+                estimated_load[i, j] += transit
+                estimated_load[j, k] += transit
+
+>>>>>>> REPLACE
+
+</DIFF>

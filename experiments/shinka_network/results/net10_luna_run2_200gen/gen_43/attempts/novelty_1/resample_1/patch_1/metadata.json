@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This crossover keeps the baseline\u2019s direct-demand signal dominant and retains the current implementation\u2019s activity-aware endpoint and transit estimates. It reduces the indirect reward substantially: each OD pair\u2019s two-hop reward is split across eligible intermediates, so alternative paths do not each receive the full demand reward. The quadratic terms remain limited to two-hop paths (at most \\(n(n-1)(n-2)\\)), and the evaluator\u2019s degree penalty is left untouched.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:22.454625",
+  "llm_cost": 0.0014092000000000002,
+  "llm_model": "gpt-6-luna"
+}

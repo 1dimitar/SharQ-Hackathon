@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_access",
+  "patch_description": "This approach combines direct-demand rewards with an endpoint-access signal: a link is valuable when its source generates traffic and its destination attracts traffic. Unlike rewarding individual two-hop paths, it adds positive quadratic penalties for selecting links that serve highly similar demand profiles from the same source or into the same destination. With degree two, this encourages each node\u2019s two links to provide complementary access rather than redundant access, while keeping the quadratic term count within the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:29.895708",
+  "llm_cost": 0.0010862,
+  "llm_model": "gpt-6-luna"
+}

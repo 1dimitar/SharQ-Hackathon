@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_endpoint_congestion",
+  "patch_description": "Add modest positive couplings between links sharing a sender or receiver, weighted by that node\u2019s share of total traffic. With only two outgoing and two incoming links per node, these couplings discourage concentrating transit capacity at traffic-heavy endpoints. The per-pair normalization keeps this congestion signal selective rather than letting the added terms overwhelm the existing two-hop rewards. It also creates interactions among links that can help the partitioned solver explore endpoint-spread topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:01:48.330067",
+  "llm_cost": 0.0012539,
+  "llm_model": "gpt-6-luna"
+}

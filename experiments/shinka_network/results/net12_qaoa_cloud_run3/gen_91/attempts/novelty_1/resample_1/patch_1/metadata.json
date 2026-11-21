@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_congestion_diversification",
+  "patch_description": "This replaces two-hop path rewards with an endpoint congestion proxy. Direct demand still favors useful links, while positive pairwise couplings mildly discourage selecting two high-demand links that concentrate traffic at the same source or destination. The resulting interactions are sparse enough to fit the term budget, and a stronger evaluator-supplied degree penalty encourages feasible topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:47:41.811737",
+  "llm_cost": 0.0025700000000000002,
+  "llm_model": "gpt-6-luna"
+}

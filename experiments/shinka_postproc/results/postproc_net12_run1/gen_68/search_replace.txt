@@ -1,0 +1,92 @@
+<NAME>
+adaptive_parent_productivity
+</NAME>
+
+<DESCRIPTION>
+Track LP-call allocation and incumbent improvements for each archive parent. Parent selection then combines productivity-weighted exploitation with a guaranteed exploration share for less-tested and structurally distant parents. This aims to spend more calls near regions that have recently produced gains without letting early success collapse the search onto a single basin.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        parents = parent_set()
+=======
+    # Attribute neighborhood-search effort and incumbent gains to each parent.
+    # Unseen parents get an optimistic initial rate, while the exploration
+    # component below ensures that low-productivity regions are still sampled.
+    parent_calls = {}
+    parent_gains = {}
+
+    def choose_parent(parents, excluded=None):
+        choices = [p for p in parents if p != excluded]
+        if not choices:
+            return excluded if excluded in parents else parents[0]
+        # Reserve one quarter of selections for archive-order exploration;
+        # the remainder favors parents with productive recent searches.
+        if rng.random() < 0.25:
+            return choices[int(rng.integers(len(choices)))]
+        weights = []
+        for p in choices:
+            calls = parent_calls.get(p, 0)
+            gains = parent_gains.get(p, 0)
+            rate = (gains + 0.25) / (calls + 2.0)
+            # A mild uncertainty bonus favors under-tested parents.
+            uncertainty = 1.0 / math.sqrt(calls + 1.0)
+            weights.append(rate + 0.35 * uncertainty)
+        weights = np.asarray(weights, dtype=float)
+        weights /= weights.sum()
+        return choices[int(rng.choice(len(choices), p=weights))]
+
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        parents = parent_set()
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # Routinely search around the incumbent; use a second, diverse parent
+        # to avoid repeatedly spending calls in the same local basin.
+        if iteration % 3 == 0 or len(parents) == 1:
+            first = best_net
+        else:
+            first = parents[int(rng.integers(min(8, len(parents))))]
+        second_choices = [p for p in parents if p != first]
+        second = (second_choices[int(rng.integers(len(second_choices)))]
+                  if second_choices else first)
+=======
+        # Always retain some incumbent-centered search, but adapt other
+        # parent choices to observed LP-call productivity.
+        first = best_net if iteration % 3 == 0 else choose_parent(parents)
+        second = choose_parent(parents, excluded=first)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            score_net(net)
+
+        iteration += 1
+=======
+        old_best = best_score
+        calls_used = 0
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            score_net(net)
+            calls_used += 1
+
+        # Share credit across the parents whose neighborhoods generated this
+        # batch; reward only actual incumbent improvements, not merely good
+        # surrogate-ranked proposals.
+        for parent in set((first, second)):
+            parent_calls[parent] = parent_calls.get(parent, 0) + calls_used / max(
+                1, len(set((first, second)))
+            )
+            if best_score < old_best:
+                parent_gains[parent] = parent_gains.get(parent, 0) + (
+                    old_best - best_score
+                ) / max(1.0, old_best)
+
+        iteration += 1
+>>>>>>> REPLACE
+
+</DIFF>

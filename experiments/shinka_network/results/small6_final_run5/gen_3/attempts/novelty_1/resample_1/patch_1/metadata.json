@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_paths",
+  "patch_description": "This version keeps the direct-link reward, but adds a small estimate of the value of a link as part of a transit route. For two-hop routes, it ranks candidate transit nodes by estimated edge and node congestion, then rewards only a few low-congestion alternatives per demand. The sparse, deterministic construction keeps the coupling count well below the limit while giving the energy a more load-aware signal for sampling and move ranking. The degree penalty remains external to this function.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:45:29.516037",
+  "llm_cost": 0.0020437,
+  "llm_model": "gpt-6-luna"
+}

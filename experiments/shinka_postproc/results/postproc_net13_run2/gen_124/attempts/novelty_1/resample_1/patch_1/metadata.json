@@ -1,0 +1,14 @@
+{
+  "generation": 124,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "consensus_evolution",
+  "patch_description": "This replaces bottleneck-focused local search with a population-based recombination strategy. It maintains a diverse archive of LP-scored networks, combines edges from different elites and repaired QAOA candidates, then uses the free repair operation to turn those mixtures into valid offspring. Occasional degree-preserving mutations help preserve exploration. The approach aims to cross between promising network structures that single-network swaps may not reach, while allocating LP calls to varied offspring rather than repeatedly probing one parent\u2019s neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:27:15.006569",
+  "llm_cost": 0.002029,
+  "llm_model": "gpt-6-luna"
+}

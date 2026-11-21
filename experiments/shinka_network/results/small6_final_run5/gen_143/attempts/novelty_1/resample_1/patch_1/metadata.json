@@ -1,0 +1,14 @@
+{
+  "generation": 143,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "complementary_service_pairs",
+  "patch_description": "Add a compact set of same-endpoint link couplings that reward pairs of neighbors offering complementary onward service. For each node, estimate which destinations each possible neighbor can serve from the demand matrix, then rank neighbor pairs by the additional weighted coverage they provide together beyond the better single neighbor. Keeping only the best pairs per node limits extra couplings and preserves a sparse structure. This adds guidance about how a node\u2019s two links work together, which direct-link and two-hop route terms do not fully capture.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:01:09.260059",
+  "llm_cost": 0.0036054000000000004,
+  "llm_model": "gpt-6-luna"
+}

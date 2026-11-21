@@ -1,0 +1,62 @@
+<NAME>
+bounded_transit_congestion
+</NAME>
+
+<DESCRIPTION>
+Estimate each intermediary’s potential transit burden from demand-weighted two-hop routes, using the harmonic mean of the two leg demands so a route with a weak leg contributes little. Convert the normalized burden into a bounded discount, then use it both when ranking intermediary candidates and when setting their route incentives. This discourages concentrating routes through already-busy transit nodes without letting congestion overwhelm the existing direct-demand and path terms. The extra work is O(n³), matching the existing route-candidate loop.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    quadratic = {}
+
+    # Selection parameters:
+=======
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    quadratic = {}
+
+    # Estimate how strongly each node is solicited as a transit point.
+    # The harmonic mean makes a route with one weak leg contribute little.
+    transit_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or normalized[i, k] <= 0.0:
+                continue
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                leg_a = float(normalized[i, j])
+                leg_b = float(normalized[j, k])
+                leg_support = (
+                    2.0 * leg_a * leg_b / (leg_a + leg_b + 1e-15)
+                )
+                transit_load[j] += float(normalized[i, k]) * leg_support
+
+    peak_transit = float(transit_load.max()) if transit_load.size else 0.0
+    congestion_discount = 1.0 + 0.25 * (
+        transit_load / max(peak_transit, 1e-15)
+    )
+    congestion_discount = np.clip(congestion_discount, 1.0, 1.25)
+
+    # Selection parameters:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                pressure = float(node_pressure[j])
+                rank = (0.25 + edge_pressure) / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+=======
+                pressure = float(node_pressure[j])
+                transit_discount = float(congestion_discount[j])
+                rank = (
+                    (0.25 + edge_pressure)
+                    / (pressure ** 0.75 * transit_discount)
+                )
+                discount = (
+                    pressure
+                    * (1.0 + 0.5 * edge_pressure)
+                    * transit_discount
+                )
+>>>>>>> REPLACE
+</DIFF>

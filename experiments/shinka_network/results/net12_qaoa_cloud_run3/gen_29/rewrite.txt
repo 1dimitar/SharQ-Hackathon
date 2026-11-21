@@ -1,0 +1,126 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Return nonnegative, zero-diagonal demand and a safe normalization."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    peak = float(np.max(traffic)) if traffic.size else 0.0
+    if peak <= 0.0:
+        peak = 1.0
+    return traffic, traffic / peak
+
+
+def _node_pressures(traffic):
+    """Estimate relay pressure from the larger directional demand total."""
+    incoming = np.sum(traffic, axis=0)
+    outgoing = np.sum(traffic, axis=1)
+    incident = np.maximum(incoming, outgoing)
+
+    peak = float(np.max(incident)) if incident.size else 0.0
+    if peak <= 0.0:
+        return np.zeros(len(traffic), dtype=float)
+    return incident / peak
+
+
+def _direct_link_terms(normalized):
+    """Give direct service a concave reward to value moderate demands too."""
+    n = len(normalized)
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            d = float(normalized[i, j])
+            linear[(i, j)] = -(0.45 * d + 0.55 * np.sqrt(d))
+    return linear
+
+
+def _route_portfolio(normalized, pressure, relay_limit=3):
+    """Build sparse rewards for the strongest two-hop relay choices per OD."""
+    n = len(normalized)
+    quadratic = {}
+    epsilon = 0.02
+    route_strength = 0.30
+
+    for source in range(n):
+        for target in range(n):
+            if source == target:
+                continue
+
+            od = float(normalized[source, target])
+            if od <= 0.0:
+                continue
+
+            # Concavity retains useful influence for moderate OD demands.
+            od_support = 0.70 * od + 0.30 * np.sqrt(od)
+            candidates = []
+
+            for relay in range(n):
+                if relay == source or relay == target:
+                    continue
+
+                first_leg = float(normalized[source, relay])
+                second_leg = float(normalized[relay, target])
+                weaker = min(first_leg, second_leg)
+                stronger = max(first_leg, second_leg)
+
+                # The ratio term makes a weak leg matter more than in a
+                # purely geometric average, while the floor keeps otherwise
+                # useful transit links eligible.
+                balance = (epsilon + weaker) / (epsilon + stronger)
+                leg_affinity = np.sqrt(
+                    (epsilon + weaker) * (epsilon + stronger)
+                ) * (0.55 + 0.45 * balance)
+
+                relay_discount = 0.65 + 0.70 * float(pressure[relay])
+                rank = leg_affinity / relay_discount
+                candidates.append((rank, relay, leg_affinity, relay_discount))
+
+            # Keep a small portfolio of alternatives instead of coupling
+            # every possible relay into the interaction graph.
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for _, relay, affinity, discount in candidates[:relay_limit]:
+                weight = -route_strength * od_support * affinity / discount
+                first = (source, relay)
+                second = (relay, target)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = float(weight)
+
+    return quadratic
+
+
+def surrogate_terms(demand):
+    """Return direct-link rewards and sparse, pressure-adjusted route rewards."""
+    traffic, normalized = _prepare_demand(demand)
+    pressure = _node_pressures(traffic)
+
+    linear = _direct_link_terms(normalized)
+    quadratic = _route_portfolio(normalized, pressure)
+
+    # Degree penalties are added by the evaluator, not included in these terms.
+    penalty_weight = 10.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

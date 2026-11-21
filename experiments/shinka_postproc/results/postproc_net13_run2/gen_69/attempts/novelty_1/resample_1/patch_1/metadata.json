@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "novelty_reserve",
+  "patch_description": "Reserve one LP evaluation per batch for the valid, uncached move that is most structurally different from the scored archive. The current batch selector favors surrogate rank and diversity within a shortlist, but may still omit a novel move elsewhere in the neighborhood. Replacing the final selected move preserves the promising choices while explicitly testing a new region; surrogate rank breaks ties in novelty.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:31:59.198876",
+  "llm_cost": 0.0023202,
+  "llm_model": "gpt-6-luna"
+}

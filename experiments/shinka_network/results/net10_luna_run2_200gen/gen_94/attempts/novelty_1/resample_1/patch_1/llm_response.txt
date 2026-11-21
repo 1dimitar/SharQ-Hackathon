@@ -1,0 +1,21 @@
+<NAME>
+stronger_edge_suppression
+</NAME>
+
+<DESCRIPTION>
+Increase the edge-pressure coefficient from 0.5 to 0.75 while leaving all other terms unchanged. This tests whether stronger suppression of indirect paths that use edges already carrying substantial direct demand improves the sampled topologies, particularly the weaker `network10_s1` case. The change is modest and preserves the existing quadratic-term structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * (through_demand / scale)
+                    / (node_pressure[j] * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                weight = (
+                    -path_strength * (through_demand / scale)
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

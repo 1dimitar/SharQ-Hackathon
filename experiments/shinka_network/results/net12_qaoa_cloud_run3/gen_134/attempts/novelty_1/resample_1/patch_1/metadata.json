@@ -1,0 +1,14 @@
+{
+  "generation": 134,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_power_075",
+  "patch_description": "Rank relay candidates using the existing affinity formula divided by pressure to the power 0.75, rather than by pressure linearly. This tests a less aggressive pressure discount: busy relays remain less attractive, but are less likely to be excluded from the limited relay budget. The selected-relay coupling weights and all other terms remain unchanged, isolating the effect of the ranking pressure sensitivity.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:42:36.235804",
+  "llm_cost": 0.0008634000000000001,
+  "llm_model": "gpt-6-luna"
+}

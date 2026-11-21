@@ -1,0 +1,14 @@
+{
+  "generation": 138,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_twohop_reward",
+  "patch_description": "Cap the combined two-hop reward for each positive-demand origin-destination pair at 65% of its direct-link reward. This keeps the existing demand-sensitive ranking among intermediate-node choices, while preventing the many possible two-hop paths for one OD pair from collectively overwhelming the direct-link signal. It also limits the influence of indirect rewards on typical sampled topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:23.481201",
+  "llm_cost": 0.0012309999999999999,
+  "llm_model": "gpt-6-luna"
+}

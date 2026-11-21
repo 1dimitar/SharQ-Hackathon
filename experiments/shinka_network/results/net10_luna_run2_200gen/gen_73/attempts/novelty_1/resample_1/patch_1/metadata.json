@@ -1,0 +1,14 @@
+{
+  "generation": 73,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "moderate_concave_paths",
+  "patch_description": "The current two-hop rewards are strong enough to reduce the fraction of samples that already satisfy the degree constraints (82%, versus 98\u201399% for earlier, milder settings). Reduce their overall strength so they are less likely to overwhelm the evaluator\u2019s degree penalty. Within that smaller contribution, use a mild concave transform of through-demand: it preserves the preference for useful high-volume paths while allowing moderate-demand paths to influence the topology. This is a targeted test of the suggested demand-dependent adjustment, with the lower strength intended to retain feasible samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:46:54.213967",
+  "llm_cost": 0.0009525,
+  "llm_model": "gpt-6-luna"
+}

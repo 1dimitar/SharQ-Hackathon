@@ -1,0 +1,95 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link costs and capped two-hop detour support."""
+    traffic = np.asarray(demand, dtype=float)
+    n = len(traffic)
+
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    normalized = traffic / scale
+
+    # Direct service remains the principal signal, with a modest concave
+    # contribution to retain influence for intermediate-sized demands.
+    linear = {}
+    direct_value = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            value = float(normalized[i, k])
+            strength = 0.92 * value + 0.08 * np.sqrt(value)
+            direct_value[i, k] = strength
+            linear[(i, k)] = -strength
+
+    # Estimate transit difficulty using total traffic touching each node.
+    incident = np.sum(normalized, axis=0) + np.sum(normalized, axis=1)
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+    pressure = np.maximum(0.65, incident / mean_incident)
+
+    quadratic = {}
+    detour_cap = 0.22
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or normalized[i, k] <= 0.0:
+                continue
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                # Avoid concentrating indirect support on busy transit nodes
+                # or routes whose two links already serve substantial demand.
+                edge_load = float(normalized[i, j] + normalized[j, k])
+                suitability = (
+                    1.0
+                    / (float(pressure[j]) * (1.0 + 0.8 * edge_load))
+                )
+                candidates.append((j, suitability))
+
+            total_suitability = sum(value for _, value in candidates)
+            if total_suitability <= 0.0:
+                continue
+
+            # All candidate paths for this OD pair collectively receive at
+            # most a fixed fraction of its direct-link reward.
+            budget = detour_cap * float(direct_value[i, k])
+            for j, suitability in candidates:
+                weight = -budget * suitability / total_suitability
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

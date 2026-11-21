@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_support_qubo",
+  "patch_description": "Restructures term generation into separate demand preparation, direct-link scoring, sparse route-coupling construction, and structural adjustment stages. Two-hop rewards now include a bounded confidence factor from both constituent links, reducing rewards for paths with weakly supported legs. The sparse selection and reciprocal-link penalty are retained, while overlap penalties use a smaller budget to limit unnecessary couplings.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:21:02.126647",
+  "llm_cost": 0.004251100000000001,
+  "llm_model": "gpt-6-luna"
+}

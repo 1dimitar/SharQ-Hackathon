@@ -1,0 +1,42 @@
+<NAME>
+selective_high_demand_relays
+</NAME>
+
+<DESCRIPTION>
+Allocate up to two additional relay candidates only to OD pairs in the top decile of positive demands. This concentrates extra two-hop interactions on the traffic most likely to benefit from alternate routing, while preserving the current relay budget for other pairs. The deterministic 90th-percentile cutoff is computed from the demand matrix, and the number of added quadratic terms remains comfortably below the limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+
+    for i in range(n):
+=======
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    positive_od = traffic[traffic > 0.0]
+    high_demand_cutoff = (
+        float(np.percentile(positive_od, 90.0))
+        if positive_od.size
+        else float("inf")
+    )
+    extra_relay_cap = 2
+    path_strength = 0.28
+
+    for i in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for rank, j in candidates[:relay_count]:
+=======
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            extra_relays = (
+                extra_relay_cap if od >= high_demand_cutoff else 0
+            )
+            for rank, j in candidates[:min(n - 2, relay_count + extra_relays)]:
+>>>>>>> REPLACE
+
+</DIFF>

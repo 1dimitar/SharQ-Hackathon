@@ -1,0 +1,14 @@
+{
+  "generation": 114,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_transit_cut",
+  "patch_description": "This crossover keeps the vectorized mean-field transit estimate and sparse route couplings from the inspiration program, while using the current program\u2019s direction-aware node-vulnerability factors for two-node cuts. It also retains weighted route-exposure debiasing, which accounts for both how often a link appears in candidate routes and the demand supported by those routes. The route terms remain sparse, and degree penalties are left to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:29:56.488036",
+  "llm_cost": 0.0041586,
+  "llm_model": "gpt-6-luna"
+}

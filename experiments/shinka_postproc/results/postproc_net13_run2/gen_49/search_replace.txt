@@ -1,0 +1,77 @@
+<NAME>
+adaptive_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Select archive parents using both solution quality and search history, rather than choosing uniformly from the elite or the whole archive. Reward parents whose neighborhoods have produced improvements, while giving underexplored and structurally distinct networks a greater chance of selection. Update usage counts and accumulated improvement after each batch. This preserves elite exploitation but reduces repeated searches in unproductive regions and encourages exploration of diverse basins.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+    guided_moves = set()
+=======
+    parent_stalls = {}
+    parent_uses = {}
+    parent_gain = {}
+    guided_moves = set()
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Favor quality and productive parents while reserving weight for exploration."""
+        if not pop:
+            return best_net
+
+        total_uses = sum(parent_uses.values())
+        weights = []
+        for rank, net in enumerate(pop):
+            uses = parent_uses.get(net, 0)
+            nearest = min(
+                (distance(net, other) for other in pop if other != net),
+                default=26,
+            )
+            novelty = min(1.0, nearest / 26.0)
+            quality = 1.0 / (1.0 + 0.04 * rank)
+            productivity = parent_gain.get(net, 0.0) / max(1, uses)
+            productivity_factor = 0.75 + min(1.5, 500.0 * productivity)
+            exploration = 0.35 * math.sqrt(
+                math.log(total_uses + 2.0) / (uses + 1.0)
+            )
+            weights.append(
+                quality * (0.55 + novelty) * productivity_factor
+                * (1.0 + exploration)
+            )
+
+        pick = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+=======
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        parent_uses[parent] = parent_uses.get(parent, 0) + 1
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+            gain = (parent_score - batch_best) / max(1.0, abs(parent_score))
+            parent_gain[parent] = parent_gain.get(parent, 0.0) + gain
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+
+</DIFF>

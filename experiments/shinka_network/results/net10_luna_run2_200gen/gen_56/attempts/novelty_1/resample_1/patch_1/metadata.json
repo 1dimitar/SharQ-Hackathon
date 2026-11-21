@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "concave_path_support",
+  "patch_description": "Give moderate-demand OD pairs a little more influence in the two-hop rewards without changing the existing transit-node capacity discount or increasing the quadratic-term count. Replacing the purely linear path-demand factor with a mostly linear, mildly concave blend may improve typical sampled topologies by broadening useful path support, while retaining emphasis on large demands. The 15% concave share is deliberately modest so it does not overwhelm the direct-demand signal.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:58.292880",
+  "llm_cost": 0.001974,
+  "llm_model": "gpt-6-luna"
+}

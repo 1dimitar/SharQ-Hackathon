@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_relay_pressure",
+  "patch_description": "Make the relay-pressure discount more sensitive by replacing the current affine denominator with a power-law denominator using \u03b1 = 1.25. This preserves the existing candidate features and path ranking structure while more strongly discouraging routes through high-pressure relays, which may reduce overload and improve typical topology quality.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:11:52.302519",
+  "llm_cost": 0.0008097000000000001,
+  "llm_model": "gpt-6-luna"
+}

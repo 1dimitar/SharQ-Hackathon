@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_route_ranking",
+  "patch_description": "Rank two-hop candidates using both their total leg demand and how evenly that support is split across the two legs. With the current sum-based ranking, a large value on just one leg can make a route look attractive even when the other leg has little demand support. The balance factor leaves well-supported, balanced routes essentially unchanged while lowering the rank of one-sided candidates. This changes candidate selection without adding couplings, and preserves the existing adaptive rule for adding a route when candidate ranks are close.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:23:15.260817",
+  "llm_cost": 0.0026550000000000002,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 74,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "lp_rewarded_operators",
+  "patch_description": "Adapt the number of sampled swaps, rotations, and kicks using their LP-confirmed improvement rates. Each evaluated move contributes one trial, and a move that beats its parent contributes a win. Smoothed rates and bounded scaling preserve a baseline for every operator, while directing more sampling toward move types that have actually improved the objective per LP call. Operator type is inferred from the number of changed arcs, so ordinary two-switches, three-link rotations, and broader kicks are tracked separately.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:37:30.699809",
+  "llm_cost": 0.0032251,
+  "llm_model": "gpt-6-luna"
+}

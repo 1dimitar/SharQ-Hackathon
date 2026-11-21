@@ -1,0 +1,43 @@
+<NAME>
+reserve_novel_batch_slot
+</NAME>
+
+<DESCRIPTION>
+The current batch screen is dominated by low-energy moves, so it can spend the LP budget repeatedly sampling nearby variants. Reserve one slot in each full batch for the fresh move whose minimum symmetric difference from the current archive is greatest; break ties by surrogate rank. This preserves most surrogate-guided evaluations while giving structurally distinct proposals a chance to reveal improvements the surrogate misses.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        # Reserve one slot in a full batch for the most novel fresh topology.
+        # Measure novelty against the bounded archive; use surrogate rank for ties.
+        if len(selected) >= batch_size and batch_size > 0:
+            rank = {net: i for i, (_, net) in enumerate(ranked)}
+            novelty_reference = archive()
+            alternatives = [net for _, net in ranked if net not in selected]
+            if alternatives and novelty_reference:
+                novel = max(
+                    alternatives,
+                    key=lambda net: (
+                        min(distance(net, old) for old in novelty_reference),
+                        -rank[net],
+                    ),
+                )
+                worst = max(range(len(selected)), key=lambda i: rank[selected[i]])
+                selected[worst] = novel
+
+        # If the neighborhood is smaller than the desired batch, use random
+        # tail moves rather than spending every call on near-duplicate variants.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

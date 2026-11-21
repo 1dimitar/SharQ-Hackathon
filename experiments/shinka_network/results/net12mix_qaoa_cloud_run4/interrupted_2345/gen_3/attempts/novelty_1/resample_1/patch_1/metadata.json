@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balancedrelay",
+  "patch_description": "The current approach rewards only direct traffic and has no interactions, so it cannot represent useful multi-hop routes. This version keeps direct demand as the dominant link signal, adds a smaller source/destination traffic-pressure signal for potential relay links, and adds demand-weighted two-hop interactions. Relay interactions are downweighted through nodes with high aggregate traffic to discourage concentrating transit at already-busy nodes. The two-hop weight adapts modestly to network size. The evaluator supplies the degree penalties, so the returned penalty weight is increased from 1.0 to 7.5 to encourage valid degree patterns during QUBO sampling.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:41:16.209323",
+  "llm_cost": 0.0025721999999999997,
+  "llm_model": "gpt-6-luna"
+}

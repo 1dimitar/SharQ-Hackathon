@@ -1,0 +1,424 @@
+<NAME>
+regularized_topology_eda
+</NAME>
+
+<DESCRIPTION>
+Replace repeated neighborhood descent with an estimation-of-distribution search. It learns which links occur in strong evaluated networks, combines that signal with a mild demand-based prior and LP bottleneck feedback, then samples new valid networks directly as unions of two disjoint derangements. A small share of candidates are multi-switch mutations of elite networks to preserve useful structure while still exploring beyond their immediate neighborhoods. This gives the LP budget a broader set of topologies to evaluate than repeatedly searching around a small set of parents.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Classical post-processing of QAOA output for QOBLIB 08."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    """Search valid topologies with a demand- and LP-informed topology EDA."""
+    n = tools.n
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    archive = []
+    edge_penalty = np.zeros((n, n), dtype=float)
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+            archive.append((seen[net], net))
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def add_prices(net):
+        """Accumulate a modest penalty for links identified as bottlenecks."""
+        try:
+            detail = tools.lp_detail(net)
+            prices = detail.get("prices", {})
+            positive = []
+            for arc, price in prices.items():
+                a, b = tuple(map(int, arc))
+                if 0 <= a < n and 0 <= b < n and a != b and float(price) > 0:
+                    positive.append((a, b, float(price)))
+            if positive:
+                scale = max(p for _, _, p in positive)
+                edge_penalty[:] *= 0.90
+                for a, b, price in positive:
+                    edge_penalty[a, b] += 0.35 + 0.45 * price / scale
+        except Exception:
+            pass
+
+    # A weak prior favors links with more direct traffic, without making
+    # demand dominate the information learned from LP-scored topologies.
+    d = np.asarray(demand, dtype=float)
+    prior = np.ones((n, n), dtype=float)
+    if d.shape == (n, n):
+        for i in range(n):
+            row = np.maximum(d[i], 0.0).copy()
+            row[i] = 0.0
+            positive = row[row > 0]
+            if positive.size:
+                scale = float(np.median(positive))
+                if scale > 0:
+                    prior[i] += 0.30 * np.minimum(row / scale, 4.0)
+    np.fill_diagonal(prior, 0.0)
+
+    # Score a diverse subset of repaired QAOA samples to seed the model.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    for net in ordered:
+        if all(distance(net, old) >= 4 for old in starts):
+            starts.append(net)
+        if len(starts) >= 30:
+            break
+    for net in ordered:
+        if len(starts) >= 30:
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+        if len(seen) and len(seen) % 12 == 0 and net == best_net:
+            add_prices(net)
+
+    if best_net is None:
+        return list(starts[0])
+
+    def ranked_archive():
+        """Keep good representatives, with a bias toward topological variety."""
+        ranked = sorted(archive, key=lambda x: x[0])
+        result = []
+        for score, net in ranked:
+            if all(distance(net, old) >= 4 for old in result):
+                result.append(net)
+            if len(result) >= 36:
+                break
+        for score, net in ranked:
+            if len(result) >= 60:
+                break
+            if net not in result:
+                result.append(net)
+        return result
+
+    def learn_weights(population, exploratory=False):
+        """Estimate link frequencies from rank-weighted archive members."""
+        counts = np.zeros((n, n), dtype=float)
+        if population:
+            ranked = sorted(
+                ((seen.get(net, float("inf")), net) for net in population),
+                key=lambda x: x[0],
+            )
+            take = ranked[:min(30, len(ranked))]
+            for rank, (_, net) in enumerate(take):
+                weight = np.exp(-rank / max(5.0, len(take) * 0.45))
+                for a, b in net:
+                    counts[a, b] += weight
+            if counts.max() > 0:
+                counts /= counts.max()
+
+        # Keep substantial exploration probability, and periodically blend
+        # toward a demand-only model so early archive bias cannot lock in.
+        learned = 0.30 + 3.4 * counts + 0.22 * prior
+        learned *= np.exp(-np.minimum(edge_penalty, 3.0))
+        learned = np.maximum(learned, 0.035)
+        np.fill_diagonal(learned, 0.0)
+        if exploratory:
+            learned = 0.50 * learned + 0.50 * np.maximum(prior, 0.05)
+            np.fill_diagonal(learned, 0.0)
+        return learned
+
+    def weighted_matching(weights, forbidden):
+        """Sample a weighted perfect matching, using backtracking for feasibility."""
+        assigned = {}
+        remaining_cols = set(range(n))
+        rows_left = set(range(n))
+
+        def recurse():
+            if not rows_left:
+                return True
+
+            # Choose the most constrained row first; randomize ties.
+            best_rows = []
+            best_count = n + 1
+            choices_by_row = {}
+            for r in rows_left:
+                choices = [
+                    c for c in remaining_cols
+                    if c != r and (r, c) not in forbidden
+                ]
+                choices_by_row[r] = choices
+                if len(choices) < best_count:
+                    best_count = len(choices)
+                    best_rows = [r]
+                elif len(choices) == best_count:
+                    best_rows.append(r)
+            if best_count == 0:
+                return False
+
+            row = best_rows[int(rng.integers(len(best_rows)))]
+            choices = choices_by_row[row]
+            vals = np.asarray([max(float(weights[row, c]), 1e-12) for c in choices])
+            # Random weighted order lets backtracking recover from unlucky choices.
+            keys = -np.log(np.maximum(rng.random(len(choices)), 1e-15)) / vals
+            choices = [choices[i] for i in np.argsort(keys)]
+
+            rows_left.remove(row)
+            for col in choices:
+                assigned[row] = col
+                remaining_cols.remove(col)
+                if recurse():
+                    return True
+                remaining_cols.add(col)
+                del assigned[row]
+            rows_left.add(row)
+            return False
+
+        if recurse():
+            return assigned
+        return None
+
+    def sample_topology(weights):
+        """A union of two disjoint derangements has exactly two in/out links."""
+        first = weighted_matching(weights, set())
+        if first is None:
+            return None
+        forbidden = {(a, b) for a, b in first.items()}
+        second = weighted_matching(weights, forbidden)
+        if second is None:
+            return None
+        net = tuple(sorted(
+            [(a, b) for a, b in first.items()]
+            + [(a, b) for a, b in second.items()]
+        ))
+        return net if tools.is_valid(net) else None
+
+    def mutate(net, trials):
+        """Create a valid offspring by applying several degree-preserving switches."""
+        cur = set(net)
+        for _ in range(trials):
+            arcs = list(cur)
+            if len(arcs) < 2:
+                break
+            p, q = rng.choice(len(arcs), size=2, replace=False)
+            a, b = arcs[int(p)]
+            c, e = arcs[int(q)]
+            if a == e or c == b or (a, e) in cur or (c, b) in cur:
+                continue
+            cur.remove((a, b))
+            cur.remove((c, e))
+            cur.add((a, e))
+            cur.add((c, b))
+        result = tuple(sorted(cur))
+        return result if result != net and tools.is_valid(result) else None
+
+    def select_batch(proposals, target=6):
+        fresh = [
+            net for net in set(proposals)
+            if net not in seen and not tools.is_cached(net) and tools.is_valid(net)
+        ]
+        if not fresh:
+            return []
+
+        # Energy is only a loose screen: preserve a few random alternatives.
+        ranked = sorted(fresh, key=energy)
+        shortlist = ranked[:min(len(ranked), max(18, target * 4))]
+        selected = [shortlist[0]]
+        while len(selected) < min(target - 2, len(shortlist)):
+            available = [x for x in shortlist if x not in selected]
+            if not available:
+                break
+            selected.append(max(
+                available,
+                key=lambda x: min(distance(x, y) for y in selected),
+            ))
+
+        # Include some surrogate-ranked and random-tail candidates as insurance.
+        for net in ranked:
+            if len(selected) >= target - 1:
+                break
+            if net not in selected:
+                selected.append(net)
+        tail = [x for x in fresh if x not in selected]
+        if tail and len(selected) < target:
+            selected.append(tail[int(rng.integers(len(tail)))])
+        return selected
+
+    batch_no = 0
+    while tools.lp_calls_left > 0:
+        batch_no += 1
+        population = ranked_archive()
+        if not population:
+            population = [best_net]
+
+        weights = learn_weights(population, exploratory=(batch_no % 5 == 0))
+        proposals = []
+
+        # Most offspring are sampled from the learned global link model.
+        for _ in range(20):
+            net = sample_topology(weights)
+            if net is not None:
+                proposals.append(net)
+
+        # Mutations preserve good substructures, but are not the main search path.
+        for _ in range(8):
+            parent = population[int(rng.integers(len(population)))]
+            net = mutate(parent, 1 + int(rng.integers(5)))
+            if net is not None:
+                proposals.append(net)
+
+        batch = select_batch(proposals)
+        if not batch:
+            # A broader sampling fallback avoids spinning when the model's
+            # most likely topologies have already been evaluated.
+            for _ in range(30):
+                net = sample_topology(np.maximum(prior, 0.05))
+                if net is not None and net not in seen and not tools.is_cached(net):
+                    batch = [net]
+                    break
+        if not batch:
+            break
+
+        improved = False
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                old_best = best_score
+                evaluate(net)
+                improved = improved or best_score < old_best
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+        if improved or batch_no % 8 == 0:
+            add_prices(best_net)
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}",
+            Path(pool_path).resolve().parent / pool["hamiltonian_file"],
+        )
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {
+            (tuple(map(int, a)), tuple(map(int, b))): float(w)
+            for (a, b), w in quadratic.items()
+        },
+    ))
+    candidates = [
+        [tuple(map(int, a)) for a in c["arcs"]]
+        for c in pool["candidates"]
+    ]
+    if control:
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(
+            demand.copy(), candidates, tools, np.random.default_rng(seed)
+        )
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                score = qt.route_min_congestion(demand, ret).objective
+                if score < best_score:
+                    best_score, best_arcs = score, tuple(sorted(ret))
+        except Exception:
+            pass
+
+    return {
+        "pool": pool_path,
+        "control": control,
+        "n": n,
+        "error": error,
+        "best": float(best_score),
+        "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used,
+        "seconds": time.perf_counter() - start,
+        "timed_out": timed_out,
+    }
+```
+</CODE>

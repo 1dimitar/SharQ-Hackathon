@@ -1,0 +1,49 @@
+<NAME>
+route_interaction_balance
+</NAME>
+
+<DESCRIPTION>
+Count how often each link is used in a selected two-hop route, then mildly attenuate quadratic terms involving heavily reused links. This regularizes variables that otherwise accumulate disproportionate interaction strength, which can distort both sampling and energy-based ranking. The interface provides only a scalar degree penalty, so this targets interaction imbalance without adding an unsupported link-specific constraint penalty; linear demand rewards and the existing degree penalty remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+
+    def add_pair(a, b, value):
+=======
+    quadratic = {}
+    route_uses = {}
+
+    def add_pair(a, b, value):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                first = (i, j)
+                second = (j, k)
+
+                # Negative coupling rewards completion of a plausible
+=======
+                first = (i, j)
+                second = (j, k)
+                route_uses[first] = route_uses.get(first, 0) + 1
+                route_uses[second] = route_uses.get(second, 0) + 1
+
+                # Negative coupling rewards completion of a plausible
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    return linear, quadratic, 1.15
+=======
+    # Prevent links used by many selected routes from dominating the
+    # interaction graph and creating disproportionately strong local fields.
+    for (a, b), value in list(quadratic.items()):
+        count_a = max(0, route_uses.get(a, 0) - 3)
+        count_b = max(0, route_uses.get(b, 0) - 3)
+        attenuation_a = (1.0 + 0.08 * count_a) ** -0.5
+        attenuation_b = (1.0 + 0.08 * count_b) ** -0.5
+        quadratic[(a, b)] = value * np.sqrt(attenuation_a * attenuation_b)
+
+    return linear, quadratic, 1.15
+>>>>>>> REPLACE
+</DIFF>

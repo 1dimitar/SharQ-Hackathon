@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cross_entropy_matchings",
+  "patch_description": "Replaces neighborhood search with a cross-entropy sampler over complete valid networks. Each network is built as the union of two disjoint weighted bipartite matchings, which guarantees exactly two incoming and outgoing links per node and no self-loops. LP-scored elites update an edge-preference model; temperature and a persistent QAOA-derived prior help balance exploitation with exploration. This spends evaluations on fresh, globally sampled topologies rather than repeatedly probing local switches.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:52:11.337335",
+  "llm_cost": 0.004007200000000001,
+  "llm_model": "gpt-6-luna"
+}

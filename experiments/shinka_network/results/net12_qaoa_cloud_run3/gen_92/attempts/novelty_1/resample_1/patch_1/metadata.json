@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_blend",
+  "patch_description": "This crossover keeps the current program\u2019s direct-link rewards and sparse, demand-adaptive relay selection, while borrowing the inspiration program\u2019s simple path-support weighting. Relay candidates are ranked using both geometric strength of the two route legs and the relay\u2019s incident-demand pressure, so a strong single leg is less likely to dominate a weak route. A low-pressure alternative is retained among the selected relays to add some diversity. The implementation also accumulates repeated couplings rather than overwriting them and handles non-finite inputs. The degree penalty remains external; the returned penalty weight is set modestly above the current value.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:47:52.476054",
+  "llm_cost": 0.002019,
+  "llm_model": "gpt-6-luna"
+}

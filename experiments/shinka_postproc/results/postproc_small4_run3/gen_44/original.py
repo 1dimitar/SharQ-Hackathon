@@ -1,0 +1,765 @@
+"""Starting program of post-processing run 2 (network13): run 1's best program (gen 49, combined
+score 0.9901 on network12), copied from results/postproc_net12_run1/best/main.py. Only the fixed
+wrapper below the EVOLVE block changed (tools.energy uses each pool's own Hamiltonian).
+"""
+
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    """Diverse archive search with batched routing estimates and learned screening."""
+    started = time.perf_counter()
+    n = int(tools.n)
+    m = 2 * n
+    infinity = float("inf")
+    best_net = None
+    best_score = infinity
+
+    # Records contain only LP-scored networks, not every generated neighbor.
+    records = {}
+    details = {}
+    visits = {}
+    stalls = {}
+    since_best = 0
+    follow = None
+
+    traffic = np.asarray(demand, dtype=float).copy()
+    np.fill_diagonal(traffic, 0.0)
+    traffic = np.maximum(traffic, 0.0)
+    scale = max(float(traffic.sum()) / max(1, m), 1.0)
+    traffic /= scale
+
+    bit = {(u, v): 1 << (u * n + v)
+           for u in range(n) for v in range(n) if u != v}
+
+    def canon(arcs):
+        return tuple(sorted((int(a), int(b)) for a, b in arcs))
+
+    def mask(net):
+        out = 0
+        for arc in net:
+            out |= bit[arc]
+        return out
+
+    def distance_masks(a, b):
+        return (a ^ b).bit_count()
+
+    def energy(net):
+        value = float(tools.energy(net))
+        return value if math.isfinite(value) else 1.0e100
+
+    def time_left():
+        return time.perf_counter() - started < 143.0
+
+    def routing_loads(successors, edge_lengths):
+        """Route on shortest paths, splitting equally at tied next hops.
+
+        Routing is processed in decreasing distance order separately for every
+        destination. This is a fixed routing heuristic, not an LP solver.
+        """
+        count = successors.shape[0]
+        bb = np.arange(count)[:, None]
+        nodes = np.arange(n)[None, :]
+        dist = np.full((count, n, n), np.inf, dtype=float)
+        dist[:, np.arange(n), np.arange(n)] = 0.0
+
+        s0 = successors[:, :, 0]
+        s1 = successors[:, :, 1]
+        dist[bb, nodes, s0] = edge_lengths[:, :, 0]
+        dist[bb, nodes, s1] = edge_lengths[:, :, 1]
+        for k in range(n):
+            np.minimum(
+                dist,
+                dist[:, :, k, None] + dist[:, None, k, :],
+                out=dist,
+            )
+
+        connected = np.isfinite(dist).all(axis=(1, 2))
+        d0 = dist[bb, s0, :] + edge_lengths[:, :, 0, None]
+        d1 = dist[bb, s1, :] + edge_lengths[:, :, 1, None]
+        good0 = np.isfinite(d0) & (d0 <= d1 + 1.0e-9)
+        good1 = np.isfinite(d1) & (d1 <= d0 + 1.0e-9)
+        denom = np.maximum(good0.astype(float) + good1, 1.0)
+        frac0 = good0 / denom
+        frac1 = good1 / denom
+        diagonal = np.arange(n)
+        frac0[:, diagonal, diagonal] = 0.0
+        frac1[:, diagonal, diagonal] = 0.0
+
+        order = np.argsort(dist, axis=1)
+        flow = np.broadcast_to(traffic, (count, n, n)).copy()
+        destinations = np.arange(n)[None, :]
+
+        # Each update has distinct (batch, destination) indices, so these
+        # advanced-index additions have no repeated-index ambiguity.
+        for rank in range(n - 1, 0, -1):
+            source = order[:, rank, :]
+            amount = flow[bb, source, destinations].copy()
+            v0 = s0[bb, source]
+            v1 = s1[bb, source]
+            send0 = amount * frac0[bb, source, destinations]
+            send1 = amount * frac1[bb, source, destinations]
+            flow[bb, v0, destinations] += send0
+            flow[bb, v1, destinations] += send1
+
+        loads = np.stack(
+            ((flow * frac0).sum(axis=2), (flow * frac1).sum(axis=2)),
+            axis=2,
+        ).reshape(count, m)
+        return loads, connected
+
+    def routing_features(nets, energies):
+        """Two feasible routing patterns and their best coarse convex mixture."""
+        count = len(nets)
+        arcs = np.asarray(nets, dtype=np.int64)
+        successors = arcs[:, :, 1].reshape(count, n, 2)
+
+        unit = np.ones((count, n, 2), dtype=float)
+        first, connected = routing_loads(successors, unit)
+
+        average = np.maximum(first.mean(axis=1), 1.0e-9)
+        relative = first / average[:, None]
+        lengths = (1.0 + 1.5 * np.minimum(relative, 6.0) ** 2)
+        second, connected2 = routing_loads(
+            successors, lengths.reshape(count, n, 2)
+        )
+        connected &= connected2
+
+        blended = first.copy()
+        objective = first.max(axis=1) + 0.10 * first.mean(axis=1)
+        for fraction in (0.2, 0.4, 0.6, 0.8, 1.0):
+            trial = (1.0 - fraction) * first + fraction * second
+            trial_objective = trial.max(axis=1) + 0.10 * trial.mean(axis=1)
+            improve_rows = trial_objective < objective
+            blended[improve_rows] = trial[improve_rows]
+            objective[improve_rows] = trial_objective[improve_rows]
+
+        top_count = max(2, n // 2)
+
+        def summaries(loads):
+            top = np.partition(loads, m - top_count, axis=1)[:, -top_count:]
+            return np.column_stack((
+                loads.mean(axis=1),
+                loads.max(axis=1),
+                top.mean(axis=1),
+                np.sqrt(np.mean(loads * loads, axis=1)),
+            ))
+
+        values = np.column_stack((summaries(first), summaries(blended)))
+        features = np.column_stack((
+            np.log(np.maximum(values, 1.0e-9)),
+            (np.asarray(energies) - energy_center) / energy_scale,
+        ))
+        proxy = 0.85 * blended.max(axis=1) + 0.15 * blended.mean(axis=1)
+        proxy[~connected] = infinity
+        return features, proxy, connected
+
+    repaired = set()
+    for candidate in candidates:
+        if not time_left():
+            break
+        try:
+            net = canon(tools.repair(candidate))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception as exc:
+            if type(exc).__name__ in ("BudgetExhausted", "RunTimeout"):
+                raise
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception as exc:
+            if type(exc).__name__ in ("BudgetExhausted", "RunTimeout"):
+                raise
+
+    if not repaired:
+        return []
+
+    initial_nets = sorted(repaired)
+    initial_energy = np.asarray([energy(net) for net in initial_nets])
+    energy_center = float(np.median(initial_energy))
+    energy_scale = max(float(np.std(initial_energy)), 1.0e-9)
+
+    initial_features, initial_proxy, connected = routing_features(
+        initial_nets, initial_energy
+    )
+    indices = np.flatnonzero(connected).tolist()
+
+    # A connected degree-feasible fallback also handles pathological repairs.
+    if not indices and n >= 3:
+        order = rng.permutation(n)
+        net = canon(
+            [(int(order[i]), int(order[(i + step) % n]))
+             for i in range(n) for step in (1, 2)]
+        )
+        initial_nets = [net]
+        initial_energy = np.asarray([energy(net)])
+        initial_features, initial_proxy, connected = routing_features(
+            initial_nets, initial_energy
+        )
+        indices = [0]
+
+    if not indices:
+        return list(initial_nets[0])
+
+    feature_scale = np.maximum(
+        np.std(initial_features[indices], axis=0), 0.04
+    )
+    dimension = initial_features.shape[1]
+
+    # This small regression learns LP changes from measured proxy changes.
+    # It never computes routing certificates or substitutes for tools.lp.
+    gram = np.eye(dimension) * 5.0
+    rhs = np.zeros(dimension)
+    coefficients = np.zeros(dimension)
+    training_pairs = 0
+
+    def certify(net, en, features, proxy, parent=None):
+        nonlocal best_net, best_score, since_best, training_pairs
+        if net in records:
+            return records[net][0]
+
+        score = float(tools.lp(net))
+        records[net] = (
+            score, float(en), np.asarray(features).copy(), mask(net), float(proxy)
+        )
+
+        if parent is not None and parent in records:
+            parent_record = records[parent]
+            if (math.isfinite(score) and math.isfinite(parent_record[0])
+                    and score > 0.0 and parent_record[0] > 0.0):
+                change = np.clip(
+                    (features - parent_record[2]) / feature_scale, -6.0, 6.0
+                )
+                target = float(np.clip(
+                    math.log(score / parent_record[0]), -0.3, 0.3
+                ))
+                weight = 1.0 / (1.0 + 3.0 * abs(target))
+                gram[:] += weight * np.outer(change, change)
+                rhs[:] += weight * change * target
+                training_pairs += 1
+
+        since_best += 1
+        if score < best_score:
+            best_net, best_score = net, score
+            since_best = 0
+        return score
+
+    # Seed all three cheap quality/coverage signals rather than energy alone.
+    initial_masks = {i: mask(initial_nets[i]) for i in indices}
+    initial_limit = min(len(indices), max(12, 2 * n))
+    selected_starts = []
+    start_set = set()
+    separation = max(6, n // 2 + 2)
+
+    def add_start(i, separated=True):
+        if i in start_set:
+            return False
+        if separated and any(
+            distance_masks(initial_masks[i], initial_masks[j]) < separation
+            for j in selected_starts
+        ):
+            return False
+        selected_starts.append(i)
+        start_set.add(i)
+        return True
+
+    by_energy = sorted(indices, key=lambda i: (initial_energy[i], i))
+    by_proxy = sorted(indices, key=lambda i: (initial_proxy[i], i))
+
+    for i in by_energy:
+        add_start(i)
+        if len(selected_starts) >= max(1, int(0.65 * initial_limit)):
+            break
+
+    target = max(len(selected_starts), int(0.90 * initial_limit))
+    for i in by_proxy:
+        add_start(i)
+        if len(selected_starts) >= target:
+            break
+
+    while len(selected_starts) < initial_limit:
+        remaining = [i for i in indices if i not in start_set]
+        if not remaining:
+            break
+        if len(selected_starts) < int(0.90 * initial_limit):
+            add_start(remaining[0], separated=False)
+            continue
+        chosen = max(
+            remaining,
+            key=lambda i: min(
+                distance_masks(initial_masks[i], initial_masks[j])
+                for j in selected_starts
+            ) if selected_starts else 0,
+        )
+        add_start(chosen, separated=False)
+
+    for i in selected_starts:
+        if tools.lp_calls_left <= 0 or not time_left():
+            break
+        certify(
+            initial_nets[i], initial_energy[i],
+            initial_features[i], initial_proxy[i]
+        )
+
+    if best_net is None:
+        return list(initial_nets[selected_starts[0]])
+
+    def separated_group(ordered, limit, gap):
+        group = []
+        for net in ordered:
+            if all(
+                distance_masks(records[net][3], records[old][3]) >= gap
+                for old in group
+            ):
+                group.append(net)
+                if len(group) >= limit:
+                    break
+        return group
+
+    def archive():
+        """Explicit LP, energy, routing, and spatial-coverage quotas."""
+        ranked = sorted(
+            (net for net in records if math.isfinite(records[net][0])),
+            key=lambda net: records[net][0],
+        )
+        if not ranked:
+            return [[best_net]] * 4, [best_net]
+
+        gap = max(6, n // 2)
+        quota = max(3, n // 3)
+        elite = ranked[:max(2, n // 4)]
+        for net in ranked:
+            if net not in elite and all(
+                distance_masks(records[net][3], records[old][3]) >= gap
+                for old in elite
+            ):
+                elite.append(net)
+                if len(elite) >= n:
+                    break
+
+        near = [
+            net for net in ranked
+            if records[net][0] <= best_score * 1.045
+        ]
+        energy_group = separated_group(
+            sorted(near, key=lambda net: records[net][1]), quota, gap
+        )
+        proxy_group = separated_group(
+            sorted(near, key=lambda net: records[net][4]), quota, gap
+        )
+
+        admissible = [
+            net for net in ranked
+            if records[net][0] <= best_score * 1.06
+        ]
+        if len(admissible) > 6 * n:
+            positions = np.linspace(
+                0, len(admissible) - 1, 6 * n, dtype=int
+            )
+            admissible = [admissible[int(i)] for i in positions]
+
+        anchors = list(dict.fromkeys(elite + energy_group + proxy_group))
+        novel = []
+        available = [net for net in admissible if net not in anchors]
+        while available and len(novel) < quota:
+            references = anchors + novel
+            chosen = max(
+                available,
+                key=lambda net: (
+                    min(distance_masks(records[net][3], records[old][3])
+                        for old in references) / max(1, 4 * n)
+                    - 2.0 * (records[net][0] / best_score - 1.0)
+                ),
+            )
+            novel.append(chosen)
+            available.remove(chosen)
+
+        groups = [
+            elite,
+            energy_group or elite,
+            proxy_group or elite,
+            novel or elite,
+        ]
+        population = list(dict.fromkeys(
+            net for group in groups for net in group
+        ))
+        return groups, population
+
+    def select_parent(groups):
+        group_id = int(rng.choice(4, p=[0.58, 0.14, 0.14, 0.14]))
+        group = groups[group_id]
+        if group_id == 0 and rng.random() < 0.45:
+            group = group[:min(4, len(group))]
+        weights = np.asarray([
+            1.0 / (
+                math.sqrt(i + 1.0)
+                * (1.0 + 0.16 * visits.get(net, 0)
+                   + 0.45 * stalls.get(net, 0))
+            )
+            for i, net in enumerate(group)
+        ])
+        weights /= weights.sum()
+        return group[int(rng.choice(len(group), p=weights))]
+
+    def switched(arcs, current, p, q):
+        a, b = arcs[p]
+        c, d = arcs[q]
+        if a == c or b == d or a == d or c == b:
+            return None
+        if (a, d) in current or (c, b) in current:
+            return None
+        result = current.copy()
+        result.remove((a, b))
+        result.remove((c, d))
+        result.add((a, d))
+        result.add((c, b))
+        return tuple(sorted(result))
+
+    def random_switch(current):
+        arcs = sorted(current)
+        p = int(rng.integers(m))
+        q = int(rng.integers(m - 1))
+        if q >= p:
+            q += 1
+        return switched(arcs, current, p, q)
+
+    def make_moves(parent, detail, population, round_id):
+        arcs = list(parent)
+        current = set(parent)
+        moves = {}
+        prices = detail.get("prices", {}) if detail else {}
+        loads = detail.get("loads", {}) if detail else {}
+        max_price = max((float(v) for v in prices.values()), default=0.0)
+        hot = {
+            tuple(map(int, arc)) for arc, value in prices.items()
+            if float(value) > max(1.0e-12, max_price * 1.0e-8)
+        }
+        if not hot and loads:
+            hot = {
+                tuple(map(int, arc))
+                for arc in sorted(loads, key=loads.get, reverse=True)[:max(2, n // 3)]
+            }
+
+        # Exact focused two-switch neighborhood, plus unbiased coverage.
+        for p in range(m):
+            for q in range(p + 1, m):
+                focused = not hot or arcs[p] in hot or arcs[q] in hot
+                if not focused and rng.random() > min(0.5, 3.0 / n):
+                    continue
+                net = switched(arcs, current, p, q)
+                if net is not None:
+                    moves.setdefault(net, 0)
+
+        hot_indices = [i for i, arc in enumerate(arcs) if arc in hot]
+        rotation_trials = 6 * n + min(6 * n, 2 * n * stalls.get(parent, 0))
+        for trial in range(rotation_trials):
+            if hot_indices and trial % 2 == 0:
+                p = hot_indices[int(rng.integers(len(hot_indices)))]
+                others = rng.choice(m - 1, size=2, replace=False)
+                q, r = (int(i) + int(int(i) >= p) for i in others)
+                ids = (p, q, r)
+            else:
+                ids = rng.choice(m, size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            rest = current - old
+            for new in (
+                {(a, d), (c, f), (e, b)},
+                {(a, f), (c, b), (e, d)},
+            ):
+                if len(new) != 3 or any(u == v for u, v in new):
+                    continue
+                if new & rest:
+                    continue
+                net = tuple(sorted(rest | new))
+                if net != parent:
+                    moves.setdefault(net, 1)
+
+        escalation = min(
+            max(1, n // 3),
+            stalls.get(parent, 0) // 2 + since_best // max(1, 12 * n),
+        )
+        for _ in range(n + escalation):
+            cur = current.copy()
+            strength = 2 + int(rng.integers(3)) + escalation // 2
+            successes = 0
+            for _ in range(3 * strength):
+                net = random_switch(cur)
+                if net is not None:
+                    cur = set(net)
+                    successes += 1
+                    if successes >= strength:
+                        break
+            net = tuple(sorted(cur))
+            if net != parent:
+                moves.setdefault(net, 2)
+
+        # Follow overlap-increasing switches toward different good regions.
+        if round_id % 3 == 0 or stalls.get(parent, 0) >= 3:
+            parent_mask = records[parent][3]
+            targets = [
+                net for net in population
+                if distance_masks(parent_mask, records[net][3]) >= max(8, n)
+            ]
+            if targets:
+                target = set(targets[int(rng.integers(len(targets)))])
+                cur = current.copy()
+                for _ in range(max(3, n // 2)):
+                    out = [[] for _ in range(n)]
+                    incoming = [[] for _ in range(n)]
+                    for a, b in cur:
+                        out[a].append(b)
+                        incoming[b].append(a)
+                    options = []
+                    best_gain = 0
+                    for a, b in sorted(target - cur):
+                        for d in sorted(out[a]):
+                            for c in sorted(incoming[b]):
+                                if c == d or (c, d) in cur:
+                                    continue
+                                removed = {(a, d), (c, b)}
+                                added = {(a, b), (c, d)}
+                                gain = len(added & target) - len(removed & target)
+                                if gain > best_gain:
+                                    best_gain = gain
+                                    options = [(removed, added)]
+                                elif gain == best_gain and gain > 0:
+                                    options.append((removed, added))
+                    if not options:
+                        break
+                    removed, added = options[int(rng.integers(len(options)))]
+                    cur.difference_update(removed)
+                    cur.update(added)
+                    net = tuple(sorted(cur))
+                    if net != parent:
+                        moves.setdefault(net, 3)
+
+        return moves
+
+    def ranks(values):
+        order = np.argsort(values, kind="stable")
+        result = np.empty(len(order), dtype=float)
+        result[order] = np.arange(len(order), dtype=float)
+        return result / max(1, len(order) - 1)
+
+    batch_size = max(7, min(13, n // 2 + 1))
+    idle = 0
+    round_id = 0
+
+    while tools.lp_calls_left > 0 and time_left():
+        round_id += 1
+        groups, population = archive()
+        if follow is not None and follow in records and rng.random() < 0.60:
+            parent = follow
+        else:
+            parent = select_parent(groups)
+        follow = None
+        visits[parent] = visits.get(parent, 0) + 1
+
+        if parent not in details:
+            details[parent] = tools.lp_detail(parent)
+        detail = details[parent]
+        generated = make_moves(parent, detail, population, round_id)
+        fresh = [
+            net for net in generated
+            if net not in records and not tools.is_cached(net)
+        ]
+        if not fresh:
+            stalls[parent] = stalls.get(parent, 0) + 1
+            idle += 1
+            if idle > 10 * n:
+                break
+            continue
+
+        energies = np.asarray([energy(net) for net in fresh])
+        features, proxies, connected = routing_features(fresh, energies)
+        good = np.flatnonzero(connected)
+        if len(good) == 0:
+            idle += 1
+            continue
+
+        fresh = [fresh[int(i)] for i in good]
+        energies = energies[good]
+        features = features[good]
+        proxies = proxies[good]
+        kinds = np.asarray([generated[net] for net in fresh])
+        count = len(fresh)
+
+        if training_pairs >= 4 * n:
+            coefficients = np.linalg.solve(gram, rhs)
+            changes = np.clip(
+                (features - records[parent][2]) / feature_scale, -6.0, 6.0
+            )
+            predicted = changes @ coefficients
+            combined = 0.80 * ranks(predicted) + 0.20 * ranks(proxies)
+        else:
+            combined = 0.80 * ranks(proxies) + 0.20 * ranks(energies)
+
+        e_order = np.argsort(energies, kind="stable")
+        p_order = np.argsort(proxies, kind="stable")
+        learned_order = np.argsort(combined, kind="stable")
+        selected = []
+        selected_set = set()
+
+        def take(i):
+            i = int(i)
+            if i in selected_set:
+                return False
+            selected.append(i)
+            selected_set.add(i)
+            return True
+
+        energy_quota = max(3, int(round(0.45 * batch_size)))
+        # Keep inexpensive two-link improvements represented in every batch.
+        for i in e_order:
+            if kinds[i] == 0:
+                take(i)
+                if len(selected) >= min(2, energy_quota):
+                    break
+        for i in e_order:
+            if len(selected) >= energy_quota:
+                break
+            take(i)
+
+        learned_target = max(energy_quota, batch_size - 3)
+        for i in learned_order:
+            if len(selected) >= learned_target:
+                break
+            take(i)
+
+        for i in p_order:
+            if take(i):
+                break
+
+        # Reserve a call for structural coverage among plausible proposals.
+        shortlist = learned_order[:min(count, max(4 * batch_size, count // 3))]
+        available = [int(i) for i in shortlist if int(i) not in selected_set]
+        if available and len(selected) < batch_size:
+            anchors = [records[net][3] for net in population[:2 * n]]
+            anchors.extend(mask(fresh[i]) for i in selected)
+            candidate_masks = {i: mask(fresh[i]) for i in available}
+            novel = max(
+                available,
+                key=lambda i: (
+                    min(distance_masks(candidate_masks[i], old) for old in anchors),
+                    -combined[i],
+                ),
+            )
+            take(novel)
+
+        # A small randomized nonlocal component prevents model lock-in.
+        if len(selected) < batch_size:
+            tail = [
+                int(i) for i in learned_order[:max(batch_size, count // 2)]
+                if int(i) not in selected_set and kinds[i] != 0
+            ]
+            if tail:
+                take(tail[int(rng.integers(len(tail)))])
+        for i in learned_order:
+            if len(selected) >= batch_size:
+                break
+            take(i)
+
+        if not selected:
+            idle += 1
+            continue
+        idle = 0
+        parent_score = records[parent][0]
+        winner = None
+        winner_score = parent_score
+
+        for i in selected:
+            if tools.lp_calls_left <= 0 or not time_left():
+                break
+            score = certify(
+                fresh[i], energies[i], features[i], proxies[i], parent=parent
+            )
+            if score < winner_score:
+                winner, winner_score = fresh[i], score
+
+        if winner is not None:
+            stalls[parent] = 0
+            if winner_score <= best_score * 1.035:
+                follow = winner
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

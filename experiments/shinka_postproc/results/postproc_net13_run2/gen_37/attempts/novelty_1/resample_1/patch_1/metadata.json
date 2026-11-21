@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 12,
+  "patch_name": "adaptive_operator_feedback",
+  "patch_description": "Track generated proposals, LP evaluations, improvements, and improvement magnitude for three move families: two-switches, rotations, and kicks/path relinking. Use the observed LP outcomes to adapt how many sampled proposals each family generates, while retaining a minimum share for every family. This puts the feedback on the expensive, exact objective rather than surrogate energy alone, and avoids allowing a temporarily lucky operator to eliminate exploration of the others.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:10:16.725359",
+  "llm_cost": 0.0036219,
+  "llm_model": "gpt-6-luna"
+}

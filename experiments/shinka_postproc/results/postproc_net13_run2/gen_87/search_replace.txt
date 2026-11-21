@@ -1,0 +1,116 @@
+<NAME>
+adaptive_operator_feedback
+</NAME>
+
+<DESCRIPTION>
+Adapt which move structures receive LP calls using their confirmed improvement rates. Classify proposals by the number of changed links (two-switch, three-link rotation, or larger move), then maintain a smoothed success estimate for each class. Batch selection gives stronger representation to move classes that have actually improved their parent, while retaining a floor for every class so under-sampled operators continue to be explored. This makes the expensive LP budget respond to observed network-quality improvements rather than relying on a fixed mix of proposals.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stalls = {}
+    best_net = None
+    best_score = float("inf")
+    rounds = 0
+=======
+    stalls = {}
+    best_net = None
+    best_score = float("inf")
+    rounds = 0
+    # Laplace-smoothed success rates keep every move class eligible.
+    operator_stats = {2: [1.0, 2.0], 3: [1.0, 2.0], 4: [1.0, 2.0]}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_batch(moves, parent, limit=3):
+        if not moves:
+            return []
+        base = energy(parent)
+        ranked = sorted(moves, key=lambda x: energy(x) - base)
+        selected = []
+        # Prefer surrogate improvement while avoiding near-duplicate trials.
+        for x in ranked:
+            if all(dist(x, y) >= 2 for y in selected):
+                selected.append(x)
+            if len(selected) >= 2:
+                break
+        # One exploratory slot, chosen from a wider ranked portion.
+        remaining = [x for x in ranked if x not in selected]
+        head = remaining[:max(20, len(remaining) // 3)]
+        if head and len(selected) < limit:
+            selected.append(head[int(rng.integers(len(head)))])
+        for x in ranked:
+            if len(selected) >= limit:
+                break
+            if x not in selected:
+                selected.append(x)
+        return selected[:limit]
+=======
+    def select_batch(moves, parent, limit=3):
+        if not moves:
+            return []
+        base = energy(parent)
+        ranked = sorted(moves, key=lambda x: energy(x) - base)
+        # Group by move size: 4 changed arcs are a two-switch, 6 a rotation,
+        # and larger differences are relinking or multi-switch perturbations.
+        groups = {2: [], 3: [], 4: []}
+        parent_set = set(parent)
+        for net in ranked:
+            changed = len(parent_set ^ set(net)) // 2
+            kind = 2 if changed <= 2 else (3 if changed == 3 else 4)
+            groups[kind].append(net)
+
+        selected = []
+        # Try one proposal from each move class, in order of its smoothed
+        # LP-confirmed improvement rate; the exploration floor is implicit.
+        kinds = [k for k in groups if groups[k]]
+        kinds.sort(
+            key=lambda k: operator_stats[k][0] / operator_stats[k][1],
+            reverse=True,
+        )
+        for kind in kinds:
+            if len(selected) >= limit:
+                break
+            for net in groups[kind]:
+                if all(dist(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    break
+
+        # Use remaining capacity on the best surrogate-ranked proposals.
+        for net in ranked:
+            if len(selected) >= limit:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:limit]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+        child_best = min((scores.get(x, float("inf")) for x in batch),
+                         default=float("inf"))
+=======
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                child_score = evaluate(net)
+                changed = len(set(parent) ^ set(net)) // 2
+                kind = 2 if changed <= 2 else (3 if changed == 3 else 4)
+                operator_stats[kind][1] += 1.0
+                if child_score < parent_score:
+                    operator_stats[kind][0] += 1.0
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+        child_best = min((scores.get(x, float("inf")) for x in batch),
+                         default=float("inf"))
+>>>>>>> REPLACE
+</DIFF>

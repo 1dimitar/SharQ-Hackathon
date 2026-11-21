@@ -1,0 +1,18 @@
+<NAME>
+stronger_degree_penalty
+</NAME>
+
+<DESCRIPTION>
+Increase the evaluator-supplied degree penalty from 1.0 to 10.0. The current feasible rate is low, so many QAOA samples spend effort on networks that need substantial repair before scoring. Since the evaluator applies this penalty separately from the rescaled QUBO terms, a stronger penalty should make degree violations more costly during sampling and steer the search toward networks with exactly two incoming and outgoing links per node. This leaves the traffic surrogate unchanged while targeting the observed feasibility bottleneck.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+=======
+    # Strongly discourage degree violations during sampling; the evaluator
+    # applies this penalty separately from the rescaled traffic terms.
+    penalty_weight = 10.0
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,71 @@
+<NAME>
+cap_twohop_influence
+</NAME>
+
+<DESCRIPTION>
+Limit the aggregate two-hop reward for each origin-destination pair to 75% of that pair’s direct-link reward. The current code assigns a reward to every feasible intermediate node, so many individually modest two-hop terms can collectively dominate the direct-service signal. Capping their total magnitude preserves the relative ranking of candidate paths while reducing the chance that the QUBO over-favors networks with many indirect routes. This follows the supplied recommendation and keeps the number of quadratic terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reward a two-edge path for carrying its estimated share of OD traffic,
+    # while charging for the marginal congestion it adds to both links.
+    # There is one term per directed two-hop path, hence O(n^3) terms.
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                p1 = edge_discount[i, j]
+                p2 = edge_discount[j, k]
+                transit = node_pressure[j]
+
+                # This is the path's share before considering whether its
+                # constituent links are already likely to be busy.
+                raw = d[i, k] * p1 * p2 / transit
+                congestion = (
+                    estimated_load[i, j] + estimated_load[j, k]
+                )
+                benefit = 0.46 * raw / (1.0 + 0.65 * congestion)
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -float(benefit)
+=======
+    # Reward two-edge paths, but cap their aggregate influence per OD pair.
+    # Without a cap, the many possible intermediates can collectively swamp
+    # the direct-link signal even when each individual path looks attractive.
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+
+            path_terms = []
+            total_benefit = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                p1 = edge_discount[i, j]
+                p2 = edge_discount[j, k]
+                transit = node_pressure[j]
+
+                raw = d[i, k] * p1 * p2 / transit
+                congestion = estimated_load[i, j] + estimated_load[j, k]
+                benefit = 0.46 * raw / (1.0 + 0.65 * congestion)
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                path_terms.append((key, benefit))
+                total_benefit += benefit
+
+            direct_magnitude = abs(linear[(i, k)])
+            cap = 0.75 * direct_magnitude
+            factor = min(1.0, cap / total_benefit) if total_benefit > 0.0 else 1.0
+            for key, benefit in path_terms:
+                quadratic[key] = -float(benefit * factor)
+>>>>>>> REPLACE
+</DIFF>

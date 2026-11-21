@@ -1,0 +1,14 @@
+{
+  "generation": 105,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_capacity_surrogate",
+  "patch_description": "Separates demand preparation, direct-link scoring, and indirect-route scoring into small helpers. Instead of assigning the same two-hop reward to every candidate route, it distributes a capped reward according to route quality: routes using heavily demanded edges or busy transit nodes receive less. This keeps indirect terms bounded per OD pair while retaining up to \\(n^3\\) useful quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:38.672888",
+  "llm_cost": 0.0012793000000000001,
+  "llm_model": "gpt-6-luna"
+}

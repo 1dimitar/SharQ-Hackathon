@@ -1,0 +1,16 @@
+<NAME>
+stronger_indirect_reward
+</NAME>
+
+<DESCRIPTION>
+Increase the total two-hop reward budget from 0.62 to 0.68 while leaving direct-link rewards and the pressure discount unchanged. This tests the suggested stronger path-reward setting in isolation: it gives the QUBO a little more incentive to select links that combine into useful indirect routes, without changing how candidate intermediates are ranked. The per-OD budget is still distributed across intermediates, so this does not add quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    indirect_budget = 0.62
+=======
+    indirect_budget = 0.68
+>>>>>>> REPLACE
+
+</DIFF>

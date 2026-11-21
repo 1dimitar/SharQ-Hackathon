@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_exposure_qubo",
+  "patch_description": "The current approach combines a direct-demand reward with a small endpoint reward and diffuse two-hop path bonuses (scale 0.18), using a degree-penalty weight of 4.0. This version keeps direct demand as the main signal but replaces the path bonuses with sparse, positive exposure penalties: pairs of links sharing a sender are penalized when they lead to high-inbound-demand destinations, and pairs sharing a receiver are penalized when they originate at high-outbound-demand nodes. The exposure scale adapts from 0.12 to 0.16 based on demand concentration, and weak pair terms are omitted. A smaller endpoint correction (0.08) and degree-penalty weight (3.5) keep congestion shaping restrained while retaining pressure toward valid degrees.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:57:14.673694",
+  "llm_cost": 0.0022885,
+  "llm_model": "gpt-6-luna"
+}

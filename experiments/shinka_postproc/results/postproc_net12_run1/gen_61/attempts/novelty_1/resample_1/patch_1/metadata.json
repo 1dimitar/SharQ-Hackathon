@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_frontier_search",
+  "patch_description": "Reorganizes the search as a compact frontier of scored networks. A single evaluation layer owns LP scoring and incumbent updates; candidate generation is separated from move ranking and archive selection. It seeds from diverse repaired QAOA candidates, then allocates calls to a mix of dual-guided switches, surrogate-ranked switches, and occasional broad exploratory moves. The bounded archive preserves distinct basins without repeatedly rescoring cached networks or spending time on elaborate path relinking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:59:57.469972",
+  "llm_cost": 0.0030272,
+  "llm_model": "gpt-6-luna"
+}

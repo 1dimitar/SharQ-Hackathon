@@ -1,0 +1,14 @@
+{
+  "generation": 181,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor_065",
+  "patch_description": "Lower the relay-pressure floor from 0.75 to 0.65 as an isolated calibration test. This gives relatively low-pressure nodes a little more two-hop path reward, making it more attractive to use relays that appear to have spare capacity. The current floor is 0.75, so this change directly tests the suggested lower-floor variant without altering the demand statistics or edge-load discount.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:13.887188",
+  "llm_cost": 0.0008685,
+  "llm_model": "gpt-6-luna"
+}

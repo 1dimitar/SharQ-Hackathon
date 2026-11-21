@@ -1,0 +1,121 @@
+<NAME>
+sparse_relay_diversification
+</NAME>
+
+<DESCRIPTION>
+This uses a sparse, demand-specific routing proxy rather than rewarding every possible two-hop path. For each origin-destination pair, it selects only the two most promising relay nodes, scoring them by relay traffic balance and the demand that the relay can plausibly serve. The resulting negative couplings reward useful direct-link combinations while limiting the interaction graph to at most about \(2n^2\) terms. A smaller linear endpoint-exposure reward encourages links to nodes with substantial traffic, helping account for transit demand without overwhelming direct demand.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build sparse demand-sensitive QUBO cost terms."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n == 0:
+        return {}, {}, 1.0
+
+    scale = float(np.max(t))
+    if not np.isfinite(scale) or scale <= 0.0:
+        scale = 1.0
+    d = np.maximum(t, 0.0) / scale
+
+    incoming = np.sum(d, axis=0)
+    outgoing = np.sum(d, axis=1)
+
+    # Relays with both traffic entering and leaving are better positioned
+    # to carry transit traffic.
+    balance = np.sqrt(np.maximum(incoming, 0.0) * np.maximum(outgoing, 0.0))
+    bmax = float(np.max(balance)) if balance.size else 0.0
+    if bmax > 0.0:
+        balance = np.sqrt(balance / bmax)
+    else:
+        balance = np.zeros(n, dtype=float)
+
+    # Linear reward combines direct traffic with modest endpoint exposure.
+    # Exposure is concave so very high-volume nodes do not dominate.
+    exposure = np.sqrt(np.maximum(incoming + outgoing, 0.0))
+    emax = float(np.max(exposure)) if exposure.size else 0.0
+    if emax > 0.0:
+        exposure /= emax
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(d[i, j])
+            endpoint = 0.5 * float(exposure[i] + exposure[j])
+            linear[(i, j)] = -(0.85 * direct + 0.15 * endpoint)
+
+    quadratic = {}
+    # For each OD pair, retain only its best few relays. This concentrates
+    # couplings on plausible routes instead of connecting every path.
+    relay_count = min(2, max(0, n - 2))
+    for i in range(n):
+        for k in range(n):
+            amount = float(d[i, k])
+            if i == k or amount <= 0.0 or relay_count == 0:
+                continue
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                # Relay balance and its demand exposure estimate transit
+                # suitability; the mild penalty favors nearer-to-useful relays.
+                suitability = float(balance[j]) * (0.65 + 0.35 * float(exposure[j]))
+                candidates.append((amount * suitability, j))
+
+            candidates.sort(reverse=True)
+            chosen = candidates[:relay_count]
+            if not chosen:
+                continue
+            best = chosen[0][0]
+            if best <= 0.0:
+                # If aggregate statistics are degenerate, use a uniform
+                # modest path reward rather than dropping the OD pair.
+                best = amount
+
+            for value, j in chosen:
+                if value <= 0.0:
+                    continue
+                # Discount secondary alternatives so the surrogate does not
+                # over-reward adding many interchangeable paths.
+                rank_factor = 1.0 if j == chosen[0][1] else 0.55
+                strength = (value / best) * amount * rank_factor
+                a = (i, j)
+                b = (j, k)
+                key = (a, b) if a <= b else (b, a)
+                quadratic[key] = quadratic.get(key, 0.0) - 0.22 * strength
+
+    # Keep the externally added degree penalty meaningful after rescaling.
+    penalty_weight = 1.25
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

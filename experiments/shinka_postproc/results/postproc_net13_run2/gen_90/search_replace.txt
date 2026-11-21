@@ -1,0 +1,32 @@
+<NAME>
+underexplored_parent_sampling
+</NAME>
+
+<DESCRIPTION>
+The archive already mixes elite parents with the rest, but its visit adjustment can strongly suppress parents that have been explored repeatedly—even if they belong to a promising, distinct region. Keep the 48% elite preference and the existing productivity signal, while giving the remaining archive members an explicit inverse-square-root visit bonus. This favors underexplored regions without making selection purely novelty-driven or discarding evidence of past improvements.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Discount repeatedly visited parents with no improvement; reward
+        # parents whose evaluations have improved their own incumbent.
+        weights = []
+        for net, base in zip(pop, baseline):
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            productivity = (1.0 + 0.7 * successes) / (1.0 + 0.35 * visits + 0.65 * stalls)
+            weights.append(base * productivity)
+=======
+        # Preserve productivity weighting, but explicitly direct the non-elite
+        # share toward archive regions that have received fewer search attempts.
+        weights = []
+        for net, base in zip(pop, baseline):
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            productivity = (1.0 + 0.7 * successes) / (1.0 + 0.35 * visits + 0.65 * stalls)
+            underexplored = 1.0 / math.sqrt(1.0 + visits)
+            weights.append(base * productivity * underexplored)
+>>>>>>> REPLACE
+</DIFF>

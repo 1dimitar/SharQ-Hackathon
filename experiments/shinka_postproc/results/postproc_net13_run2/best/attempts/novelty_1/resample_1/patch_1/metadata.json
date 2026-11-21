@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "consensus_switches",
+  "patch_description": "Add a small number of two-switch proposals guided by arc frequencies in the top structurally diverse archive members. Rank switches by their net gain in consensus arcs, then sample from the strongest few rather than always taking the single highest-ranked move. This supplements the existing bottleneck-focused and unrestricted proposals without letting consensus guidance dominate the neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:41:06.059043",
+  "llm_cost": 0.0030700000000000002,
+  "llm_model": "gpt-6-luna"
+}

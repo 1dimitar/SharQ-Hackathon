@@ -1,0 +1,14 @@
+{
+  "generation": 152,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fractional_route_balance",
+  "patch_description": "Instead of rewarding every two-hop path independently, this approach estimates how much each possible link would carry under a demand-weighted fractional routing model. Direct paths receive priority; remaining traffic is distributed over two-hop alternatives, discounted when they use busy intermediate nodes. The resulting estimated link loads define linear congestion costs, while quadratic terms penalize pairs of links that would jointly concentrate load at the same tail or head. This emphasizes load balance and transit capacity rather than simply accumulating path rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:53.813140",
+  "llm_cost": 0.0014677,
+  "llm_model": "gpt-6-luna"
+}

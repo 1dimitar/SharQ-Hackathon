@@ -1,0 +1,14 @@
+{
+  "generation": 126,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "protected_archive_relink",
+  "patch_description": "Every sixth search round, reserve one LP evaluation for a legal two-switch step toward a randomly selected, distant archive member. Unlike ordinary moves, this relinking candidate is evaluated before surrogate-ranked local proposals, so it cannot be crowded out by them. Shuffling the distant targets gives varied archive members an opportunity to contribute rather than repeatedly favoring only the highest-ranked few. The relinking step is accepted as a proposal only when it increases overlap with its target; all moves preserve the network\u2019s degree constraints.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:28:09.154354",
+  "llm_cost": 0.0019381,
+  "llm_model": "gpt-6-luna"
+}

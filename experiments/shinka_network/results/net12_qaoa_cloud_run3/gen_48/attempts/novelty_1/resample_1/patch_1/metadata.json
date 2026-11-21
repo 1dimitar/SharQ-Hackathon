@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "stronger_relay_pressure",
+  "patch_description": "Increase the pressure sensitivity of the relay discount from linear to a power of 1.25, in both candidate ranking and the resulting two-hop reward. This preserves the current candidate set and affinity features while more strongly discouraging paths through nodes with high incident demand, which may reduce transit bottlenecks and improve topology quality.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:11:49.501801",
+  "llm_cost": 0.0005492,
+  "llm_model": "gpt-6-luna"
+}

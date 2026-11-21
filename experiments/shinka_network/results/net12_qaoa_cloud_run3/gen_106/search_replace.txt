@@ -1,0 +1,40 @@
+<NAME>
+selective_extra_relays
+</NAME>
+
+<DESCRIPTION>
+Reserve a second relay interaction for only the highest-demand OD pairs, using the 90th percentile of positive off-diagonal demands as the cutoff. All other OD pairs retain one relay. This keeps the existing ranking and reward formulas, limits each OD pair to at most two relays, and focuses the extra quadratic terms on traffic most likely to affect the maximum link load.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.46
+    relay_budget = min(n - 2, max(1, n // 5))
+    for i in range(n):
+=======
+    quadratic = {}
+    path_strength = 0.46
+    positive_demands = traffic[traffic > 0.0]
+    extra_relay_cutoff = (
+        float(np.percentile(positive_demands, 90))
+        if positive_demands.size
+        else float("inf")
+    )
+    base_relay_count = 1
+    for i in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            # Rank strongest bottleneck-sensitive relays first, deterministically.
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for rank, j, edge_pressure in candidates[:relay_budget]:
+=======
+            # Rank strongest bottleneck-sensitive relays first, deterministically.
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            relay_budget = base_relay_count
+            if through_demand >= extra_relay_cutoff:
+                relay_budget = min(2, n - 2)
+            for rank, j, edge_pressure in candidates[:relay_budget]:
+>>>>>>> REPLACE
+</DIFF>

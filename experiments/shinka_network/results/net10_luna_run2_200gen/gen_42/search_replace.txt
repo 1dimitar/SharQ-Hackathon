@@ -1,0 +1,19 @@
+<NAME>
+stronger_two_hop
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward strength from 0.20 to 0.25, keeping the direct-link rewards and both pressure discounts unchanged. The current program’s best-topology gaps are worse than the earlier linear-direct formulation, suggesting the concave direct reward may be encouraging direct links without enough credit for useful transit routes. This modest increase tests whether stronger support for two-hop service improves the low-energy topology region without changing the quadratic-term count or the model’s structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.20
+    for i in range(n):
+=======
+    quadratic = {}
+    path_strength = 0.25
+    for i in range(n):
+>>>>>>> REPLACE
+</DIFF>

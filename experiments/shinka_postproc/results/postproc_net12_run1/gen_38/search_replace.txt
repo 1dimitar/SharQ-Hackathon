@@ -1,0 +1,69 @@
+<NAME>
+adaptive_basin_search
+</NAME>
+
+<DESCRIPTION>
+Replace the incumbent-only kick loop with an adaptive search over a small archive of basins. Track how often each parent produces an improving descent and the size of its best gain; favor productive parents, but retain an exploration probability for less-tested basins. This uses LP results to allocate subsequent search effort while preserving diversity from the initially ranked repaired candidates. Archive updates are bounded, and the loop still spends the available LP budget through the existing descent and swap mechanisms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    while True:
+        net = best_net
+        for _ in range(2 + int(rng.integers(3))):
+            net = next(swaps(net), net)
+        net, score = descend(net, tools.lp(net))
+        if score < best:
+            best_net, best = net, score
+=======
+    # Keep several basins alive and adapt parent selection to measured progress.
+    archive = list(dict.fromkeys(ranked[:min(10, len(ranked))]))
+    trials = {net: 0 for net in archive}
+    gains = {net: 0.0 for net in archive}
+    while True:
+        # A fixed exploration share prevents early noisy success from monopolizing
+        # the search; otherwise weight parents by improvements per trial.
+        if len(archive) > 1 and rng.random() < 0.25:
+            parent = archive[int(rng.integers(len(archive)))]
+        else:
+            weights = np.asarray([
+                1.0 + 4.0 * gains.get(net, 0.0) / (1.0 + trials.get(net, 0))
+                for net in archive
+            ], dtype=float)
+            parent = archive[int(rng.choice(len(archive), p=weights / weights.sum()))]
+
+        parent_score = pool.get(parent, best)
+        trials[parent] = trials.get(parent, 0) + 1
+        net = parent
+        for _ in range(2 + int(rng.integers(3))):
+            net = next(swaps(net), net)
+        score0 = tools.lp(net)
+        net, score = descend(net, score0)
+
+        if score < best:
+            gains[parent] = gains.get(parent, 0.0) + (best - score) / max(1.0, best)
+            best_net, best = net, score
+
+        if net not in archive:
+            if len(archive) < 12:
+                archive.append(net)
+            else:
+                # Replace a weak, over-tested basin; keep the incumbent protected.
+                replaceable = [x for x in archive if x != best_net]
+                if replaceable:
+                    worst = max(
+                        replaceable,
+                        key=lambda x: (pool.get(x, best) - best)
+                        + 0.01 * trials.get(x, 0),
+                    )
+                    if score < pool.get(worst, float("inf")):
+                        archive[archive.index(worst)] = net
+                        trials.pop(worst, None)
+                        gains.pop(worst, None)
+        pool[net] = min(pool.get(net, float("inf")), score)
+        if net not in trials:
+            trials[net] = 0
+            gains[net] = 0.0
+>>>>>>> REPLACE
+
+</DIFF>

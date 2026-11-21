@@ -1,0 +1,236 @@
+--- a/original.py
++++ b/original.py
+@@ -1,94 +1,188 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build direct-link and selectively pressure-discounted two-hop terms."""
+-    matrix = np.asarray(demand, dtype=float)
+-    n = len(matrix)
++    """Return direct-link costs, sparse coverage interactions, and penalty."""
++    traffic = np.asarray(demand, dtype=float).copy()
++    traffic = np.maximum(traffic, 0.0)
++    np.fill_diagonal(traffic, 0.0)
++    n = len(traffic)
+ 
+-    traffic = np.maximum(matrix, 0.0).copy()
+-    np.fill_diagonal(traffic, 0.0)
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
+-    if scale <= 0.0:
+-        scale = 1.0
++    maximum = float(traffic.max()) if traffic.size else 0.0
++    if maximum <= 0.0:
++        linear = {
++            (i, j): 0.0
++            for i in range(n)
++            for j in range(n)
++            if i != j
++        }
++        return linear, {}, 1.45
+ 
+-    normalized = traffic / scale
+-    roots = np.sqrt(normalized)
++    t = traffic / maximum
++    root = np.sqrt(t)
++
++    # Main parameters:
++    #   direct blend:                 0.78 demand + 0.22 sqrt(demand)
++    #   strong-demand quantile:       0.75
++    #   selected affinity paths:      4 strong / 2 ordinary
++    #   additional spare paths:       1
++    #   main / spare path strengths:  0.44 / 0.27
++    #   cubic-redundancy damping:     0.65
++    #   degree-penalty weight:        1.45
++    direct = 0.78 * t + 0.22 * root
+     linear = {
+-        (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
++        (i, j): -float(direct[i, j])
+         for i in range(n)
+         for j in range(n)
+         if i != j
+     }
++    quadratic = {}
+ 
+-    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-    node_pressure = np.maximum(0.65, incident / max_incident)
++    incident = np.maximum(t.sum(axis=0), t.sum(axis=1))
++    pressure = np.maximum(
++        0.65, incident / max(float(incident.max()), 1e-12)
++    )
+ 
+-    positive = traffic[traffic > 0.0]
+-    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+-    quadratic = {}
++    positive = t[t > 0.0]
++    cutoff = float(np.quantile(positive, 0.75))
++
++    # Fractional reference link occupancies. These are only used to expand
++    # the direct/path redundancy term, not to impose degree constraints.
++    attractiveness = 0.18 + direct
++    np.fill_diagonal(attractiveness, 0.0)
++    row_mass = attractiveness.sum(axis=1)
++    col_mass = attractiveness.sum(axis=0)
++    denominator = np.sqrt(row_mass[:, None] * col_mass[None, :])
++    occupancy = np.minimum(
++        0.80,
++        2.0 * attractiveness / np.maximum(denominator, 1e-12),
++    )
++    np.fill_diagonal(occupancy, 0.0)
++
++    # Keep indirect rewards from becoming increasingly dominant as n grows.
++    size_factor = (10.0 / max(n, 5)) ** 0.15
++    redundancy = 0.65
++
++    def add_quadratic(a, b, weight):
++        if abs(weight) < 1e-14:
++            return
++        key = (a, b) if a < b else (b, a)
++        quadratic[key] = quadratic.get(key, 0.0) + float(weight)
++
++    def add_path(i, j, k, reward):
++        """Approximate -reward * A*B*(1-D) through second order.
++
++        A = x_ij, B = x_jk, D = x_ik. The cubic correction is
++        damped to avoid treating fractional occupancies as exact routing.
++        """
++        first = (i, j)
++        second = (j, k)
++        direct_link = (i, k)
++
++        pa = float(occupancy[i, j])
++        pb = float(occupancy[j, k])
++        pd = float(occupancy[i, k])
++        correction = redundancy * reward
++
++        add_quadratic(first, second, -reward + correction * pd)
++        add_quadratic(direct_link, first, correction * pb)
++        add_quadratic(direct_link, second, correction * pa)
++
++        # Linear terms belonging to the same second-order expansion.
++        linear[direct_link] -= correction * pa * pb
++        linear[first] -= correction * pd * pb
++        linear[second] -= correction * pd * pa
+ 
+     for i in range(n):
+         for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
++            if i == k or t[i, k] <= 0.0:
+                 continue
+ 
+-            support = 0.70 * normalized[i, k] + 0.30 * roots[i, k]
++            support = float(0.73 * t[i, k] + 0.27 * root[i, k])
+             candidates = []
++
+             for j in range(n):
+                 if j == i or j == k:
+                     continue
+-                edge_pressure = normalized[i, j] + normalized[j, k]
+-                pressure = float(node_pressure[j])
+-                affinity = 0.25 + edge_pressure
+-                rank = affinity / (pressure ** 0.75)
+-                discount = pressure * (1.0 + 0.5 * edge_pressure)
+-                candidates.append((float(rank), j, float(discount)))
+ 
+-            candidates.sort(reverse=True)
+-            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+-            selected = set()
++                a = float(t[i, j])
++                b = float(t[j, k])
++                total = a + b
++                geometric = float(np.sqrt(a * b))
+ 
+-            for position, (_, j, discount) in enumerate(candidates[:keep]):
+-                selected.add(j)
+-                rank_factor = 1.0 + 0.08 * (keep - position)
+-                weight = -0.46 * float(support) * rank_factor / discount
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = weight
++                # Favor intermediates supported by both legs, rather than
++                # a single high-demand leg and an otherwise arbitrary edge.
++                balance = 2.0 * geometric / (0.20 + total)
++                affinity = 0.18 + 0.65 * total + 0.70 * geometric
++                node_load = float(pressure[j])
++                rank = affinity / (node_load ** 0.80)
++                discount = node_load * (1.0 + 0.50 * total)
+ 
+-            # Retain one alternative selected by the full-path model's
+-            # pressure discount, unless it was already selected by affinity.
+-            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
++                candidates.append(
++                    (rank, j, discount, balance)
++                )
++
++            candidates.sort(key=lambda item: (-item[0], item[1]))
++            keep = min(
++                len(candidates),
++                4 if t[i, k] >= cutoff else 2,
++            )
++
++            for position, (_, j, discount, balance) in enumerate(
++                candidates[:keep]
++            ):
++                evidence = 0.78 + 0.44 * balance
++                rank_factor = 1.0 + 0.07 * (keep - position)
++                reward = (
++                    0.44
++                    * size_factor
++                    * support
++                    * evidence
++                    * rank_factor
++                    / discount
++                )
++                add_path(i, j, k, reward)
++
++            # Retain a capacity-oriented alternative without expanding the
++            # number of selected routes as the instance grows.
++            remaining = candidates[keep:]
+             if remaining:
+-                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = -0.30 * float(support) / discount
++                _, j, discount, balance = min(
++                    remaining,
++                    key=lambda item: (
++                        item[2] / (0.85 + 0.15 * item[3]),
++                        item[1],
++                    ),
++                )
++                reward = (
++                    0.27
++                    * size_factor
++                    * support
++                    * (0.85 + 0.30 * balance)
++                    / discount
++                )
++                add_path(i, j, k, reward)
+ 
+-    return linear, quadratic, 1.25
++    return linear, quadratic, 1.45
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

@@ -1,0 +1,14 @@
+{
+  "generation": 89,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_search",
+  "patch_description": "Reorganizes the search into a compact initialization, archive-based parent selection, and screened neighborhood batches. It removes the costly path-relinking work and limits move generation to focused two-switches, sampled rotations, and occasional kicks. Each batch spends most LP calls on surrogate-ranked moves and reserves one exploration slot for the proposal with greatest aggregate distance from several leading archive members, as recommended.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:48:53.453230",
+  "llm_cost": 0.0043132000000000005,
+  "llm_model": "gpt-6-luna"
+}

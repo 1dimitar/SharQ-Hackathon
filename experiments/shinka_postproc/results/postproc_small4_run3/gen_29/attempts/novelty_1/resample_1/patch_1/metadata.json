@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "incumbent_path_relinking",
+  "patch_description": "Add a short path-relinking search from each selected parent toward the best network found so far. Each step uses a valid degree-preserving two-switch that increases the number of links shared with the incumbent, and contributes the intermediate networks to the existing move pool. This can explore useful combinations of two good topologies that ordinary local moves may not prioritize.\n\nAlso fix the batch filler: its current surrogate-ranking loop fills every available slot before the tail-exploration code runs, so the intended random exploration slot is never reserved. Leave one slot for a random fresh move when alternatives remain, preserving a small amount of exploration alongside the ranked trials. Both changes scale with n and use the existing RNG and LP-scoring pipeline.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:09:44.136461",
+  "llm_cost": 0.0039556,
+  "llm_model": "gpt-6-luna"
+}

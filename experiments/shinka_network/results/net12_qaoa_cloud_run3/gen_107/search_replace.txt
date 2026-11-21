@@ -1,0 +1,42 @@
+<NAME>
+selective_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Use fewer relay candidates for ordinary-demand OD pairs, while retaining extra relay choices for the highest-demand pairs. This follows the promising sparse-construction direction: reducing weak interactions may make communities easier to solve, while the two additional candidates preserve support for the most important traffic. The per-pair budget is capped by the number of valid relay nodes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Limit the number of competing relay interactions per OD pair.
+    relay_budget = min(n - 2, max(2, int(math.sqrt(n))))
+
+    quadratic = {}
+=======
+    # Keep ordinary OD pairs sparse, but preserve extra relay options for
+    # the most important demands.
+    base_relay_budget = max(1, n // 5)
+    extra_relay_cap = 2
+    positive_demands = normalized[normalized > 0.0]
+    high_demand_cutoff = (
+        float(np.percentile(positive_demands, 90.0))
+        if positive_demands.size
+        else float("inf")
+    )
+
+    quadratic = {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for _, j, pressure in candidates[:relay_budget]:
+=======
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            extra_relays = (
+                extra_relay_cap if value >= high_demand_cutoff else 0
+            )
+            relay_budget = min(
+                n - 2, base_relay_budget + extra_relays
+            )
+            for _, j, pressure in candidates[:relay_budget]:
+>>>>>>> REPLACE
+</DIFF>

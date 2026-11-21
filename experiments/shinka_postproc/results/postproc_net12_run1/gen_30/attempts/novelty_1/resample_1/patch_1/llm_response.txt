@@ -1,0 +1,262 @@
+<NAME>
+dual_archive_search
+</NAME>
+
+<DESCRIPTION>
+Combines the current program’s energy-ranked repaired seeds, diverse archive, and occasional crossover with the other implementation’s bottleneck-price-guided move ranking. Each parent’s LP detail is fetched once, and two-link exchanges are ranked using both the energy surrogate and an estimate of relief on priced links versus demand on inserted links. Small batches of promising moves are evaluated, with occasional exploration picks to hedge against imperfect proxies. The archive is capped for bounded search overhead while the best-scoring network is tracked independently.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    edge_count = 2 * n
+    D = np.asarray(demand, dtype=float)
+    archive = {}
+    best_net = None
+    best_score = float("inf")
+
+    def add(net, score=None):
+        nonlocal best_net, best_score
+        net = tuple(sorted(tuple(map(int, e)) for e in net))
+        if net in archive or not tools.is_valid(net):
+            return False
+        if score is None:
+            score = float(tools.lp(net))
+        else:
+            score = float(score)
+        archive[net] = (score, float(tools.energy(net)))
+        if score < best_score:
+            best_net, best_score = net, score
+        return True
+
+    # Evaluate repaired QAOA samples in surrogate-energy order.
+    seeds = set()
+    for cand in candidates:
+        try:
+            net = tuple(sorted(tuple(map(int, e)) for e in tools.repair(cand)))
+            if tools.is_valid(net):
+                seeds.add(net)
+        except Exception:
+            continue
+    for net in sorted(seeds, key=tools.energy):
+        if tools.lp_calls_left <= 0:
+            break
+        add(net)
+
+    if not archive and tools.lp_calls_left > 0:
+        add(tools.repair([]))
+
+    if not archive:
+        return []
+
+    def trim_archive(limit=28):
+        """Retain strong networks while preserving structural diversity."""
+        if len(archive) <= limit:
+            return
+        ordered = sorted(archive, key=lambda x: archive[x][0])
+        keep = []
+        for net in ordered:
+            if all(len(set(net) & set(old)) < edge_count - 2 for old in keep):
+                keep.append(net)
+                if len(keep) >= limit:
+                    break
+        for net in ordered:
+            if len(keep) >= limit:
+                break
+            if net not in keep:
+                keep.append(net)
+        archive_keys = set(keep)
+        for net in list(archive):
+            if net not in archive_keys:
+                del archive[net]
+
+    def proposals(net):
+        arcs = list(net)
+        current = set(net)
+        detail = tools.lp_detail(net)
+        prices = {tuple(k): float(v) for k, v in detail.get("prices", {}).items()}
+        loads = {tuple(k): float(v) for k, v in detail.get("loads", {}).items()}
+        positive = [v for v in prices.values() if v > 0]
+        price_scale = float(np.mean(positive)) if positive else 1.0
+        score_scale = max(1.0, float(detail.get("score", 1.0)))
+
+        directional = {}
+        for p in range(len(arcs)):
+            a, b = arcs[p]
+            for q in range(p + 1, len(arcs)):
+                c, d = arcs[q]
+                if a == d or c == b:
+                    continue
+                x, y = (a, d), (c, b)
+                if x in current or y in current:
+                    continue
+                nxt = tuple(sorted((current - {arcs[p], arcs[q]}) | {x, y}))
+                if nxt == net or not tools.is_valid(nxt):
+                    continue
+
+                relief = 0.0
+                for edge in (arcs[p], arcs[q]):
+                    relief += max(0.0, prices.get(edge, 0.0)) * (
+                        1.0 + max(0.0, loads.get(edge, 0.0)) / score_scale
+                    )
+                added_demand = max(0.0, float(D[a, d])) + max(
+                    0.0, float(D[c, b])
+                )
+                value = relief - price_scale * added_demand
+                # Repeated constructions of the same network keep the strongest signal.
+                directional[nxt] = max(directional.get(nxt, -float("inf")), value)
+
+        if not directional:
+            return []
+
+        nets = list(directional)
+        energies = {x: float(tools.energy(x)) for x in nets}
+        energy_order = sorted(nets, key=energies.get)
+        direction_order = sorted(nets, key=directional.get, reverse=True)
+        erank = {x: i for i, x in enumerate(energy_order)}
+        drank = {x: i for i, x in enumerate(direction_order)}
+        # Rank fusion makes neither noisy proxy completely dominant.
+        return sorted(
+            nets,
+            key=lambda x: 0.55 * erank[x] + 0.45 * drank[x]
+        )
+
+    def crossover(x, y):
+        # Repair the union, retaining common and complementary candidate links.
+        union = list(set(x) | set(y))
+        try:
+            child = tuple(sorted(tuple(map(int, e)) for e in tools.repair(union)))
+        except Exception:
+            return None
+        if child != x and tools.is_valid(child):
+            return child
+        return None
+
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        trim_archive()
+        ranked = sorted(archive, key=lambda x: archive[x][0])
+        if not ranked:
+            break
+
+        if iteration % 4 == 3 and len(ranked) > 2:
+            parent = ranked[int(rng.integers(min(12, len(ranked))))]
+        else:
+            parent = ranked[iteration % min(8, len(ranked))]
+
+        generated = proposals(parent)
+
+        if len(ranked) > 1 and iteration % 3 == 0:
+            other = ranked[int(rng.integers(len(ranked)))]
+            if other != parent:
+                child = crossover(parent, other)
+                if child is not None:
+                    generated.append(child)
+
+        # Remove archived/cached networks before spending time ranking/evaluating.
+        seen = set()
+        fresh = []
+        for net in generated:
+            if net not in seen and net not in archive and not tools.is_cached(net):
+                seen.add(net)
+                fresh.append(net)
+
+        if not fresh:
+            iteration += 1
+            continue
+
+        # Most calls go to high-ranked moves; a small random reserve explores
+        # alternatives that the surrogate and dual signal may undervalue.
+        batch_size = min(8, tools.lp_calls_left, len(fresh))
+        batch = fresh[:batch_size]
+        if len(fresh) > batch_size and batch_size >= 3:
+            reserve = min(2, batch_size // 3, len(fresh) - batch_size)
+            if reserve:
+                picks = rng.choice(
+                    len(fresh) - batch_size, size=reserve, replace=False
+                )
+                batch = fresh[:batch_size - reserve] + [
+                    fresh[batch_size + int(i)] for i in picks
+                ]
+
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            add(net)
+
+        iteration += 1
+
+    return list(best_net) if best_net is not None else []
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import signal
+
+    import oracle
+    from hamiltonian import surrogate_terms
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }
+```
+</CODE>

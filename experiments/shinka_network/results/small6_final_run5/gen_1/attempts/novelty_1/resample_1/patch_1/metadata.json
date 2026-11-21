@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "direct_route_correction",
+  "patch_description": "The current surrogate rewards a two-hop route even when the same demand\u2019s direct link is also selected, effectively counting that demand twice. Add small positive couplings between the direct link and each edge of a selected two-hop path. These partially offset the path reward when the direct link is present, while retaining some incentive for alternate paths because real traffic may split or need to avoid congestion. Apply the correction to both ranked and fallback paths, and accumulate coefficients so overlapping terms are handled consistently. The added terms grow only with the number of selected paths, well within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:44:53.546504",
+  "llm_cost": 0.002604,
+  "llm_model": "gpt-6-luna"
+}

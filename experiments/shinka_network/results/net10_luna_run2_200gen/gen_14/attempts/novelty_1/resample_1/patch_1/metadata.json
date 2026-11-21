@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_two_hop",
+  "patch_description": "The two-hop terms improved the median gap over the linear-only baseline, suggesting that rewarding useful indirect routes is helping typical samples. The best-sample results are mixed, so make a modest increase to the existing two-hop coefficient rather than changing the term structure: raising `path_strength` from 0.16 to 0.20 gives indirect routes somewhat more influence while retaining demand gating and transit-load discounting.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:57.980765",
+  "llm_cost": 0.0005041000000000001,
+  "llm_model": "gpt-6-luna"
+}

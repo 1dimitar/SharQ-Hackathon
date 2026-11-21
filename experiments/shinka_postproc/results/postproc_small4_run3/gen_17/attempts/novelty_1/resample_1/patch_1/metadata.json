@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "targeted_hot_rotations",
+  "patch_description": "The existing rotation sampler draws triples uniformly, then discards triples that do not include a bottleneck link. When only a few links are hot, that wastes many trials. Keep the random rotation component for exploration, but add a size-scaled set of rotations that deliberately include the highest-pressure links. Each rotation preserves all in- and out-degrees, and the existing batch screen still decides which proposals merit LP calls. This makes dual guidance more productive without letting it monopolize the search.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:33:41.606875",
+  "llm_cost": 0.0027303,
+  "llm_model": "gpt-6-luna"
+}

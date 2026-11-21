@@ -1,0 +1,14 @@
+{
+  "generation": 85,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "stagnation_archive_kicks",
+  "patch_description": "When the search stalls, diversify from archive members that have been selected least often rather than repeatedly branching from the current elite. Build a short degree-preserving kick by applying a few randomly chosen two-switches, then let the existing surrogate and dual-price screening decide which resulting neighbors merit LP calls. A bounded kick and retry limit keep this exploration from consuming excessive runtime, while ordinary iterations retain the existing selection behavior.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:12:32.265278",
+  "llm_cost": 0.0020726,
+  "llm_model": "gpt-6-luna"
+}

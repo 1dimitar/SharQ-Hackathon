@@ -1,0 +1,75 @@
+<NAME>
+energy_tail_exploration
+</NAME>
+
+<DESCRIPTION>
+The current batch selector takes three surrogate-favored moves, then fills from the next few ranked moves; its shuffled tail is effectively unreachable when the batch limit is five. This can repeatedly spend LP calls on near-neighbors favored by a surrogate that is only loosely correlated with the exact routing score. Keep two strong-energy proposals, but deliberately sample the remaining slots across the rest of the energy-ranked neighborhood. This provides a low-cost form of online robustness to surrogate misranking while retaining exploitation and the existing LP budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def select_batch(moves, parent, limit=5):
+        """Use surrogate quality for part of the batch, diversity for the rest."""
+        if not moves:
+            return []
+
+        base_energy = energy(parent)
+        ranked = sorted(
+            moves,
+            key=lambda net: energy(net) - base_energy,
+        )
+
+        selected = []
+        # Take distinct candidates among the surrogate-favored proposals.
+        for net in ranked:
+            if all(distance(net, old) >= 3 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(3, limit):
+                break
+
+        # Fill with a mixture of ranked and shuffled tail proposals.
+        remaining = [net for net in ranked if net not in selected]
+        head = remaining[:max(limit * 2, 1)]
+        tail = remaining[len(head):]
+        rng.shuffle(tail)
+        for net in head + tail:
+            if len(selected) >= limit:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected
+=======
+    def select_batch(moves, parent, limit=5):
+        """Exploit the surrogate, but reserve LP calls for lower-ranked energy bands."""
+        if not moves:
+            return []
+
+        base_energy = energy(parent)
+        ranked = sorted(moves, key=lambda net: energy(net) - base_energy)
+        selected = []
+
+        # Keep only a small elite slice: exact scores have shown that energy
+        # ordering is useful but not reliable enough to fill most of a batch.
+        elite_count = min(2, limit)
+        for net in ranked:
+            if all(distance(net, old) >= 3 for old in selected):
+                selected.append(net)
+            if len(selected) >= elite_count:
+                break
+
+        remaining = [net for net in ranked if net not in selected]
+        slots = limit - len(selected)
+        if remaining and slots > 0:
+            # Draw across the ranked remainder, including its low-energy tail,
+            # rather than drawing only from the next few surrogate-best moves.
+            bands = min(slots, len(remaining))
+            for band in range(bands):
+                lo = band * len(remaining) // bands
+                hi = (band + 1) * len(remaining) // bands
+                if hi > lo:
+                    selected.append(remaining[int(rng.integers(lo, hi))])
+
+        return selected[:limit]
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,16 @@
+<NAME>
+moderate_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Increase the concave component of the direct-link reward from 0.15 to 0.25 while keeping the linear component dominant. This gives moderate-demand links somewhat more influence when choosing the limited degree slots, without changing the existing path terms or making the reward substantially more concave.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+=======
+            linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_neighborhoods",
+  "patch_description": "This replaces selected two-hop-path rewards with a neighborhood-diversity surrogate. Direct demand still favors useful links, while pairwise terms encourage each node\u2019s two neighbors to have complementary traffic profiles and mildly penalize redundant, high-pressure neighborhoods. Reciprocal links receive a small bonus when traffic flows both ways. The pair terms form local groups around common sources or destinations, giving the partitioner a compact structure without explicitly ranking relays for each OD pair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:25.631254",
+  "llm_cost": 0.0030930000000000003,
+  "llm_model": "gpt-6-luna"
+}

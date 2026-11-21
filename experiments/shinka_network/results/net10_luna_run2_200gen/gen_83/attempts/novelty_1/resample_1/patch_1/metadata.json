@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_balanced_paths",
+  "patch_description": "This version retains direct-demand rewards while distributing a bounded two-hop reward across candidate routes. Transit-node pressure is normalized by the maximum incident demand, with a floor of 0.65, so busy nodes are discounted without making lightly loaded nodes\u2019 pressure unstable. It also mildly rewards reciprocal links when traffic is substantial in both directions. The path terms are limited to two-hop paths, keeping the quadratic term count within the stated bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:48:05.574454",
+  "llm_cost": 0.0015292,
+  "llm_model": "gpt-6-luna"
+}

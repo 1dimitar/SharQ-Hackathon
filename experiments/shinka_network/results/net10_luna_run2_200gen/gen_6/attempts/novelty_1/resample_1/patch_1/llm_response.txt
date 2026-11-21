@@ -1,0 +1,54 @@
+<NAME>
+endpoint_load_balance
+</NAME>
+
+<DESCRIPTION>
+Replace the generic two-hop reward with positive pairwise congestion costs for links that share a source or destination. A node has only two outgoing and two incoming links, so selecting two links that each carry substantial direct demand can concentrate load at that endpoint. The geometric-mean weights penalize such pairs while remaining bounded by the demand scale. This keeps the existing direct-demand signal and uses at most \(n(n-1)(n-2)\) quadratic terms, within the limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # A selected pair i->j, j->k can serve i->k traffic in two hops.
+    # Keep this synergy deliberately weaker than the direct-link reward.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic > 0.0:
+                    quadratic[((i, j), (j, k))] = -0.12 * traffic / dmax
+
+    penalty_weight = 1.0
+=======
+    # Discourage selecting pairs of high-demand links at the same endpoint:
+    # each node has only two incoming and two outgoing slots, and such pairs
+    # are likely to concentrate rather than balance traffic.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(j + 1, n):
+                if k == i:
+                    continue
+
+                # Two outgoing links from i.
+                a = float(demand[i, j])
+                b = float(demand[i, k])
+                if a > 0.0 and b > 0.0:
+                    quadratic[((i, j), (i, k))] = 0.16 * np.sqrt(a * b) / dmax
+
+                # Two incoming links to i.
+                a = float(demand[j, i])
+                b = float(demand[k, i])
+                if a > 0.0 and b > 0.0:
+                    quadratic[((j, i), (k, i))] = 0.16 * np.sqrt(a * b) / dmax
+
+    penalty_weight = 1.0
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_aware_paths",
+  "patch_description": "Combines the baseline\u2019s direct-demand link rewards with the current program\u2019s congestion-aware two-hop path rewards. Two-hop rewards are discounted when their intermediate node or constituent links have high incident demand, discouraging the QUBO from overvaluing paths through likely bottlenecks. Terms are kept sparse, and the evaluator remains responsible for degree penalties and rescaling.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:41.397418",
+  "llm_cost": 0.0017509,
+  "llm_model": "gpt-6-luna"
+}

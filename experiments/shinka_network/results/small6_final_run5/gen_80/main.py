@@ -1,0 +1,267 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear costs, sparse quadratic costs, and degree penalty."""
+    traffic = np.asarray(demand, dtype=float)
+    if traffic.ndim != 2 or traffic.shape[0] != traffic.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    traffic = np.nan_to_num(
+        traffic, copy=True, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    np.maximum(traffic, 0.0, out=traffic)
+    n = traffic.shape[0]
+    np.fill_diagonal(traffic, 0.0)
+
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    t = traffic / maximum if maximum > 0.0 else traffic.copy()
+    roots = np.sqrt(t)
+
+    # Direct-link reward: retain a concave component so moderate demands
+    # still contribute, while keeping the largest demands influential.
+    direct = 0.72 * t + 0.28 * roots
+    support = 0.68 * t + 0.32 * roots
+    linear = {
+        (i, j): -float(direct[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    def add_pair(first, second, weight):
+        """Add a coupling under a deterministic unordered-link key."""
+        weight = float(weight)
+        if abs(weight) < 1e-13 or first == second:
+            return
+        key = (first, second) if first < second else (second, first)
+        quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    incident = np.maximum(t.sum(axis=0), t.sum(axis=1))
+    peak_incident = float(incident.max()) if incident.size else 0.0
+    pressure = np.maximum(
+        0.65, incident / max(peak_incident, 1e-15)
+    )
+
+    positive = t[t > 0.0]
+    heavy_cutoff = (
+        float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    )
+    mean_direct = float(direct.sum()) / max(1, n * (n - 1))
+    depth_scale = max(
+        0.75, float(np.log2(max(n, 2)) / np.log2(10.0))
+    )
+
+    # Candidate two-hop routes are selected by leg affinity and transit
+    # pressure. Aggregate their estimated demand before applying a bounded
+    # congestion discount, so a busy middle node does not receive every
+    # route reward at full strength.
+    route_records = []
+    transit_load = np.zeros(n, dtype=float)
+    route_size = max(0.82, 1.0 - 0.008 * max(0, n - 10))
+
+    for source in range(n):
+        for target in range(n):
+            if source == target or t[source, target] <= 0.0:
+                continue
+
+            candidates = []
+            for middle in range(n):
+                if middle == source or middle == target:
+                    continue
+
+                first_leg = float(t[source, middle])
+                second_leg = float(t[middle, target])
+                leg_sum = first_leg + second_leg
+                leg_balance = np.sqrt(first_leg * second_leg)
+
+                # A small floor allows low-demand links to be considered
+                # as transit links; the geometric term favors routes with
+                # useful support on both legs.
+                rank = (
+                    0.18 + 0.35 * leg_sum + 0.47 * leg_balance
+                ) / (float(pressure[middle]) ** 0.65)
+                route_discount = (
+                    float(pressure[middle]) ** 0.70
+                    * (1.0 + 0.35 * leg_sum)
+                )
+                candidates.append(
+                    (float(rank), middle, float(route_discount))
+                )
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            if not candidates:
+                continue
+
+            best_rank = candidates[0][0]
+            selected = candidates[:2]
+
+            # Add a third route only for a heavy OD pair and only when it
+            # is close enough to the leading candidate to be credible.
+            if (
+                t[source, target] >= heavy_cutoff
+                and len(candidates) > 2
+                and candidates[2][0] >= 0.82 * best_rank
+            ):
+                selected.append(candidates[2])
+
+            count_scale = 1.0 / np.sqrt(float(len(selected)))
+            demand_support = float(support[source, target])
+
+            for position, (rank, middle, route_discount) in enumerate(selected):
+                relative_rank = rank / max(best_rank, 1e-15)
+                rank_factor = 1.08 - 0.08 * position
+                quality_factor = 0.70 + 0.30 * relative_rank
+                weight = (
+                    -0.38
+                    * route_size
+                    * demand_support
+                    * rank_factor
+                    * quality_factor
+                    * count_scale
+                    / max(route_discount, 1e-12)
+                )
+
+                route_records.append(
+                    (
+                        (source, middle),
+                        (middle, target),
+                        middle,
+                        weight,
+                    )
+                )
+                transit_load[middle] += (
+                    demand_support * quality_factor * count_scale
+                )
+
+    mean_transit = float(transit_load.mean()) if n else 0.0
+    for first, second, middle, weight in route_records:
+        if mean_transit > 1e-15:
+            overload = max(
+                0.0, float(transit_load[middle]) / mean_transit - 1.0
+            )
+            overload = min(3.0, overload)
+            congestion_discount = 1.0 + 0.11 * overload
+        else:
+            congestion_discount = 1.0
+        add_pair(first, second, weight / congestion_discount)
+
+    # A link can be valuable as transit even when its own direct demand is
+    # modest. Reward links whose endpoint has useful service profiles for
+    # that node's incoming or outgoing traffic.
+    service_strength = 0.12 * mean_direct * depth_scale
+    if service_strength > 0.0 and n > 2:
+        for reverse in (False, True):
+            profiles = roots.T if reverse else roots
+            needs = t.T if reverse else t
+
+            for node in range(n):
+                weights = needs[node].copy()
+                weights[node] = 0.0
+                total_need = float(weights.sum())
+                if total_need <= 1e-15:
+                    continue
+                weights /= total_need
+
+                neighbors = [a for a in range(n) if a != node]
+                profile_values = {}
+                for neighbor in neighbors:
+                    profile = profiles[neighbor].copy()
+                    profile[node] = 0.0
+                    profile_total = float(profile.sum())
+                    if profile_total > 1e-15:
+                        profile /= profile_total
+                    profile_values[neighbor] = profile
+
+                coverage = {
+                    a: float(np.dot(weights, profile_values[a]))
+                    for a in neighbors
+                }
+                best_coverage = max(coverage.values()) if coverage else 0.0
+                if best_coverage <= 1e-15:
+                    continue
+
+                def directed_link(a):
+                    return (a, node) if reverse else (node, a)
+
+                # These small main effects complement the direct-demand
+                # terms by valuing plausible transit neighbors.
+                for a in neighbors:
+                    linear[directed_link(a)] -= (
+                        service_strength
+                        * coverage[a]
+                        / best_coverage
+                    )
+
+                # Select only the most redundant neighbor pairs. On a
+                # degree-two topology, this penalty encourages the two
+                # selected links to provide distinct service.
+                overlaps = []
+                for pos, a in enumerate(neighbors):
+                    for b in neighbors[pos + 1:]:
+                        overlap = float(
+                            np.dot(
+                                weights,
+                                np.minimum(
+                                    profile_values[a], profile_values[b]
+                                ),
+                            )
+                        ) / best_coverage
+                        if overlap >= 0.30:
+                            overlaps.append((overlap, a, b))
+
+                overlaps.sort(key=lambda item: (-item[0], item[1], item[2]))
+                pair_budget = max(2, n // 3)
+                pair_strength = 0.17 * mean_direct * depth_scale
+                for overlap, a, b in overlaps[:pair_budget]:
+                    add_pair(
+                        directed_link(a),
+                        directed_link(b),
+                        pair_strength * overlap,
+                    )
+
+    # Reciprocal links can consume scarce degree slots while immediately
+    # backtracking traffic. Preserve a reduced penalty when both directions
+    # have substantial direct demand.
+    reciprocal_strength = 0.44 * mean_direct * depth_scale
+    if reciprocal_strength > 0.0:
+        for i in range(n):
+            for j in range(i + 1, n):
+                mutual = min(float(t[i, j]), float(t[j, i]))
+                add_pair(
+                    (i, j),
+                    (j, i),
+                    reciprocal_strength * (1.0 - 0.50 * mutual),
+                )
+
+    # The evaluator supplies the degree penalties; keep their scale
+    # moderate relative to the normalized cost terms.
+    penalty_weight = min(
+        1.42, 1.28 + 0.007 * max(0, n - 10)
+    )
+    penalty_weight = max(0.05, float(penalty_weight))
+
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

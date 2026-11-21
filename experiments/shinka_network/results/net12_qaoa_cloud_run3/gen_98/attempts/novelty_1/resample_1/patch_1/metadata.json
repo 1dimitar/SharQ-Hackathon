@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_pipeline",
+  "patch_description": "Separates demand cleanup, direct-link scoring, relay selection, and QUBO assembly into small deterministic stages. Instead of rewarding every two-hop route, it selects the two most promising relays per positive-demand OD pair and divides that pair\u2019s relay reward between them. This keeps the interaction graph sparser and easier to partition, while applying the suggested percentile-based adjustment to relay rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:58:49.131863",
+  "llm_cost": 0.0018820999999999998,
+  "llm_model": "gpt-6-luna"
+}

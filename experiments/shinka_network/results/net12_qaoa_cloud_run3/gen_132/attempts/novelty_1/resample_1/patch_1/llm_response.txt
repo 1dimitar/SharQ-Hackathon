@@ -1,0 +1,19 @@
+<NAME>
+bottleneck_relay_affinity
+</NAME>
+
+<DESCRIPTION>
+Rank relay candidates by a bottleneck-aware affinity instead of the sum of their two leg demands. The current sum can favor a relay with one strong leg and one nearly unusable leg; a minimum-plus-fractional-maximum score still values a strong leg but makes the weaker leg matter more. This affects which relays enter the sparse interaction set while leaving the existing pressure discount, reward construction, and term budget unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+=======
+                left = float(traffic[i, j]) / scale
+                right = float(traffic[j, k]) / scale
+                affinity = min(left, right) + 0.25 * max(left, right) + 0.01
+>>>>>>> REPLACE
+</DIFF>

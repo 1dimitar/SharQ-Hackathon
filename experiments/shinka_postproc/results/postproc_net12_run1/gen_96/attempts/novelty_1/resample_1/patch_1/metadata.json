@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "archive_yield_selection",
+  "patch_description": "Track whether searches from archive parents produce incumbent improvements, and use that yield to modestly favor productive parents. Keep a fixed 30% exploration share, choosing from the least-visited available parents so that distant or under-tested archive members continue to receive attention. This makes the selection rule more responsive than weighting by the tiny fractional size of an improvement, while retaining coverage.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:18:38.305344",
+  "llm_cost": 0.0024799,
+  "llm_model": "gpt-6-luna"
+}

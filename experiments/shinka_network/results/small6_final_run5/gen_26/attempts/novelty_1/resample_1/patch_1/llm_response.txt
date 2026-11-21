@@ -1,0 +1,87 @@
+<NAME>
+targeted_three_hop
+</NAME>
+
+<DESCRIPTION>
+Add a sparse three-hop alternative only for high-demand OD pairs whose two-hop evidence is weak or ambiguous. Rank candidate paths using support on their legs and pressure at both transit nodes, then add small pairwise rewards for the three links in the selected path. This tests the targeted three-hop recommendation without adding broad route coverage or making longer paths compete strongly with the existing direct-link and two-hop terms. The added work is O(n⁴) in the worst case, which is modest for n ≤ 24, and adds at most three couplings per qualifying OD pair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    high_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+    quadratic = {}
+=======
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    high_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+    quadratic = {}
+>>>>>>> REPLACE
+</DIFF>
+
+The current code already defines `high_cutoff`, so this first block would not change it. Use this single effective edit instead:
+
+<DIFF>
+<<<<<<< SEARCH
+            # Three-hop Taylor terms are omitted: pairwise fragments can
+            # reward incomplete paths and misrank valid two-link exchanges.
+=======
+            # Add one tightly targeted three-hop alternative for high-demand
+            # pairs when the leading two-hop evidence is weak or ambiguous.
+            close_two_hop = (
+                len(candidates) > 1
+                and candidates[1][0] >= 0.85 * candidates[0][0]
+            )
+            best_two_hop_evidence = max(
+                normalized[i, j] + normalized[j, k]
+                for j in range(n)
+                if j != i and j != k
+            )
+            if traffic[i, k] >= high_cutoff and (
+                best_two_hop_evidence < 0.45 or close_two_hop
+            ):
+                best_path = None
+                for a in range(n):
+                    if a == i or a == k:
+                        continue
+                    first_leg = float(normalized[i, a])
+                    if first_leg <= 0.0:
+                        continue
+                    for b in range(n):
+                        if b == i or b == k or b == a:
+                            continue
+                        middle_leg = float(normalized[a, b])
+                        last_leg = float(normalized[b, k])
+                        if middle_leg <= 0.0 or last_leg <= 0.0:
+                            continue
+
+                        quality = (first_leg * middle_leg * last_leg) ** (1.0 / 3.0)
+                        pressure = float(node_pressure[a] * node_pressure[b])
+                        rank = (
+                            0.15
+                            + np.sqrt(first_leg * middle_leg)
+                            + np.sqrt(middle_leg * last_leg)
+                        ) / (pressure ** 0.25)
+                        candidate = (float(rank), a, b, float(quality), pressure)
+                        if best_path is None or candidate[0] > best_path[0]:
+                            best_path = candidate
+
+                if best_path is not None and best_path[3] > 0.03:
+                    _, a, b, quality, pressure = best_path
+                    path_links = ((i, a), (a, b), (b, k))
+                    reward = (
+                        0.07
+                        * float(support)
+                        * (0.5 + quality)
+                        / (pressure ** 0.20)
+                    )
+                    for p in range(3):
+                        for q in range(p + 1, 3):
+                            edge_a, edge_b = path_links[p], path_links[q]
+                            key = (
+                                (edge_a, edge_b)
+                                if edge_a < edge_b
+                                else (edge_b, edge_a)
+                            )
+                            quadratic[key] = quadratic.get(key, 0.0) - reward
+>>>>>>> REPLACE
+</DIFF>

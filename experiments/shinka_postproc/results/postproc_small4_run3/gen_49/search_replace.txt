@@ -1,0 +1,140 @@
+<NAME>
+hot_arc_removal
+</NAME>
+
+<DESCRIPTION>
+Make bottleneck removal a focused move source rather than relying on random rotations to happen to include a hot link. Track switches and rotations that remove positive-price or highest-load arcs, add sampled three-arc rotations that deliberately include a hot arc, and reserve one LP evaluation per batch for the best-energy fresh focused move. The rest of the batch selection remains unchanged, so hot-arc guidance supplements rather than dominates exploration. All added move counts scale with `n`.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    focused_moves = set()
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+        focused_moves.clear()
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                cand = switch(net, p, q)
+                if cand is not None:
+                    moves.add(cand)
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+=======
+                cand = switch(net, p, q)
+                if cand is not None:
+                    moves.add(cand)
+                    if arcs[p] in hot or arcs[q] in hot:
+                        focused_moves.add(cand)
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+        # Rotations preserve degrees and can cross barriers that two-switches miss.
+        if len(arcs) >= 3:
+            stalls = parent_stalls.get(net, 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+            for _ in range(rotation_trials):
+                ids = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                for new in (
+                    {(a, d), (c, f), (e, b)},
+                    {(a, f), (c, b), (e, d)},
+                ):
+                    if len(new) != 3 or any(x == y for x, y in new):
+                        continue
+                    if new & (current - old):
+                        continue
+                    cand = tuple(sorted((current - old) | new))
+                    moves.add(cand)
+
+=======
+        # Rotations preserve degrees and can cross barriers that two-switches miss.
+        if len(arcs) >= 3:
+            stalls = parent_stalls.get(net, 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+            for _ in range(rotation_trials):
+                ids = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                for new in (
+                    {(a, d), (c, f), (e, b)},
+                    {(a, f), (c, b), (e, d)},
+                ):
+                    if len(new) != 3 or any(x == y for x, y in new):
+                        continue
+                    if new & (current - old):
+                        continue
+                    cand = tuple(sorted((current - old) | new))
+                    moves.add(cand)
+                    if old & hot:
+                        focused_moves.add(cand)
+
+            # Explicitly sample rotations that remove a hot arc instead of
+            # waiting for an unrestricted rotation to select one by chance.
+            hot_indices = [i for i, arc in enumerate(arcs) if arc in hot]
+            if hot_indices:
+                targeted_trials = max(2 * n, len(hot_indices) * n // 2)
+                for _ in range(targeted_trials):
+                    target = int(rng.choice(hot_indices))
+                    others = rng.choice(len(arcs) - 1, size=2, replace=False)
+                    ids = [target] + [
+                        int(i) if int(i) < target else int(i) + 1
+                        for i in others
+                    ]
+                    (a, b), (c, d), (e, f) = (arcs[i] for i in ids)
+                    old = {(a, b), (c, d), (e, f)}
+                    for new in (
+                        {(a, d), (c, f), (e, b)},
+                        {(a, f), (c, b), (e, d)},
+                    ):
+                        if len(new) != 3 or any(x == y for x, y in new):
+                            continue
+                        if new & (current - old):
+                            continue
+                        cand = tuple(sorted((current - old) | new))
+                        moves.add(cand)
+                        focused_moves.add(cand)
+
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+
+        def take(order, number):
+=======
+        selected = []
+        focused_fresh = [net for net in fresh if net in focused_moves]
+        if focused_fresh:
+            selected.append(min(focused_fresh, key=energy))
+
+        def take(order, number):
+>>>>>>> REPLACE
+
+</DIFF>

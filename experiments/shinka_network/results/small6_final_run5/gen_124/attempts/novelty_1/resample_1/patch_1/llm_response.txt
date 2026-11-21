@@ -1,0 +1,54 @@
+<NAME>
+balanced_route_evidence
+</NAME>
+
+<DESCRIPTION>
+Rank intermediates by evidence on both route legs rather than their sum alone. With only two links available per direction, a candidate supported by one strong leg and one negligible leg can waste scarce connectivity. The revised affinity preserves the old value for equally supported legs but discounts asymmetric paths by up to 25%. Apply the same ranking in transit-pressure estimation so its congestion forecast remains consistent with route selection.
+
+Lower the heavy-demand threshold from 0.75 to 0.68, giving important demands more routing alternatives. Tighten the near-tie rule slightly and require evidence on both legs before adding an extra candidate. This targets better route coverage without indiscriminately increasing couplings; reward strengths and degree-penalty settings remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = (0.25 + evidence) / (float(initial_pressure[j]) ** 0.75)
+=======
+                balanced_evidence = float(
+                    np.sqrt(normalized[i, j] * normalized[j, k])
+                )
+                affinity = 0.25 + 0.75 * evidence + 0.50 * balanced_evidence
+                rank = affinity / (float(initial_pressure[j]) ** 0.75)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    high_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+=======
+    cutoff = float(np.quantile(positive, 0.68)) if positive.size else 0.0
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                affinity = 0.25 + edge_pressure
+                rank = affinity / (pressure ** 0.75)
+=======
+                balanced_evidence = float(
+                    np.sqrt(normalized[i, j] * normalized[j, k])
+                )
+                affinity = 0.25 + 0.75 * edge_pressure + 0.50 * balanced_evidence
+                rank = affinity / (pressure ** 0.75)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                next_evidence = float(normalized[i, next_j] + normalized[next_j, k])
+                best_rank = max(candidates[0][0], 1e-12)
+                if (next_rank / max(frontier, 1e-12) >= 0.92
+                        and next_rank / best_rank >= 0.65
+                        and next_evidence >= 0.05):
+=======
+                next_evidence = float(normalized[i, next_j] + normalized[next_j, k])
+                weakest_leg = float(min(
+                    normalized[i, next_j], normalized[next_j, k]
+                ))
+                best_rank = max(candidates[0][0], 1e-12)
+                if (next_rank / max(frontier, 1e-12) >= 0.94
+                        and next_rank / best_rank >= 0.68
+                        and next_evidence >= 0.05
+                        and weakest_leg >= 0.01):
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,421 @@
+--- a/original.py
++++ b/original.py
+@@ -1,210 +1,243 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
++def _canonical_pair(first, second):
++    """Return a stable key for an unordered pair of directed links."""
++    return (first, second) if first < second else (second, first)
++
++
++def _add_quadratic(terms, first, second, weight):
++    """Accumulate a quadratic coefficient, ignoring numerical zeros."""
++    if abs(weight) <= 1e-15:
++        return
++    key = _canonical_pair(first, second)
++    terms[key] = terms.get(key, 0.0) + float(weight)
++
++
++def _clean_demand(demand):
++    """Validate, sanitize, and normalize the demand matrix."""
++    matrix = np.asarray(demand, dtype=float)
++    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
++        raise ValueError("demand must be a square matrix")
++
++    traffic = np.nan_to_num(
++        matrix, copy=True, nan=0.0, posinf=0.0, neginf=0.0
++    )
++    np.maximum(traffic, 0.0, out=traffic)
++    np.fill_diagonal(traffic, 0.0)
++
++    scale = float(traffic.max()) if traffic.size else 0.0
++    if scale > 0.0:
++        normalized = traffic / scale
++    else:
++        normalized = np.zeros_like(traffic)
++    return traffic, normalized
++
++
++def _build_route_catalog(normalized, incident):
++    """Cache useful route features and iterate a congestion estimate."""
++    n = normalized.shape[0]
++    max_incident = max(float(incident.max()) if incident.size else 0.0, 1e-12)
++    node_base = incident / max_incident
++    pressure = np.maximum(0.55, node_base)
++
++    # Each record stores an OD pair, its demand support, and all possible
++    # intermediary candidates as (node, base route affinity).
++    catalog = []
++    for i in range(n):
++        for k in range(n):
++            demand_ik = float(normalized[i, k])
++            if i == k or demand_ik <= 0.0:
++                continue
++
++            candidates = []
++            for j in range(n):
++                if j == i or j == k:
++                    continue
++                first_leg = float(normalized[i, j])
++                second_leg = float(normalized[j, k])
++                evidence = first_leg + second_leg
++                balance = (
++                    2.0 * np.sqrt(first_leg * second_leg)
++                    / (evidence + 1e-12)
++                )
++                affinity = (0.22 + 0.58 * evidence + 0.20 * np.sqrt(
++                    first_leg * second_leg
++                )) * (0.72 + 0.28 * balance)
++                candidates.append((j, float(affinity)))
++
++            support = 0.70 * demand_ik + 0.30 * np.sqrt(demand_ik)
++            # Larger demands are more likely to use their direct link; weak
++            # demands therefore contribute relatively more transit pressure.
++            routed_mass = demand_ik * (
++                0.30 + 0.70 * np.sqrt(max(0.0, 1.0 - demand_ik))
++            )
++            catalog.append((i, k, float(support), float(routed_mass), candidates))
++
++    # A few damped reassignment rounds approximate the competition for
++    # transit capacity without requiring a routing solver.
++    for _ in range(3):
++        transit = np.zeros(n, dtype=float)
++        for _, _, _, routed_mass, candidates in catalog:
++            ranked = sorted(
++                (
++                    (affinity / (pressure[j] ** 0.80), j)
++                    for j, affinity in candidates
++                ),
++                reverse=True,
++            )[:3]
++            if not ranked:
++                continue
++            strengths = [max(score, 1e-12) ** 1.6 for score, _ in ranked]
++            total = sum(strengths)
++            for strength, (_, j) in zip(strengths, ranked):
++                transit[j] += routed_mass * strength / total
++
++        projected = node_base + 0.45 * transit / max_incident
++        projected = np.clip(projected, 0.55, 2.2)
++        pressure = 0.50 * pressure + 0.50 * projected
++
++    return catalog, pressure
++
++
++def _add_route_terms(quadratic, catalog, pressure):
++    """Reward completion of a few congestion-adjusted two-hop routes."""
++    for i, k, support, _, candidates in catalog:
++        ranked = sorted(
++            (
++                (affinity / (pressure[j] ** 0.80), j)
++                for j, affinity in candidates
++            ),
++            reverse=True,
++        )
++        if not ranked:
++            continue
++
++        selected = ranked[:2]
++        if len(ranked) >= 3:
++            best = max(ranked[0][0], 1e-12)
++            second = max(ranked[1][0], 1e-12)
++            third = ranked[2][0]
++            # Expand only when the boundary alternatives are genuinely close.
++            if third >= 0.88 * second and second >= 0.62 * best:
++                selected.append(ranked[2])
++
++        strengths = [max(score, 1e-12) ** 1.6 for score, _ in selected]
++        total = sum(strengths)
++        if total <= 0.0:
++            continue
++
++        shares = [strength / total for strength in strengths]
++        pressure_adjustment = sum(
++            share / (pressure[j] ** 0.45)
++            for share, (_, j) in zip(shares, selected)
++        )
++        route_budget = 0.92 * support * float(
++            np.clip(pressure_adjustment, 0.65, 1.20)
++        )
++
++        for share, (_, j) in zip(shares, selected):
++            _add_quadratic(
++                quadratic,
++                (i, j),
++                (j, k),
++                -route_budget * share,
++            )
++
++
++def _add_branch_diversity_terms(quadratic, normalized):
++    """Penalize a few highly redundant pairs of outgoing/incoming branches."""
++    n = normalized.shape[0]
++    if n < 3:
++        return
++
++    mean_direct = float(np.mean(
++        0.70 * normalized + 0.30 * np.sqrt(normalized)
++    ))
++    if mean_direct <= 0.0:
++        return
++
++    for inbound in (False, True):
++        profiles = np.sqrt(normalized.T if inbound else normalized)
++        norms = np.sqrt(np.sum(profiles * profiles, axis=1))
++        profiles = profiles / np.maximum(norms[:, None], 1e-12)
++        similarity = profiles @ profiles.T
++
++        for center in range(n):
++            branches = [node for node in range(n) if node != center]
++            pairs = []
++            for pos, a in enumerate(branches):
++                for b in branches[pos + 1:]:
++                    value = float(similarity[a, b])
++                    if value >= 0.45:
++                        pairs.append((value, a, b))
++            pairs.sort(reverse=True)
++
++            # Keep this correction deliberately sparse so it shapes branch
++            # choices without overwhelming the route and direct-demand terms.
++            for value, a, b in pairs[:2]:
++                if inbound:
++                    first, second = (a, center), (b, center)
++                else:
++                    first, second = (center, a), (center, b)
++                _add_quadratic(
++                    quadratic,
++                    first,
++                    second,
++                    0.35 * mean_direct * value,
++                )
++
++
+ def surrogate_terms(demand):
+-    """Build direct-link and selectively pressure-discounted two-hop terms."""
+-    matrix = np.asarray(demand, dtype=float)
+-    n = len(matrix)
+-
+-    traffic = np.maximum(matrix, 0.0).copy()
+-    np.fill_diagonal(traffic, 0.0)
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
+-    if scale <= 0.0:
+-        scale = 1.0
+-
+-    normalized = traffic / scale
++    """Return linear terms, sparse route/diversity couplings, and penalty."""
++    traffic, normalized = _clean_demand(demand)
++    n = normalized.shape[0]
+     roots = np.sqrt(normalized)
++
+     linear = {
+         (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
+         for i in range(n)
+         for j in range(n)
+         if i != j
+     }
+-
+-    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-
+-    # Estimate transit demand on plausible two-hop routes, using incident
+-    # load as an initial congestion estimate. Keep only the two best routes
+-    # per OD pair to avoid spreading load over unsupported intermediates.
+-    initial_pressure = np.maximum(0.65, incident / max_incident)
+-    transit_load = np.zeros(n, dtype=float)
+-    for i in range(n):
+-        for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
+-                continue
+-            routes = []
+-            for j in range(n):
+-                if j == i or j == k:
+-                    continue
+-                evidence = float(normalized[i, j] + normalized[j, k])
+-                if evidence <= 0.02:
+-                    continue
+-                rank = (0.25 + evidence) / (float(initial_pressure[j]) ** 0.75)
+-                routes.append((rank, j, evidence))
+-            routes.sort(reverse=True)
+-            selected = routes[:2]
+-            if not selected:
+-                continue
+-            strengths = [
+-                rank * rank * (0.20 + evidence)
+-                for rank, _, evidence in selected
+-            ]
+-            total_strength = sum(strengths)
+-            routed_fraction = 0.35 + 0.65 * (1.0 - float(normalized[i, k]))
+-            for (_, j, _), strength in zip(selected, strengths):
+-                transit_load[j] += (
+-                    float(traffic[i, k]) * routed_fraction * strength / total_strength
+-                )
+-
+-    projected_pressure = incident / max_incident + 0.35 * transit_load / max_incident
+-    node_pressure = np.maximum(0.65, np.minimum(1.8, projected_pressure))
+-
+-    positive = traffic[traffic > 0.0]
+-    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+-    high_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+     quadratic = {}
+ 
+-    for i in range(n):
+-        for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
+-                continue
+-
+-            support = 0.70 * normalized[i, k] + 0.30 * roots[i, k]
+-            candidates = []
+-            for j in range(n):
+-                if j == i or j == k:
+-                    continue
+-                edge_pressure = normalized[i, j] + normalized[j, k]
+-                pressure = float(node_pressure[j])
+-                affinity = 0.25 + edge_pressure
+-                rank = affinity / (pressure ** 0.75)
+-                discount = pressure * (1.0 + 0.5 * edge_pressure)
+-                candidates.append((float(rank), j, float(discount)))
+-
+-            candidates.sort(reverse=True)
+-            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+-            # Add one alternative only when the route ranking is genuinely
+-            # ambiguous and the candidate has evidence on both of its legs.
+-            if keep < len(candidates):
+-                frontier = candidates[keep - 1][0]
+-                next_rank, next_j, _ = candidates[keep]
+-                next_evidence = float(normalized[i, next_j] + normalized[next_j, k])
+-                best_rank = max(candidates[0][0], 1e-12)
+-                if (next_rank / max(frontier, 1e-12) >= 0.92
+-                        and next_rank / best_rank >= 0.65
+-                        and next_evidence >= 0.05):
+-                    keep += 1
+-            selected = set()
+-
+-            for position, (_, j, discount) in enumerate(candidates[:keep]):
+-                selected.add(j)
+-                rank_factor = 1.0 + 0.08 * (keep - position)
+-                weight = -0.46 * float(support) * rank_factor / discount
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = weight
+-
+-            # Retain one alternative selected by the full-path model's
+-            # pressure discount, unless it was already selected by affinity.
+-            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+-            if remaining:
+-                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = -0.30 * float(support) / discount
+-
+-            # Three-hop Taylor terms are omitted: pairwise fragments can
+-            # reward incomplete paths and misrank valid two-link exchanges.
+-
+-    # Correct excessive mean-field attraction from overlapping route rewards.
+-    # Use soft degree-balanced link marginals rather than assuming that every
+-    # potential partner is equally likely to appear in a sampled topology.
+-    if quadratic:
+-        propensity = np.exp(
+-            2.0 * (0.75 * normalized + 0.25 * roots)
+-        )
+-        np.fill_diagonal(propensity, 0.0)
+-        for _ in range(20):
+-            propensity *= (
+-                2.0 / np.maximum(propensity.sum(axis=1), 1e-12)
+-            )[:, None]
+-            propensity *= (
+-                2.0 / np.maximum(propensity.sum(axis=0), 1e-12)
+-            )[None, :]
+-        # Fractional scaling need not respect individual binary upper bounds.
+-        np.minimum(propensity, 1.0, out=propensity)
+-
+-        exposure = np.zeros((n, n), dtype=float)
+-        for (first, second), weight in quadratic.items():
+-            if weight < 0.0:
+-                exposure[first] -= weight * float(propensity[second])
+-                exposure[second] -= weight * float(propensity[first])
+-
+-        active_exposure = exposure[exposure > 0.0]
+-        if active_exposure.size:
+-            threshold = float(np.quantile(active_exposure, 0.75))
+-            for link in linear:
+-                excess = max(0.0, float(exposure[link]) - threshold)
+-                # Center only a fraction of unusually large background
+-                # rewards; preserve the full benefit of completing a path.
+-                linear[link] += min(0.18, 0.25 * excess)
+-
+-    # Penalize a small number of demand-weighted redundant branch pairs.
+-    # Outbound profiles describe destinations; transposed profiles describe
+-    # origins for the analogous inbound correction.
+-    for inbound in (False, True):
+-        od = normalized.T if inbound else normalized
+-        profiles = np.sqrt(od).copy()
+-        np.fill_diagonal(profiles, 1.0)
+-        for center in range(n):
+-            weights = od[center]
+-            if float(weights.sum()) <= 0.0:
+-                continue
+-            gram = (profiles * weights[None, :]) @ profiles.T
+-            branches = [j for j in range(n) if j != center]
+-            normalizer = max(float(gram[j, j]) for j in branches)
+-            if normalizer <= 1e-12:
+-                continue
+-
+-            redundant = []
+-            for position, j in enumerate(branches):
+-                for k in branches[position + 1:]:
+-                    overlap = float(gram[j, k]) / normalizer
+-                    if overlap > 0.15:
+-                        redundant.append((overlap, j, k))
+-            redundant.sort(reverse=True)
+-
+-            for overlap, j, k in redundant[:3]:
+-                first = (j, center) if inbound else (center, j)
+-                second = (k, center) if inbound else (center, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = quadratic.get(key, 0.0) + 0.24 * overlap
+-
+-    pressure_cv = float(np.std(incident) / max(float(np.mean(incident)), 1e-12))
+-    penalty_weight = 1.15 + 0.20 * pressure_cv / (1.0 + pressure_cv)
+-    return linear, quadratic, float(min(1.35, max(1.15, penalty_weight)))
++    if not np.any(traffic):
++        return linear, quadratic, 1.25
++
++    outgoing = normalized.sum(axis=1)
++    incoming = normalized.sum(axis=0)
++    incident = np.maximum(outgoing, incoming)
++
++    catalog, pressure = _build_route_catalog(normalized, incident)
++    _add_route_terms(quadratic, catalog, pressure)
++    _add_branch_diversity_terms(quadratic, normalized)
++
++    pressure_cv = float(
++        np.std(incident) / max(float(np.mean(incident)), 1e-12)
++    )
++    penalty_weight = 1.18 + 0.18 * pressure_cv / (1.0 + pressure_cv)
++    penalty_weight = float(np.clip(penalty_weight, 1.18, 1.36))
++    return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

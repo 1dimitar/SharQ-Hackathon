@@ -1,0 +1,97 @@
+<NAME>
+targeted_three_hop
+</NAME>
+
+<DESCRIPTION>
+Add one tightly capped three-hop alternative only for high-demand endpoint pairs whose best two-hop candidate has weak leg balance. Rank the alternatives using support on all three legs and transit-node pressure, then add small rewards to the two consecutive link pairs. This tests useful longer routes without broadly increasing coupling density or letting the three-hop surrogate overwhelm the existing two-hop model.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    positive = traffic[traffic > 0.0]
+    if positive.size:
+        cutoff = float(np.quantile(positive, 0.68))
+    else:
+        cutoff = 0.0
+
+    quadratic = {}
+=======
+    positive = traffic[traffic > 0.0]
+    if positive.size:
+        cutoff = float(np.quantile(positive, 0.68))
+        hard_cutoff = float(np.quantile(positive, 0.82))
+    else:
+        cutoff = 0.0
+        hard_cutoff = 0.0
+
+    quadratic = {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                rank = (0.18 + balance + edge_evidence) / (pressure[j] ** 0.88)
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Spend couplings on more alternatives for larger demands, but
+            # keep the graph compact for the numerous small demands.
+            keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+
+            for position, (rank, j) in enumerate(candidates[:keep]):
+=======
+                rank = (0.18 + balance + edge_evidence) / (pressure[j] ** 0.88)
+                candidates.append((float(rank), j, float(balance)))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Spend couplings on more alternatives for larger demands, but
+            # keep the graph compact for the numerous small demands.
+            keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+
+            for position, (rank, j, balance) in enumerate(candidates[:keep]):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                add_pair((i, k), first, direct_redundancy)
+                add_pair((i, k), second, direct_redundancy)
+
+    return linear, quadratic, 1.15
+=======
+                add_pair((i, k), first, direct_redundancy)
+                add_pair((i, k), second, direct_redundancy)
+
+            # Add at most one three-hop option for a difficult, high-demand
+            # pair: its best two-hop candidate has weak balanced leg support.
+            if (
+                traffic[i, k] > 0.0
+                and traffic[i, k] >= hard_cutoff
+                and max(candidate[2] for candidate in candidates) < 0.30
+            ):
+                three_hop = []
+                for a in range(n):
+                    if a == i or a == k:
+                        continue
+                    for b in range(n):
+                        if b == i or b == k or b == a:
+                            continue
+
+                        leg0 = 0.56 * np.sqrt(row_share[i, a]) + 0.44 * np.sqrt(z[i, a])
+                        leg1 = 0.56 * np.sqrt(row_share[a, b]) + 0.44 * np.sqrt(z[a, b])
+                        leg2 = 0.56 * np.sqrt(row_share[b, k]) + 0.44 * np.sqrt(z[b, k])
+                        weakest_ratio = min(leg0, leg1, leg2) / max(
+                            leg0, leg1, leg2, 1e-12
+                        )
+                        quality = (
+                            (leg0 * leg1 * leg2) ** (1.0 / 3.0)
+                            * (0.55 + 0.45 * weakest_ratio)
+                            / ((pressure[a] * pressure[b]) ** 0.30)
+                        )
+                        three_hop.append((float(quality), a, b))
+
+                if three_hop:
+                    quality, a, b = max(
+                        three_hop, key=lambda item: (item[0], -item[1], -item[2])
+                    )
+                    reward = 0.045 * support * quality
+                    add_pair((i, a), (a, b), -reward)
+                    add_pair((a, b), (b, k), -reward)
+
+    return linear, quadratic, 1.15
+>>>>>>> REPLACE
+</DIFF>

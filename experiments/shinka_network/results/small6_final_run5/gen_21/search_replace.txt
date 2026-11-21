@@ -1,0 +1,130 @@
+<NAME>
+transit_pressure
+</NAME>
+
+<DESCRIPTION>
+Estimate transit congestion from each OD pair’s two best plausible two-hop routes, weighted by their leg evidence and current node pressure. Blend this projected load modestly with each node’s existing incident traffic before ranking route alternatives. This adds route-specific pressure information without requiring an LP or adding couplings. Also remove the three-hop Taylor approximation: its pairwise terms can reward partial paths even when the complete three-edge route is absent, creating misleading energy signals.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    node_pressure = np.maximum(0.65, incident / max_incident)
+=======
+    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+
+    # Estimate transit demand on plausible two-hop routes, using incident
+    # load as an initial congestion estimate. Keep only the two best routes
+    # per OD pair to avoid spreading load over unsupported intermediates.
+    initial_pressure = np.maximum(0.65, incident / max_incident)
+    transit_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+            routes = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                evidence = float(normalized[i, j] + normalized[j, k])
+                if evidence <= 0.02:
+                    continue
+                rank = (0.25 + evidence) / (float(initial_pressure[j]) ** 0.75)
+                routes.append((rank, j, evidence))
+            routes.sort(reverse=True)
+            selected = routes[:2]
+            if not selected:
+                continue
+            strengths = [
+                rank * rank * (0.20 + evidence)
+                for rank, _, evidence in selected
+            ]
+            total_strength = sum(strengths)
+            routed_fraction = 0.35 + 0.65 * (1.0 - float(normalized[i, k]))
+            for (_, j, _), strength in zip(selected, strengths):
+                transit_load[j] += (
+                    float(traffic[i, k]) * routed_fraction * strength / total_strength
+                )
+
+    projected_pressure = incident / max_incident + 0.35 * transit_load / max_incident
+    node_pressure = np.maximum(0.65, np.minimum(1.8, projected_pressure))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            # Consider one three-hop alternative only for pairs with weak or
+            # ambiguous two-hop evidence, or unusually large direct demand.
+            best_leg_evidence = max(
+                normalized[i, j] + normalized[j, k]
+                for _, j, _ in candidates
+            ) if candidates else 0.0
+            close_two_hop = (
+                len(candidates) > 1
+                and candidates[1][0] >= 0.82 * candidates[0][0]
+            )
+            difficult = (
+                best_leg_evidence < 0.40
+                or close_two_hop
+                or traffic[i, k] >= high_cutoff
+            )
+
+            if difficult:
+                best_path = None
+                for a in range(n):
+                    if a == i or a == k:
+                        continue
+                    for b in range(n):
+                        if b == i or b == k or b == a:
+                            continue
+                        first_leg = float(normalized[i, a])
+                        middle_leg = float(normalized[a, b])
+                        last_leg = float(normalized[b, k])
+                        if first_leg <= 0.0 or middle_leg <= 0.0 or last_leg <= 0.0:
+                            continue
+
+                        endpoint_affinity = float(np.sqrt(first_leg * last_leg))
+                        path_quality = float(
+                            (first_leg * middle_leg * last_leg) ** (1.0 / 3.0)
+                        )
+                        transit_pressure = float(
+                            node_pressure[a] * node_pressure[b]
+                        )
+                        rank = (
+                            0.08 + 0.45 * endpoint_affinity + 0.55 * middle_leg
+                        ) / (transit_pressure ** 0.35)
+                        candidate = (rank, a, b, path_quality, transit_pressure)
+                        if best_path is None or candidate[0] > best_path[0]:
+                            best_path = candidate
+
+                if best_path is not None:
+                    _, a, b, path_quality, transit_pressure = best_path
+                    path_reward = (
+                        0.12
+                        * float(support)
+                        * (0.50 + path_quality)
+                        / (transit_pressure ** 0.25)
+                    )
+                    path_links = ((i, a), (a, b), (b, k))
+                    occupancy = 0.25
+
+                    # Second-order Taylor terms for a three-edge route reward;
+                    # accumulate them so any existing pair coupling is kept.
+                    for edge in path_links:
+                        linear[edge] -= path_reward * occupancy * occupancy
+                    for p in range(3):
+                        for q in range(p + 1, 3):
+                            edge_a, edge_b = path_links[p], path_links[q]
+                            key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+                            quadratic[key] = (
+                                quadratic.get(key, 0.0)
+                                - path_reward * occupancy
+                            )
+=======
+            # Three-hop Taylor terms are omitted: pairwise fragments can
+            # reward incomplete paths and misrank valid two-link exchanges.
+>>>>>>> REPLACE
+</DIFF>

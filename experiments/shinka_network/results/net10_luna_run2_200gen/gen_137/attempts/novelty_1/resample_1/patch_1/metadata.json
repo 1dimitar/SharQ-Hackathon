@@ -1,0 +1,14 @@
+{
+  "generation": 137,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_route_cover",
+  "patch_description": "Instead of rewarding every possible two-hop path, this approach ranks relay candidates separately for each demanded origin\u2013destination pair and adds QUBO rewards only for the two most promising paths. Relay ranking uses estimated node pressure and the direct traffic on the path\u2019s links. This sparse route-cover surrogate focuses the annealer on useful, less-congested routes while reducing quadratic-term count and avoiding the accumulated reward from many weak paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:30.706829",
+  "llm_cost": 0.0021597,
+  "llm_model": "gpt-6-luna"
+}

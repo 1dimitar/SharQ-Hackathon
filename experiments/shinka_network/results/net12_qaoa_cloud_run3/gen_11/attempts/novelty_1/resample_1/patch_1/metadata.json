@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_degree_penalty",
+  "patch_description": "The QUBO already rewards direct links and two-hop paths, but the evaluator reports that only 17% of sampled topologies are valid before repair. With the evaluator rescaling the cost terms to a maximum absolute weight of 1, a degree penalty of 1 can be too weak relative to the many cost terms: the solver may prefer an invalid topology that earns extra routing reward, leaving repair to fix it afterward. Raise the separate evaluator-supplied penalty to 6 so degree violations are substantially more expensive while preserving the existing cost-term ranking among valid topologies. This targets feasibility without adding quadratic terms or changing the cost model.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:29:14.193731",
+  "llm_cost": 0.000522,
+  "llm_model": "gpt-6-luna"
+}

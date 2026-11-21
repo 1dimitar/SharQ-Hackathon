@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_refined_routes",
+  "patch_description": "This keeps the compact direct-link and selected two-hop structure, while adding a bounded second-pass congestion adjustment. First, plausible two-hop routes share each demand fractionally to estimate which transit nodes are likely to carry traffic. Then route rankings and couplings are modestly discounted at those nodes, in addition to accounting for their existing origin/destination traffic. The adjustment is deliberately limited so it refines route affinity rather than overwhelming demand-based link rewards. The coupling set remains sparse, and no degree penalties are added.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:14:51.551195",
+  "llm_cost": 0.0032843,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 148,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_route_budget",
+  "patch_description": "Reduce the number of two-hop alternatives while leaving their ranking and weight calculation unchanged. The current QUBO contains roughly 400 quadratic terms, and lower-ranked alternatives can add noisy attractions without providing much additional route information. Keep one route for ordinary-demand pairs and two for high-demand pairs; the existing near-tie rule can still retain one extra when the choice is ambiguous. This tests a sparser service-pair budget while preserving the existing service scoring.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:06:25.509051",
+  "llm_cost": 0.0036632,
+  "llm_model": "gpt-6-luna"
+}

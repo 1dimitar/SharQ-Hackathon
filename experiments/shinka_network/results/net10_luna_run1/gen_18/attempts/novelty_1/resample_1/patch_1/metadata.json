@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_load_discount",
+  "patch_description": "Keep the existing set of demand-supported two-hop paths and their overall scale, but discount paths through high-traffic relay nodes. A relay\u2019s row-plus-column demand is a simple proxy for how much transit load it may already need to carry; the stronger `1 / (1 + node_load[j] / max_node_load)` discount tests whether avoiding busy relays improves the typical as well as best sampled topology. This adds no quadratic terms and leaves direct-link rewards and degree penalties unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:17:11.951267",
+  "llm_cost": 0.0009686,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elite_path_relinking",
+  "patch_description": "Add a short path-relinking phase to each neighborhood. It chooses a strong, topologically distant network from the scored archive, then repeatedly applies legal degree-preserving switches that increase the number of shared links with that target. The intermediate networks join the existing move set, where the usual surrogate screening and LP scoring decide which are worth exploring. This provides directed exploration between promising regions instead of relying only on random kicks.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:59:35.077678",
+  "llm_cost": 0.0018657,
+  "llm_model": "gpt-6-luna"
+}

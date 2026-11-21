@@ -1,0 +1,81 @@
+<NAME>
+complementary_service_pairs
+</NAME>
+
+<DESCRIPTION>
+Add a compact set of same-endpoint link couplings that reward pairs of neighbors offering complementary onward service. For each node, estimate which destinations each possible neighbor can serve from the demand matrix, then rank neighbor pairs by the additional weighted coverage they provide together beyond the better single neighbor. Keeping only the best pairs per node limits extra couplings and preserves a sparse structure. This adds guidance about how a node’s two links work together, which direct-link and two-hop route terms do not fully capture.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, 1.15
+=======
+    # Reward pairs of neighbors whose onward service complements one another.
+    # Profiles estimate one-step service from each possible neighbor; the
+    # diagonal represents destinations already reached at that neighbor.
+    mean_direct = float(direct_score.sum()) / max(1, n * (n - 1))
+    service_strength = 0.16 * mean_direct
+    service_budget = max(1, n // 3)
+
+    for reverse in (False, True):
+        scores = direct_score.T if reverse else direct_score
+        demands = traffic.T if reverse else traffic
+        profiles = np.minimum(
+            1.0,
+            2.0 * scores
+            / np.maximum(scores.sum(axis=1, keepdims=True), 1e-12),
+        )
+        np.fill_diagonal(profiles, 1.0)
+
+        totals = demands.sum(axis=1)
+        mean_total = float(totals.mean())
+        if mean_total <= 1e-12:
+            continue
+
+        for node in range(n):
+            total = float(totals[node])
+            if total <= 1e-12:
+                continue
+
+            weights = demands[node] / total
+            neighbors = [a for a in range(n) if a != node]
+            local_profiles = profiles[neighbors]
+            candidates = []
+
+            for a_pos in range(len(neighbors)):
+                first_profile = local_profiles[a_pos]
+                for b_pos in range(a_pos + 1, len(neighbors)):
+                    second_profile = local_profiles[b_pos]
+                    union = (
+                        first_profile + second_profile
+                        - first_profile * second_profile
+                    )
+                    gain = float(
+                        weights @ (union - np.maximum(first_profile, second_profile))
+                    )
+                    if gain > 1e-12:
+                        candidates.append((
+                            gain, neighbors[a_pos], neighbors[b_pos]
+                        ))
+
+            if not candidates:
+                continue
+
+            candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
+            best_gain = candidates[0][0]
+            importance = float(np.clip(total / mean_total, 0.60, 1.40))
+            strength = service_strength * importance
+
+            for gain, a, b in candidates[:service_budget]:
+                first = (a, node) if reverse else (node, a)
+                second = (b, node) if reverse else (node, b)
+                add_pair(
+                    first,
+                    second,
+                    -strength * min(1.0, gain / max(best_gain, 1e-12)),
+                )
+
+    return linear, quadratic, 1.15
+>>>>>>> REPLACE
+
+</DIFF>

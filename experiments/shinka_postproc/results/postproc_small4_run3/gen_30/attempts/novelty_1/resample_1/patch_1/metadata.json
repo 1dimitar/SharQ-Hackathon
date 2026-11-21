@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stratified_novelty_reserve",
+  "patch_description": "Replace the link-pressure ranking with a genuine exploration reserve. Removing heavily loaded links does not reliably improve routing, and the current fill loop consumes every remaining slot before exploration can run.\n\nKeep most LP calls for low-energy proposals. Reserve the remaining calls for structurally novel proposals and a randomized move-scale stratum, so numerous rotations cannot crowd out two-switches or longer kicks. Increase this reserve modestly when a parent stalls. Novelty is measured against good archived networks as well as the current batch, encouraging exploration of different basins rather than merely different siblings. All topology comparisons use precomputed edge sets to keep screening inexpensive.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:10:20.861639",
+  "llm_cost": 0.050918,
+  "llm_model": "gpt-6.1-sol"
+}

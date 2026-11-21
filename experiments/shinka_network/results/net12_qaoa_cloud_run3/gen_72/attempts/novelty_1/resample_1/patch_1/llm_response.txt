@@ -1,0 +1,131 @@
+<NAME>
+gateway_diversity
+</NAME>
+
+<DESCRIPTION>
+This uses a different surrogate from path-reward models: it rewards direct traffic links, then adds sparse positive couplings between links that share a source or destination when their traffic profiles are redundant. Those couplings favor networks whose two gateways at a node offer complementary service, rather than repeatedly rewarding every possible two-hop path. The interactions are limited to shared-endpoint pairs, keeping the QUBO sparse and encouraging useful local communities.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and gateway-profile diversity penalties."""
+    traffic = np.asarray(demand, dtype=float)
+    n = len(traffic)
+    traffic = np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0)
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    q = traffic / scale
+
+    # Concave direct-service reward retains influence for moderate demands.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(q[i, j])
+                linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+
+    # A row profile describes which destinations a node's traffic tends to
+    # reach; a column profile describes which origins tend to send to it.
+    # Normalization makes profile similarity independent of total volume.
+    row_sums = np.sum(q, axis=1)
+    col_sums = np.sum(q, axis=0)
+    row_profiles = np.zeros_like(q)
+    col_profiles = np.zeros_like(q)
+    for i in range(n):
+        if row_sums[i] > 0.0:
+            row_profiles[i] = q[i] / row_sums[i]
+        if col_sums[i] > 0.0:
+            col_profiles[:, i] = q[:, i] / col_sums[i]
+
+    max_row = float(np.max(row_sums)) if n else 0.0
+    max_col = float(np.max(col_sums)) if n else 0.0
+    if max_row <= 0.0:
+        max_row = 1.0
+    if max_col <= 0.0:
+        max_col = 1.0
+
+    quadratic = {}
+    strength = 0.14
+
+    # Competing first-hop gateways from one source should offer different
+    # destination profiles. Their overlap is a redundancy cost.
+    for source in range(n):
+        importance = 0.55 + 0.45 * float(row_sums[source] / max_row)
+        for a in range(n):
+            if a == source:
+                continue
+            for b in range(a + 1, n):
+                if b == source:
+                    continue
+
+                # Exclude the source itself from both profiles.
+                overlap = 0.0
+                for dest in range(n):
+                    if dest != source:
+                        overlap += min(
+                            float(row_profiles[a, dest]),
+                            float(row_profiles[b, dest]),
+                        )
+                if overlap > 0.025:
+                    first, second = (source, a), (source, b)
+                    key = (first, second) if first < second else (second, first)
+                    quadratic[key] = strength * importance * overlap
+
+    # Competing last-hop gateways into one destination should likewise serve
+    # different traffic-origin profiles.
+    for dest in range(n):
+        importance = 0.55 + 0.45 * float(col_sums[dest] / max_col)
+        for a in range(n):
+            if a == dest:
+                continue
+            for b in range(a + 1, n):
+                if b == dest:
+                    continue
+
+                overlap = 0.0
+                for origin in range(n):
+                    if origin != dest:
+                        overlap += min(
+                            float(col_profiles[origin, a]),
+                            float(col_profiles[origin, b]),
+                        )
+                if overlap > 0.025:
+                    first, second = (a, dest), (b, dest)
+                    key = (first, second) if first < second else (second, first)
+                    quadratic[key] = strength * importance * overlap
+
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.25
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

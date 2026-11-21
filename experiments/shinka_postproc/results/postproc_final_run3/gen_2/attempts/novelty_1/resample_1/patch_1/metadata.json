@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "shortest_path_screen",
+  "patch_description": "Add a cheap, independent congestion estimate to LP-batch selection. For a small energy-ranked shortlist, route each OD demand uniformly over its shortest paths and use the resulting maximum estimated link load to identify promising moves. The batch still includes energy-ranked options, so this signal supplements rather than replaces the Hamiltonian surrogate. Limiting the estimate to a shortlist keeps its cost bounded as the network size grows.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:46:10.832878",
+  "llm_cost": 0.0023297,
+  "llm_model": "gpt-6-luna"
+}

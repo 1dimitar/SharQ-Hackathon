@@ -1,0 +1,333 @@
+<NAME>
+ruin_recreate
+</NAME>
+
+<DESCRIPTION>
+This replaces switch-neighborhood search with randomized ruin-and-recreate. It removes a variable-size set of links—often including LP-identified bottlenecks—then reconstructs a degree-feasible network while favoring edges supported by demand and good archived networks. A bounded elite archive, adaptive destruction size, and simulated-annealing acceptance help explore beyond small local changes. Each novel valid network is certified directly by the LP, so the call budget goes to evaluating complete alternatives rather than screening large move batches.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+import itertools
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    n = int(tools.n)
+    m = 2 * n
+    D = demand
+    seen = {}
+    detail_by_net = {}
+    archive = []
+    archive_sets = {}
+    visits = {}
+    best_net = None
+    best_score = float("inf")
+    current = None
+    current_score = float("inf")
+    stall = 0
+
+    def canon(arcs):
+        return tuple(sorted((int(a), int(b)) for a, b in arcs))
+
+    def distance(a, b):
+        return m - len(archive_sets.get(a, set(a)).intersection(
+            archive_sets.get(b, set(b))
+        ))
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            if not tools.is_valid(net):
+                return float("inf")
+            detail = tools.lp_detail(net)
+            score = float(detail["score"])
+            seen[net] = score
+            detail_by_net[net] = detail
+            archive_sets[net] = set(net)
+            if math.isfinite(score):
+                add_archive(net)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def add_archive(net):
+        """Maintain a small, diverse set of strong networks."""
+        if net in archive or not math.isfinite(seen[net]):
+            return
+        pool = archive + [net]
+        pool.sort(key=lambda x: seen[x])
+        limit = max(12, min(3 * n, 36))
+        selected = []
+
+        # Keep a compact elite core, then favor structurally distinct members.
+        core = max(4, n // 3)
+        for x in pool:
+            if x not in selected:
+                selected.append(x)
+            if len(selected) >= core:
+                break
+        separation = max(3, n // 4)
+        for x in pool:
+            if len(selected) >= limit:
+                break
+            if x in selected or seen[x] > seen[pool[0]] * 1.10:
+                continue
+            sx = archive_sets.get(x, set(x))
+            if all(m - len(sx & archive_sets.get(y, set(y))) >= separation
+                   for y in selected):
+                selected.append(x)
+        for x in pool:
+            if len(selected) >= limit:
+                break
+            if x not in selected:
+                selected.append(x)
+        archive[:] = selected
+
+    def edge_frequencies():
+        """Empirical edge support among the current elite archive."""
+        freq = {}
+        if not archive:
+            return freq
+        denom = float(len(archive))
+        for net in archive:
+            for edge in net:
+                freq[edge] = freq.get(edge, 0.0) + 1.0 / denom
+        return freq
+
+    def generate(parent, k, temperature, freq):
+        """Ruin k links and recursively refill all degree deficits."""
+        parent_list = list(parent)
+        parent_set = set(parent)
+        detail = detail_by_net.get(parent, {})
+        prices = detail.get("prices", {})
+        loads = detail.get("loads", {})
+
+        weights = []
+        for edge in parent_list:
+            price = float(prices.get(edge, 0.0))
+            load = float(loads.get(edge, 0.0))
+            # Bottlenecks are more likely to be removed; random weight remains
+            # so that dual degeneracy cannot freeze the search.
+            weights.append(1.0 + (4.0 if price > 1e-10 else 0.0)
+                           + 0.8 * load / max(1.0, best_score))
+
+        k = max(2, min(m, int(k)))
+        probs = [w / sum(weights) for w in weights]
+        try:
+            ids = rng.choice(m, size=k, replace=False, p=probs)
+        except Exception:
+            ids = rng.choice(m, size=k, replace=False)
+        removed = {parent_list[int(i)] for i in ids}
+        kept = parent_set - removed
+
+        outdeg = [0] * n
+        indeg = [0] * n
+        for a, b in kept:
+            outdeg[a] += 1
+            indeg[b] += 1
+        out_need = [2 - x for x in outdeg]
+        in_need = [2 - x for x in indeg]
+        additions = []
+        node_budget = [1800]
+
+        # Higher demand and archive support make an edge attractive.
+        dscale = max(1.0, float(D.max()))
+        def utility(a, b):
+            return (0.45 * float(D[a, b]) / dscale
+                    + 1.35 * freq.get((a, b), 0.0))
+
+        def recurse():
+            if not any(out_need):
+                return not any(in_need)
+            node_budget[0] -= 1
+            if node_budget[0] <= 0:
+                return False
+
+            # Choose the unfinished source with the fewest feasible fillings.
+            chosen = None
+            options_for_chosen = None
+            best_count = None
+            for a in range(n):
+                need = out_need[a]
+                if need <= 0:
+                    continue
+                available = [
+                    b for b in range(n)
+                    if b != a and in_need[b] > 0 and (a, b) not in kept
+                    and (a, b) not in additions
+                ]
+                if len(available) < need:
+                    return False
+                if need == 1:
+                    options = [(b,) for b in available]
+                else:
+                    options = list(itertools.combinations(available, need))
+                if best_count is None or len(options) < best_count:
+                    chosen, options_for_chosen = a, options
+                    best_count = len(options)
+            if chosen is None:
+                return False
+
+            a = chosen
+            # Randomized greedy ordering, with temperature controlling diversity.
+            scored = []
+            for combo in options_for_chosen:
+                value = sum(utility(a, b) for b in combo)
+                noise = float(rng.gumbel()) * max(0.05, temperature)
+                scored.append((value + noise, combo))
+            scored.sort(key=lambda x: x[0], reverse=True)
+
+            need = out_need[a]
+            for _, combo in scored:
+                if any(in_need[b] <= 0 for b in combo):
+                    continue
+                out_need[a] = 0
+                for b in combo:
+                    in_need[b] -= 1
+                    additions.append((a, b))
+                if recurse():
+                    return True
+                for b in combo:
+                    additions.pop()
+                    in_need[b] += 1
+                out_need[a] = need
+            return False
+
+        # A few randomized construction attempts limit pathological backtracking.
+        for _ in range(4):
+            if recurse():
+                result = tuple(sorted(kept | set(additions)))
+                if len(result) == m and tools.is_valid(result):
+                    return result
+            # Reset recursion state for another ordering.
+            additions.clear()
+            for a in range(n):
+                out_need[a] = 2 - sum(1 for x, _ in kept if x == a)
+            for b in range(n):
+                in_need[b] = 2 - sum(1 for _, y in kept if y == b)
+            node_budget[0] = 1800
+        return None
+
+    # Repair raw samples for a diverse set of inexpensive starting points.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    start_sets = []
+    for net in ordered:
+        sn = set(net)
+        if all(m - len(sn & old) >= max(3, n // 4) for old in start_sets):
+            starts.append(net)
+            start_sets.append(sn)
+        if len(starts) >= min(len(ordered), max(10, 2 * n)):
+            break
+    for net in ordered:
+        if len(starts) >= min(len(ordered), max(10, 2 * n)):
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if best_net is None:
+        return list(starts[0])
+
+    current, current_score = best_net, best_score
+    iteration = 0
+
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        if not archive:
+            break
+
+        # Alternate a persistent annealing walk with archive-based restarts.
+        if current is None or rng.random() < (0.22 if stall < n else 0.48):
+            weights = [1.0 / math.sqrt(1.0 + visits.get(x, 0))
+                       for x in archive]
+            total = sum(weights)
+            r = float(rng.random()) * total
+            parent = archive[-1]
+            for x, w in zip(archive, weights):
+                r -= w
+                if r <= 0:
+                    parent = x
+                    break
+            current = parent
+            current_score = seen[parent]
+        else:
+            parent = current
+
+        visits[parent] = visits.get(parent, 0) + 1
+        freq = edge_frequencies()
+
+        # Increase destruction scale after stagnation; vary it to keep moves
+        # ranging from near-local repairs to substantial topology changes.
+        base = max(2, n // 7)
+        extra = min(max(0, stall // max(2, n // 4)), max(2, n // 2))
+        k = base + int(rng.integers(max(1, 1 + extra)))
+        if rng.random() < 0.18:
+            k += max(2, n // 3)
+        k = min(m, k)
+
+        temp = 0.35 + min(1.4, 0.12 * stall)
+        child = generate(parent, k, temp, freq)
+        if child is None or child in seen or tools.is_cached(child):
+            stall += 1
+            continue
+
+        try:
+            score = evaluate(child)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            stall += 1
+            continue
+
+        if score < current_score:
+            current, current_score = child, score
+            stall = 0
+        else:
+            # Scores are normalized in the acceptance test so the temperature
+            # adapts across instance sizes.
+            relative_loss = (score - current_score) / max(1.0, current_score)
+            anneal_temp = 0.0015 + min(0.006, 0.00025 * stall)
+            if rng.random() < math.exp(-max(0.0, relative_loss) / anneal_temp):
+                current, current_score = child, score
+            stall += 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

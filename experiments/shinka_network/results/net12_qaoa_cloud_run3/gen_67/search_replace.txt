@@ -1,0 +1,22 @@
+<NAME>
+gentler_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Soften the pressure discount on relay nodes while leaving candidate ranking and selection unchanged. Raising normalized node pressure to 0.75 makes the reward less sensitive to pressure differences, so a relay is not rejected as strongly just because its incident demand is relatively high. This tests the gentler-pressure variant in isolation; the existing edge-pressure discount and all other terms remain intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * path_support * rank_factor
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                weight = (
+                    -path_strength * path_support * rank_factor
+                    / ((float(node_pressure[j]) ** 0.75) * (1.0 + 0.5 * edge_pressure))
+                )
+>>>>>>> REPLACE
+
+</DIFF>

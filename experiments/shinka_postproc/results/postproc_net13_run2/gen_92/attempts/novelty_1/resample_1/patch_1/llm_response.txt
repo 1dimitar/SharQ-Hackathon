@@ -1,0 +1,81 @@
+<NAME>
+archive_wide_novelty
+</NAME>
+
+<DESCRIPTION>
+Replace nearest-archive-member novelty with aggregate distance from the leading archive members. A candidate that is far from one member but similar to the rest will no longer look artificially novel. Keep the surrogate-ranked proposals for exploitation, and reserve one slot for the candidate with greatest aggregate archive distance; break ties in favor of lower surrogate energy.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Use a compact set of strong, mutually distinct archive members as
+        # reference points. Distance from these rewards unexplored topology
+        # regions without making novelty the only selection criterion.
+        archive = sorted(scores, key=scores.get)[:24]
+        if not archive:
+            archive = [parent]
+        novelty = {
+            net: min(distance(net, ref) for ref in archive)
+            for net in moves
+        }
+
+        selected = []
+        # Preserve exploitation: take the strongest surrogate proposals first.
+        for net in ranked:
+            if all(distance(net, old) >= 3 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(2, limit):
+                break
+
+        # Search for underrepresented regions, but only within a surrogate
+        # shortlist so wildly poor-energy proposals do not dominate.
+        shortlist = ranked[:max(12, limit * 5)]
+        while len(selected) < min(4, limit):
+            available = [net for net in shortlist if net not in selected]
+            if not available:
+                break
+            pick = max(
+                available,
+                key=lambda net: (novelty[net], -ranked.index(net)),
+            )
+            selected.append(pick)
+
+        # Spend any remaining batch capacity on the best-ranked proposals.
+=======
+        # Measure novelty against several leading archive members: a candidate
+        # is novel only if it is distant from the archive as a whole.
+        archive = sorted(scores, key=scores.get)[:12]
+        if not archive:
+            archive = [parent]
+        novelty = {
+            net: sum(distance(net, ref) for ref in archive)
+            for net in moves
+        }
+
+        selected = []
+        # Preserve exploitation: take the strongest surrogate proposals first.
+        for net in ranked:
+            if all(distance(net, old) >= 3 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(2, limit):
+                break
+
+        # Reserve one slot for archive-wide exploration, but screen it through
+        # the surrogate shortlist. Lower energy breaks equal-novelty ties.
+        shortlist = ranked[:max(12, limit * 5)]
+        if len(selected) < limit:
+            available = [net for net in shortlist if net not in selected]
+            if available:
+                pick = max(
+                    available,
+                    key=lambda net: (
+                        novelty[net],
+                        -energy(net),
+                        -ranked.index(net),
+                    ),
+                )
+                selected.append(pick)
+
+        # Spend any remaining batch capacity on the best-ranked proposals.
+>>>>>>> REPLACE
+</DIFF>

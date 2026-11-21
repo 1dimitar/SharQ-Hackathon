@@ -1,0 +1,215 @@
+<NAME>
+dual_metric_screen
+</NAME>
+
+<DESCRIPTION>
+Replace the link-pressure heuristic with a routing-dual lower bound. Treat the parent’s nonnegative dual prices as link lengths and compute their directed shortest-path metric d. For any proposed network E, sum(demand * d) / sum(d[u,v] for (u,v) in E) is a valid congestion lower bound. Unlike removal pressure, this accounts for whether newly added links actually shortcut expensive routes.
+
+Use the bound to deprioritize moves that cannot improve the parent, while retaining them as possible stepping stones. Reserve only a small part of each batch for optimistic dual-ranked local moves; energy remains the main ranking signal.
+
+Also fix the currently unreachable exploration reserve: explicitly leave slots for candidates structurally distant from the archive and the already-selected batch. Increase this reserve modestly when the parent stalls. All calculations are free of LP calls and scale with network size.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Mix energy-ranked trials with a normalized link-pressure heuristic."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        energy_quota = min(4 if detail else 6, batch_size)
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= energy_quota:
+                break
+
+        # A switch can improve the routing bottleneck by removing heavily used,
+        # expensive links. Penalize new links carrying substantial direct demand.
+        if detail and len(selected) < batch_size:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            if max_demand <= 0:
+                max_demand = 1.0
+
+            pressure_ranked = []
+            parent_set = set(parent)
+            for net in fresh:
+                removed = parent_set - set(net)
+                added = set(net) - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            pressure_quota = min(3, batch_size - len(selected))
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Combine energy, a valid dual-metric bound, and genuine exploration."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        energy_order = sorted(fresh, key=energy)
+        energy_rank = {net: i for i, net in enumerate(energy_order)}
+        parent_score = float(seen.get(parent, float("inf")))
+        bounds = {}
+
+        if detail and math.isfinite(parent_score):
+            prices = {
+                tuple(map(int, a)): max(0.0, float(v))
+                for a, v in detail.get("prices", {}).items()
+            }
+            scale = sum(prices.get(a, 0.0) for a in parent)
+            if scale > 0.0 and math.isfinite(scale):
+                metric = np.full((n, n), np.inf, dtype=float)
+                np.fill_diagonal(metric, 0.0)
+                for u, v in parent:
+                    metric[u, v] = prices.get((u, v), 0.0) / scale
+                for k in range(n):
+                    np.minimum(
+                        metric,
+                        metric[:, k:k + 1] + metric[k:k + 1, :],
+                        out=metric,
+                    )
+
+                if np.all(np.isfinite(metric)):
+                    numerator = float(np.sum(np.asarray(demand) * metric))
+                    if numerator > 0.0 and math.isfinite(numerator):
+                        # Triangle inequality makes this metric feasible for
+                        # EVERY candidate graph, not just the parent:
+                        # C * sum_E d(u,v) >= sum_st demand[s,t] * d(s,t).
+                        for net in fresh:
+                            denominator = sum(float(metric[u, v]) for u, v in net)
+                            bounds[net] = (
+                                numerator / denominator
+                                if denominator > 0.0 else float("inf")
+                            )
+
+        target = parent_score - 1e-7 * max(1.0, abs(parent_score))
+        # A bound is not a score prediction. Use it mainly to avoid spending
+        # exploitation calls on moves already ruled out as improvements.
+        # Keep these moves available for exploration and neutral transitions.
+        ranked = sorted(
+            fresh,
+            key=lambda net: (
+                bool(bounds) and bounds[net] >= target,
+                energy_rank[net],
+            ),
+        )
+
+        explore = max(1, batch_size // 4)
+        if parent_stalls.get(parent, 0) >= max(2, n // 5):
+            explore = min(batch_size - 1, explore + 1)
+        exploitation_limit = batch_size - explore
+        dual_quota = (
+            min(exploitation_limit, max(1, batch_size // 4))
+            if bounds else 0
+        )
+        energy_quota = exploitation_limit - dual_quota
+        selected = ranked[:energy_quota]
+
+        if dual_quota:
+            # The parent metric becomes less predictive far from its parent.
+            # Restrict this small optimistic-bound portfolio to 2/3-link moves.
+            dual_order = sorted(
+                (
+                    net for net in fresh
+                    if net not in selected
+                    and bounds[net] < target
+                    and distance(net, parent) <= 6
+                ),
+                key=lambda net: (bounds[net], energy_rank[net]),
+            )
+            selected.extend(dual_order[:dual_quota])
+
+        for net in ranked:
+            if len(selected) >= exploitation_limit:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Actually reserve exploration slots before filling the batch.
+        # Restrict the energy tail, then greedily maximize distance from the
+        # archive AND the other proposals selected for this batch.
+        tail = [net for net in energy_order if net not in selected]
+        pool = tail[:max(explore, (3 * len(tail)) // 4)]
+        if pool:
+            references = [frozenset(net) for net in archive()]
+            references.extend(frozenset(net) for net in selected)
+            if not references:
+                references = [frozenset(parent)]
+            edge_sets = {net: frozenset(net) for net in pool}
+            novelty = {
+                net: min(len(edge_sets[net] ^ ref) for ref in references)
+                for net in pool
+            }
+            while pool and len(selected) < batch_size:
+                chosen = max(
+                    pool, key=lambda net: (novelty[net], -energy_rank[net])
+                )
+                selected.append(chosen)
+                pool.remove(chosen)
+                chosen_set = edge_sets[chosen]
+                for net in pool:
+                    novelty[net] = min(
+                        novelty[net], len(edge_sets[net] ^ chosen_set)
+                    )
+
+        for net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

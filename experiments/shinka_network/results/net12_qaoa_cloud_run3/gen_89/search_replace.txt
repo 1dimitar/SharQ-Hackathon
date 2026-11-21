@@ -1,0 +1,16 @@
+<NAME>
+high_demand_cutoff_90
+</NAME>
+
+<DESCRIPTION>
+Raise the demand cutoff for assigning the larger relay budget from the 75th to the 90th percentile. This concentrates the extra relay alternatives on the highest-demand OD pairs, while leaving the ranking and reward formulas and the existing two-extra-relay allowance unchanged. The sparser selection should also avoid adding interactions for as many lower-demand pairs.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+=======
+    cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+>>>>>>> REPLACE
+
+</DIFF>

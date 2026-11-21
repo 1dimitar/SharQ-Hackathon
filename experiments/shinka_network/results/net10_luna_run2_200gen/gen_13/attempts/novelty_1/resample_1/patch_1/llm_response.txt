@@ -1,0 +1,38 @@
+<NAME>
+endpoint_pressure_mix
+</NAME>
+
+<DESCRIPTION>
+Blend the direct-demand reward with a small endpoint-pressure reward. Direct demand remains the dominant signal, while the secondary component favors links leaving nodes with substantial outgoing traffic and entering nodes with substantial incoming traffic. Normalize each component independently before mixing so the 90/10 ratio is meaningful across demand scales. This changes only the linear terms; it preserves the existing two-hop terms and degree-penalty setup.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    scale = float(np.max(demand)) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+=======
+    scale = float(np.max(demand)) or 1.0
+    direct = demand / scale
+
+    # Endpoint pressure estimates how useful a link may be for serving
+    # traffic originating at i and traffic destined for j. Keep this
+    # secondary signal small so the direct-demand reward remains dominant.
+    outgoing = np.sum(demand, axis=1)
+    incoming = np.sum(demand, axis=0)
+    endpoint = outgoing[:, None] + incoming[None, :]
+    endpoint_scale = float(np.max(endpoint)) or 1.0
+    endpoint = endpoint / endpoint_scale
+
+    direct_weight = 0.90
+    endpoint_weight = 0.10
+    linear = {
+        (i, j): -float(
+            direct_weight * direct[i, j] + endpoint_weight * endpoint[i, j]
+        )
+        for i in range(n) for j in range(n) if i != j
+    }
+>>>>>>> REPLACE
+</DIFF>

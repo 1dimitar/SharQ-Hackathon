@@ -1,0 +1,23 @@
+<NAME>
+max_incident_pressure
+</NAME>
+
+<DESCRIPTION>
+Switch relay-pressure normalization from mean incident demand to maximum incident demand, while keeping the existing 0.75 floor and all route-reward settings unchanged. This isolates the normalization choice: most nodes will receive the floor pressure, while the busiest nodes are discounted relative to the single most loaded node. The softer, more concentrated pressure adjustment may avoid over-penalizing useful relays and improve the typical sampled topology.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    incident = np.sum(traffic, axis=0) + np.sum(traffic, axis=1)
+    mean_incident = float(np.mean(incident)) if incident.size else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+    node_pressure = np.maximum(0.75, incident / mean_incident)
+=======
+    incident = np.sum(traffic, axis=0) + np.sum(traffic, axis=1)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    node_pressure = np.maximum(0.75, incident / max_incident)
+>>>>>>> REPLACE
+</DIFF>

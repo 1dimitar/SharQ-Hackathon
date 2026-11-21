@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_basin_search",
+  "patch_description": "This replaces population-based crossover with dual-guided basin search. It uses LP bottleneck prices to prioritize degree-preserving link exchanges, then screens a small shortlist with demand and QUBO energy before spending LP calls. A diverse elite archive supplies restart points, while occasional multi-switch kicks and three-link rotations explore beyond the immediate neighborhood. Limiting energy calculations to promising proposals also aims to reduce runtime.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:44.010165",
+  "llm_cost": 0.0037107,
+  "llm_model": "gpt-6-luna"
+}

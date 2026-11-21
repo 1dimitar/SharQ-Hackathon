@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_degree_feasibility",
+  "patch_description": "Only 17% of sampled solutions are valid before repair, so too much of the search effort is being spent on topologies that must be altered before scoring. Increase the evaluator-supplied degree penalty from 1.0 to 5.0. This makes violations of the required two incoming and two outgoing links substantially more costly relative to the normalized surrogate terms, encouraging the QAOA search to produce valid topologies directly while leaving the traffic-based objective unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:20:33.482431",
+  "llm_cost": 0.000558,
+  "llm_model": "gpt-6-luna"
+}

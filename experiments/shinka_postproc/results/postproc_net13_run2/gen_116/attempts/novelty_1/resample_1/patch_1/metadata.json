@@ -1,0 +1,14 @@
+{
+  "generation": 116,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elite_path_relinking",
+  "patch_description": "Explicitly path-relink a parent toward another high-quality archived network. Each step attempts a degree-preserving two-switch that adds one of the target network\u2019s missing links, recording intermediate networks as proposals. This can combine useful structure from two strong solutions and traverse regions that random switches may rarely reach. The number of steps is bounded, and all proposals still pass through the existing validity check and LP-budgeted batch selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:19:25.750710",
+  "llm_cost": 0.0019128,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,136 @@
+"""Sparse shadow-price surrogate terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import math
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and sparse, load-aware two-hop rewards."""
+    traffic = np.asarray(demand, dtype=float)
+    n = len(traffic)
+
+    traffic = np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0)
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    d = traffic / scale
+
+    rows = np.sum(d, axis=1)
+    cols = np.sum(d, axis=0)
+    max_row = max(float(np.max(rows)) if n else 0.0, 1e-12)
+    max_col = max(float(np.max(cols)) if n else 0.0, 1e-12)
+
+    # Normalized node shadow prices approximate how contested a relay is.
+    node_load = rows + cols
+    max_node_load = max(float(np.max(node_load)) if n else 0.0, 1e-12)
+    node_price = np.maximum(node_load / max_node_load, 0.0)
+
+    # Link prices combine the link's own demand with the demand pressure at
+    # its origin and destination. The small floor avoids singular prices.
+    link_price = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            link_price[i, j] = (
+                0.25
+                + float(d[i, j])
+                + 0.20 * float(rows[i] / max_row)
+                + 0.20 * float(cols[j] / max_col)
+            )
+
+    # Direct service remains attractive, with a concave term so moderate
+    # demands are not completely swamped by the largest OD pairs.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            value = float(d[i, j])
+            utility = 0.72 * value + 0.28 * math.sqrt(value)
+            linear[(i, j)] = -float(utility)
+
+    # Select only a small number of promising relays for each OD pair.
+    # This produces a much sparser interaction graph than enumerating every
+    # possible two-hop path.
+    quadratic = {}
+    relay_count = min(2, max(0, n - 2))
+    path_strength = 0.24
+
+    if relay_count:
+        for i in range(n):
+            for k in range(n):
+                if i == k:
+                    continue
+
+                od = float(d[i, k])
+                if od <= 0.0:
+                    continue
+
+                od_support = 0.68 * od + 0.32 * math.sqrt(od)
+
+                # Heavy OD pairs already have a strong direct-link incentive;
+                # retain some detour value without treating all routes equally.
+                detour_factor = 0.58 + 0.42 / (1.0 + 2.0 * od)
+                candidates = []
+
+                for j in range(n):
+                    if j == i or j == k:
+                        continue
+
+                    # Low-priced legs have more estimated spare capacity.
+                    leg_price = math.sqrt(
+                        float(link_price[i, j]) * float(link_price[j, k])
+                    )
+                    relay_price = (0.35 + float(node_price[j])) ** 1.15
+
+                    # A path with one especially expensive leg should not be
+                    # rescued by an inexpensive other leg.
+                    quality = 1.0 / (0.45 + leg_price * relay_price)
+                    candidates.append((quality, j))
+
+                candidates.sort(key=lambda item: (-item[0], item[1]))
+                chosen = candidates[:relay_count]
+                qsum = sum(q for q, _ in chosen)
+                if qsum <= 0.0:
+                    continue
+
+                for quality, j in chosen:
+                    a = (i, j)
+                    b = (j, k)
+                    key = (a, b) if a < b else (b, a)
+                    weight = (
+                        -path_strength
+                        * od_support
+                        * detour_factor
+                        * quality
+                        / qsum
+                    )
+                    quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    # Degree penalties are applied by the evaluator.
+    penalty_weight = 2.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,40 @@
+<NAME>
+selective_relay_paths
+</NAME>
+
+<DESCRIPTION>
+Add modest quadratic rewards for two-link paths, weighted by the relay node’s balanced in/out traffic score raised to the power 1.5. This makes indirect-routing rewards more selective than a uniform two-hop bonus, while retaining the direct-demand linear baseline. Excluding paths that return to their starting node avoids rewarding unproductive two-cycles. The added terms are O(n³), within the term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+=======
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+
+    # Favor relays with substantial, balanced traffic entering and leaving them.
+    incoming = np.sum(demand, axis=0)
+    outgoing = np.sum(demand, axis=1)
+    relay = np.sqrt(np.maximum(incoming, 0.0) * np.maximum(outgoing, 0.0))
+    relay_max = float(relay.max()) or 1.0
+    relay = (relay / relay_max) ** 1.5
+
+    # A selected two-link path can carry traffic that has no direct link.
+    # Keep this reward modest so it complements rather than overwhelms direct demand.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                weight = 0.15 * (float(demand[i, k]) / scale) * float(relay[j])
+                if weight:
+                    quadratic[((i, j), (j, k))] = -weight
+
+    penalty_weight = 1.0
+>>>>>>> REPLACE
+</DIFF>

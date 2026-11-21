@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_affinity",
+  "patch_description": "Blend the geometric mean with the harmonic mean of the two leg affinities. This mildly favors relays with two useful legs over those relying on one strong and one weak leg, while retaining the existing relay budget and pressure discount. Unlike replacing the operands with their minimum and maximum, this changes the ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:48:04.300898",
+  "llm_cost": 0.009746000000000001,
+  "llm_model": "gpt-6.1-terra"
+}

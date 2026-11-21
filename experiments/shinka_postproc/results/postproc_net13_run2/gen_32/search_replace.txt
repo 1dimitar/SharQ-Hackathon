@@ -1,0 +1,87 @@
+<NAME>
+guided_archive_relinking
+</NAME>
+
+<DESCRIPTION>
+Add a short path-relinking phase from each selected parent toward a distant, high-quality archived network. The path is built from valid degree-preserving two-switches that strictly reduce the symmetric difference from the target. A few of these intermediate networks are reserved for LP evaluation, so the surrogate ranking cannot screen out every guided move. This complements local neighborhood search with directed exploration between promising regions while keeping the added work bounded.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    guided_moves = set()
+
+    def canon(arcs):
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+            if cand != net:
+                moves.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+            if cand != net:
+                moves.add(cand)
+
+        # Relink toward a distant, strong archive member. Greedy valid switches
+        # create intermediate topologies that progressively approach the target.
+        guided_moves.clear()
+        targets = [
+            x for x in archive()
+            if x != net and distance(x, net) >= 6
+        ]
+        targets.sort(key=lambda x: seen.get(x, float("inf")))
+        if targets:
+            target = targets[int(rng.integers(min(8, len(targets))))]
+            target_set = set(target)
+            cur = net
+            for _ in range(8):
+                arcs_now = list(cur)
+                best_distance = distance(cur, target)
+                improving = []
+                for p in range(len(arcs_now)):
+                    for q in range(p + 1, len(arcs_now)):
+                        cand = switch(cur, p, q)
+                        if cand is None:
+                            continue
+                        d = distance(cand, target)
+                        if d < best_distance:
+                            best_distance = d
+                            improving = [cand]
+                        elif d == best_distance:
+                            improving.append(cand)
+                if not improving:
+                    break
+                cur = improving[int(rng.integers(len(improving)))]
+                if cur != net and tools.is_valid(cur):
+                    guided_moves.add(cur)
+                    moves.add(cur)
+                if set(cur) == target_set:
+                    break
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+=======
+        selected = []
+        # Reserve a few evaluations for guided path intermediates.
+        guided = sorted(
+            (m for m in fresh if m in guided_moves),
+            key=lambda m: energy(m) - base_e,
+        )
+        selected.extend(guided[:min(3, batch_size)])
+
+        # First take good-energy moves that are not all tiny variants of one another.
+>>>>>>> REPLACE
+</DIFF>

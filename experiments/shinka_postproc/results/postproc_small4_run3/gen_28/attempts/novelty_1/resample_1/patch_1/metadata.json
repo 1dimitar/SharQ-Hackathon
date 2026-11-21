@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_screening_quotas",
+  "patch_description": "Adapt the LP batch allocation using each screening signal\u2019s observed success rate: whether a selected move beats its parent. Smoothed rates prevent a small number of early outcomes from dominating, while a minimum slot for every available signal preserves the existing mix of learned prediction, energy, routing proxy, novelty, and uncertainty. The remaining slots are allocated in proportion to those smoothed rates. Attribute each evaluated move to the signal that selected it and update the statistics, so later batches can favor signals that have been productive in this run.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:08:57.255873",
+  "llm_cost": 0.0037638999999999997,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,74 @@
+<NAME>
+adaptive_rotation_sampling
+</NAME>
+
+<DESCRIPTION>
+Track whether evaluated 2-switches or 3-link rotations improve the incumbent, then adapt the number of sampled rotations while keeping a minimum rotation mix. Rotations can escape basins that are difficult to reach through a single switch, but spending many proposals on them is wasteful when they have not helped. This change uses observed LP outcomes—not just proposal counts—to adjust their sampling rate, while retaining the existing switch search and batch ranking. Improvement is measured against the incumbent before each batch so that the reward is attributed correctly.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stale = 0
+    kick = 1
+=======
+    stale = 0
+    kick = 1
+    # Adapt the rotation share from observed LP improvements, with smoothing
+    # and a nonzero floor so rotations remain available for basin changes.
+    switch_trials = rotation_trials = 0
+    switch_wins = rotation_wins = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        tries = min(100, 12 + 5 * kick)
+=======
+        # Keep at least 12 rotation attempts, and increase their share when
+        # rotations have yielded improvements more often than 2-switches.
+        switch_rate = (switch_wins + 1.0) / (switch_trials + 4.0)
+        rotation_rate = (rotation_wins + 1.0) / (rotation_trials + 4.0)
+        adapt = min(2.5, max(0.5, rotation_rate / switch_rate))
+        tries = min(100, max(12, int((12 + 5 * kick) * adapt)))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        previous_best = best_score
+        parent_score = scores.get(parent, best_score)
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            value = evaluate(net)
+            if math.isfinite(value):
+                if value < previous_best:
+                    previous_best = value
+                if value <= parent_score * 1.02 or value == best_score:
+                    remember(net)
+
+        if best_score < (scores.get(parent, float("inf")) - 1e-9):
+=======
+        previous_best = best_score
+        parent_score = scores.get(parent, best_score)
+        # Attribute each evaluated move's incumbent improvement to its type:
+        # a 2-edge symmetric difference is a switch; a 3-edge one is a rotation.
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            value = evaluate(net)
+            move_size = len(set(parent) ^ set(net))
+            if move_size == 4:
+                switch_trials += 1
+                if value < best_score or value < previous_best:
+                    switch_wins += 1
+            elif move_size == 6:
+                rotation_trials += 1
+                if value < best_score or value < previous_best:
+                    rotation_wins += 1
+            if math.isfinite(value):
+                if value < previous_best:
+                    previous_best = value
+                if value <= parent_score * 1.02 or value == best_score:
+                    remember(net)
+
+        if best_score < (scores.get(parent, float("inf")) - 1e-9):
+>>>>>>> REPLACE
+
+</DIFF>

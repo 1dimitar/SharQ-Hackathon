@@ -1,0 +1,14 @@
+{
+  "generation": 120,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_balanced_branch_coverage",
+  "patch_description": "Replace overlap-only penalties with a two-branch coverage and load-balance proxy. Overlap alone can penalize two useful neighbors without crediting the traffic they serve. The new cost estimates uncovered demand and first-link load imbalance, treating direct destinations preferentially.\n\nFor each node, decompose the complete branch-pair cost into additive link costs and a zero-row-sum interaction residual. This decomposition is exact when exactly two branches are selected, before sparsification. Retain only the strongest residual interactions, including rewards for complementary branches. This preserves broad coverage information in linear terms while keeping the coupling budget compact. Existing route rewards, transit-pressure estimates, and degree penalties remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:37:10.020686",
+  "llm_cost": 0.08895800000000001,
+  "llm_model": "gpt-6.1-sol"
+}

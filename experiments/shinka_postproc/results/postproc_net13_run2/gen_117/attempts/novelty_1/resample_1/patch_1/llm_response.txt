@@ -1,0 +1,93 @@
+<NAME>
+dual_focused_screening
+</NAME>
+
+<DESCRIPTION>
+The move generator already creates proposals that alter bottleneck links, but the current batch screen ranks every proposal only by QUBO energy. That can discard the very proposals most likely to reduce the LP objective, especially when the surrogate misranks congestion changes. Reserve part of each LP batch for energy-ranked moves that change links with positive dual prices, using high-load links as a fallback when no positive prices are available. Fill the remaining batch as before, preserving energy guidance and diversity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # If the neighborhood is smaller than the desired batch, use random
+        # tail moves rather than spending every call on near-duplicate variants.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        # Reserve part of the LP batch for moves that change links implicated
+        # by the current LP bottlenecks; the surrogate may not reflect this.
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {
+            tuple(map(int, edge))
+            for edge, price in prices.items()
+            if price > 0
+        }
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            hot = {
+                edge for _, edge in sorted(
+                    ((float(value), tuple(map(int, edge))) for edge, value in loads.items()),
+                    reverse=True,
+                )[:6]
+            }
+
+        parent_edges = set(parent)
+        focused = []
+        if hot:
+            for delta, net in ranked:
+                changed_hot = len((parent_edges ^ set(net)) & hot)
+                if changed_hot:
+                    focused.append((delta, -changed_hot, net))
+            focused.sort(key=lambda item: (item[0], item[1]))
+
+        selected = []
+        focus_limit = min(max(1, batch_size // 3), len(focused))
+        for _, _, net in focused:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= focus_limit:
+                break
+
+        # Fill with surrogate-good moves while retaining topological variety.
+        for _, net in ranked:
+            if len(selected) >= min(6, batch_size):
+                break
+            if net not in selected and all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+
+        # Complete the batch by energy rank, then use a shuffled tail if needed.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

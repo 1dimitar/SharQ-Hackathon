@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "degree_penalty_tune",
+  "patch_description": "Raise the evaluator\u2019s degree-penalty weight slightly from 1.0 to 1.05. The current samples are already almost always feasible, so this is a deliberately small adjustment: it may discourage near-feasible low-energy samples that need repair, without substantially changing the demand-based reward structure or suppressing topology exploration. Since the evaluator rescales the objective terms before applying this penalty, the change is local and bounded; compare feasibility and both best and median gaps to ensure the stronger penalty does not harm topology quality.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:24.305005",
+  "llm_cost": 0.0010148000000000002,
+  "llm_model": "gpt-6-luna"
+}

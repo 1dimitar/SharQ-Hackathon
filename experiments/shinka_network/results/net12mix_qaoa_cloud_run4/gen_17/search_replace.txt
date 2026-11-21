@@ -1,0 +1,43 @@
+<NAME>
+selective_endpoint_congestion
+</NAME>
+
+<DESCRIPTION>
+Add modest positive couplings between links sharing a sender or receiver, weighted by that node’s share of total traffic. With only two outgoing and two incoming links per node, these couplings discourage concentrating transit capacity at traffic-heavy endpoints. The per-pair normalization keeps this congestion signal selective rather than letting the added terms overwhelm the existing two-hop rewards. It also creates interactions among links that can help the partitioned solver explore endpoint-spread topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    0.30 * float(ds[i, k]) * suitability / total
+                )
+
+    penalty_weight = 3.0
+=======
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    0.30 * float(ds[i, k]) * suitability / total
+                )
+
+    # Penalize concentrating links at high-traffic endpoints. Normalize by the
+    # number of alternatives so this remains a modest, selective congestion cue.
+    total_traffic = float(row.sum()) or 1.0
+    for node in range(n):
+        outgoing = [(node, j) for j in range(n) if j != node]
+        incoming = [(i, node) for i in range(n) if i != node]
+        out_exposure = float(row[node]) / total_traffic
+        in_exposure = float(col[node]) / total_traffic
+
+        for links, exposure in ((outgoing, out_exposure), (incoming, in_exposure)):
+            pair_weight = 0.14 * exposure / max(1, n - 2)
+            if pair_weight <= 0.0:
+                continue
+            for p in range(len(links)):
+                for q in range(p + 1, len(links)):
+                    a, b = links[p], links[q]
+                    key = (a, b) if a < b else (b, a)
+                    quadratic[key] = quadratic.get(key, 0.0) + pair_weight
+
+    penalty_weight = 3.0
+>>>>>>> REPLACE
+
+</DIFF>

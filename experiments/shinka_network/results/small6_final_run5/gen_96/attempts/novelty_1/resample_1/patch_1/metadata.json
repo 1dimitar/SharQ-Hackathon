@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "endpoint_share_routes",
+  "patch_description": "Add bounded endpoint-share evidence to route support. A leg is more informative when it accounts for a meaningful share of traffic leaving its source or entering its destination. The geometric combination of those shares is blended with the harmonic mean of the leg magnitudes; the harmonic mean remains an upper limit, so a strong leg cannot compensate for a weak one. Use the result mildly in candidate ranking and route rewards to prefer supported paths without eliminating alternatives.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:15:59.564395",
+  "llm_cost": 0.0035047000000000003,
+  "llm_model": "gpt-6-luna"
+}

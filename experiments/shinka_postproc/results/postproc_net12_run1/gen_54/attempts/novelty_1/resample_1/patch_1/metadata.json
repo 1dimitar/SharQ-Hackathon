@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "archive_preserving_targeted_kicks",
+  "patch_description": "The current search generates small random kicks from whichever parent happens to be selected, but it does not escalate exploration when the whole search stagnates. Track global progress and, after a stall, perturb a non-elite archive member rather than the incumbent. Bias the kick\u2019s switches toward that donor\u2019s priced or heavily loaded links, while retaining the existing random switches for broader exploration. The archive is refreshed from scored networks, so the elite remains available and the kicked topology is evaluated as a new search start.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:56:46.824620",
+  "llm_cost": 0.0024522000000000003,
+  "llm_model": "gpt-6-luna"
+}

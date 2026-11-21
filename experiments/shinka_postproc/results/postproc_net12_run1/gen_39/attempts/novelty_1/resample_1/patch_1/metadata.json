@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_relink",
+  "patch_description": "Add path-relinking moves that take a single switch toward another high-quality archived topology. For each selected target, the search looks for target links absent from the current parent and tries to install them with a degree-preserving two-switch. This explores connections between promising regions that random neighborhoods may miss, while preserving validity and leaving the existing LP batch screening in place.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:49:17.703433",
+  "llm_cost": 0.0019848,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This crossover keeps the direct-link reward that performed well for best samples, adds a small concave component to give moderate demands influence, and combines it with pressure-discounted two-hop rewards. The two-hop strength is moderated between the current program and the inspiration program to avoid making indirect-path rewards dominate. It retains the same output format and degree-penalty handling.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:58.882818",
+  "llm_cost": 0.001164,
+  "llm_model": "gpt-6-luna"
+}

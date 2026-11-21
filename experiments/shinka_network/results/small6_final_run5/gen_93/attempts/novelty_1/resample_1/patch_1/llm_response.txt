@@ -1,0 +1,69 @@
+<NAME>
+vulnerability_cut
+</NAME>
+
+<DESCRIPTION>
+Add a compact two-node-cut congestion correction. A pair of reciprocal links leaves fewer links crossing the cut between those two nodes, so the correction penalizes cuts with high external traffic. Scale each cut coefficient modestly by the endpoints’ external-demand vulnerability, normalizing the factors so the overall correction strength stays stable. The linear offsets preserve the correction’s intended ranking on valid degree-two topologies, while the cut interaction reinforces the reciprocal-link term without adding new coupling keys.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Debias only links that occur unusually often in route-reward couplings.
+=======
+    # Approximate congestion across each two-node cut. The cut has
+    # 4 - x_ij - x_ji boundary links in each direction on a valid topology;
+    # the quadratic expansion of its inverse-square load has coefficients
+    # 7/144 for each arc and 13/144 for the reciprocal product.
+    row_sum = traffic.sum(axis=1)
+    column_sum = traffic.sum(axis=0)
+    total_incident = row_sum + column_sum
+    cut_linear = np.zeros((n, n), dtype=float)
+    cut_strength = 0.80 / 144.0
+    cut_data = []
+    vulnerability_factors = []
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal = float(traffic[i, j] + traffic[j, i])
+            external_cut = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(column_sum[i] + column_sum[j]),
+                ) - internal,
+            )
+            squared_load = (external_cut / incident_scale) ** 2
+
+            external_i = max(0.0, float(total_incident[i]) - internal)
+            external_j = max(0.0, float(total_incident[j]) - internal)
+            vulnerability = 0.5 * (
+                external_i / max(float(total_incident[i]), 1e-12)
+                + external_j / max(float(total_incident[j]), 1e-12)
+            )
+            factor = 0.80 + 0.40 * min(1.0, max(0.0, vulnerability))
+            cut_data.append((i, j, squared_load, factor))
+            vulnerability_factors.append(factor)
+
+    factor_mean = float(np.mean(vulnerability_factors)) if vulnerability_factors else 1.0
+    for i, j, squared_load, factor in cut_data:
+        if squared_load <= 0.0:
+            continue
+        coefficient = cut_strength * squared_load * factor / max(factor_mean, 1e-12)
+        cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+        reciprocal_key = ((i, j), (j, i))
+        quadratic[reciprocal_key] = quadratic.get(reciprocal_key, 0.0) + 13.0 * coefficient
+
+    # Remove node potentials and a common edge offset: these are constant
+    # over valid degree-two topologies, so the cut correction guides rankings
+    # without introducing a spurious degree preference.
+    node_offset = cut_linear.sum(axis=1) / max(1, n - 1)
+    edge_offset = float(cut_linear.sum()) / max(1, n * (n - 1))
+    for i, j in linear:
+        linear[(i, j)] += float(
+            cut_linear[i, j] - node_offset[i] - node_offset[j] + edge_offset
+        )
+
+    # Debias only links that occur unusually often in route-reward couplings.
+>>>>>>> REPLACE
+
+</DIFF>

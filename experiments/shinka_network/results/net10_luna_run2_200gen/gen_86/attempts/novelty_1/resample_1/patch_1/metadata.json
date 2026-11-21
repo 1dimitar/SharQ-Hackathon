@@ -1,0 +1,14 @@
+{
+  "generation": 86,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_indirect_budget",
+  "patch_description": "The current two-hop reward is assigned independently to every possible intermediate node, so an OD pair with many candidate paths can contribute a large aggregate incentive even when its direct demand is modest. Keep the existing path-specific signal and transit/edge-pressure discounts, but collect the candidate rewards per OD pair and proportionally cap their sum at 0.5 times that pair\u2019s normalized direct demand. This preserves the relative preference among useful paths while limiting the aggregate indirect reward, reducing the risk that indirect incentives overwhelm direct-link demand. The number of quadratic terms remains within the existing bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:48:30.507015",
+  "llm_cost": 0.0011564000000000001,
+  "llm_model": "gpt-6-luna"
+}

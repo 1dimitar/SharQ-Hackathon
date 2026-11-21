@@ -1,0 +1,17 @@
+<NAME>
+relay_pressure_exponent
+</NAME>
+
+<DESCRIPTION>
+Soften the pressure penalty when selecting which relays receive quadratic terms by ranking candidates with `affinity / pressure**0.75` instead of `affinity / pressure`. This tests the recommended lower pressure sensitivity: it gives plausible relays at busier nodes a better chance of being retained in the sparse interaction set, while the existing pressure discount in the reward still discourages overusing them. The change is limited to candidate selection, leaving the reward scale and interaction count unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = (0.25 + affinity) / float(node_pressure[j])
+                candidates.append((rank, j, edge_pressure))
+=======
+                rank = (0.25 + affinity) / (float(node_pressure[j]) ** 0.75)
+                candidates.append((rank, j, edge_pressure))
+>>>>>>> REPLACE
+</DIFF>

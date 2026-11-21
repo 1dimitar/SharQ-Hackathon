@@ -1,0 +1,44 @@
+<NAME>
+endpoint_cut_vulnerability
+</NAME>
+
+<DESCRIPTION>
+Scale each reciprocal-link penalty using the average external-demand share of its two endpoints. A reciprocal pair can consume scarce degree while leaving both endpoints dependent on the rest of the network, so pairs with more external traffic relative to their own incident demand should receive a stronger cut penalty. Clipping the endpoint shares and normalizing the factors preserves the overall reciprocal-penalty scale and adds no couplings.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for i in range(n):
+        for j in range(i + 1, n):
+            external = (
+                float(traffic[i, :].sum() + traffic[:, i].sum()
+                      + traffic[j, :].sum() + traffic[:, j].sum())
+                - 2.0 * float(traffic[i, j] + traffic[j, i])
+            )
+            local_load = float(incident[i] + incident[j])
+            external_share = min(1.0, max(0.0, external / max(local_load, 1e-12)))
+            factor = 0.75 + 0.50 * external_share
+            pair_data.append((i, j, factor))
+            local_factors.append(factor)
+=======
+    row_load = traffic.sum(axis=1)
+    column_load = traffic.sum(axis=0)
+    total_incident = row_load + column_load
+    for i in range(n):
+        for j in range(i + 1, n):
+            pair_traffic = float(traffic[i, j] + traffic[j, i])
+            vulnerability_i = (
+                float(row_load[i] + column_load[i]) - pair_traffic
+            ) / max(float(total_incident[i]), 1e-12)
+            vulnerability_j = (
+                float(row_load[j] + column_load[j]) - pair_traffic
+            ) / max(float(total_incident[j]), 1e-12)
+            endpoint_vulnerability = min(
+                1.0, max(0.0, 0.5 * (vulnerability_i + vulnerability_j))
+            )
+            factor = 0.75 + 0.50 * endpoint_vulnerability
+            pair_data.append((i, j, factor))
+            local_factors.append(factor)
+>>>>>>> REPLACE
+
+</DIFF>

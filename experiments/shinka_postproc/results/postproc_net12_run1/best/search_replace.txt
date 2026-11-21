@@ -1,0 +1,68 @@
+<NAME>
+stagnation_rotations
+</NAME>
+
+<DESCRIPTION>
+Increase the number of sampled three-link rotations only for parents whose recent neighborhoods have failed to improve them. The current search samples a fixed 70 rotations regardless of whether a parent is productive or stalled; adaptive escalation spends more exploration effort where the two-switch neighborhood is insufficient, while keeping productive-parent iterations inexpensive. Rotations remain restricted to involve hot links and are still screened before LP evaluation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_net = None
+    best_score = float("inf")
+
+    def canon(arcs):
+=======
+    best_net = None
+    best_score = float("inf")
+    parent_stalls = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Rotate destinations on three links; these preserve in/out degrees too.
+        if len(arcs) >= 3:
+            for _ in range(70):
+=======
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+        # Rotations preserve degrees and can cross barriers that two-switches miss.
+        if len(arcs) >= 3:
+            stalls = parent_stalls.get(net, 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+            for _ in range(rotation_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+    return list(best_net) if best_net is not None else []
+=======
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+>>>>>>> REPLACE
+</DIFF>

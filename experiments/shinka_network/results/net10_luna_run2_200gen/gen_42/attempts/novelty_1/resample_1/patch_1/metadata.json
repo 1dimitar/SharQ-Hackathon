@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_two_hop",
+  "patch_description": "Increase the two-hop reward strength from 0.20 to 0.25, keeping the direct-link rewards and both pressure discounts unchanged. The current program\u2019s best-topology gaps are worse than the earlier linear-direct formulation, suggesting the concave direct reward may be encouraging direct links without enough credit for useful transit routes. This modest increase tests whether stronger support for two-hop service improves the low-energy topology region without changing the quadratic-term count or the model\u2019s structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:57.268890",
+  "llm_cost": 0.0007740000000000001,
+  "llm_model": "gpt-6-luna"
+}

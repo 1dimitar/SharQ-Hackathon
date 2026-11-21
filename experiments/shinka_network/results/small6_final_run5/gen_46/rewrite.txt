@@ -1,0 +1,189 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Normalize nonnegative traffic and compute endpoint-load pressure."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = len(traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    normalized = traffic / scale
+    roots = np.sqrt(normalized)
+
+    incident = np.maximum(normalized.sum(axis=0), normalized.sum(axis=1))
+    peak = float(np.max(incident)) if incident.size else 0.0
+    if peak <= 0.0:
+        peak = 1.0
+    pressure = np.maximum(0.55, incident / peak)
+
+    positive = normalized[normalized > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    return normalized, roots, pressure, incident, cutoff
+
+
+def _route_probabilities(normalized, i, k, pressure):
+    """Softly distribute one OD pair between direct and two-hop options."""
+    n = len(normalized)
+    candidates = []
+    utilities = [
+        np.log(0.22 + 1.05 * float(normalized[i, k]))
+    ]
+
+    for j in range(n):
+        if j == i or j == k:
+            continue
+
+        left = float(normalized[i, j])
+        right = float(normalized[j, k])
+        edge_sum = left + right
+        geometric = np.sqrt(max(0.0, left * right))
+
+        # Demand affinity encourages plausible constituent links. Transit
+        # pressure discounts routes that concentrate traffic at busy nodes.
+        affinity = 0.18 + edge_sum + 0.35 * geometric
+        utility = (
+            np.log(affinity)
+            - 0.72 * np.log(max(0.55, float(pressure[j])))
+            - 0.10 * np.log1p(0.5 * edge_sum)
+        )
+        candidates.append((j, edge_sum))
+        utilities.append(utility)
+
+    values = np.asarray(utilities, dtype=float)
+    values = (values - float(np.max(values))) / 0.58
+    probabilities = np.exp(np.clip(values, -35.0, 0.0))
+    probabilities /= max(1e-15, float(probabilities.sum()))
+
+    # Index zero is the direct option; remaining entries align with candidates.
+    return candidates, probabilities
+
+
+def _estimate_transit_load(normalized, pressure, incident):
+    """Iteratively estimate how much OD traffic would use each transit node."""
+    n = len(normalized)
+    transit = np.zeros(n, dtype=float)
+    peak_incident = max(1e-12, float(np.max(incident)) if incident.size else 0.0)
+
+    # A few damped updates are enough to avoid overcommitting to the first
+    # pressure estimate while retaining deterministic, inexpensive evaluation.
+    for _ in range(2):
+        updated = np.zeros(n, dtype=float)
+        for i in range(n):
+            for k in range(n):
+                amount = float(normalized[i, k])
+                if i == k or amount <= 0.0:
+                    continue
+                candidates, probabilities = _route_probabilities(
+                    normalized, i, k, pressure
+                )
+                for index, (j, _) in enumerate(candidates, start=1):
+                    updated[j] += amount * float(probabilities[index])
+
+        transit = 0.45 * transit + 0.55 * updated
+        pressure = np.maximum(
+            0.55,
+            np.maximum(incident / peak_incident, 0.55)
+            + 0.30 * np.sqrt(transit / peak_incident),
+        )
+
+    return pressure
+
+
+def _canonical_pair(first, second):
+    """Return a deterministic key for a symmetric QUBO coupling."""
+    return (first, second) if first < second else (second, first)
+
+
+def _build_terms(normalized, roots, pressure, cutoff):
+    """Assemble direct-link rewards and a compact set of route couplings."""
+    n = len(normalized)
+
+    direct_value = 0.75 * normalized + 0.25 * roots
+    linear = {
+        (i, j): -float(direct_value[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            amount = float(normalized[i, k])
+            if i == k or amount <= 0.0:
+                continue
+
+            candidates, probabilities = _route_probabilities(
+                normalized, i, k, pressure
+            )
+            ranked = []
+            for index, (j, edge_sum) in enumerate(candidates, start=1):
+                ranked.append(
+                    (
+                        float(probabilities[index]),
+                        j,
+                        float(edge_sum),
+                    )
+                )
+            ranked.sort(key=lambda item: (-item[0], item[1]))
+
+            keep = min(len(ranked), 3 if amount >= cutoff else 2)
+            support = 0.70 * amount + 0.30 * float(roots[i, k])
+
+            for position, (probability, j, edge_sum) in enumerate(ranked[:keep]):
+                # Keep a modest floor so useful alternative routes are not
+                # erased when the soft assignment strongly prefers another.
+                route_share = 0.25 + 0.75 * np.sqrt(max(0.0, probability))
+                rank_factor = 1.0 + 0.06 * (keep - position - 1)
+                congestion = np.sqrt(max(0.55, float(pressure[j])))
+                edge_discount = 1.0 + 0.08 * edge_sum
+                weight = (
+                    -0.45
+                    * support
+                    * route_share
+                    * rank_factor
+                    / (congestion * edge_discount)
+                )
+
+                first = (i, j)
+                second = (j, k)
+                key = _canonical_pair(first, second)
+                quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    return linear, quadratic
+
+
+def surrogate_terms(demand):
+    """Build sparse direct and pressure-aware two-hop surrogate terms."""
+    normalized, roots, initial_pressure, incident, cutoff = _prepare_demand(demand)
+    pressure = _estimate_transit_load(normalized, initial_pressure, incident)
+    linear, quadratic = _build_terms(normalized, roots, pressure, cutoff)
+
+    # Degree constraints are supplied separately by the evaluator.
+    return linear, quadratic, 1.25
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

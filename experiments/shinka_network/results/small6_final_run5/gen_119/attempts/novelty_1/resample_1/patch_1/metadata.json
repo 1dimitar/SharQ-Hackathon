@@ -1,0 +1,14 @@
+{
+  "generation": 119,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "normalized_cut_reallocation",
+  "patch_description": "Strengthen the two-node cut correction slightly while reallocating it toward more vulnerable endpoint pairs. The vulnerability multiplier is widened to 0.8\u20131.2, then normalized by the squared-load-weighted mean across cuts. This preserves the total load-weighted cut correction, so the change tests where that signal is allocated rather than accidentally changing its overall scale. The calculation remains quadratic in the number of nodes and does not add couplings beyond the existing reciprocal-link terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:34:00.792197",
+  "llm_cost": 0.0028796000000000004,
+  "llm_model": "gpt-6-luna"
+}

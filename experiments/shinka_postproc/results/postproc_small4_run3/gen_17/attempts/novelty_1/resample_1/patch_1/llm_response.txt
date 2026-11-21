@@ -1,0 +1,79 @@
+<NAME>
+targeted_hot_rotations
+</NAME>
+
+<DESCRIPTION>
+The existing rotation sampler draws triples uniformly, then discards triples that do not include a bottleneck link. When only a few links are hot, that wastes many trials. Keep the random rotation component for exploration, but add a size-scaled set of rotations that deliberately include the highest-pressure links. Each rotation preserves all in- and out-degrees, and the existing batch screen still decides which proposals merit LP calls. This makes dual guidance more productive without letting it monopolize the search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+        # Rotations preserve degrees and can cross barriers that two-switches miss.
+        if len(arcs) >= 3:
+            stalls = parent_stalls.get(net, 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+            for _ in range(rotation_trials):
+                ids = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                for new in (
+                    {(a, d), (c, f), (e, b)},
+                    {(a, f), (c, b), (e, d)},
+                ):
+                    if len(new) != 3 or any(x == y for x, y in new):
+                        continue
+                    if new & (current - old):
+                        continue
+                    cand = tuple(sorted((current - old) | new))
+                    moves.add(cand)
+=======
+        # Generate rotations that deliberately remove high-pressure links.
+        # Retain random rotations as a complementary source of nonlocal moves.
+        if len(arcs) >= 3:
+            stalls = parent_stalls.get(net, 0)
+
+            def add_rotation(ids):
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+                old = {(a, b), (c, d), (e, f)}
+                for new in (
+                    {(a, d), (c, f), (e, b)},
+                    {(a, f), (c, b), (e, d)},
+                ):
+                    if len(new) != 3 or any(x == y for x, y in new):
+                        continue
+                    if new & (current - old):
+                        continue
+                    moves.add(tuple(sorted((current - old) | new)))
+
+            if hot:
+                loads = detail.get("loads", {}) if detail else {}
+                prices = detail.get("prices", {}) if detail else {}
+                hot_order = sorted(
+                    hot,
+                    key=lambda a: (
+                        float(prices.get(a, 0.0)),
+                        float(loads.get(a, 0.0)),
+                    ),
+                    reverse=True,
+                )
+                arc_index = {a: i for i, a in enumerate(arcs)}
+                target_trials = min(180, max(24, 6 * len(hot_order)))
+                for t in range(target_trials):
+                    critical = hot_order[t % len(hot_order)]
+                    p = arc_index[critical]
+                    others = [i for i in range(len(arcs)) if i != p]
+                    chosen = rng.choice(len(others), size=2, replace=False)
+                    add_rotation([p, others[int(chosen[0])], others[int(chosen[1])]])
+
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+            for _ in range(rotation_trials):
+                ids = rng.choice(len(arcs), size=3, replace=False)
+                if hot and not any(arcs[int(i)] in hot for i in ids):
+                    continue
+                add_rotation(ids)
+>>>>>>> REPLACE
+
+</DIFF>

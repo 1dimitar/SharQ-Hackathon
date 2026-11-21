@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptiveportfolio",
+  "patch_description": "The current search spends up to `2*n+4` LP calls on starts and uses mostly fixed move-screening quotas. This version uses `n` diverse starts, then adapts the batch allocation among energy, shortest-path routing, LP bottleneck focus, an online prediction model, novelty, and random exploration according to each source\u2019s observed improvement rate. It keeps a diverse archive and mixes 2-switches, 3-link rotations, multi-switch kicks, and short path-relinking steps. The routing proxy emphasizes estimated peak link load, while the predictor is only one protected signal rather than the sole guide.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:42:02.716008",
+  "llm_cost": 0.008883,
+  "llm_model": "gpt-6-luna"
+}

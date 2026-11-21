@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "ucb_parent_selection",
+  "patch_description": "Allocate parent searches using both historical progress and underexploration. Keep the existing preference for strong archive members, but boost parents that have been selected fewer times and those whose neighborhoods have recently produced improvements; gently discount repeatedly stalled parents. Update visit counts only after any fallback parent is chosen, so the statistics reflect the parent actually searched.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:09:22.835491",
+  "llm_cost": 0.0031343000000000005,
+  "llm_model": "gpt-6-luna"
+}

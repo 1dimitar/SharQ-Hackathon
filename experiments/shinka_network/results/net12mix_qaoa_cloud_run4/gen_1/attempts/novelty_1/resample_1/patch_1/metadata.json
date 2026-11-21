@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capacity_aware_paths",
+  "patch_description": "Retain the direct-demand reward, but add discounted two-hop rewards only when an intermediate node is a plausible relay: its total incoming and outgoing demand should both be substantial. This targets useful path structure without treating every possible intermediate as equally valuable. Normalize each origin-destination pair\u2019s relay rewards so that adding many candidate intermediates does not multiply its influence. The resulting interactions are sparse enough to stay below the quadratic-term limit, and the stronger degree penalty helps keep the cost terms from overwhelming the evaluator\u2019s degree constraints.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:44:05.063576",
+  "llm_cost": 0.0008529,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_pressure_qubo",
+  "patch_description": "Reorganizes term construction into distinct preprocessing, transit-pressure estimation, route-coupling, and correction stages. Sparse route candidates are selected by demand support and node pressure; a small number of demand-profile overlap couplings discourage redundant branches. Exposure correction limits excessive attraction from overlapping route rewards while keeping the model compact.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:49:31.482751",
+  "llm_cost": 0.0038195,
+  "llm_model": "gpt-6-luna"
+}

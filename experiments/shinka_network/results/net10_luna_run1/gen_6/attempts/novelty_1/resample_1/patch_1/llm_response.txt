@@ -1,0 +1,50 @@
+<NAME>
+discounted_twohop_routing
+</NAME>
+
+<DESCRIPTION>
+Keep the baseline reward for direct traffic, and add a modest quadratic reward when two selected links form a two-hop route. Unlike an undiscounted two-hop reward, scale each path term by a small factor and discount paths through nodes with high aggregate demand. This limits over-rewarding indirect routes and discourages concentrating transit potential at already busy nodes. The number of quadratic terms is at most \(n(n-1)(n-2)\), within the stated limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    demand = np.asarray(demand, dtype=float)
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A two-hop route is useful, but should be a modest complement to a
+    # direct-link reward rather than an equally strong reward for every path.
+    node_load = demand.sum(axis=0) + demand.sum(axis=1)
+    max_node_load = float(node_load.max()) or 1.0
+    quadratic = {}
+    path_weight = 0.12
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            relay_discount = 1.0 / (1.0 + 0.5 * float(node_load[j]) / max_node_load)
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                value = float(demand[i, k])
+                if value > 0.0:
+                    quadratic[((i, j), (j, k))] = (
+                        -path_weight * (value / scale) * relay_discount
+                    )
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

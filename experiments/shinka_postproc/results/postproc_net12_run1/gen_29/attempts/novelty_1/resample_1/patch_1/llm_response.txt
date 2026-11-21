@@ -1,0 +1,276 @@
+<NAME>
+dual_stagnation_rotations
+</NAME>
+
+<DESCRIPTION>
+This version focuses ordinary search on two-switches that touch dual-priced bottleneck links, ranking them by estimated dual relief and surrogate energy before spending LP calls. It scores a diversified subset of repaired starts, then tracks unsuccessful batches per parent. After repeated failures it selectively adds three-link rotations centered on that parent’s highest-price links, increasing their frequency and focus as stagnation continues; successful progress resets the escalation. An elite archive provides varied restart parents, while cached and already-scored networks are skipped.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    scores = {}
+    details = {}
+    archive = []
+    best_net = None
+    best_score = float("inf")
+
+    def norm(arcs):
+        return tuple(sorted((int(a), int(b)) for a, b in arcs))
+
+    def distance(a, b):
+        return len(set(a).symmetric_difference(b))
+
+    def remember(net, value):
+        nonlocal best_net, best_score
+        if value < best_score:
+            best_net, best_score = net, value
+        if any(net == old for old, _ in archive):
+            return
+        if archive and min(distance(net, old) for old, _ in archive) < 4:
+            if value > min(v for _, v in archive) * 1.001:
+                return
+        archive.append((net, value))
+        archive.sort(key=lambda x: x[1])
+        del archive[14:]
+
+    def evaluate(net):
+        net = norm(net)
+        if net in scores:
+            return scores[net]
+        if not tools.is_valid(net):
+            return float("inf")
+        value = float(tools.lp(net))
+        scores[net] = value
+        remember(net, value)
+        return value
+
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = norm(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+    if not repaired:
+        try:
+            net = norm(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+    if not repaired:
+        return []
+
+    ordered = sorted(repaired, key=tools.energy)
+    starts = []
+    for net in ordered:
+        if all(distance(net, old) >= 6 for old in starts):
+            starts.append(net)
+        if len(starts) >= 16:
+            break
+    for net in ordered:
+        if len(starts) >= 26:
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+    if best_net is None:
+        return starts[0]
+
+    def link_info(net):
+        if net not in details:
+            try:
+                details[net] = tools.lp_detail(net)
+            except Exception:
+                details[net] = {}
+        d = details[net]
+        prices = {}
+        loads = {}
+        for edge, value in d.get("prices", {}).items():
+            try:
+                prices[tuple(map(int, edge))] = float(value)
+            except Exception:
+                pass
+        for edge, value in d.get("loads", {}).items():
+            try:
+                loads[tuple(map(int, edge))] = float(value)
+            except Exception:
+                pass
+        hot = {e for e, p in prices.items() if p > 1e-10}
+        if not hot and loads:
+            peak = max(loads.values())
+            hot = {e for e, x in loads.items() if x >= 0.93 * peak}
+        return prices, hot
+
+    def two_switches(net, prices, hot, focus_only=True):
+        arcs = list(net)
+        old = set(net)
+        result = {}
+        old_energy = float(tools.energy(net))
+        for i, (a, b) in enumerate(arcs):
+            for c, d in arcs[i + 1:]:
+                removed = ((a, b), (c, d))
+                if focus_only and hot and not (set(removed) & hot):
+                    continue
+                x, y = (a, d), (c, b)
+                if a == d or c == b or x == y or x in old or y in old:
+                    continue
+                cand = norm((old - set(removed)) | {x, y})
+                if cand in result:
+                    continue
+                relief = sum(prices.get(e, 0.0) for e in removed)
+                relief -= prices.get(x, 0.0) + prices.get(y, 0.0)
+                delta_energy = float(tools.energy(cand)) - old_energy
+                add_traffic = float(demand[x[0], x[1]]) + float(demand[y[0], y[1]])
+                result[cand] = (relief, delta_energy, add_traffic)
+        return result
+
+    def rotations(net, prices, hot, attempts, focus_count):
+        arcs = list(net)
+        old = set(net)
+        if len(arcs) < 3:
+            return {}
+        ranked_hot = sorted(hot, key=lambda e: prices.get(e, 0.0), reverse=True)
+        centers = ranked_hot[:max(1, focus_count)] if ranked_hot else []
+        result = {}
+        old_energy = float(tools.energy(net))
+        for _ in range(attempts):
+            if centers and rng.random() < 0.8:
+                center = centers[int(rng.integers(len(centers)))]
+                i = arcs.index(center)
+                choices = [j for j in range(len(arcs)) if j != i]
+                j, k = rng.choice(choices, size=2, replace=False)
+                ids = (i, int(j), int(k))
+            else:
+                ids = tuple(int(x) for x in rng.choice(len(arcs), size=3, replace=False))
+            (a, b), (c, d), (e, f) = (arcs[t] for t in ids)
+            removed = {(a, b), (c, d), (e, f)}
+            if len({a, c, e}) < 3:
+                continue
+            if hot and not (removed & hot) and centers:
+                continue
+            if rng.random() < 0.5:
+                added = {(a, d), (c, f), (e, b)}
+            else:
+                added = {(a, f), (c, b), (e, d)}
+            if len(added) != 3 or any(u == v for u, v in added):
+                continue
+            if added & (old - removed):
+                continue
+            cand = norm((old - removed) | added)
+            if cand in result:
+                continue
+            relief = sum(prices.get(x, 0.0) for x in removed)
+            relief -= sum(prices.get(x, 0.0) for x in added)
+            result[cand] = (
+                relief,
+                float(tools.energy(cand)) - old_energy,
+                sum(float(demand[u, v]) for u, v in added),
+            )
+        return result
+
+    parent_failures = {}
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        elite = archive[:]
+        if not elite:
+            break
+
+        # Diversified archive restarts become more common after stagnation.
+        if rng.random() < 0.22:
+            base, _ = elite[int(rng.integers(len(elite)))]
+        elif best_net is not None and rng.random() < 0.55:
+            base = best_net
+        else:
+            base, _ = elite[int(rng.integers(min(6, len(elite))))]
+
+        failures = parent_failures.get(base, 0)
+        prices, hot = link_info(base)
+        moves = two_switches(base, prices, hot, True)
+        if not moves:
+            moves = two_switches(base, prices, hot, False)
+
+        # Escalate rotations only for repeatedly unsuccessful parents.
+        if failures >= 3:
+            amount = min(180, 45 + 25 * (failures - 3))
+            moves.update(rotations(base, prices, hot, amount, min(8, 2 + failures // 3)))
+
+        fresh = [
+            (net, rank) for net, rank in moves.items()
+            if net not in scores and not tools.is_cached(net)
+        ]
+        if not fresh:
+            parent_failures[base] = failures + 1
+            continue
+
+        fresh.sort(key=lambda item: (
+            -item[1][0],
+            item[1][1],
+            item[1][2],
+        ))
+        # Take a compact, diverse beam and retain a small randomized probe.
+        shortlist = fresh[:min(36, len(fresh))]
+        selected = []
+        while shortlist and len(selected) < 6:
+            if not selected:
+                chosen = shortlist[0]
+            else:
+                chosen = max(
+                    shortlist,
+                    key=lambda item: (
+                        min(distance(item[0], old) for old in selected)
+                        - 0.12 * shortlist.index(item)
+                    ),
+                )
+            selected.append(chosen[0])
+            shortlist.remove(chosen)
+        tail = [net for net, _ in fresh if net not in set(selected)]
+        if tail:
+            selected.append(tail[int(rng.integers(len(tail)))])
+
+        previous_best = best_score
+        evaluated = []
+        for net in selected:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluated.append((net, evaluate(net)))
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    break
+                raise
+
+        if best_score < previous_best:
+            parent_failures[base] = 0
+        else:
+            parent_failures[base] = failures + 1
+
+        if evaluated:
+            evaluated.sort(key=lambda x: x[1])
+            winner, value = evaluated[0]
+            # Continue locally when promising; otherwise explore archive basins.
+            if value <= best_score or rng.random() < 0.35:
+                pass
+            elif rng.random() < 0.08:
+                parent_failures[base] = failures + 2
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "batch_novelty_reserve",
+  "patch_description": "Reserve one LP evaluation in each screened batch for a structurally novel move. Surrogate-ranked moves remain the main selection mechanism, but a move far from the evaluated archive may reveal a good region that the surrogate ranking would otherwise overlook. Choose the novel move by maximizing its minimum symmetric-difference distance from the archive; because the ranked list is surrogate-ordered, ties naturally favor the better surrogate score. The batch remains bounded by its existing size.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:26:11.446163",
+  "llm_cost": 0.0027406,
+  "llm_model": "gpt-6-luna"
+}

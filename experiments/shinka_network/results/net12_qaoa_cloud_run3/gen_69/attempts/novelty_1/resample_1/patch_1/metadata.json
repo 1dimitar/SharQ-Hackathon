@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_balance",
+  "patch_description": "Keeps the current implementation\u2019s sparse, pressure-aware relay selection and degree-penalty setting, which produced a higher feasible rate with far fewer quadratic terms. It combines these with the inspiration program\u2019s stronger emphasis on direct demand. Selected relay couplings are also weighted by their relative path affinity, so the best candidate relays contribute more than weaker candidates without adding a dense set of interactions.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:13:16.063515",
+  "llm_cost": 0.0012666,
+  "llm_model": "gpt-6-luna"
+}

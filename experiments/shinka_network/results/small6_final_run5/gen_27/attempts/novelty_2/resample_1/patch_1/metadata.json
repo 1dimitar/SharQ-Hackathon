@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_aware_routes",
+  "patch_description": "This version keeps direct-link rewards strong, but makes two-hop rewards conditional on having a plausible, demand-supported route. It estimates transit pressure from candidate routes, discounts routes through busier nodes, and uses a second-order expansion of the benefit of serving an OD pair indirectly rather than directly. Modest pairwise node-capacity terms discourage overly concentrated link choices. The construction is deterministic, uses no solver or randomness, and stays within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:09:58.156394",
+  "llm_cost": 0.0051089,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,52 @@
+<NAME>
+capacity_aware_twohop
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, and add a smaller reward when two selected links form a two-hop route for an origin–destination pair. Since degree-two topologies can have at most four such routes for a pair, divide the indirect reward across those four possibilities to limit duplicate credit. Discount routes through nodes with high total incident demand, which are less attractive as transit nodes. This adds at most \(n(n-1)(n-2)\) quadratic terms and preserves the existing degree-penalty weight.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(np.max(demand)) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # A two-hop route can use any selected pair i -> j -> k.  With
+    # indegree and outdegree two, at most four such routes exist per OD pair.
+    # Share the indirect reward across those possibilities to avoid the
+    # overcounting from assigning a large reward to every candidate path.
+    node_load = np.sum(demand, axis=0) + np.sum(demand, axis=1)
+    mean_load = float(np.mean(node_load)) or 1.0
+    quadratic = {}
+    indirect_fraction = 0.6
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            # High-demand nodes are less desirable transit points.
+            transit_factor = 2.0 * mean_load / (mean_load + float(node_load[j]))
+            for k in range(n):
+                if k == i or k == j or demand[i, k] == 0:
+                    continue
+                weight = (
+                    -indirect_fraction
+                    * float(demand[i, k]) / scale
+                    * transit_factor / 4.0
+                )
+                quadratic[((i, j), (j, k))] = weight
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

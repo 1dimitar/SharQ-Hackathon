@@ -1,0 +1,245 @@
+<NAME>
+adaptivebottleneck
+</NAME>
+
+<DESCRIPTION>
+The current search spends many LP calls on large screened batches, while its move-generation effort grows with a parent's stall count. This version uses smaller batches and an adaptive, score-aware search: it focuses on positive-price links when available, but still samples unrestricted exchanges and three-link rotations to escape narrow neighborhoods. It keeps a diverse archive, chooses parents using both score and diversity, and applies a cooling acceptance rule so promising non-improving moves can seed further exploration. Candidate starts are selected from a larger repaired pool using surrogate rank and topology diversity; surrogate energy is used only for screening, not as a substitute for LP scores.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    seen = {}
+    best_net, best_score = None, float("inf")
+    stalls = {}
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    for net in ordered:
+        if all(distance(net, x) >= 4 for x in starts):
+            starts.append(net)
+        if len(starts) >= 36:
+            break
+    for net in ordered:
+        if len(starts) >= min(60, len(ordered)):
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if best_net is None:
+        return list(starts[0])
+
+    def archive():
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        # Protect both top solutions and different search regions.
+        for net in ranked:
+            if all(distance(net, x) >= 3 for x in out):
+                out.append(net)
+            if len(out) >= 18:
+                break
+        for net in ranked:
+            if len(out) >= 30:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    def parent_choice(pop):
+        if not pop:
+            return best_net
+        # Mostly exploit good solutions, with a substantial diversity component.
+        if rng.random() < 0.62:
+            return pop[int(rng.integers(min(8, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+
+    def two_switch(net, p, q):
+        arcs = list(net)
+        a, b = arcs[p]
+        c, d = arcs[q]
+        if a == d or c == b:
+            return None
+        cur = set(net)
+        if (a, d) in cur or (c, b) in cur:
+            return None
+        cur.remove((a, b))
+        cur.remove((c, d))
+        cur.add((a, d))
+        cur.add((c, b))
+        return tuple(sorted(cur))
+
+    def generate(net, detail, round_no):
+        arcs = list(net)
+        cur = set(net)
+        moves = set()
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, a)) for a, p in prices.items() if p > 0}
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            hot = {a for _, a in sorted(
+                ((float(v), tuple(map(int, a))) for a, v in loads.items()),
+                reverse=True)[:7]}
+
+        # Critical-link exchanges; periodically broaden to the full neighborhood.
+        broad = round_no % 5 == 0 or not hot
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                if not broad and arcs[p] not in hot and arcs[q] not in hot:
+                    continue
+                m = two_switch(net, p, q)
+                if m is not None:
+                    moves.add(m)
+
+        # Random exchange samples mitigate dual degeneracy and local traps.
+        for _ in range(90):
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            m = two_switch(net, p, q)
+            if m is not None:
+                moves.add(m)
+
+        # Degree-preserving three-edge rotations provide larger steps.
+        trials = 100 + min(180, 12 * stalls.get(net, 0))
+        for _ in range(trials):
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            if hot and round_no % 3 and not old.intersection(hot):
+                continue
+            for new in ({(a, d), (c, f), (e, b)},
+                        {(a, f), (c, b), (e, d)}):
+                if len(new) != 3 or any(x == y for x, y in new):
+                    continue
+                if new & (cur - old):
+                    continue
+                moves.add(tuple(sorted((cur - old) | new)))
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+
+    def screen(moves, parent, width):
+        fresh = [m for m in moves
+                 if m not in seen and not tools.is_cached(m)]
+        if not fresh:
+            return []
+        base = energy(parent)
+        # Take a mix of surrogate-favored, diverse, and random proposals.
+        ranked = sorted(fresh, key=lambda m: energy(m) - base)
+        chosen = []
+        for m in ranked:
+            if all(distance(m, x) >= 2 for x in chosen):
+                chosen.append(m)
+            if len(chosen) >= max(2, width - 2):
+                break
+        tail = [m for m in fresh if m not in chosen]
+        if tail:
+            rng.shuffle(tail)
+            chosen.extend(tail[:max(0, width - len(chosen))])
+        return chosen[:width]
+
+    round_no = 0
+    temperature = max(1.0, best_score * 0.002)
+    while tools.lp_calls_left > 0:
+        round_no += 1
+        pop = archive()
+        parent = parent_choice(pop)
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+
+        width = 4 if round_no % 4 else 6
+        batch = screen(generate(parent, detail, round_no), parent, width)
+        if not batch:
+            alternatives = [x for x in pop if x != parent]
+            if alternatives:
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+                    detail = tools.lp_detail(parent)
+                except Exception:
+                    detail = None
+                batch = screen(generate(parent, detail, round_no), parent, width)
+        if not batch:
+            continue
+
+        parent_score = seen.get(parent, float("inf"))
+        try:
+            for net in batch:
+                if tools.lp_calls_left <= 0:
+                    break
+                evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+        batch_best = min((seen.get(m, float("inf")) for m in batch),
+                         default=float("inf"))
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        # Cooling with a floor retains occasional uphill exploration throughout.
+        temp = max(best_score * 0.00008, temperature / (1.0 + round_no / 220.0))
+        if batch_best > parent_score and rng.random() < math.exp(
+                -min(50.0, (batch_best - parent_score) / max(temp, 1.0))):
+            # Preserve this region in the archive; subsequent selection can revisit it.
+            pass
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

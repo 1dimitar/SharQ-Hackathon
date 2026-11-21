@@ -1,0 +1,15 @@
+<NAME>
+relay_pressure_exponent_075
+</NAME>
+
+<DESCRIPTION>
+Change only the relay-ranking pressure discount, using affinity divided by pressure to the 0.75 power. This tests the suggested milder pressure sensitivity while leaving the affinity formula, relay budgets, and reward equations unchanged. Because the ranking also feeds the existing rank factor, the selected relays and their relative influence may shift; comparing this variant against a 1.25 exponent would help isolate the effect of pressure sensitivity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = affinity / (0.75 + float(node_pressure[j]))
+=======
+                rank = affinity / (float(node_pressure[j]) ** 0.75)
+>>>>>>> REPLACE
+</DIFF>

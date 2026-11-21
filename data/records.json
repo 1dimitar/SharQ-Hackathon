@@ -1,0 +1,4612 @@
+{
+ "overall": {
+  "network12": {
+   "instance": "network12",
+   "n": 12,
+   "score": 276474.0,
+   "bkv": 276474,
+   "gap_pct": 0.0,
+   "method": "lp_local_search",
+   "label": "analysis/lp_local_search.py",
+   "quantum": false,
+   "source": "shinka_network/results/reports/network12_lp_local_search.json",
+   "found": "2026-11-21T18:41:15",
+   "logged": "2026-11-21T23:58:35",
+   "key": "df8fd31a2dbd",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ]
+   ],
+   "solution": "solutions/network12_276474_df8fd3.sol",
+   "solution_check": "valid"
+  },
+  "network10": {
+   "instance": "network10",
+   "n": 10,
+   "score": 210800.0,
+   "bkv": 210800,
+   "gap_pct": 0.0,
+   "method": "lp_local_search",
+   "label": "analysis/lp_local_search.py",
+   "quantum": false,
+   "source": "shinka_network/results/reports/network10_lp_local_search.json",
+   "found": "2026-11-21T18:15:22",
+   "logged": "2026-11-21T23:58:35",
+   "key": "2fccf665e86b",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     0
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     9,
+     3
+    ]
+   ],
+   "solution": "solutions/network10_210800_2fccf6.sol",
+   "solution_check": "valid"
+  },
+  "network13": {
+   "instance": "network13",
+   "n": 13,
+   "score": 299715.0,
+   "bkv": 300620,
+   "gap_pct": -0.301,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "run 1 gen 49, 20000 LP calls, pool network13_r3g128_seed0 (shinka_postproc/results/reports/network13_gen49_20k_r3g128.json)",
+   "quantum": true,
+   "source": "/private/tmp/claude-501/-Users-mostafataheri-Documents-SharQ-Hackathon/e54009ac-8067-40cd-aa4c-cb67238d852a/scratchpad/net13_299715.json",
+   "found": "2026-11-22T00:33:35",
+   "logged": "2026-11-22T00:33:35",
+   "key": "a176396fe0cd",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     12
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     12,
+     10
+    ]
+   ],
+   "solution": "solutions/network13_299715_a17639.sol",
+   "solution_check": "valid"
+  },
+  "network14": {
+   "instance": "network14",
+   "n": 14,
+   "score": 341375.0,
+   "bkv": 343091,
+   "gap_pct": -0.5002,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k (network14_r3g128_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k/network14_r3g128_seed1/best_network.json",
+   "found": "2026-11-22T05:52:21",
+   "logged": "2026-11-22T05:52:34",
+   "key": "f449b6f5947b",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     13,
+     5
+    ]
+   ],
+   "solution": "solutions/network14_341375_f449b6.sol",
+   "solution_check": "valid"
+  },
+  "network15": {
+   "instance": "network15",
+   "n": 15,
+   "score": 369720.0,
+   "bkv": 370870,
+   "gap_pct": -0.3101,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_10k (network15_r3g128_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_10k/network15_r3g128_seed0/best_network.json",
+   "found": "2026-11-22T04:04:23",
+   "logged": "2026-11-22T04:04:55",
+   "key": "d9b257fb90a8",
+   "details": {
+    "lp_calls": 10000
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     14
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     12
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     6
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     7
+    ]
+   ],
+   "solution": "solutions/network15_369720_d9b257.sol",
+   "solution_check": "valid"
+  },
+  "network16": {
+   "instance": "network16",
+   "n": 16,
+   "score": 395566.0,
+   "bkv": 397908,
+   "gap_pct": -0.5886,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k (network16_r2g181_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k/network16_r2g181_seed1/best_network.json",
+   "found": "2026-11-22T05:27:01",
+   "logged": "2026-11-22T05:28:27",
+   "key": "4901bc43d952",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     14
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     13,
+     12
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     10
+    ],
+    [
+     15,
+     11
+    ]
+   ],
+   "solution": "solutions/network16_395566_4901bc.sol",
+   "solution_check": "valid"
+  },
+  "network17": {
+   "instance": "network17",
+   "n": 17,
+   "score": 431938.0,
+   "bkv": 437000,
+   "gap_pct": -1.1584,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen33_25k (network17_r2g181_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen33_25k/network17_r2g181_seed1/best_network.json",
+   "found": "2026-11-22T07:27:59",
+   "logged": "2026-11-22T07:28:09",
+   "key": "a77fdfaeb9c3",
+   "details": {
+    "lp_calls": 25000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     13
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     10,
+     16
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     3
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     0
+    ],
+    [
+     16,
+     11
+    ]
+   ],
+   "solution": "solutions/network17_431938_a77fdf.sol",
+   "solution_check": "valid"
+  },
+  "network18": {
+   "instance": "network18",
+   "n": 18,
+   "score": 466000.0,
+   "bkv": 473375,
+   "gap_pct": -1.558,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_10k (network18_r3g128_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_10k/network18_r3g128_seed1/best_network.json",
+   "found": "2026-11-22T04:42:31",
+   "logged": "2026-11-22T04:42:41",
+   "key": "95f2f274957f",
+   "details": {
+    "lp_calls": 5593
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     17
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     16,
+     8
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     17,
+     15
+    ],
+    [
+     17,
+     16
+    ]
+   ],
+   "solution": "solutions/network18_466000_95f2f2.sol",
+   "solution_check": "valid"
+  },
+  "network19": {
+   "instance": "network19",
+   "n": 19,
+   "score": 480000.0,
+   "bkv": 492924,
+   "gap_pct": -2.6219,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen33_25k (network19_r2g181_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen33_25k/network19_r2g181_seed1/best_network.json",
+   "found": "2026-11-22T07:40:44",
+   "logged": "2026-11-22T07:42:13",
+   "key": "62cc4b89bc25",
+   "details": {
+    "lp_calls": 25000
+   },
+   "arcs": [
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     15
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     9,
+     18
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     18
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     14
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     11
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     17,
+     16
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     17
+    ]
+   ],
+   "solution": "solutions/network19_480000_62cc4b.sol",
+   "solution_check": "valid"
+  },
+  "network20": {
+   "instance": "network20",
+   "n": 20,
+   "score": 511769.0,
+   "bkv": 528528,
+   "gap_pct": -3.1709,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k_big (network20_r3g128_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k_big/network20_r3g128_seed1/best_network.json",
+   "found": "2026-11-22T07:15:02",
+   "logged": "2026-11-22T07:15:03",
+   "key": "3353111ff63f",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     19
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     16
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     11
+    ],
+    [
+     16,
+     5
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     8
+    ],
+    [
+     17,
+     16
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     4
+    ],
+    [
+     19,
+     10
+    ]
+   ],
+   "solution": "solutions/network20_511769_335311.sol",
+   "solution_check": "valid"
+  },
+  "network21": {
+   "instance": "network21",
+   "n": 21,
+   "score": 557053.0,
+   "bkv": 569273,
+   "gap_pct": -2.1466,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "init_run1_gen49, 10000 LP calls, pool network21_r3g128_c16p2loc_seed0",
+   "quantum": true,
+   "source": "shinka_postproc/results/pipeline/network21_r3g128_c16p2loc_seed0__init_run1_gen49_10000",
+   "found": "2026-11-22T03:42:40",
+   "logged": "2026-11-22T03:42:40",
+   "key": "d75f44b262c1",
+   "details": {
+    "lp_calls": 10000,
+    "seconds": 289.1
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     1,
+     19
+    ],
+    [
+     2,
+     16
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     20
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     0
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     10,
+     17
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     13,
+     15
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     8
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     10
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     0
+    ],
+    [
+     20,
+     7
+    ]
+   ],
+   "solution": "solutions/network21_557053_d75f44.sol",
+   "solution_check": "valid"
+  },
+  "network22": {
+   "instance": "network22",
+   "n": 22,
+   "score": 597524.0,
+   "bkv": 618135,
+   "gap_pct": -3.3344,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k_big (network22_r3g128_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k_big/network22_r3g128_seed0/best_network.json",
+   "found": "2026-11-22T06:19:33",
+   "logged": "2026-11-22T06:20:50",
+   "key": "1d1bd1fe8956",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     21
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     14
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     18
+    ],
+    [
+     10,
+     20
+    ],
+    [
+     10,
+     21
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     15
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     16,
+     19
+    ],
+    [
+     17,
+     1
+    ],
+    [
+     17,
+     19
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     17
+    ],
+    [
+     19,
+     8
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     0
+    ],
+    [
+     20,
+     11
+    ],
+    [
+     21,
+     1
+    ],
+    [
+     21,
+     8
+    ]
+   ],
+   "solution": "solutions/network22_597524_1d1bd1.sol",
+   "solution_check": "valid"
+  },
+  "network23": {
+   "instance": "network23",
+   "n": 23,
+   "score": 636848.0,
+   "bkv": 659369,
+   "gap_pct": -3.4155,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k_big (network23_r2g181_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k_big/network23_r2g181_seed0/best_network.json",
+   "found": "2026-11-22T06:15:11",
+   "logged": "2026-11-22T06:16:49",
+   "key": "b474feba0705",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     5
+    ],
+    [
+     0,
+     21
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     20
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     22
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     18
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     19
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     13,
+     22
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     4
+    ],
+    [
+     15,
+     21
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     17,
+     15
+    ],
+    [
+     18,
+     2
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     10
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     20,
+     13
+    ],
+    [
+     21,
+     1
+    ],
+    [
+     21,
+     8
+    ],
+    [
+     22,
+     3
+    ],
+    [
+     22,
+     18
+    ]
+   ],
+   "solution": "solutions/network23_636848_b474fe.sol",
+   "solution_check": "valid"
+  },
+  "network24": {
+   "instance": "network24",
+   "n": 24,
+   "score": 659539.0,
+   "bkv": 663688,
+   "gap_pct": -0.6251,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_net24_25k (network24_r3g128_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_net24_25k/network24_r3g128_seed0/best_network.json",
+   "found": "2026-11-22T05:09:30",
+   "logged": "2026-11-22T05:09:42",
+   "key": "e7668a4476f4",
+   "details": {
+    "lp_calls": 25000
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     13
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     21
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     22
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     6,
+     19
+    ],
+    [
+     6,
+     20
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     14
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     15
+    ],
+    [
+     13,
+     19
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     15,
+     16
+    ],
+    [
+     15,
+     21
+    ],
+    [
+     16,
+     6
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     17,
+     15
+    ],
+    [
+     17,
+     18
+    ],
+    [
+     18,
+     14
+    ],
+    [
+     18,
+     23
+    ],
+    [
+     19,
+     10
+    ],
+    [
+     19,
+     22
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     20,
+     8
+    ],
+    [
+     21,
+     3
+    ],
+    [
+     21,
+     8
+    ],
+    [
+     22,
+     2
+    ],
+    [
+     22,
+     23
+    ],
+    [
+     23,
+     4
+    ],
+    [
+     23,
+     20
+    ]
+   ],
+   "solution": "solutions/network24_659539_e7668a.sol",
+   "solution_check": "valid"
+  },
+  "network11": {
+   "instance": "network11",
+   "n": 11,
+   "score": 238334.0,
+   "bkv": 238334,
+   "gap_pct": 0.0,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "init_run1_gen49, 10000 LP calls, pool network11_r3g128_c16p2loc_seed0",
+   "quantum": true,
+   "source": "shinka_postproc/results/pipeline/network11_r3g128_c16p2loc_seed0__init_run1_gen49_10000",
+   "found": "2026-11-22T03:26:24",
+   "logged": "2026-11-22T03:26:24",
+   "key": "851e52fd7fec",
+   "details": {
+    "lp_calls": 10000,
+    "seconds": 71.2
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "solution": "solutions/network11_238334_851e52.sol",
+   "solution_check": "valid"
+  }
+ },
+ "quantum": {
+  "network12": {
+   "instance": "network12",
+   "n": 12,
+   "score": 277000.0,
+   "bkv": 276474,
+   "gap_pct": 0.1903,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "init_run1_gen49, 10000 LP calls, pool network12_r3g128_c20p2_seed0",
+   "quantum": true,
+   "source": "shinka_postproc/results/pipeline/network12_r3g128_c20p2_seed0__init_run1_gen49_10000",
+   "found": "2026-11-22T05:04:54",
+   "logged": "2026-11-22T05:04:54",
+   "key": "20212f3e461f",
+   "details": {
+    "lp_calls": 10000,
+    "seconds": 75.1
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     11
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     2
+    ]
+   ],
+   "solution": "solutions/network12_277000_20212f.sol",
+   "solution_check": "valid"
+  },
+  "network13": {
+   "instance": "network13",
+   "n": 13,
+   "score": 299715.0,
+   "bkv": 300620,
+   "gap_pct": -0.301,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "run 1 gen 49, 20000 LP calls, pool network13_r3g128_seed0 (shinka_postproc/results/reports/network13_gen49_20k_r3g128.json)",
+   "quantum": true,
+   "source": "/private/tmp/claude-501/-Users-mostafataheri-Documents-SharQ-Hackathon/e54009ac-8067-40cd-aa4c-cb67238d852a/scratchpad/net13_299715.json",
+   "found": "2026-11-22T00:33:35",
+   "logged": "2026-11-22T00:33:35",
+   "key": "a176396fe0cd",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     12
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     12,
+     10
+    ]
+   ],
+   "solution": "solutions/network13_299715_a17639.sol",
+   "solution_check": "valid"
+  },
+  "network14": {
+   "instance": "network14",
+   "n": 14,
+   "score": 341375.0,
+   "bkv": 343091,
+   "gap_pct": -0.5002,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k (network14_r3g128_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k/network14_r3g128_seed1/best_network.json",
+   "found": "2026-11-22T05:52:21",
+   "logged": "2026-11-22T05:52:34",
+   "key": "f449b6f5947b",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     13,
+     5
+    ]
+   ],
+   "solution": "solutions/network14_341375_f449b6.sol",
+   "solution_check": "valid"
+  },
+  "network15": {
+   "instance": "network15",
+   "n": 15,
+   "score": 369720.0,
+   "bkv": 370870,
+   "gap_pct": -0.3101,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_10k (network15_r3g128_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_10k/network15_r3g128_seed0/best_network.json",
+   "found": "2026-11-22T04:04:23",
+   "logged": "2026-11-22T04:04:55",
+   "key": "d9b257fb90a8",
+   "details": {
+    "lp_calls": 10000
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     14
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     12
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     6
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     7
+    ]
+   ],
+   "solution": "solutions/network15_369720_d9b257.sol",
+   "solution_check": "valid"
+  },
+  "network16": {
+   "instance": "network16",
+   "n": 16,
+   "score": 395566.0,
+   "bkv": 397908,
+   "gap_pct": -0.5886,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k (network16_r2g181_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k/network16_r2g181_seed1/best_network.json",
+   "found": "2026-11-22T05:27:01",
+   "logged": "2026-11-22T05:28:27",
+   "key": "4901bc43d952",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     14
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     13,
+     12
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     10
+    ],
+    [
+     15,
+     11
+    ]
+   ],
+   "solution": "solutions/network16_395566_4901bc.sol",
+   "solution_check": "valid"
+  },
+  "network17": {
+   "instance": "network17",
+   "n": 17,
+   "score": 431938.0,
+   "bkv": 437000,
+   "gap_pct": -1.1584,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen33_25k (network17_r2g181_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen33_25k/network17_r2g181_seed1/best_network.json",
+   "found": "2026-11-22T07:27:59",
+   "logged": "2026-11-22T07:28:09",
+   "key": "a77fdfaeb9c3",
+   "details": {
+    "lp_calls": 25000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     13
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     10,
+     16
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     3
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     0
+    ],
+    [
+     16,
+     11
+    ]
+   ],
+   "solution": "solutions/network17_431938_a77fdf.sol",
+   "solution_check": "valid"
+  },
+  "network22": {
+   "instance": "network22",
+   "n": 22,
+   "score": 597524.0,
+   "bkv": 618135,
+   "gap_pct": -3.3344,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k_big (network22_r3g128_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k_big/network22_r3g128_seed0/best_network.json",
+   "found": "2026-11-22T06:19:33",
+   "logged": "2026-11-22T06:20:50",
+   "key": "1d1bd1fe8956",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     21
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     14
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     18
+    ],
+    [
+     10,
+     20
+    ],
+    [
+     10,
+     21
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     15
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     16,
+     19
+    ],
+    [
+     17,
+     1
+    ],
+    [
+     17,
+     19
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     17
+    ],
+    [
+     19,
+     8
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     0
+    ],
+    [
+     20,
+     11
+    ],
+    [
+     21,
+     1
+    ],
+    [
+     21,
+     8
+    ]
+   ],
+   "solution": "solutions/network22_597524_1d1bd1.sol",
+   "solution_check": "valid"
+  },
+  "network18": {
+   "instance": "network18",
+   "n": 18,
+   "score": 466000.0,
+   "bkv": 473375,
+   "gap_pct": -1.558,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_10k (network18_r3g128_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_10k/network18_r3g128_seed1/best_network.json",
+   "found": "2026-11-22T04:42:31",
+   "logged": "2026-11-22T04:42:41",
+   "key": "95f2f274957f",
+   "details": {
+    "lp_calls": 5593
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     17
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     16,
+     8
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     17,
+     15
+    ],
+    [
+     17,
+     16
+    ]
+   ],
+   "solution": "solutions/network18_466000_95f2f2.sol",
+   "solution_check": "valid"
+  },
+  "network24": {
+   "instance": "network24",
+   "n": 24,
+   "score": 659539.0,
+   "bkv": 663688,
+   "gap_pct": -0.6251,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_net24_25k (network24_r3g128_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_net24_25k/network24_r3g128_seed0/best_network.json",
+   "found": "2026-11-22T05:09:30",
+   "logged": "2026-11-22T05:09:42",
+   "key": "e7668a4476f4",
+   "details": {
+    "lp_calls": 25000
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     13
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     21
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     22
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     6,
+     19
+    ],
+    [
+     6,
+     20
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     14
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     15
+    ],
+    [
+     13,
+     19
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     15,
+     16
+    ],
+    [
+     15,
+     21
+    ],
+    [
+     16,
+     6
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     17,
+     15
+    ],
+    [
+     17,
+     18
+    ],
+    [
+     18,
+     14
+    ],
+    [
+     18,
+     23
+    ],
+    [
+     19,
+     10
+    ],
+    [
+     19,
+     22
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     20,
+     8
+    ],
+    [
+     21,
+     3
+    ],
+    [
+     21,
+     8
+    ],
+    [
+     22,
+     2
+    ],
+    [
+     22,
+     23
+    ],
+    [
+     23,
+     4
+    ],
+    [
+     23,
+     20
+    ]
+   ],
+   "solution": "solutions/network24_659539_e7668a.sol",
+   "solution_check": "valid"
+  },
+  "network20": {
+   "instance": "network20",
+   "n": 20,
+   "score": 511769.0,
+   "bkv": 528528,
+   "gap_pct": -3.1709,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k_big (network20_r3g128_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k_big/network20_r3g128_seed1/best_network.json",
+   "found": "2026-11-22T07:15:02",
+   "logged": "2026-11-22T07:15:03",
+   "key": "3353111ff63f",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     19
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     16
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     11
+    ],
+    [
+     16,
+     5
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     8
+    ],
+    [
+     17,
+     16
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     4
+    ],
+    [
+     19,
+     10
+    ]
+   ],
+   "solution": "solutions/network20_511769_335311.sol",
+   "solution_check": "valid"
+  },
+  "network23": {
+   "instance": "network23",
+   "n": 23,
+   "score": 636848.0,
+   "bkv": 659369,
+   "gap_pct": -3.4155,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen20_20k_big (network23_r2g181_seed0)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen20_20k_big/network23_r2g181_seed0/best_network.json",
+   "found": "2026-11-22T06:15:11",
+   "logged": "2026-11-22T06:16:49",
+   "key": "b474feba0705",
+   "details": {
+    "lp_calls": 20000
+   },
+   "arcs": [
+    [
+     0,
+     5
+    ],
+    [
+     0,
+     21
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     20
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     22
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     18
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     19
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     13,
+     22
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     4
+    ],
+    [
+     15,
+     21
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     17,
+     15
+    ],
+    [
+     18,
+     2
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     10
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     20,
+     13
+    ],
+    [
+     21,
+     1
+    ],
+    [
+     21,
+     8
+    ],
+    [
+     22,
+     3
+    ],
+    [
+     22,
+     18
+    ]
+   ],
+   "solution": "solutions/network23_636848_b474fe.sol",
+   "solution_check": "valid"
+  },
+  "network21": {
+   "instance": "network21",
+   "n": 21,
+   "score": 557053.0,
+   "bkv": 569273,
+   "gap_pct": -2.1466,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "init_run1_gen49, 10000 LP calls, pool network21_r3g128_c16p2loc_seed0",
+   "quantum": true,
+   "source": "shinka_postproc/results/pipeline/network21_r3g128_c16p2loc_seed0__init_run1_gen49_10000",
+   "found": "2026-11-22T03:42:40",
+   "logged": "2026-11-22T03:42:40",
+   "key": "d75f44b262c1",
+   "details": {
+    "lp_calls": 10000,
+    "seconds": 289.1
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     1,
+     19
+    ],
+    [
+     2,
+     16
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     20
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     0
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     10,
+     17
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     13,
+     15
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     8
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     10
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     0
+    ],
+    [
+     20,
+     7
+    ]
+   ],
+   "solution": "solutions/network21_557053_d75f44.sol",
+   "solution_check": "valid"
+  },
+  "network19": {
+   "instance": "network19",
+   "n": 19,
+   "score": 480000.0,
+   "bkv": 492924,
+   "gap_pct": -2.6219,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "harvest_A_gen33_25k (network19_r2g181_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/harvest_A_gen33_25k/network19_r2g181_seed1/best_network.json",
+   "found": "2026-11-22T07:40:44",
+   "logged": "2026-11-22T07:42:13",
+   "key": "62cc4b89bc25",
+   "details": {
+    "lp_calls": 25000
+   },
+   "arcs": [
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     15
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     9,
+     18
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     18
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     14
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     11
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     17,
+     16
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     17
+    ]
+   ],
+   "solution": "solutions/network19_480000_62cc4b.sol",
+   "solution_check": "valid"
+  },
+  "network11": {
+   "instance": "network11",
+   "n": 11,
+   "score": 238334.0,
+   "bkv": 238334,
+   "gap_pct": 0.0,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "init_run1_gen49, 10000 LP calls, pool network11_r3g128_c16p2loc_seed0",
+   "quantum": true,
+   "source": "shinka_postproc/results/pipeline/network11_r3g128_c16p2loc_seed0__init_run1_gen49_10000",
+   "found": "2026-11-22T03:26:24",
+   "logged": "2026-11-22T03:26:24",
+   "key": "851e52fd7fec",
+   "details": {
+    "lp_calls": 10000,
+    "seconds": 71.2
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "solution": "solutions/network11_238334_851e52.sol",
+   "solution_check": "valid"
+  }
+ }
+}
