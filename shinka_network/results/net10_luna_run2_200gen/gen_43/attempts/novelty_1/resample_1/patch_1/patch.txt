@@ -1,0 +1,115 @@
+--- a/original.py
++++ b/original.py
+@@ -1,85 +1,89 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Return direct-link and capacity-weighted two-hop QUBO terms."""
++    """Return direct-demand and capacity-weighted two-hop QUBO terms."""
+     t = np.asarray(demand, dtype=float)
+     n = int(t.shape[0])
+ 
+-    # Ignore negative entries if supplied; normalize for unit invariance.
++    # Keep the model well-defined for negative entries and zero-demand inputs.
+     d = np.maximum(t, 0.0).copy()
+     np.fill_diagonal(d, 0.0)
+     scale = float(np.max(d)) or 1.0
+     d /= scale
+ 
+     row = np.sum(d, axis=1)
+     col = np.sum(d, axis=0)
+     activity = row + col
+     mean_activity = float(np.mean(activity)) or 1.0
+ 
+-    # Nodes with high activity are likely to be costly transit points.
+-    # A smooth inverse-capacity factor keeps every node usable.
++    # Higher-activity nodes are somewhat less attractive as transit nodes.
+     transit = 1.0 / (0.5 + activity / mean_activity)
+-    transit /= float(np.mean(transit)) or 1.0
++    transit_mean = float(np.mean(transit)) or 1.0
++    transit /= transit_mean
+ 
+-    # Direct value is augmented by source/destination activity, but the
+-    # demand term remains dominant.
+-    rscale = float(np.max(row)) or 1.0
+-    cscale = float(np.max(col)) or 1.0
++    # Preserve the baseline preference for links serving substantial direct
++    # demand, with only a modest adjustment for endpoint traffic pressure.
++    row_scale = float(np.max(row)) or 1.0
++    col_scale = float(np.max(col)) or 1.0
+     linear = {}
+     for i in range(n):
+         for j in range(n):
+             if i == j:
+                 continue
+-            endpoint = 0.5 * (row[i] / rscale + col[j] / cscale)
+-            linear[(i, j)] = -(0.82 * d[i, j] + 0.18 * endpoint)
++            endpoint_pressure = 0.5 * (
++                float(row[i]) / row_scale + float(col[j]) / col_scale
++            )
++            linear[(i, j)] = -(
++                0.92 * float(d[i, j]) + 0.08 * endpoint_pressure
++            )
+ 
+-    # For each OD pair, split its two-hop potential across eligible
+-    # intermediates in proportion to their estimated transit capacity.
+-    # This avoids rewarding every possible realization of the same traffic
+-    # as though it were independently useful.
++    # Reward two-hop paths as a limited supplement to direct-link value.
++    # Divide each OD pair's indirect value among possible intermediates;
++    # this avoids giving the same traffic a full reward for every candidate
++    # path. Transit activity supplies a smooth capacity-aware weighting.
+     quadratic = {}
++    indirect_fraction = 0.22
+     for i in range(n):
+         for k in range(n):
+             value = float(d[i, k])
+             if i == k or value <= 0.0:
+                 continue
+ 
+-            mids = [j for j in range(n) if j != i and j != k]
+-            denom = sum(float(transit[j]) for j in mids)
++            denom = sum(float(transit[j]) for j in range(n) if j != i and j != k)
+             if denom <= 0.0:
+                 continue
+ 
+-            for j in mids:
+-                # A modest indirect signal complements, rather than
+-                # overwhelms, the direct-link preference.
++            for j in range(n):
++                if j == i or j == k:
++                    continue
+                 share = float(transit[j]) / denom
+-                weight = -0.72 * value * share
+-                key = ((i, j), (j, k))
++                weight = -indirect_fraction * value * share
+                 if weight != 0.0:
+-                    quadratic[key] = weight
++                    quadratic[((i, j), (j, k))] = weight
+ 
++    # Degree constraints are added by the evaluator.
+     penalty_weight = 1.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

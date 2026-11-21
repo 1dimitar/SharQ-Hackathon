@@ -1,0 +1,14 @@
+{
+  "generation": 111,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_relay",
+  "patch_description": "This design keeps direct-demand rewards but changes the two-hop signal to favor routes through relays and links with more estimated spare capacity. Relay pressure blends mean-normalized and max-normalized estimates, with a floor so a busy node is discouraged rather than ruled out. Candidate paths are ranked using both relay pressure and the direct-demand burden on their component links; a capped reward is then shared among the best candidates for each OD pair. This combines the earlier programs\u2019 direct-service and two-hop ideas while making route selection explicitly congestion-aware.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:38.924068",
+  "llm_cost": 0.0021727,
+  "llm_model": "gpt-6-luna"
+}

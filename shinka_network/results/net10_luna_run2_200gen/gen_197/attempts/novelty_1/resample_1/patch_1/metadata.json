@@ -1,0 +1,14 @@
+{
+  "generation": 197,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_pressure",
+  "patch_description": "Estimate relay pressure from the average of a node\u2019s incoming and outgoing demand, rather than letting either side dominate. Keep the existing mean normalization and raise the pressure floor to 0.65, so low-demand nodes are not treated as nearly uncongested transit points. This changes only the relay discount used by the existing two-hop model; it does not add quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:03:04.672735",
+  "llm_cost": 0.0010959,
+  "llm_model": "gpt-6-luna"
+}

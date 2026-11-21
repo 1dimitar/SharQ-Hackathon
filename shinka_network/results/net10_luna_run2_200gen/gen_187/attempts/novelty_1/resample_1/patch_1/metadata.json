@@ -1,0 +1,14 @@
+{
+  "generation": 187,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_incidence_load",
+  "patch_description": "This uses an incidence-load surrogate rather than rewarding completed two-hop paths. Each candidate link gets a benefit based on direct traffic and how well its endpoints connect high-demand origins and destinations. Positive quadratic terms penalize pairs of links that compete for the same outgoing or incoming node capacity, with stronger penalties when their traffic profiles overlap. This aims to discourage hub concentration and produce more balanced low-energy topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:55.820162",
+  "llm_cost": 0.0014333,
+  "llm_model": "gpt-6-luna"
+}

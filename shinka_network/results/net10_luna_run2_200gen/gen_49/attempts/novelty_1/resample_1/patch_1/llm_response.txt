@@ -1,0 +1,59 @@
+<NAME>
+pressure_discounted_paths
+</NAME>
+
+<DESCRIPTION>
+Strengthen the two-hop signal while discounting paths through heavily loaded transit nodes and paths whose edges already have substantial direct demand. Keep the positive-demand OD gate so zero-demand pairs do not generate quadratic terms. This favors short paths that can plausibly serve meaningful traffic without concentrating too much load on busy nodes or edges; the coefficient is increased from 0.06 to 0.15 to make the path signal more influential alongside direct-link rewards.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # A weak two-hop reward encourages links that jointly provide a short
+    # route for traffic not captured by either link's own demand.
+    row_load = np.asarray(demand, dtype=float).sum(axis=1)
+    col_load = np.asarray(demand, dtype=float).sum(axis=0)
+    node_load = row_load + col_load
+    typical_load = float(node_load.mean()) or 1.0
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+                # Discount busy transit nodes to avoid overloading their
+                # limited incoming and outgoing capacity.
+                congestion = 1.0 + float(node_load[j]) / typical_load
+                weight = -0.06 * (traffic / scale) / congestion
+                quadratic[((i, j), (j, k))] = weight
+=======
+    # Reward useful two-hop paths, discounting both constrained transit
+    # nodes and paths whose component edges already have high direct demand.
+    row_load = np.asarray(demand, dtype=float).sum(axis=1)
+    col_load = np.asarray(demand, dtype=float).sum(axis=0)
+    node_load = row_load + col_load
+    typical_load = float(node_load.mean()) or 1.0
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+                transit_pressure = float(node_load[j]) / typical_load
+                edge_pressure = (
+                    float(demand[i, j]) + float(demand[j, k])
+                ) / scale
+                discount = (1.0 + transit_pressure) * (1.0 + 0.35 * edge_pressure)
+                weight = -0.15 * (traffic / scale) / discount
+                quadratic[((i, j), (j, k))] = weight
+>>>>>>> REPLACE
+</DIFF>

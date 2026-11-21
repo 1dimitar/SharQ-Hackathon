@@ -10,6 +10,7 @@ from __future__ import annotations
 import itertools
 import json
 import math
+import re
 import sys
 import warnings
 from dataclasses import dataclass
@@ -73,6 +74,8 @@ def subset_demand(n: int, seed: int) -> tuple[np.ndarray, list[int]]:
 SUITES = {
     # network10 only: 4 annealing seeds x 64 reads, so the score does not hinge on one lucky run.
     "net10": [("real", 10, s, 64) for s in range(4)],
+    # network12 (the notebook's instance). evaluate_qoro.py uses the first --max_runs seeds.
+    "net12": [("real", 12, s, 64) for s in range(4)],
     # Future: new instances from node subsets of the QOBLIB matrix.
     "sub10": [("sub", 10, s, 48) for s in range(4)],
     # Pipeline test: small random matrices.
@@ -245,14 +248,15 @@ def build_bqm(demand: np.ndarray, linear, quadratic, penalty_weight):
     return bqm, surrogate, arcs
 
 
-def score_terms(inst: Instance, linear, quadratic, penalty_weight) -> dict:
-    """Sample the QUBO, repair, LP-score. Returns per-instance metrics."""
+def score_samples(inst: Instance, samples, arcs, num_quadratic: int) -> dict:
+    """Repair every sample to a valid topology and LP-score it. Shared by all samplers.
+
+    samples: iterable of bit assignments in variable order (dict, array or bitstring).
+    """
     demand, n = inst.demand, len(inst.demand)
-    bqm, surrogate, arcs = build_bqm(demand, linear, quadratic, penalty_weight)
-    sampleset = SimulatedAnnealingSampler().sample(bqm, num_reads=inst.num_reads, seed=inst.seed)
     scores, feasible, cache = [], 0, {}
     best_score, best_arcs = math.inf, None
-    for sample in sampleset.samples():
+    for sample in samples:
         raw = qt.decode_topology(sample, arcs)
         feasible += qt.is_valid_topology(n, raw)
         topo = tuple(sorted(qt.repair_topology(n, raw, demand)))
@@ -261,6 +265,8 @@ def score_terms(inst: Instance, linear, quadratic, penalty_weight) -> dict:
         scores.append(cache[topo])
         if cache[topo] < best_score:
             best_score, best_arcs = cache[topo], topo
+    if not scores:
+        raise RuntimeError("the sampler returned no samples")
     scores = np.array(scores)
     best, median = float(scores.min()), float(np.median(scores))
     return {
@@ -272,8 +278,55 @@ def score_terms(inst: Instance, linear, quadratic, penalty_weight) -> dict:
         "gap_best_pct": 100.0 * (best / inst.ref - 1.0),
         "gap_median_pct": 100.0 * (median / inst.ref - 1.0),
         "score": 0.5 * inst.ref / best + 0.5 * inst.ref / median,
-        "feasible_rate": feasible / inst.num_reads,
+        "feasible_rate": feasible / len(scores),
+        "num_samples": len(scores),
         "distinct": len(cache),
-        "num_quadratic": surrogate.num_interactions,
+        "num_quadratic": num_quadratic,
         "best_arcs": [list(map(int, a)) for a in best_arcs],
     }
+
+
+def score_terms(inst: Instance, linear, quadratic, penalty_weight) -> dict:
+    """Simulated annealing on the QUBO, then repair and LP-score (the local evaluator)."""
+    bqm, surrogate, arcs = build_bqm(inst.demand, linear, quadratic, penalty_weight)
+    sampleset = SimulatedAnnealingSampler().sample(bqm, num_reads=inst.num_reads, seed=inst.seed)
+    return score_samples(inst, sampleset.samples(), arcs, surrogate.num_interactions)
+
+
+# --------------------------------------------------------------------------- #
+# Rules for the evolved code (shared by evaluate.py and evaluate_qoro.py)
+# --------------------------------------------------------------------------- #
+# The surrogate must be built from the demand matrix alone: no LP, no solvers, no file access.
+FORBIDDEN = [
+    r"qoblib", r"\bproblem\b", r"scipy\.optimize", r"linprog", r"\bmilp\b", r"dimod", r"dwave",
+    r"\bneal\b", r"subprocess", r"os\.system", r"\bopen\(", r"\beval\(", r"\bexec\(", r"__import__",
+    r"importlib", r"\bsocket\b", r"requests", r"urllib", r"\bdivi\b",
+]  # fmt: skip
+SECONDS_PER_INSTANCE = 20.0
+
+
+def evolve_block(source: str) -> str:
+    m = re.search(r"EVOLVE-BLOCK-START(.*?)EVOLVE-BLOCK-END", source, flags=re.S)
+    return m.group(1) if m else source
+
+
+def forbidden_use(program_path: str) -> str | None:
+    code = evolve_block(Path(program_path).read_text())
+    code = re.sub(r'""".*?"""', "", code, flags=re.S)  # ignore docstrings
+    code = re.sub(r"#.*", "", code)
+    for pattern in FORBIDDEN:
+        if re.search(pattern, code):
+            return f"forbidden construct in the evolved code: {pattern}"
+    return None
+
+
+def check_result(result) -> str | None:
+    """Validate what run_surrogate returned. None if usable, else an error message."""
+    if not isinstance(result, dict) or not {"n", "linear", "quadratic", "penalty_weight"} <= set(result):
+        return "run_surrogate must return the dict built by the fixed wrapper"
+    if result["seconds"] > SECONDS_PER_INSTANCE:
+        return (
+            f"surrogate_terms took {result['seconds']:.1f}s for n={result['n']} "
+            f"(limit {SECONDS_PER_INSTANCE:.0f}s)"
+        )
+    return validate_terms(result["n"], result["linear"], result["quadratic"], result["penalty_weight"])

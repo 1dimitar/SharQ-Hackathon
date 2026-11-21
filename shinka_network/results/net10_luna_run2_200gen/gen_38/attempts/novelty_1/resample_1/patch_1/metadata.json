@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bounded_path_support",
+  "patch_description": "Scale each eligible two-hop reward by a bounded measure of support from its two component edges. Paths whose edges both carry substantial direct demand receive a modestly stronger incentive, while the positive multiplier floor preserves the existing incentive for paths with lightly loaded edges. The current positive-through-demand gate and transit-pressure discount remain unchanged, and this adds no quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:35.501287",
+  "llm_cost": 0.0010111,
+  "llm_model": "gpt-6-luna"
+}

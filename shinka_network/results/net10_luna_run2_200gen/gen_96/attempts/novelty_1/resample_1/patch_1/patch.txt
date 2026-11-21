@@ -1,0 +1,155 @@
+--- a/original.py
++++ b/original.py
+@@ -1,88 +1,116 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
++def _prepare_demand(demand):
++    """Return a finite, nonnegative demand matrix with no self-traffic."""
++    t = np.asarray(demand, dtype=float).copy()
++    if t.ndim != 2 or t.shape[0] != t.shape[1]:
++        raise ValueError("demand must be a square matrix")
++    t = np.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0)
++    np.maximum(t, 0.0, out=t)
++    np.fill_diagonal(t, 0.0)
++    return t
++
++
++def _relay_pressures(t, normalized):
++    """Estimate how costly it is to use each node as a transit point."""
++    incident = np.sum(t, axis=0) + np.sum(t, axis=1)
++    mean_incident = float(np.mean(incident))
++    if mean_incident <= 0.0:
++        return np.ones(len(t), dtype=float)
++
++    # A floor prevents quiet nodes from receiving unbounded preference.
++    return np.maximum(0.65, incident / mean_incident)
++
++
++def _path_quality(i, j, k, normalized, pressure):
++    """Score the two-hop route i -> j -> k before demand weighting."""
++    edge_load = float(normalized[i, j] + normalized[j, k])
++    return 1.0 / (float(pressure[j]) * (1.0 + 0.65 * edge_load))
++
++
+ def surrogate_terms(demand):
+     """Build linear, quadratic, and degree-penalty terms for the topology QUBO."""
+-    t = np.asarray(demand, dtype=float)
++    t = _prepare_demand(demand)
+     n = len(t)
+ 
+     if n == 0:
+         return {}, {}, 1.0
+ 
+-    # Work on a nonnegative copy; ignore self-traffic.
+-    t = np.maximum(t, 0.0).copy()
+-    np.fill_diagonal(t, 0.0)
+-
+     scale = float(np.max(t))
+     if scale <= 0.0:
+         scale = 1.0
++    normalized = t / scale
++    pressure = _relay_pressures(t, normalized)
+ 
+-    normalized = t / scale
+-
+-    # Direct traffic is the most reliable indication of which links should exist.
++    # Direct traffic is a reliable local signal for building a link.
+     linear = {
+         (i, j): -float(normalized[i, j])
+         for i in range(n)
+         for j in range(n)
+         if i != j
+     }
+ 
+-    # Transit capacity is scarce at nodes with high total incident traffic.
+-    incident = np.sum(t, axis=0) + np.sum(t, axis=1)
+-    max_incident = float(np.max(incident))
+-    if max_incident > 0.0:
+-        node_pressure = np.maximum(0.65, incident / max_incident)
+-    else:
+-        node_pressure = np.ones(n, dtype=float)
+-
+-    # Reward two-hop routes for demanded pairs. Discount routes through busy
+-    # intermediates and routes whose links already have appreciable direct load.
++    # Build path terms by OD pair. Normalizing route quality within each pair
++    # keeps the total two-hop support controlled while favoring better relays.
+     quadratic = {}
+     path_strength = 0.56
+ 
+     for i in range(n):
+-        for j in range(n):
+-            if j == i:
++        for k in range(n):
++            if i == k:
+                 continue
+-            for k in range(n):
+-                if k == i or k == j:
+-                    continue
+ 
+-                through_demand = float(normalized[i, k])
+-                if through_demand <= 0.0:
+-                    continue
++            through = float(normalized[i, k])
++            if through <= 0.0:
++                continue
+ 
+-                edge_pressure = float(normalized[i, j] + normalized[j, k])
+-                weight = (
+-                    -path_strength
+-                    * through_demand
+-                    / (
+-                        float(node_pressure[j])
+-                        * (1.0 + 0.5 * edge_pressure)
+-                    )
+-                )
+-                quadratic[((i, j), (j, k))] = weight
++            intermediates = [
++                j for j in range(n) if j != i and j != k
++            ]
++            if not intermediates:
++                continue
++
++            qualities = [
++                _path_quality(i, j, k, normalized, pressure)
++                for j in intermediates
++            ]
++            mean_quality = float(sum(qualities)) / len(qualities)
++            if mean_quality <= 0.0:
++                continue
++
++            # A mild concave transform lets smaller positive demands contribute
++            # while retaining the direct, demand-proportional signal.
++            through_signal = 0.8 * through + 0.2 * float(np.sqrt(through))
++
++            for j, quality in zip(intermediates, qualities):
++                relative_quality = quality / mean_quality
++                # Bound route concentration so one estimated route cannot
++                # dominate the QUBO solely because of its pressure estimate.
++                relative_quality = min(1.8, max(0.55, relative_quality))
++                weight = -path_strength * through_signal * relative_quality
++                quadratic[((i, j), (j, k))] = float(weight)
+ 
+     return linear, quadratic, 1.0
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

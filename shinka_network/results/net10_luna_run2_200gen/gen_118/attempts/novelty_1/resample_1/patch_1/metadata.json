@@ -1,0 +1,14 @@
+{
+  "generation": 118,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_two_hop_strength",
+  "patch_description": "Raise the two-hop reward strength from 0.25 to 0.46. The current surrogate already rewards only positive-demand two-hop routes and discounts pressured intermediates, but its route reward may be too weak to influence topology selection relative to direct-link rewards. This targeted increase follows the suggested strength sweep while staying below 0.56, which may help sampled topologies serve more traffic through useful routes without making the two-hop terms dominant. It does not change the term count or degree-penalty handling.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:11.452517",
+  "llm_cost": 0.0008203000000000002,
+  "llm_model": "gpt-6-luna"
+}

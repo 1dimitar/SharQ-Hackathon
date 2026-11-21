@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_path_strength",
+  "patch_description": "Raise the two-hop reward from 0.25 to 0.56, following the recommended sweep around the strongest observed setting. The current pressure discount remains unchanged, so this isolates the effect of giving useful indirect routes a larger share of the surrogate\u2019s cost signal. This may help the QUBO favor topologies that serve high-demand pairs without a direct link, while retaining the existing direct-link rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:54.020678",
+  "llm_cost": 0.0007920000000000001,
+  "llm_model": "gpt-6-luna"
+}

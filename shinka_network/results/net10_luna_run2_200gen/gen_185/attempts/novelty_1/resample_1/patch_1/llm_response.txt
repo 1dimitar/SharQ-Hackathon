@@ -1,0 +1,55 @@
+<NAME>
+cap_twohop_support
+</NAME>
+
+<DESCRIPTION>
+The current two-hop reward is accumulated independently for every intermediate node. For an OD pair with many candidate relays, those rewards can collectively outweigh the reward for building its direct link, giving the QUBO an overly strong incentive to assemble paths rather than favor direct service. This edit first computes the candidate path rewards for each OD pair, then proportionally caps their total magnitude at 0.75 times that pair’s direct-link reward. It retains the relative ranking of relay paths while limiting their combined influence. The quadratic term count and degree-penalty handling remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            # Keep the relative quality of relay choices, but prevent the
+            # collection of all relays for this OD pair from overwhelming its
+            # direct-link signal.
+            path_terms = []
+            total_support = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                path_terms.append((key, weight))
+                total_support += abs(weight)
+
+            direct_support = abs(linear[(i, k)])
+            cap = 0.75 * direct_support
+            factor = min(1.0, cap / total_support) if total_support > 0.0 else 1.0
+            for key, weight in path_terms:
+                quadratic[key] = weight * factor
+>>>>>>> REPLACE
+</DIFF>

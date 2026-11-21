@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tune_twohop_strength",
+  "patch_description": "Reduce the two-hop reward coefficient from 0.48 to 0.25 as a targeted strength sweep. The current formulation already gates on positive demand and discounts busy intermediates, so this leaves those mechanisms and the linear terms unchanged. A more moderate path reward may reduce the incentive to select indirect paths that do not actually ease bottleneck link loads.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:09.288493",
+  "llm_cost": 0.0009580000000000001,
+  "llm_model": "gpt-6-luna"
+}

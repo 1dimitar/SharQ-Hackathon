@@ -1,0 +1,40 @@
+<NAME>
+concave_path_signal
+</NAME>
+
+<DESCRIPTION>
+Use a restrained blend of linear and square-root normalized demand for two-hop rewards, while leaving direct-link rewards unchanged. The square-root component gives moderate-demand OD pairs more influence relative to the largest demands, which may help the selected links provide useful indirect routes for a broader range of traffic. The blend remains bounded and preserves the existing pressure and edge-load discounts.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            normalized_demand = through_demand / scale
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * normalized_demand
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+            normalized_demand = through_demand / scale
+            path_demand_signal = (
+                0.8 * normalized_demand + 0.2 * np.sqrt(normalized_demand)
+            )
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_demand_signal
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

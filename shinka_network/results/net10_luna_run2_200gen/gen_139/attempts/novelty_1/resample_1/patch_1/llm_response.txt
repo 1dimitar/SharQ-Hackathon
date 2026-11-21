@@ -1,0 +1,16 @@
+<NAME>
+relay_pressure_floor_085
+</NAME>
+
+<DESCRIPTION>
+Raise the relay-pressure floor from 0.75 to 0.85 as a focused sweep of the suggested parameter. This reduces the relative reward for paths through otherwise very quiet relays, whose estimated transit capacity may be misleading, while leaving all other terms unchanged. The edit isolates whether this stronger protection improves the balance of sampled topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_pressure = np.maximum(0.75, incident / max_incident)
+=======
+    node_pressure = np.maximum(0.85, incident / max_incident)
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,16 @@
+<NAME>
+stronger_edge_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the edge-pressure discount from 0.5 to 0.75 while leaving the direct-demand reward, node-pressure discount, and all other terms unchanged. This tests the suggested pressure tuning independently: candidate two-hop paths that use links with substantial direct demand receive less reward, which may reduce concentration of traffic and improve typical sampled topologies. The change preserves the existing term structure and quadratic-term count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    / (node_pressure[j] * (1.0 + 0.5 * edge_pressure))
+=======
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+>>>>>>> REPLACE
+
+</DIFF>

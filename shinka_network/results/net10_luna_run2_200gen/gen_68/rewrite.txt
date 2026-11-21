@@ -1,0 +1,112 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear, quadratic, and degree-penalty terms for the QUBO."""
+    t = np.asarray(demand, dtype=float)
+    if t.ndim != 2 or t.shape[0] != t.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    n = int(t.shape[0])
+    if n == 0:
+        return {}, {}, 1.0
+
+    t = np.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0)
+    t = np.maximum(t, 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+
+    scale = float(np.max(t))
+    if scale <= 0.0:
+        scale = 1.0
+    d = t / scale
+
+    rows = np.sum(t, axis=1)
+    cols = np.sum(t, axis=0)
+    endpoint = rows[:, None] + cols[None, :]
+    endpoint_scale = float(np.max(endpoint))
+    if endpoint_scale > 0.0:
+        endpoint = endpoint / endpoint_scale
+    else:
+        endpoint.fill(0.0)
+
+    # Favor direct service, while retaining a small signal for moderate demands
+    # and links incident to high-volume origins/destinations.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(d[i, j])
+            value = 0.88 * direct + 0.08 * float(np.sqrt(direct))
+            value += 0.04 * float(endpoint[i, j])
+            linear[(i, j)] = -value
+
+    # Mildly discourage using already busy nodes as transit points. The
+    # normalized factor stays bounded and does not exclude any intermediate.
+    incident = rows + cols
+    positive_incident = incident[incident > 0.0]
+    mean_incident = (
+        float(np.mean(positive_incident)) if positive_incident.size else 1.0
+    )
+    pressure = incident / max(mean_incident, 1.0e-12)
+    transit_discount = 1.0 / np.sqrt(1.0 + pressure)
+
+    # For each OD pair, distribute a capped total indirect reward over its
+    # possible two-hop paths. This prevents large-n overcounting of the same
+    # demand across many intermediates.
+    quadratic = {}
+    indirect_cap = 0.30
+    uniform_mix = 0.35
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+
+            mids = [j for j in range(n) if j != i and j != k]
+            if not mids:
+                continue
+
+            evidence = np.empty(len(mids), dtype=float)
+            for p, j in enumerate(mids):
+                # Support favors paths whose component links have independent
+                # direct-traffic evidence, without making unsupported paths zero.
+                support = np.sqrt(float(d[i, j]) * float(d[j, k]))
+                evidence[p] = (0.20 + 0.80 * support) * float(transit_discount[j])
+
+            total = float(np.sum(evidence))
+            if total > 0.0:
+                shares = (1.0 - uniform_mix) * evidence / total
+                shares += uniform_mix / len(mids)
+            else:
+                shares = np.full(len(mids), 1.0 / len(mids))
+
+            budget = indirect_cap * float(d[i, k])
+            for j, share in zip(mids, shares):
+                weight = -budget * float(share)
+                if weight != 0.0:
+                    quadratic[((i, j), (j, k))] = weight
+
+    return linear, quadratic, 1.1
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

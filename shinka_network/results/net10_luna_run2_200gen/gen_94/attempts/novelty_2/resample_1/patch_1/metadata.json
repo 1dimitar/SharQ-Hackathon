@@ -1,0 +1,14 @@
+{
+  "generation": 94,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "edge_pressure_discount",
+  "patch_description": "Discount two-hop rewards when either component link already has substantial direct demand. The current transit-node discount does not account for pressure on the links themselves; adding an edge-pressure factor makes paths using busy links less attractive. This tests the stronger `1 + 0.75 * edge_pressure` suppression while leaving the other terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:45.439667",
+  "llm_cost": 0.0012461,
+  "llm_model": "gpt-6-luna"
+}

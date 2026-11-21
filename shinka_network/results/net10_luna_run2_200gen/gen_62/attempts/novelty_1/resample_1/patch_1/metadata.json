@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_path_strength",
+  "patch_description": "Reduce the two-hop reward budget from 0.8 to 0.62 while leaving the direct-link rewards and transit-pressure formula unchanged. Since a two-hop demand can receive credit from several candidate paths, a more moderate reward should limit overcounting and keep the QUBO\u2019s low-energy topologies more strongly guided by direct demand. This tests a lower path-strength setting without changing the term structure or term count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:27.503297",
+  "llm_cost": 0.0011076,
+  "llm_model": "gpt-6-luna"
+}

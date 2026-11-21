@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_link_surrogate",
+  "patch_description": "Reorganizes term construction around per-link benefit and pairwise congestion, using normalized demand and row/column traffic statistics. Linear terms favor links that directly serve demand and connect traffic-heavy endpoints. Quadratic terms discourage choosing links that compete for the same source or destination capacity, while a demand-sensitive reciprocal-link adjustment can favor useful two-way connections. The sparse pair generation stays within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:15:25.077885",
+  "llm_cost": 0.0011840000000000002,
+  "llm_model": "gpt-6-luna"
+}

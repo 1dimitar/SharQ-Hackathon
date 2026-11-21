@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "demand_centric_path_balance",
+  "patch_description": "Reorganizes term construction around each demanded origin\u2013destination pair: it evaluates all eligible two-hop intermediates, scores them using relay pressure and direct-edge load, then normalizes their support so promising routes are favored without rewarding every alternative equally. Direct-link rewards remain separate, and helper functions isolate input preparation, relay scoring and QUBO assembly for easier maintenance. The number of quadratic terms remains at most \\(n(n-1)(n-2)\\).",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:50:02.787651",
+  "llm_cost": 0.0021121,
+  "llm_model": "gpt-6-luna"
+}

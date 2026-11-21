@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "load_balanced_routing",
+  "patch_description": "This approach estimates where traffic would accumulate if demand were spread across direct and two-hop routes, then uses that estimate to shape the QUBO. Direct-link rewards reflect demand and endpoint activity; two-hop rewards are allocated across candidate intermediates according to route suitability and transit pressure. A separate, modest overlap penalty discourages choosing same-endpoint links with redundant traffic profiles, encouraging more balanced access to the network. This differs from relying primarily on direct demand and uniformly budgeted two-hop rewards, while keeping the quadratic term count below the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:49.993456",
+  "llm_cost": 0.0016727,
+  "llm_model": "gpt-6-luna"
+}

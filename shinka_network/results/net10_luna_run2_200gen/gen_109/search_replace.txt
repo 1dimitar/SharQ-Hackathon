@@ -1,0 +1,27 @@
+<NAME>
+cap_indirect_budget
+</NAME>
+
+<DESCRIPTION>
+The current two-hop terms allocate an aggregate reward of 0.58 times each OD pair’s normalized demand, even when that reward is large relative to the direct-link reward. Cap that aggregate indirect reward at 35% of the corresponding direct-link value. This retains the existing support- and pressure-weighted route selection while limiting how strongly indirect paths can compete with direct service, which may improve the typical sampled topology without adding quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # A modest indirect budget avoids overvaluing routes that require
+            # multiple links, while still rewarding useful connectivity.
+            budget = 0.58 * traffic
+=======
+            # Bound the total indirect reward for this OD pair relative to
+            # its direct-link value, so many candidate paths cannot collectively
+            # overwhelm the incentive to serve substantial demand directly.
+            direct_value = (
+                0.72 * traffic
+                + 0.18 * np.sqrt(traffic)
+                + 0.10 * (
+                    float(rows[i]) + float(cols[k])
+                ) / (2.0 * max_incident)
+            )
+            budget = min(0.58 * traffic, 0.35 * direct_value)
+>>>>>>> REPLACE
+</DIFF>

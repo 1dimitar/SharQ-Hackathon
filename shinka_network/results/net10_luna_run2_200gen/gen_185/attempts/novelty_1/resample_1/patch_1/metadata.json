@@ -1,0 +1,14 @@
+{
+  "generation": 185,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_twohop_support",
+  "patch_description": "The current two-hop reward is accumulated independently for every intermediate node. For an OD pair with many candidate relays, those rewards can collectively outweigh the reward for building its direct link, giving the QUBO an overly strong incentive to assemble paths rather than favor direct service. This edit first computes the candidate path rewards for each OD pair, then proportionally caps their total magnitude at 0.75 times that pair\u2019s direct-link reward. It retains the relative ranking of relay paths while limiting their combined influence. The quadratic term count and degree-penalty handling remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:49.114761",
+  "llm_cost": 0.0010187,
+  "llm_model": "gpt-6-luna"
+}

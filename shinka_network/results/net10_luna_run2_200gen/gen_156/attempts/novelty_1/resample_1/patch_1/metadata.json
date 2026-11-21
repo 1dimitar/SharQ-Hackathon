@@ -1,0 +1,14 @@
+{
+  "generation": 156,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_reward",
+  "patch_description": "Make a modest shift toward the square-root component in the direct-link reward, from 15% to 25%. This gives moderate-demand direct links more influence while retaining a strong preference for high-demand links. It is a targeted test that leaves the current two-hop path design unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:13.952488",
+  "llm_cost": 0.0008100000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 179,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diversity_capacity",
+  "patch_description": "This approach replaces two-hop path rewards with a capacity-diversity proxy. Direct traffic still favors useful links, while pairwise penalties discourage a node\u2019s two outgoing links from pointing to destinations with similar traffic profiles, or two incoming links from coming from sources with similar profiles. Such redundant links are less likely to provide diverse routing options. The quadratic terms are sparse\u2014only pairs sharing a tail or head are considered\u2014and the evaluator remains responsible for degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:23.316588",
+  "llm_cost": 0.001438,
+  "llm_model": "gpt-6-luna"
+}

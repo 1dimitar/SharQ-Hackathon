@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "targeted_transit_paths",
+  "patch_description": "Keep the direct-demand linear reward, and add only demand-conditioned two-hop interactions. A path \\(i \\to j \\to k\\) is rewarded only when \\(t[i,k] > 0\\), with its reward scaled by how strongly demand supports the incoming and outgoing legs at the intermediate node. The normalized inbound/outbound shares make the profile comparable across nodes and prevent generic two-hop paths from receiving the same reward. The interaction set is at most \\(n(n-1)(n-2)\\), within the term limit, and avoids the broader shared-endpoint and reciprocal-link penalties that performed worse.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:40.400799",
+  "llm_cost": 0.0016219,
+  "llm_model": "gpt-6-luna"
+}

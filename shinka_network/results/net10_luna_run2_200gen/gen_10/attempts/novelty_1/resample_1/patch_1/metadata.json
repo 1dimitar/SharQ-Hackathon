@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "endpoint_pressure_mix",
+  "patch_description": "Blend the direct-demand signal with a normalized endpoint-pressure signal at a 90/10 ratio. Direct traffic remains the dominant cue, while the smaller term favors links incident to nodes with substantial total incoming or outgoing traffic, which may need additional connectivity to handle transit. Keep the existing two-hop terms unchanged so this tests the mixture without also changing their contribution.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:22.252476",
+  "llm_cost": 0.0006223,
+  "llm_model": "gpt-6-luna"
+}

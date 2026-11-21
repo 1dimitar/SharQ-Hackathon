@@ -1,0 +1,14 @@
+{
+  "generation": 114,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_loadaware_routes",
+  "patch_description": "The current approach spreads each OD pair\u2019s indirect-route reward over every possible intermediate, which can make individual route terms weak. This version concentrates that reward on the three strongest candidates and discounts paths more strongly using estimated component-edge load: each edge\u2019s direct demand plus a small endpoint-throughput proxy. It retains direct-link value and a reduced traffic-profile overlap penalty, while keeping the quadratic-term count below the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:23.415999",
+  "llm_cost": 0.0024823,
+  "llm_model": "gpt-6-luna"
+}

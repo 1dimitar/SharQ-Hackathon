@@ -1,0 +1,14 @@
+{
+  "generation": 196,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_twohop_strength",
+  "patch_description": "Reduce the two-hop reward strength from 0.52 to 0.40. Two-hop terms help represent indirect service, but rewarding many possible paths can make the typical sampled topology less focused on high-value direct links. A more moderate strength tests whether preserving the direct-link signal improves the median topology while retaining useful two-hop guidance. This is a controlled single-parameter change; compare it against the current 0.52 setting.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:03:00.306210",
+  "llm_cost": 0.0008958,
+  "llm_model": "gpt-6-luna"
+}

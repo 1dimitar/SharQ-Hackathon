@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_path_balance",
+  "patch_description": "This version keeps direct demand as the strongest link signal and adds a modest concave term so medium-demand direct links remain visible. Two-hop incentives are capped separately for each origin\u2013destination pair: all candidate intermediates together receive at most a fixed fraction of that pair\u2019s normalized demand, rather than accumulating an incentive proportional to the number of intermediates. The cap is allocated using component-link support and a mild transit-load discount, with a uniform share mixed in to preserve alternatives. Input demands are sanitized, and the degree penalty is strengthened slightly to encourage feasible samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:46:17.614221",
+  "llm_cost": 0.0014,
+  "llm_model": "gpt-6-luna"
+}

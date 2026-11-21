@@ -1,0 +1,19 @@
+<NAME>
+capped_indirect_budget
+</NAME>
+
+<DESCRIPTION>
+Cap the total two-hop reward for each OD pair relative to the existing direct-link reward. The path scores still determine how that budget is distributed among intermediates, preserving path-specific signals, but indirect routes can no longer collectively outweigh direct service. The existing traffic-based budget remains as an upper bound, so small-demand pairs retain their prior reward when the direct-signal cap is not more restrictive.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # A modest indirect budget avoids overvaluing routes that require
+            # multiple links, while still rewarding useful connectivity.
+            budget = 0.58 * traffic
+=======
+            # Cap the aggregate indirect reward relative to the direct-link
+            # signal, while retaining the original traffic-based upper bound.
+            budget = min(0.58 * traffic, 0.45 * (-linear[(i, k)]))
+>>>>>>> REPLACE
+</DIFF>

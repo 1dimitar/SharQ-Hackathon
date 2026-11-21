@@ -1,0 +1,14 @@
+{
+  "generation": 85,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_indirect_budget",
+  "patch_description": "Cap each OD pair\u2019s total two-hop reward relative to its direct-link signal, while keeping the existing evidence-based allocation among intermediate nodes. The current budget is proportional to demand but can still add substantial incentive for a pair even when the direct-link signal is already strong. Limiting it to 38% of the direct signal reduces the chance that several indirect path terms collectively overwhelm direct-link preferences, without removing path-specific guidance.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:48:27.345453",
+  "llm_cost": 0.0009334,
+  "llm_model": "gpt-6-luna"
+}

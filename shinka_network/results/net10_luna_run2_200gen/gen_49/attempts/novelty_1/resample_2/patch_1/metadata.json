@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_weighted_paths",
+  "patch_description": "Replace the current uniform-mixed two-hop reward with a per-OD allocation across eligible paths. Keep the positive-demand OD gate, but distribute each OD pair\u2019s indirect reward according to path suitability: paths through lower-pressure transit nodes and using edges with less direct demand receive a larger share. Normalizing the suitability weights per OD avoids rewarding every possible intermediate as if it independently carried the full traffic, while retaining broad path coverage. This directly tests the pressure-discounted allocation recommendation without changing the linear terms or degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:18.254206",
+  "llm_cost": 0.0011831,
+  "llm_model": "gpt-6-luna"
+}

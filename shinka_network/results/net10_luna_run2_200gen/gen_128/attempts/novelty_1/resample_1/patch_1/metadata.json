@@ -1,0 +1,14 @@
+{
+  "generation": 128,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This hybrid keeps the current implementation\u2019s concave demand component, so moderate-demand direct links and paths still matter, while shifting both signals toward the inspiration program\u2019s direct-demand weighting. It also adopts the inspiration\u2019s stronger discount for paths whose component links already carry direct traffic. Transit-node pressure discourages reliance on busy intermediate nodes, and a slightly stronger degree penalty is intended to keep annealing samples closer to valid topologies. Quadratic terms are generated only for positive-demand OD pairs, so the term count stays below \\(n^3\\).",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:27.351359",
+  "llm_cost": 0.0017162,
+  "llm_model": "gpt-6-luna"
+}

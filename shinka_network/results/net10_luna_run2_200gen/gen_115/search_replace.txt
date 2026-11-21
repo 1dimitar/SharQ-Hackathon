@@ -1,0 +1,15 @@
+<NAME>
+increase_two_hop_strength
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward strength from 0.25 to 0.46 while keeping the demand transform and route-quality calculation unchanged. The current setting may underweight useful transit paths relative to direct-link rewards, especially for topologies where degree constraints prevent directly connecting every high-demand pair. A moderate increase should give the sampler more incentive to select links that form viable two-hop routes, without making the path reward as dominant as the previously tested 0.56 setting. This leaves the positive-demand-only path terms and their existing pressure discounts intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.25
+=======
+    path_strength = 0.46
+>>>>>>> REPLACE
+</DIFF>

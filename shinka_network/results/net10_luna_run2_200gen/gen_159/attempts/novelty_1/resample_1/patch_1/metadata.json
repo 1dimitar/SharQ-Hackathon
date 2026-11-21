@@ -1,0 +1,14 @@
+{
+  "generation": 159,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor",
+  "patch_description": "Raise the relay-pressure floor from 0.65 to 0.85, leaving all other path calculations unchanged. This tests whether the current discount penalizes low-incident-demand relays too strongly: a higher floor makes paths through those nodes less favored relative to paths through busy nodes, while reducing the spread in relay discounts. The change is a focused comparison of the suggested floor values.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:43.929792",
+  "llm_cost": 0.0008419,
+  "llm_model": "gpt-6-luna"
+}

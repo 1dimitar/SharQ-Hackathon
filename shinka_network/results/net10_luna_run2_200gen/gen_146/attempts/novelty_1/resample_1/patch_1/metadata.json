@@ -1,0 +1,14 @@
+{
+  "generation": 146,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_discount",
+  "patch_description": "This variant strengthens the edge-traffic discount to 0.85 while retaining demand-aware direct-link rewards and node-pressure discounts. Two-hop rewards are reduced when either component link already carries substantial direct demand, or when the intermediate node has high incident demand. The un-clamped discount preserves distinctions between paths of different congestion levels. The number of quadratic terms remains at most \\(n(n-1)(n-2)\\), within the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:14.841844",
+  "llm_cost": 0.0012554,
+  "llm_model": "gpt-6-luna"
+}

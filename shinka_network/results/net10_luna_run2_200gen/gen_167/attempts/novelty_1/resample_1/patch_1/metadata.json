@@ -1,0 +1,14 @@
+{
+  "generation": 167,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_path_strength",
+  "patch_description": "Increase the two-hop reward strength from 0.46 to 0.50, leaving the direct-link signal, transit-pressure estimate, and edge discount unchanged. This is a controlled step toward the suggested narrow sweep around 0.56: indirect routes matter because most traffic cannot be carried directly, but increasing their reward too much risks favoring paths whose component links compete for capacity. Testing 0.50 first keeps that risk modest while measuring whether stronger two-hop support improves both the best and typical sampled topology.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:20.523449",
+  "llm_cost": 0.0009278000000000001,
+  "llm_model": "gpt-6-luna"
+}

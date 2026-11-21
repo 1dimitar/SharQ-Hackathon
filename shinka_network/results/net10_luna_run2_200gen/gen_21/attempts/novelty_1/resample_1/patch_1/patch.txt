@@ -1,0 +1,136 @@
+--- a/original.py
++++ b/original.py
+@@ -1,77 +1,104 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+-def surrogate_terms(demand):
+-    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
++def _demand_statistics(demand):
++    """Return a safe demand scale and per-node incident traffic."""
++    matrix = np.asarray(demand, dtype=float)
++    n = matrix.shape[0]
++    scale = float(np.max(np.abs(matrix))) if matrix.size else 0.0
++    if scale <= 0.0:
++        scale = 1.0
+ 
+-    Args:
+-        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+-            (zero diagonal).
++    outgoing = np.sum(matrix, axis=1)
++    incoming = np.sum(matrix, axis=0)
++    incident = outgoing + incoming
++    max_incident = float(np.max(incident)) if incident.size else 0.0
++    return matrix, n, scale, outgoing, incoming, incident, max_incident
+ 
+-    Returns:
+-        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+-            (x_ij = 1 if the directed link i -> j is built), i != j.
+-        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+-        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+-            after rescaling these terms so the largest |weight| is 1.
+ 
+-    Lower energy must mean a better topology. Baseline: reward each link by the demand
+-    it carries directly.
+-    """
+-    n = len(demand)
+-    dmax = float(np.max(demand)) or 1.0
+-    row = np.sum(demand, axis=1)
+-    col = np.sum(demand, axis=0)
+-    node_scale = float(max(np.max(row), np.max(col))) or 1.0
++def _build_linear(matrix, n, scale, outgoing, incoming):
++    """Favor direct traffic while retaining a small endpoint-capacity signal."""
++    row_scale = float(np.max(outgoing)) if outgoing.size else 0.0
++    col_scale = float(np.max(incoming)) if incoming.size else 0.0
++    endpoint_scale = max(row_scale, col_scale, 1.0)
+ 
+-    # Preserve the strong direct-demand signal, with a small preference for
+-    # links incident to high-throughput sources and destinations.
+     linear = {}
+     for i in range(n):
+         for j in range(n):
+             if i == j:
+                 continue
+-            endpoint_pressure = (float(row[i]) + float(col[j])) / (2.0 * node_scale)
++            endpoint_pressure = (float(outgoing[i]) + float(incoming[j])) / (
++                2.0 * endpoint_scale
++            )
+             linear[(i, j)] = -(
+-                0.90 * float(demand[i, j]) / dmax
++                0.90 * float(matrix[i, j]) / scale
+                 + 0.10 * endpoint_pressure
+             )
++    return linear
+ 
+-    # A selected pair i->j, j->k can serve i->k traffic in two hops.
+-    # Keep this synergy deliberately weaker than the direct-link reward.
++
++def _build_two_hop_terms(matrix, n, scale, incident, max_incident):
++    """Reward useful two-hop routes, with bounded pressure on transit nodes."""
+     quadratic = {}
++    if max_incident <= 0.0:
++        return quadratic
++
+     for i in range(n):
+         for j in range(n):
+-            if j == i:
++            if i == j:
+                 continue
++
++            # Keep the discount bounded: even the busiest node can still be
++            # selected as a transit point when the route is otherwise useful.
++            load_ratio = float(incident[j]) / max_incident
++            transit_factor = max(0.75, 1.0 - 0.25 * load_ratio)
++
+             for k in range(n):
+                 if k == i or k == j:
+                     continue
+-                traffic = float(demand[i, k])
+-                if traffic > 0.0:
+-                    quadratic[((i, j), (j, k))] = -0.12 * traffic / dmax
++                traffic = float(matrix[i, k])
++                if traffic <= 0.0:
++                    continue
+ 
++                # The ordered links form i -> j -> k and jointly serve i -> k.
++                quadratic[((i, j), (j, k))] = (
++                    -0.12 * (traffic / scale) * transit_factor
++                )
++    return quadratic
++
++
++def surrogate_terms(demand):
++    """Build linear and quadratic surrogate costs from a demand matrix."""
++    stats = _demand_statistics(demand)
++    matrix, n, scale, outgoing, incoming, incident, max_incident = stats
++
++    linear = _build_linear(matrix, n, scale, outgoing, incoming)
++    quadratic = _build_two_hop_terms(
++        matrix, n, scale, incident, max_incident
++    )
++
++    # Degree constraints are added by the evaluator, not included here.
+     penalty_weight = 1.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

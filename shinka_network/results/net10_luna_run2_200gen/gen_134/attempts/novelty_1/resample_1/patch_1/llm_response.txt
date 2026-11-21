@@ -1,0 +1,21 @@
+<NAME>
+stronger_edge_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the discount on two-hop paths that use edges with substantial direct demand, changing only the edge-load factor and leaving relay-node pressure unchanged. This makes indirect-path rewards favor combinations of less-loaded edges, which may reduce competition for the same links and improve load balance. The change is deliberately isolated so its effect can be evaluated against the current program.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

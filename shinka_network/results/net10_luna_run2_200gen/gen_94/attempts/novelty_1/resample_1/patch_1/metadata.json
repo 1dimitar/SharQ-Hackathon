@@ -1,0 +1,14 @@
+{
+  "generation": 94,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_suppression",
+  "patch_description": "Increase the edge-pressure coefficient from 0.5 to 0.75 while leaving all other terms unchanged. This tests whether stronger suppression of indirect paths that use edges already carrying substantial direct demand improves the sampled topologies, particularly the weaker `network10_s1` case. The change is modest and preserves the existing quadratic-term structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:35.422094",
+  "llm_cost": 0.0008899000000000001,
+  "llm_model": "gpt-6-luna"
+}

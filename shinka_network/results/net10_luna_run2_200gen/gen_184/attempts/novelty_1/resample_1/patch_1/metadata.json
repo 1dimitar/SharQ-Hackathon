@@ -1,0 +1,14 @@
+{
+  "generation": 184,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_reward",
+  "patch_description": "Give moderate-demand direct links more influence by blending normalized demand with its square root. This narrows the gap between high- and moderate-demand link rewards, which may improve the quality of typical sampled topologies while retaining a substantial reward for directly serving heavy traffic. The existing two-hop terms remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:48.064738",
+  "llm_cost": 0.0009481000000000001,
+  "llm_model": "gpt-6-luna"
+}

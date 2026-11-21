@@ -1,0 +1,15 @@
+<NAME>
+path_strength_050
+</NAME>
+
+<DESCRIPTION>
+Increase only the two-hop path reward strength from 0.46 to 0.50. The current QUBO already uses selective, pressure-discounted path terms; a small isolated increase tests whether giving feasible two-hop service a little more influence improves sampled topologies without changing the direct-link reward or pressure calculation. This is a conservative calibration change rather than a larger shift that could over-reward paths.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.46
+=======
+    path_strength = 0.50
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,85 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear and quadratic surrogate costs for directed links."""
+    demand = np.asarray(demand, dtype=float)
+    n = len(demand)
+    if n < 2:
+        return {}, {}, 1.0
+
+    demand = np.maximum(demand, 0.0)
+    scale = float(demand.max())
+    if scale <= 0.0:
+        scale = 1.0
+
+    # A relay is useful when it has both incoming and outgoing traffic.
+    incoming = demand.sum(axis=0)
+    outgoing = demand.sum(axis=1)
+    eps = max(scale * 1e-9, 1e-12)
+    relay = np.sqrt((incoming + eps) * (outgoing + eps))
+    relay_max = float(relay.max())
+    if relay_max > 0.0:
+        relay /= relay_max
+
+    # Direct links retain the strongest signal from the baseline.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                linear[(i, j)] = -float(demand[i, j]) / scale
+
+    quadratic = {}
+    # A path reward is apportioned among plausible relays according to
+    # relay capacity; discount traffic already strongly favored directly.
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            traffic = float(demand[i, k])
+            if traffic <= 0.0:
+                continue
+
+            eligible = [
+                j for j in range(n)
+                if j != i and j != k and relay[j] > 0.0
+            ]
+            if not eligible:
+                continue
+            denom = sum(float(relay[j]) for j in eligible)
+            if denom <= 0.0:
+                continue
+
+            # Avoid making every alternative relay equally attractive:
+            # high-capacity relays receive a larger share.
+            direct_fraction = traffic / (traffic + 0.25 * scale)
+            for j in eligible:
+                share = float(relay[j]) / denom
+                value = 0.20 * (traffic / scale) * direct_fraction * share
+                if value > 0.0:
+                    quadratic[((i, j), (j, k))] = -value
+
+    # Keep the degree penalty strong enough to preserve valid topologies.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

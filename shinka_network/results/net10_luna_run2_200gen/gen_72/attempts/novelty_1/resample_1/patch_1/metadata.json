@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_incident_transit_pressure",
+  "patch_description": "Discount two-hop rewards according to the transit node\u2019s incident demand, normalized by the busiest node rather than by an average. A modest 0.85 floor prevents the busiest node from being penalized so heavily that useful routes through it lose all incentive. This adds no quadratic terms and retains the existing direct-demand and edge-pressure signals.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:46:43.576543",
+  "llm_cost": 0.0011662999999999999,
+  "llm_model": "gpt-6-luna"
+}

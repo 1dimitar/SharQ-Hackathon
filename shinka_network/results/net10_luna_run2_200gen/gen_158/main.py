@@ -1,0 +1,142 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic cost terms from a traffic demand matrix."""
+    t = np.asarray(demand, dtype=float)
+    n = int(t.shape[0])
+
+    # Sanitize inputs and ignore self-traffic.
+    t = np.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0)
+    t = np.maximum(t, 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+
+    max_demand = float(np.max(t)) if t.size else 0.0
+    if max_demand <= 0.0:
+        max_demand = 1.0
+    z = t / max_demand
+
+    row_sum = np.sum(z, axis=1)
+    col_sum = np.sum(z, axis=0)
+    incident = row_sum + col_sum
+    max_incident = float(np.max(incident)) if n else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+
+    # Direct-service value retains a strong signal for large OD pairs, but
+    # gives moderate demands some influence under the two-link degree limit.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            value = float(z[i, j])
+            linear[(i, j)] = -(0.82 * value + 0.18 * np.sqrt(value))
+
+    quadratic = {}
+
+    # Diversification terms: two outgoing links that serve very similar
+    # destinations, or two incoming links fed by similar origins, are less
+    # useful together. Profiles are normalized to measure similarity rather
+    # than absolute traffic volume.
+    row_norm = np.sqrt(np.sum(z * z, axis=1))
+    col_norm = np.sqrt(np.sum(z * z, axis=0))
+    out_profile = np.divide(
+        z, row_norm[:, None], out=np.zeros_like(z),
+        where=row_norm[:, None] > 0.0,
+    )
+    in_profile = np.divide(
+        z, col_norm[None, :], out=np.zeros_like(z),
+        where=col_norm[None, :] > 0.0,
+    )
+
+    diversity_strength = 0.055
+    for node in range(n):
+        neighbors = [v for v in range(n) if v != node]
+        for a in range(len(neighbors)):
+            j = neighbors[a]
+            for b in range(a + 1, len(neighbors)):
+                k = neighbors[b]
+
+                # Positive energy discourages redundant choices.
+                sim_out = float(np.dot(out_profile[j], out_profile[k]))
+                if sim_out > 1e-12:
+                    quadratic[((node, j), (node, k))] = diversity_strength * sim_out
+
+                sim_in = float(np.dot(in_profile[j], in_profile[k]))
+                if sim_in > 1e-12:
+                    quadratic[((j, node), (k, node))] = diversity_strength * sim_in
+
+    # Bounded indirect-service budget per OD pair. Distributing the budget
+    # prevents an OD pair with many possible relays from receiving an
+    # artificially large total reward.
+    pressure = incident / max_incident
+    relay_floor = 0.85
+    path_strength = 0.48
+
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            od = float(z[i, k])
+            if od <= 0.0:
+                continue
+
+            mids = []
+            scores = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                # Profile affinity distinguishes potentially useful relay
+                # links from routes assembled from unrelated traffic.
+                first = float(z[i, j])
+                second = float(z[j, k])
+                affinity = np.sqrt(first * second)
+
+                # A nonzero support floor retains plausible paths even when
+                # their component links carry little direct OD traffic.
+                support = 0.20 + 0.80 * affinity / (1.0 + affinity)
+                relay_cost = max(relay_floor, float(pressure[j]))
+                score = support / relay_cost
+                mids.append(j)
+                scores.append(score)
+
+            if not scores:
+                continue
+            denom = float(sum(scores))
+            if denom <= 0.0:
+                continue
+
+            # Concavity gives smaller OD pairs some representation while the
+            # total indirect incentive remains bounded for each OD pair.
+            od_signal = 0.75 * od + 0.25 * np.sqrt(od)
+            budget = path_strength * od_signal
+            for j, score in zip(mids, scores):
+                key = ((i, j), (j, k))
+                quadratic[key] = quadratic.get(key, 0.0) - budget * score / denom
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

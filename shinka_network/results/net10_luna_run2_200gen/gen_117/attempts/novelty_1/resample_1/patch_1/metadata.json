@@ -1,0 +1,14 @@
+{
+  "generation": 117,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tighten_detour_cap",
+  "patch_description": "Reduce the aggregate two-hop reward per origin-destination pair from 0.75 to 0.5 times its direct-demand reward. The current cap still gives detours a substantial combined incentive across many possible intermediates; tightening it should help preserve the direct-link signal and make low-energy topologies less dependent on diffuse two-hop rewards. The existing per-pair scaling continues to preserve transit-node preferences, while this change adds no terms or runtime.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:57.412945",
+  "llm_cost": 0.0008279,
+  "llm_model": "gpt-6-luna"
+}

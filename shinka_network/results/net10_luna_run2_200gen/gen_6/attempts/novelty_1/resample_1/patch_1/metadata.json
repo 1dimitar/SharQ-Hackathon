@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_load_balance",
+  "patch_description": "Replace the generic two-hop reward with positive pairwise congestion costs for links that share a source or destination. A node has only two outgoing and two incoming links, so selecting two links that each carry substantial direct demand can concentrate load at that endpoint. The geometric-mean weights penalize such pairs while remaining bounded by the demand scale. This keeps the existing direct-demand signal and uses at most \\(n(n-1)(n-2)\\) quadratic terms, within the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:52.017432",
+  "llm_cost": 0.0007398999999999999,
+  "llm_model": "gpt-6-luna"
+}

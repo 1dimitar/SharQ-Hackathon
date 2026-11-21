@@ -1,0 +1,14 @@
+{
+  "generation": 87,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_pressure_floor065",
+  "patch_description": "Normalize transit-node pressure by the busiest node rather than by the mean, and use a 0.65 floor. This bounds pressure to a consistent [0.65, 1] range across demand matrices, while still discounting paths through the busiest transit nodes. It tests the suggested max-based normalization with a floor that preserves useful differentiation without suppressing most candidate paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:48:26.843933",
+  "llm_cost": 0.0008671000000000001,
+  "llm_model": "gpt-6-luna"
+}

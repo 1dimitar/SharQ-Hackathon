@@ -1,0 +1,14 @@
+{
+  "generation": 175,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "nonlinear_edge_discount",
+  "patch_description": "Increase the discount on two-hop rewards for paths whose component edges carry substantial direct demand, using a power of 1.5 rather than a linear denominator. This tests stronger, nonlinear edge-load discounting while leaving the direct-link rewards, node pressure, and path support unchanged. It preserves the current term count and may steer the low-energy region away from concentrating traffic on already-demand-heavy edges.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:25.145384",
+  "llm_cost": 0.0009095,
+  "llm_model": "gpt-6-luna"
+}

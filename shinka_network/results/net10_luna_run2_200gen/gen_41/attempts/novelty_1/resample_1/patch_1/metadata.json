@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_pressure_discount",
+  "patch_description": "Increase the edge-pressure coefficient from 0.5 to 0.75 while leaving the direct-link rewards, transit-node discount, and path strength unchanged. This tests whether more strongly discouraging two-hop paths that use links with substantial direct demand improves load balance, without changing the rest of the surrogate. The edit adds no quadratic terms and is inexpensive to evaluate.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:58.589224",
+  "llm_cost": 0.0008338000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 188,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor_065",
+  "patch_description": "Lower the minimum relay-pressure factor from 0.75 to 0.65, leaving incident-demand calculation and edge discounting unchanged. This controlled test gives low-incident nodes more support as transit relays, which may help the sampled topologies route traffic without overloading a small set of high-pressure nodes. The change is limited to the pressure floor so its effect can be compared directly with the current setting.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:02:06.160210",
+  "llm_cost": 0.0008166000000000001,
+  "llm_model": "gpt-6-luna"
+}

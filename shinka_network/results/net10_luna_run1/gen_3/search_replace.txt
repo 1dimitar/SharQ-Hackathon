@@ -1,0 +1,40 @@
+<NAME>
+capacity_aware_paths
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, but add a restrained quadratic reward for completing two-hop routes. Unlike a fixed reward for every two-hop path, divide each demand’s contribution among its possible intermediaries and discount intermediaries with high total in/out demand. This limits overcounting and makes transit capacity a consideration, while preserving the baseline as the dominant signal. The number of quadratic terms is at most n(n−1)(n−2), within the stated limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+=======
+    linear = {(i, j): -float(demand[i, j]) / scale
+              for i in range(n) for j in range(n) if i != j}
+
+    # A two-hop route i -> j -> k is useful when both links are selected.
+    # Spread each demand's modest route bonus across possible intermediaries,
+    # and discount busy intermediaries that are likely to be transit bottlenecks.
+    row_load = np.asarray(demand, dtype=float).sum(axis=1)
+    col_load = np.asarray(demand, dtype=float).sum(axis=0)
+    node_load = row_load + col_load
+    mean_load = float(node_load.mean()) or 1.0
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            if i == k or demand[i, k] <= 0:
+                continue
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                congestion = 1.0 + node_load[j] / mean_load
+                weight = -0.18 * float(demand[i, k]) / (scale * max(1, n - 2) * congestion)
+                quadratic[((i, j), (j, k))] = weight
+
+    penalty_weight = 1.0
+>>>>>>> REPLACE
+
+</DIFF>

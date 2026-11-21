@@ -1,0 +1,14 @@
+{
+  "generation": 89,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_route_pipeline",
+  "patch_description": "The cost is built in separate stages: sanitize and normalize demand, score direct links, allocate a capped indirect-reward budget across demand-supported two-hop routes, then add small diversity penalties for similar links sharing an endpoint. The per-OD cap prevents path rewards from collectively overwhelming direct demand, while modular helpers make each component easy to tune. The quadratic-term count stays below the required limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:30.398173",
+  "llm_cost": 0.002722,
+  "llm_model": "gpt-6-luna"
+}

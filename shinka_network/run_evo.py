@@ -5,7 +5,13 @@
     uv run python run_evo.py --suite net10 --generations 20 --islands 4     # local
     ./run_docker.sh --suite net10 --generations 20 --islands 4             # in Docker
 
-Needs OPENAI_API_KEY in the environment or in shinka_network/.env.
+Quantum evaluations on Qoro's cloud (ShinkaEvolve runs here, every circuit goes to Qoro):
+    uv run python run_evo.py --suite net12 --sampler qaoa_partitioned --backend cloud \
+        --init results/<run>/best/main.py
+--sampler pce|qaoa_partitioned runs evaluate_qoro.py under the repository's root .venv (it needs
+qoro-divi, which cannot share an environment with ShinkaEvolve), so these runs are host-only.
+
+Needs OPENAI_API_KEY (and QORO_API_KEY for --backend cloud) in shinka_network/.env.
 """
 
 import argparse
@@ -36,8 +42,8 @@ Lower energy must mean a better network.
 ## How it is used and scored
 1. Your terms are rescaled so the largest |weight| is 1.
 2. The evaluator adds penalty_weight * [ sum_i (outdeg_i - 2)^2 + sum_j (indeg_j - 2)^2 ]. Do not add degree penalties yourself.
-3. Simulated annealing draws a few dozen low-energy samples from this QUBO. Each sample is repaired to the nearest valid topology and scored by the routing LP.
-4. Per annealing run: score = 0.5 * ref / best + 0.5 * ref / median, where best and median are over the sampled topologies and ref is the best score known for that demand matrix (the proven optimum where one exists). The combined score is the mean over several demand matrices and/or annealing seeds; 1.0 would mean every sample is optimal.
+3. {sampler_text} Each sample is repaired to the nearest valid topology and scored by the routing LP.
+4. Per run: score = 0.5 * ref / best + 0.5 * ref / median, where best and median are over the sampled topologies and ref is the best score known for that demand matrix (the proven optimum where one exists). The combined score is the mean over several demand matrices and/or seeds; 1.0 would mean every sample is optimal.
 So the low-energy region of your QUBO must consist of topologies with a low maximum link load: the best sample matters, and so does the typical sample.
 
 ## Rules
@@ -61,6 +67,21 @@ So the low-energy region of your QUBO must consist of topologies with a low maxi
 
 The feedback after each evaluation lists, per demand matrix, the gap of the best and of the median sampled topology to the reference, how many samples were valid before repair, and the number of quadratic terms. Use it to see what fails."""
 
+SAMPLER_TEXT = {
+    "sa": "Simulated annealing draws a few dozen low-energy samples from this QUBO.",
+    "pce": (
+        "Pauli Correlation Encoding (PCE), a variational quantum algorithm that encodes all variables on a few "
+        "qubits (16 for n = 12), is optimised on this QUBO on Qoro's quantum simulator, and its 100 lowest-energy "
+        "solutions are taken. PCE solutions rarely satisfy the degree rules on their own, so they lean on the repair step."
+    ),
+    "qaoa_partitioned": (
+        "The QUBO is split into communities of at most 12 variables by community detection on its interaction "
+        "graph; each part is solved by QAOA on Qoro's quantum simulator, the parts are recombined by beam search "
+        "and polished by local search, and the 100 best combined solutions are taken. How your couplings group "
+        "variables into communities therefore matters."
+    ),
+}
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -74,11 +95,30 @@ def main() -> None:
     parser.add_argument("--proposal-jobs", type=int, default=4)
     parser.add_argument("--init", default="initial.py", help="starting program")
     parser.add_argument("--results-dir", default=None)
+    parser.add_argument("--sampler", choices=["sa", "pce", "qaoa_partitioned"], default="sa",
+                        help="sa: local simulated annealing (evaluate.py); pce / qaoa_partitioned: Divi (evaluate_qoro.py)")
+    parser.add_argument("--backend", choices=["cloud", "local"], default="cloud",
+                        help="quantum samplers only: Qoro cloud or the local Maestro simulator")
+    parser.add_argument("--max-runs", type=int, default=2, help="quantum samplers only: seeds per evaluation")
+    parser.add_argument("--eval-python", default=None, help="Python for evaluate_qoro.py (default: ../.venv)")
+    parser.add_argument("--eval-time", default=None, help="time limit per evaluation, HH:MM:SS")
     args = parser.parse_args()
+
+    if args.sampler == "sa":
+        eval_program, eval_python = "evaluate.py", sys.executable
+        eval_args = {"suite": args.suite}
+        eval_time = args.eval_time or "00:10:00"
+    else:
+        eval_program = "evaluate_qoro.py"
+        eval_python = args.eval_python or str(HERE.parent / ".venv" / "bin" / "python")
+        if not Path(eval_python).exists():
+            sys.exit(f"{eval_python} not found: run `uv sync` in the repository root (the notebook environment).")
+        eval_args = {"suite": args.suite, "routine": args.sampler, "backend": args.backend, "max_runs": args.max_runs}
+        eval_time = args.eval_time or "01:00:00"
 
     results_dir = args.results_dir or f"results/{args.suite}_{time.strftime('%m%d_%H%M%S')}"
     evo_config = EvolutionConfig(
-        task_sys_msg=TASK_SYS_MSG,
+        task_sys_msg=TASK_SYS_MSG.replace("{sampler_text}", SAMPLER_TEXT[args.sampler]),
         patch_types=["diff", "full", "cross"],
         patch_type_probs=[0.6, 0.3, 0.1],
         num_generations=args.generations,
@@ -116,10 +156,10 @@ def main() -> None:
         parent_selection_lambda=10.0,
     )
     job_config = LocalJobConfig(
-        eval_program_path="evaluate.py",
-        extra_cmd_args={"suite": args.suite},
-        time="00:10:00",
-        python_executable=sys.executable,
+        eval_program_path=eval_program,
+        extra_cmd_args=eval_args,
+        time=eval_time,
+        python_executable=eval_python,
         eval_verbose=False,
     )
     runner = ShinkaEvolveRunner(
@@ -131,7 +171,7 @@ def main() -> None:
         max_db_workers=2,
         verbose=True,
     )
-    print(f"Suite: {args.suite} | results: {HERE / results_dir}")
+    print(f"Suite: {args.suite} | sampler: {args.sampler} ({eval_program}, {eval_args}) | results: {HERE / results_dir}")
     runner.run()
 
 

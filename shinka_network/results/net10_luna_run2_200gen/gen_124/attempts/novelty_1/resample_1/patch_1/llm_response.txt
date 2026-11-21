@@ -1,0 +1,19 @@
+<NAME>
+relay_pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Replace the current smoothly varying transit score with mean-normalized incident-demand pressure and a 0.75 floor. This tests the suggested mean-based normalization and floor while leaving the direct-link rewards, path rewards, and per-OD cap unchanged. The floor limits how strongly a quiet relay can be favored, while nodes above average pressure are progressively discounted.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    transit = 2.0 * mean_load / (mean_load + node_load)
+=======
+    # Normalize relay pressure by the mean incident demand. The floor prevents
+    # unusually quiet nodes from receiving an outsized transit preference.
+    relay_pressure = np.maximum(0.75, node_load / mean_load)
+    transit = 1.0 / relay_pressure
+>>>>>>> REPLACE
+
+</DIFF>

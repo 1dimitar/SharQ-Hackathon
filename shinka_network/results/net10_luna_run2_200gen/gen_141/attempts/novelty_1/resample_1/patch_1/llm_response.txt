@@ -1,0 +1,54 @@
+<NAME>
+cap_aggregate_twohop
+</NAME>
+
+<DESCRIPTION>
+The current quadratic reward is assigned independently for every eligible intermediate node. As n grows, the aggregate reward for routing one OD pair indirectly can therefore become much larger than the reward for its direct link, biasing the QUBO toward path support rather than useful direct connections. Keep the existing transit-pressure preferences, but scale all candidate two-hop rewards for each OD pair together so their total magnitude is at most 65% of that pair’s direct-link reward. This preserves relative preferences between intermediates while limiting indirect terms’ influence on both the best and typical sampled topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            candidates = []
+            total_support = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                support = (
+                    path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+                candidates.append((j, support))
+                total_support += support
+
+            # Keep aggregate indirect support subordinate to the direct-link
+            # reward for this OD pair, without changing the ranking of routes.
+            direct_support = 0.85 * normalized_demand + 0.15 * np.sqrt(normalized_demand)
+            support_cap = 0.65 * direct_support
+            multiplier = min(1.0, support_cap / total_support) if total_support > 0.0 else 1.0
+
+            for j, support in candidates:
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -support * multiplier
+>>>>>>> REPLACE
+</DIFF>

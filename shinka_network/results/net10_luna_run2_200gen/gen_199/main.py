@@ -1,0 +1,120 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return direct-link rewards and sparse shared-endpoint load penalties."""
+    traffic = np.asarray(demand, dtype=float)
+    n = len(traffic)
+
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    peak = float(np.max(traffic)) if traffic.size else 0.0
+    if peak > 0.0:
+        direct = traffic / peak
+    else:
+        direct = np.zeros_like(traffic)
+
+    outgoing = np.sum(traffic, axis=1)
+    incoming = np.sum(traffic, axis=0)
+    mean_out = float(np.mean(outgoing))
+    mean_in = float(np.mean(incoming))
+
+    if mean_out > 0.0:
+        out_pressure = outgoing / mean_out
+    else:
+        out_pressure = np.ones(n, dtype=float)
+    if mean_in > 0.0:
+        in_pressure = incoming / mean_in
+    else:
+        in_pressure = np.ones(n, dtype=float)
+
+    # Average directional pressure so asymmetric nodes are not treated as
+    # completely unusable relays; the floor keeps low-pressure nodes viable.
+    pressure = np.maximum(0.65, 0.5 * (out_pressure + in_pressure))
+    pressure_scale = max(float(np.max(pressure)), 1.0)
+    pressure = pressure / pressure_scale
+
+    # Approximate expected link load using direct traffic and endpoint
+    # pressures. This is an edge-level estimate, not a path enumeration.
+    edge_risk = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                transit_proxy = np.sqrt(max(0.0, out_pressure[i] * in_pressure[j]))
+                edge_risk[i, j] = 0.68 * direct[i, j] + 0.32 * min(
+                    1.0, transit_proxy / max(float(np.max(out_pressure)), float(np.max(in_pressure)), 1.0)
+                )
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            d = float(direct[i, j])
+            risk = float(edge_risk[i, j])
+            # Prefer direct service, while mildly disfavoring links with high
+            # predicted utilization.
+            linear[(i, j)] = -0.78 * d - 0.22 * np.sqrt(d) + 0.18 * risk * risk
+
+    # Penalize co-selecting risky links sharing an origin or destination.
+    # This represents concentration risk while keeping the QUBO O(n^3).
+    quadratic = {}
+    pair_scale = 0.12
+
+    for i in range(n):
+        links = [(i, j) for j in range(n) if j != i]
+        for a in range(len(links)):
+            e1 = links[a]
+            for b in range(a + 1, len(links)):
+                e2 = links[b]
+                r1 = float(edge_risk[e1[0], e1[1]])
+                r2 = float(edge_risk[e2[0], e2[1]])
+                endpoint_factor = 0.5 + 0.5 * (
+                    float(pressure[e1[1]]) + float(pressure[e2[1]])
+                ) / 2.0
+                weight = pair_scale * r1 * r2 * endpoint_factor
+                if weight > 1e-12:
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+                    quadratic[key] = weight
+
+    for j in range(n):
+        links = [(i, j) for i in range(n) if i != j]
+        for a in range(len(links)):
+            e1 = links[a]
+            for b in range(a + 1, len(links)):
+                e2 = links[b]
+                r1 = float(edge_risk[e1[0], e1[1]])
+                r2 = float(edge_risk[e2[0], e2[1]])
+                endpoint_factor = 0.5 + 0.5 * (
+                    float(pressure[e1[0]]) + float(pressure[e2[0]])
+                ) / 2.0
+                weight = pair_scale * r1 * r2 * endpoint_factor
+                if weight > 1e-12:
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+                    quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

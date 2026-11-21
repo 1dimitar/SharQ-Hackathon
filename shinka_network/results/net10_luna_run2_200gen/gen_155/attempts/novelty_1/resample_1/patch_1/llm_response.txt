@@ -1,0 +1,15 @@
+<NAME>
+raise_relay_pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Raise the relay-pressure floor from 0.75 to 0.85. The current QUBO gives relatively strong rewards to two-hop paths through low-incident-demand nodes because their pressure is floored at 0.75. A higher floor discounts those paths more evenly, reducing the chance that the sampler over-rewards indirect routes and disrupts otherwise useful direct-link choices. This is a focused test of the suggested floor adjustment and leaves the path strength and edge discount unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        node_pressure = np.maximum(0.75, incident / mean_incident)
+=======
+        node_pressure = np.maximum(0.85, incident / mean_incident)
+>>>>>>> REPLACE
+</DIFF>

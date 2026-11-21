@@ -1,0 +1,139 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic surrogate costs from a demand matrix."""
+    d = np.asarray(demand, dtype=float)
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0)
+    n = int(d.shape[0])
+
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = d / scale
+
+    rows = np.sum(z, axis=1)
+    cols = np.sum(z, axis=0)
+    incident = rows + cols
+    max_incident = float(np.max(incident)) if n else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+
+    # Direct link value combines its own traffic with endpoint throughput.
+    # The square-root term keeps moderate traffic from being swamped by a few
+    # large OD pairs.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(z[i, j])
+            endpoint = (float(rows[i]) + float(cols[j])) / (2.0 * max_incident)
+            value = 0.72 * direct + 0.18 * np.sqrt(direct) + 0.10 * endpoint
+            linear[(i, j)] = -float(value)
+
+    # Pairwise penalties are based on correlated traffic profiles: selecting
+    # two similar outgoing destinations (or incoming origins) gives less
+    # route diversity and tends to concentrate load.
+    row_norm = np.sqrt(np.sum(z * z, axis=1))
+    col_norm = np.sqrt(np.sum(z * z, axis=0))
+    row_profile = np.divide(
+        z, row_norm[:, None], out=np.zeros_like(z),
+        where=row_norm[:, None] > 0.0,
+    )
+    col_profile = np.divide(
+        z, col_norm[None, :], out=np.zeros_like(z),
+        where=col_norm[None, :] > 0.0,
+    )
+
+    quadratic = {}
+    overlap_strength = 0.075
+    for node in range(n):
+        neighbors = [v for v in range(n) if v != node]
+        for a in range(len(neighbors)):
+            j = neighbors[a]
+            for b in range(a + 1, len(neighbors)):
+                k = neighbors[b]
+                sim_out = float(np.dot(row_profile[j], row_profile[k]))
+                if sim_out > 1e-10:
+                    quadratic[((node, j), (node, k))] = overlap_strength * sim_out
+                sim_in = float(np.dot(col_profile[j], col_profile[k]))
+                if sim_in > 1e-10:
+                    quadratic[((j, node), (k, node))] = overlap_strength * sim_in
+
+    # Estimate a two-hop route's value from component-link support, while
+    # discounting transit through nodes already associated with heavy traffic.
+    # For each OD pair, allocate a bounded total reward across its possible
+    # intermediates, favoring paths that are plausible under the demand matrix.
+    pressure = incident / max_incident
+    for i in range(n):
+        for k in range(n):
+            traffic = float(z[i, k])
+            if i == k or traffic <= 0.0:
+                continue
+
+            mids = []
+            scores = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                first = float(z[i, j])
+                second = float(z[j, k])
+                support = np.sqrt(first * second)
+
+                # Avoid making unsupported paths impossible, but favor paths
+                # whose constituent links carry related demand.
+                support_factor = 0.12 + 0.88 * support / (1.0 + support)
+                transit_factor = 1.0 / (0.65 + float(pressure[j]))
+                score = support_factor * transit_factor
+                mids.append(j)
+                scores.append(score)
+
+            if not mids:
+                continue
+            scores = np.asarray(scores, dtype=float)
+            denom = float(np.sum(scores))
+            if denom <= 0.0:
+                continue
+
+            # Bound the total indirect reward for this OD pair relative to
+            # its direct-link value, so many candidate paths cannot collectively
+            # overwhelm the incentive to serve substantial demand directly.
+            direct_value = (
+                0.72 * traffic
+                + 0.18 * np.sqrt(traffic)
+                + 0.10 * (
+                    float(rows[i]) + float(cols[k])
+                ) / (2.0 * max_incident)
+            )
+            budget = min(0.58 * traffic, 0.35 * direct_value)
+            for j, score in zip(mids, scores):
+                weight = -budget * float(score) / denom
+                if weight != 0.0:
+                    quadratic[((i, j), (j, k))] = weight
+
+    # The evaluator applies degree penalties separately.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

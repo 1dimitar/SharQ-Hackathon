@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_pressure_85_15",
+  "patch_description": "Increase the endpoint-pressure share from 10% to 15%, while keeping direct demand dominant at 85%. This tests the recommended nearby mixture: endpoint pressure may help choose links useful to high-throughput sources and destinations, improving typical topologies, while the strong direct-demand component remains the main signal. The two components stay normalized as before; the quadratic terms and degree penalty are unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:33.015578",
+  "llm_cost": 0.0008568,
+  "llm_model": "gpt-6-luna"
+}

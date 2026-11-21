@@ -1,0 +1,37 @@
+{
+    "combined_score": 0.8316809595028667,
+    "public": {
+        "mean_gap_best_pct": 10.771228652751418,
+        "mean_gap_median_pct": 31.611835863377607,
+        "mean_feasible_rate": 0.7890625,
+        "mean_quadratic_terms": 480.0
+    },
+    "private": {
+        "network10_s0": {
+            "best": 225334.0,
+            "median": 281042.0,
+            "ref": 210800.0
+        },
+        "network10_s1": {
+            "best": 242400.0,
+            "median": 272367.0,
+            "ref": 210800.0
+        },
+        "network10_s2": {
+            "best": 230400.0,
+            "median": 280467.0,
+            "ref": 210800.0
+        },
+        "network10_s3": {
+            "best": 235889.0,
+            "median": 275875.0,
+            "ref": 210800.0
+        }
+    },
+    "text_feedback": "network10_s0: best 225334 vs reference 210800 (gap +6.9%), median gap +33.3%, 88% of samples valid before repair, 64 distinct topologies, 480 quadratic terms, built in 0.00s\nnetwork10_s1: best 242400 vs reference 210800 (gap +15.0%), median gap +29.2%, 75% of samples valid before repair, 64 distinct topologies, 480 quadratic terms, built in 0.00s\nnetwork10_s2: best 230400 vs reference 210800 (gap +9.3%), median gap +33.0%, 78% of samples valid before repair, 64 distinct topologies, 480 quadratic terms, built in 0.00s\nnetwork10_s3: best 235889 vs reference 210800 (gap +11.9%), median gap +30.9%, 75% of samples valid before repair, 64 distinct topologies, 480 quadratic terms, built in 0.00s\nLargest gap: network10_s1 (+15.0%).",
+    "execution_time_mean": 0.0004236352500583962,
+    "execution_time_std": 0.00011853133967615676,
+    "num_valid_runs": 4,
+    "num_invalid_runs": 0,
+    "all_validation_errors": []
+}

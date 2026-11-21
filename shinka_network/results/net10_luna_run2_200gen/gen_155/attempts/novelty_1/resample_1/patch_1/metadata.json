@@ -1,0 +1,14 @@
+{
+  "generation": 155,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "raise_relay_pressure_floor",
+  "patch_description": "Raise the relay-pressure floor from 0.75 to 0.85. The current QUBO gives relatively strong rewards to two-hop paths through low-incident-demand nodes because their pressure is floored at 0.75. A higher floor discounts those paths more evenly, reducing the chance that the sampler over-rewards indirect routes and disrupts otherwise useful direct-link choices. This is a focused test of the suggested floor adjustment and leaves the path strength and edge discount unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:16.355983",
+  "llm_cost": 0.0009561000000000001,
+  "llm_model": "gpt-6-luna"
+}

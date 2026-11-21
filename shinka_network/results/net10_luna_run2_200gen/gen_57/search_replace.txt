@@ -1,0 +1,16 @@
+<NAME>
+moderate_indirect_budget
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward budget from 0.62 to 0.56, one of the suggested sweep values. The current setting improved median gaps but coincided with worse best gaps and a lower feasible rate than the earlier program. Slightly reducing indirect rewards preserves the existing path support and allocation while giving direct-link demand a stronger relative influence; this is a targeted test of whether that balance also improves the best sampled topologies and feasibility.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.62
+=======
+    path_strength = 0.56
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 103,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_capped_direct",
+  "patch_description": "This crossover keeps the current implementation\u2019s endpoint-pressure signal and direct-demand emphasis, while borrowing the inspiration program\u2019s concave demand response and transit-load adjustment. Two-hop rewards are discounted for busy transit nodes and pressured constituent links, then capped per origin-destination pair so the accumulated indirect reward cannot overwhelm the direct-link signal as network size grows. It emits at most one quadratic term per valid two-hop path, within the required term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:20.249062",
+  "llm_cost": 0.0013222,
+  "llm_model": "gpt-6-luna"
+}

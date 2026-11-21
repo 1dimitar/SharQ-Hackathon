@@ -1,0 +1,24 @@
+<NAME>
+narrow_path_quality
+</NAME>
+
+<DESCRIPTION>
+The current concave path support gives smaller OD demands substantially more relative influence than large demands. Narrow that variation by applying a bounded multiplier to each path’s existing support: clamp its ratio to normalized demand to [0.8, 1.4]. This preserves the current path-strength and transit-pressure terms while limiting how much concavity can distort the relative importance of OD pairs. For normalized demand in (0, 1], this mainly caps the boost given to small demands; the lower bound keeps the formulation well-defined if the demand model is later adjusted.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+=======
+            raw_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+            relative_quality = raw_support / normalized_demand
+            relative_quality = min(1.4, max(0.8, relative_quality))
+            path_support = normalized_demand * relative_quality
+>>>>>>> REPLACE
+</DIFF>

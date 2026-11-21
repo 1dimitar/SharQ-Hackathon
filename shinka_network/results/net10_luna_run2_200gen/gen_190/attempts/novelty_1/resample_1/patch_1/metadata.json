@@ -1,0 +1,14 @@
+{
+  "generation": 190,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_load_discount",
+  "patch_description": "The direct-link blend already uses the evidence-backed 85:15 calibration. Instead, strengthen the existing discount on two-hop paths whose constituent links have substantial direct demand. Those links are more likely to have limited capacity left for transit traffic, so this makes the path rewards more load-aware without adding quadratic terms or changing the QUBO structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:02:26.127138",
+  "llm_cost": 0.001216,
+  "llm_model": "gpt-6-luna"
+}

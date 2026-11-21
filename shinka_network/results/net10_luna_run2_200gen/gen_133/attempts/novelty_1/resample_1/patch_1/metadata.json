@@ -1,0 +1,14 @@
+{
+  "generation": 133,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse-relay-balance",
+  "patch_description": "The current program uses max-normalized relay pressure and spreads every two-hop reward across all possible intermediates. This version uses mean-normalized pressure with a higher 0.85 floor, then allocates each OD pair\u2019s indirect reward to at most four promising relays. It adds a modest penalty for redundant incoming or outgoing neighbor profiles, while keeping the total number of quadratic terms well below the allowed limit. The direct-link reward remains demand-focused, with a smaller endpoint contribution.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:00.257120",
+  "llm_cost": 0.0016744,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_path_reward",
+  "patch_description": "Reduce the two-hop reward strength from 0.25 to 0.20. This is a targeted adjustment toward a more conservative path signal: two-hop rewards can otherwise overwhelm the direct-link demand signal, even with pressure discounts. A prior evaluation of this strength had a smaller mean best-topology gap than the current program, so this change prioritizes improving the best sampled topology while retaining the existing selective, positive-demand-gated paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:29.621771",
+  "llm_cost": 0.0007938,
+  "llm_model": "gpt-6-luna"
+}

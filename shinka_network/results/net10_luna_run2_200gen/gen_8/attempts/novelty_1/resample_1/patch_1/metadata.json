@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "neighbor_role_diversity",
+  "patch_description": "Keep the baseline direct-demand reward, and add a modest positive interaction for selecting links whose endpoints have similar network roles. Two outgoing neighbors with similar demand profiles offer redundant downstream options; likewise, two incoming neighbors with similar profiles offer redundant origins. Penalizing these pairs encourages the two links at each node to provide more diverse routing options, while the direct-demand reward still favors useful links. Cosine normalization makes the interactions comparable across nodes with different total demand. The construction adds at most \\(n(n-1)(n-2)\\) quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:33.935487",
+  "llm_cost": 0.0019221,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,70 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build demand-based direct-link and two-hop surrogate cost terms."""
+    demand = np.asarray(demand, dtype=float)
+    n = len(demand)
+    scale = float(np.max(demand)) or 1.0
+
+    # A modest concave blend gives non-dominant traffic pairs some influence,
+    # while retaining the baseline's emphasis on large direct demands.
+    normalized = np.maximum(demand, 0.0) / scale
+    direct_reward = 0.90 * normalized + 0.10 * np.sqrt(normalized)
+    linear = {
+        (i, j): -float(direct_reward[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # Retain the existing two-hop path formulation.
+    incident = np.sum(demand, axis=0) + np.sum(demand, axis=1)
+    mean_incident = float(np.mean(incident)) or 1.0
+    node_pressure = np.maximum(0.75, incident / mean_incident)
+
+    quadratic = {}
+    path_strength = 0.25
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                through_demand = float(demand[i, k])
+                if through_demand <= 0.0:
+                    continue
+                edge_pressure = (
+                    float(demand[i, j]) + float(demand[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * (through_demand / scale)
+                    / (node_pressure[j] * (1.0 + 0.5 * edge_pressure))
+                )
+                quadratic[((i, j), (j, k))] = weight
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

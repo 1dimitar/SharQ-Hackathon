@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_surrogate",
+  "patch_description": "Keeps the current implementation\u2019s direct-link and endpoint-aware linear rewards, while blending the two versions\u2019 weaker and stronger two-hop incentives with an intermediate coefficient. The two-hop reward is shared across candidate intermediates and discounts busy transit nodes, avoiding the over-rewarding of any single route. The degree penalty remains external to the returned cost terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:47.334620",
+  "llm_cost": 0.0010812,
+  "llm_model": "gpt-6-luna"
+}

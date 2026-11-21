@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_allocated_paths",
+  "patch_description": "Keeps the direct-link demand reward, but allocates a bounded two-hop reward for each positive-demand OD pair across its possible intermediate nodes. The allocation favors paths whose two constituent links have geometric demand support and discounts intermediate nodes with high incident demand. Normalizing the path weights per OD prevents an OD pair from receiving a larger total reward merely because it has more candidate intermediates. The bounded path contribution and moderate penalty weight are intended to retain useful routing signal without encouraging excessive degree violations.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:44.712093",
+  "llm_cost": 0.0012564,
+  "llm_model": "gpt-6-luna"
+}

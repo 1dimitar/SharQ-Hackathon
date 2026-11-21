@@ -1,0 +1,14 @@
+{
+  "generation": 198,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_twohop_influence",
+  "patch_description": "Limit the aggregate two-hop reward for each origin-destination pair to 75% of that pair\u2019s direct-link reward. The current code assigns a reward to every feasible intermediate node, so many individually modest two-hop terms can collectively dominate the direct-service signal. Capping their total magnitude preserves the relative ranking of candidate paths while reducing the chance that the QUBO over-favors networks with many indirect routes. This follows the supplied recommendation and keeps the number of quadratic terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:03:20.860794",
+  "llm_cost": 0.0011712,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_pressure_path_cover",
+  "patch_description": "This combines the direct-demand signal with a second-order path-coverage reward: a pair of selected links earns credit for carrying traffic that could otherwise require a direct link. To avoid giving every possible two-hop route the full value of the same demand, the path reward is shared across the four routes an OD pair could use under degree-two constraints.\n\nThe novel calibration uses maximum-normalized incident traffic to discount busy transit nodes, with a bounded inverse pressure factor. It also discounts routes whose component links already have substantial direct demand, since those links may have less spare capacity. A small endpoint-throughput contribution in the linear terms preserves useful source and destination signals without displacing direct demand.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:55.310930",
+  "llm_cost": 0.0021801999999999998,
+  "llm_model": "gpt-6-luna"
+}

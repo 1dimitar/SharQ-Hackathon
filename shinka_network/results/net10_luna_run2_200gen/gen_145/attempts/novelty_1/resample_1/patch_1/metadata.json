@@ -1,0 +1,14 @@
+{
+  "generation": 145,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_reward",
+  "patch_description": "Give moderate-demand direct links more influence by using the suggested 0.75 linear / 0.25 square-root blend. This retains the strong preference for high-demand direct links while making useful mid-demand links more competitive, which may improve typical sampled topologies and reduce the median gap. Keep the existing two-hop route discounts unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:09.673850",
+  "llm_cost": 0.0008669000000000001,
+  "llm_model": "gpt-6-luna"
+}

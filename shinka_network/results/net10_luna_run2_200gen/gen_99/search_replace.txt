@@ -1,0 +1,15 @@
+<NAME>
+twohop_strength_balance
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward strength from 0.25 to 0.46 while leaving the direct-link rewards and pressure discounts unchanged. The current setting has a relatively strong best-sample gap but a much worse median gap, suggesting that useful multi-hop paths may be under-rewarded for typical samples. This is a measured increase that strengthens those path signals without jumping to the more aggressive 0.56 setting, which had mixed best-sample results.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.25
+=======
+    path_strength = 0.46
+>>>>>>> REPLACE
+</DIFF>

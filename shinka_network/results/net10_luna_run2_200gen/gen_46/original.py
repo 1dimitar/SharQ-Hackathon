@@ -1,0 +1,70 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build surrogate cost terms for the directed network-design QUBO."""
+    demand = np.asarray(demand, dtype=float)
+    n = len(demand)
+
+    scale = float(np.max(demand))
+    if scale <= 0.0:
+        scale = 1.0
+
+    # Blend the established direct-demand signal with a mild concave
+    # adjustment, so moderately sized demands retain some influence.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            normalized = max(0.0, float(demand[i, j]) / scale)
+            direct_value = 0.90 * normalized + 0.10 * np.sqrt(normalized)
+            linear[(i, j)] = -float(direct_value)
+
+    # Preserve the existing two-hop reward and its transit congestion discount.
+    row_load = demand.sum(axis=1)
+    col_load = demand.sum(axis=0)
+    node_load = row_load + col_load
+    typical_load = float(node_load.mean())
+    if typical_load <= 0.0:
+        typical_load = 1.0
+
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            congestion = 1.0 + float(node_load[j]) / typical_load
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+                weight = -0.12 * (traffic / scale) / congestion
+                quadratic[((i, j), (j, k))] = weight
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

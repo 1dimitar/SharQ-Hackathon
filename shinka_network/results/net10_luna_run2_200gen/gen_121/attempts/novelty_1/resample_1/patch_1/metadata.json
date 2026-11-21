@@ -1,0 +1,14 @@
+{
+  "generation": 121,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor",
+  "patch_description": "Keep the route-quality, congestion, and indirect-budget settings unchanged, but apply a 0.75 floor to the existing max-normalized relay pressure. This isolates the effect of pressure normalization: very quiet nodes no longer receive a disproportionate transit reward solely because their incident demand is small, while busier nodes retain their relative pressure. The floor is a focused test of the suggested max-based normalization variants and avoids changing unrelated route-scoring behavior.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:29.144731",
+  "llm_cost": 0.0010763,
+  "llm_model": "gpt-6-luna"
+}

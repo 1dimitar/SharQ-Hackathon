@@ -1,0 +1,49 @@
+<NAME>
+pressure_aware_two_hop
+</NAME>
+
+<DESCRIPTION>
+Add gated two-hop path rewards with strength 0.25. The reward reflects demand between the path’s endpoints, discounts paths through high-throughput transit nodes and links already carrying high direct demand, and is accumulated using canonical link-pair keys. This tests a stronger path signal while keeping the existing direct-demand rewards and same-endpoint load penalties. The added terms remain within the quadratic-term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    # Reward useful two-hop paths. Discount paths through busy transit nodes
+    # and links that already have substantial direct demand.
+    path_strength = 0.25
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            first_demand = float(demand[i, j])
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                endpoint_demand = float(demand[i, k])
+                second_demand = float(demand[j, k])
+                if endpoint_demand <= 0.0:
+                    continue
+
+                transit_pressure = (float(row[j]) + float(col[j])) / (2.0 * node_scale)
+                edge_pressure = np.sqrt(
+                    (1.0 + first_demand / dmax) *
+                    (1.0 + second_demand / dmax)
+                )
+                reward = (
+                    path_strength
+                    * (endpoint_demand / dmax)
+                    * (1.0 - 0.5 * transit_pressure)
+                    / edge_pressure
+                )
+
+                edge_a, edge_b = (i, j), (j, k)
+                key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+                quadratic[key] = quadratic.get(key, 0.0) - reward
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

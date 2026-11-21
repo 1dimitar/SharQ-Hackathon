@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_indirect_budget",
+  "patch_description": "Reduce the two-hop reward budget from 0.62 to 0.56, one of the suggested sweep values. The current setting improved median gaps but coincided with worse best gaps and a lower feasible rate than the earlier program. Slightly reducing indirect rewards preserves the existing path support and allocation while giving direct-link demand a stronger relative influence; this is a targeted test of whether that balance also improves the best sampled topologies and feasibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:37.475425",
+  "llm_cost": 0.0008057,
+  "llm_model": "gpt-6-luna"
+}

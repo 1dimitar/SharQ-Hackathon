@@ -1,0 +1,14 @@
+{
+  "generation": 165,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "path_strength_050",
+  "patch_description": "Raise the two-hop path strength from 0.46 to 0.50 as a narrow sweep toward the previously promising value of 0.56. This keeps the direct-link rewards, path-quality bounds, and pressure discounts fixed, so the evaluation isolates the effect of slightly stronger two-hop support. It may help the QUBO favor useful indirect routes where a direct link is not the best way to carry demand.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:17.045604",
+  "llm_cost": 0.0009567,
+  "llm_model": "gpt-6-luna"
+}

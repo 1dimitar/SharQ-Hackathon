@@ -1,0 +1,14 @@
+{
+  "generation": 147,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_balanced_twohop",
+  "patch_description": "Keeps the current program\u2019s stronger two-hop support, which had the best reported combined score, and retains the inspiration program\u2019s concave direct-demand signal and intermediate-node pressure discount. Precomputes normalized demand and per-edge pressure to avoid repeated array conversions inside the path loops. It emits only two-hop path terms, within the quadratic-term limit, and leaves degree penalties to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:14.903968",
+  "llm_cost": 0.0013042000000000002,
+  "llm_model": "gpt-6-luna"
+}

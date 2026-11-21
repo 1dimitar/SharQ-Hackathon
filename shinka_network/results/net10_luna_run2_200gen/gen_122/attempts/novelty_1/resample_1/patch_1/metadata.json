@@ -1,0 +1,14 @@
+{
+  "generation": 122,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "narrow_path_quality",
+  "patch_description": "The current concave path support gives smaller OD demands substantially more relative influence than large demands. Narrow that variation by applying a bounded multiplier to each path\u2019s existing support: clamp its ratio to normalized demand to [0.8, 1.4]. This preserves the current path-strength and transit-pressure terms while limiting how much concavity can distort the relative importance of OD pairs. For normalized demand in (0, 1], this mainly caps the boost given to small demands; the lower bound keeps the formulation well-defined if the demand model is later adjusted.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:35.464560",
+  "llm_cost": 0.0009822000000000001,
+  "llm_model": "gpt-6-luna"
+}

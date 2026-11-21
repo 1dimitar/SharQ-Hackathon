@@ -1,0 +1,14 @@
+{
+  "generation": 173,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_portfolio_qubo",
+  "patch_description": "Instead of rewarding every possible two-hop route equally, this design gives each origin\u2013destination pair a small, demand-weighted portfolio of its most promising intermediate nodes. Candidate routes are ranked by estimated edge exposure and transit-node pressure, then their rewards are normalized across the portfolio. This limits the cumulative incentive to create many overlapping paths while retaining useful two-hop structure. Direct-link rewards remain dominant, with a slightly more concave demand blend to give moderate-demand links some influence.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:46.636275",
+  "llm_cost": 0.0028343,
+  "llm_model": "gpt-6-luna"
+}

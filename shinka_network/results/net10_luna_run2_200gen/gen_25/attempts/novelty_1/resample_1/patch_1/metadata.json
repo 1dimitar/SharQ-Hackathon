@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "supported_path_reward",
+  "patch_description": "For each two-hop path, retain the current discount for edge pressure, but multiply its reward by a bounded support factor derived from the normalized direct demands on both route edges. The nonzero floor keeps potentially useful paths available even when one edge has little direct demand; the increasing factor favors paths whose component links are already supported by traffic. This changes weights only for the existing two-hop terms and adds no quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:04.033402",
+  "llm_cost": 0.0009599000000000001,
+  "llm_model": "gpt-6-luna"
+}

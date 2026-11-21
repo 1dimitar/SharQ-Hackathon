@@ -1,0 +1,15 @@
+<NAME>
+twophop_strength_020
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward coefficient from 0.15 to 0.20 by raising `indirect_fraction` from 0.6 to 0.8; the code divides it by four when forming each term. This tests a moderate increase in the value of indirect service while keeping positive-demand gating and the transit-load discount unchanged, as suggested by the prior feedback.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    indirect_fraction = 0.6
+=======
+    indirect_fraction = 0.8
+>>>>>>> REPLACE
+</DIFF>

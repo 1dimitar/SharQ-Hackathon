@@ -1,0 +1,107 @@
+<NAME>
+balanced_incidence_load
+</NAME>
+
+<DESCRIPTION>
+This uses an incidence-load surrogate rather than rewarding completed two-hop paths. Each candidate link gets a benefit based on direct traffic and how well its endpoints connect high-demand origins and destinations. Positive quadratic terms penalize pairs of links that compete for the same outgoing or incoming node capacity, with stronger penalties when their traffic profiles overlap. This aims to discourage hub concentration and produce more balanced low-energy topologies.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.maximum(matrix, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    maximum = float(np.max(traffic)) if traffic.size else 0.0
+    if maximum <= 0.0:
+        maximum = 1.0
+    t = traffic / maximum
+
+    # Endpoint activity estimates the transit pressure a link may encounter.
+    row = np.sum(t, axis=1)
+    col = np.sum(t, axis=0)
+    mean_activity = max(float(np.mean(row + col)), 1e-12)
+    source_pressure = np.sqrt(row / mean_activity)
+    sink_pressure = np.sqrt(col / mean_activity)
+
+    # Estimate the usefulness of a link from direct traffic and its role in
+    # connecting active origins to active destinations. The latter is a
+    # separable endpoint score, not a path-completion reward.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = t[i, j]
+            connectivity = np.sqrt(max(row[i], 0.0) * max(col[j], 0.0))
+            affinity = connectivity / max(float(np.mean(row + col)), 1e-12)
+            value = 0.72 * direct + 0.28 * min(1.0, affinity)
+            # Mildly avoid sending links into or out of already busy nodes.
+            value /= 1.0 + 0.12 * (source_pressure[i] + sink_pressure[j])
+            linear[(i, j)] = -float(value)
+
+    quadratic = {}
+
+    # Penalize pairs sharing a tail or head. Their profile overlap estimates
+    # whether those links are likely to compete for the same transit traffic.
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(j + 1, n):
+                if k == i:
+                    continue
+                # Same-tail links: destinations with similar incoming demand
+                # patterns are less complementary as transit choices.
+                a = traffic[:, j]
+                b = traffic[:, k]
+                denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+                overlap = float(np.dot(a, b) / denom) if denom > 1e-15 else 0.0
+                pressure = 0.5 * (sink_pressure[j] + sink_pressure[k])
+                w = 0.12 * overlap * (1.0 + 0.15 * pressure)
+                if w > 0.0:
+                    quadratic[((i, j), (i, k))] = float(w)
+
+                # Same-head links: similar origin profiles also compete for
+                # the receiving node's limited incoming transit capacity.
+                a = traffic[j, :]
+                b = traffic[k, :]
+                denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+                overlap = float(np.dot(a, b) / denom) if denom > 1e-15 else 0.0
+                pressure = 0.5 * (source_pressure[j] + source_pressure[k])
+                w = 0.12 * overlap * (1.0 + 0.15 * pressure)
+                if w > 0.0:
+                    quadratic[((j, i), (k, i))] = float(w)
+
+    # Avoid an excessively weak degree term after global coefficient scaling.
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

@@ -1,0 +1,14 @@
+{
+  "generation": 110,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_saturation_paths",
+  "patch_description": "This design estimates how likely each direct link is to be selected by separately allocating two units of fractional capacity at each source and destination. Two-hop rewards then emphasize demand less likely to be served directly, while discounting transit through busy nodes and links with high direct demand. This endpoint-saturation estimate changes which paths receive reward rather than simply increasing every two-hop reward. A stronger degree penalty is intended to keep annealing samples feasible before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:39.786739",
+  "llm_cost": 0.0025846000000000003,
+  "llm_model": "gpt-6-luna"
+}

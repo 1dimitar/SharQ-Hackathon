@@ -1,0 +1,15 @@
+<NAME>
+route_budget_056
+</NAME>
+
+<DESCRIPTION>
+Increase the total two-hop reward per positive-demand OD pair from 0.52 to 0.56. This is a modest adjustment toward the recommended sweep range, while keeping the existing top-three supported intermediates and all route scoring unchanged. The larger indirect-route signal may help sampled topologies represent useful multi-hop connectivity, particularly improving typical-sample quality without adding quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            budget = 0.52 * demand_value
+=======
+            budget = 0.56 * demand_value
+>>>>>>> REPLACE
+</DIFF>

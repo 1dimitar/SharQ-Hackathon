@@ -1,0 +1,44 @@
+<NAME>
+concave_path_signal
+</NAME>
+
+<DESCRIPTION>
+Increase the mild concave component in both direct-link and two-hop demand signals. This gives medium-demand OD pairs more influence relative to the largest demands, which may encourage a more balanced topology and improve typical sampled solutions. The adjustment keeps direct demand dominant and does not add quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): -(
+            0.95 * float(traffic[i, j]) / scale
+            + 0.05 * np.sqrt(float(traffic[i, j]) / scale)
+        )
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+=======
+    linear = {
+        (i, j): -(
+            0.85 * float(traffic[i, j]) / scale
+            + 0.15 * np.sqrt(float(traffic[i, j]) / scale)
+        )
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            path_support = (
+                0.85 * normalized_demand
+                + 0.15 * np.sqrt(normalized_demand)
+            )
+=======
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+>>>>>>> REPLACE
+
+</DIFF>

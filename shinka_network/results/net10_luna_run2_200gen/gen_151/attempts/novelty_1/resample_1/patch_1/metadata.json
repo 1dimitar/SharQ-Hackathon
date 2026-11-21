@@ -1,0 +1,14 @@
+{
+  "generation": 151,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reduce_path_strength",
+  "patch_description": "Reduce the indirect-route reward budget from 0.58 to 0.50. This tests the lower end of the suggested narrow sweep while leaving the pressure and edge discounts unchanged. A slightly weaker path reward may reduce the tendency to favor plausible two-hop routes at the expense of directly serving heavy demand, and it changes only the route-strength parameter.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:42.691518",
+  "llm_cost": 0.0009742,
+  "llm_model": "gpt-6-luna"
+}

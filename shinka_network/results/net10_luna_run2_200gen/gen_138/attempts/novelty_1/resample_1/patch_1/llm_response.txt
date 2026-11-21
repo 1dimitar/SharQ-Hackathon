@@ -1,0 +1,86 @@
+<NAME>
+cap_twohop_reward
+</NAME>
+
+<DESCRIPTION>
+Cap the combined two-hop reward for each positive-demand origin-destination pair at 65% of its direct-link reward. This keeps the existing demand-sensitive ranking among intermediate-node choices, while preventing the many possible two-hop paths for one OD pair from collectively overwhelming the direct-link signal. It also limits the influence of indirect rewards on typical sampled topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.25
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+    quadratic = {}
+    path_strength = 0.25
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            # Generate this OD pair's path rewards first, then cap their
+            # combined magnitude relative to its direct-link reward.
+            candidates = []
+            total_magnitude = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                candidates.append((key, weight))
+                total_magnitude += abs(weight)
+
+            direct_magnitude = abs(linear[(i, k)])
+            cap = 0.65 * direct_magnitude
+            factor = min(1.0, cap / total_magnitude) if total_magnitude > 0.0 else 1.0
+            for key, weight in candidates:
+                quadratic[key] = weight * factor
+>>>>>>> REPLACE
+
+</DIFF>

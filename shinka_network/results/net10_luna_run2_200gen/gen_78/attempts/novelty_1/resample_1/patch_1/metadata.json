@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_edge_pressure",
+  "patch_description": "Replace the current nonlinear component-link pressure discount with the milder linear factor `1 + 0.75 * edge_pressure`. The current exponent of 1.5 can strongly suppress paths using links with direct demand, even when those paths have good demand support. A moderate discount still favors less-loaded components while retaining more differentiation from the demand-supported path evidence, which may improve both the best and typical sampled topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:30.478140",
+  "llm_cost": 0.0009008000000000001,
+  "llm_model": "gpt-6-luna"
+}

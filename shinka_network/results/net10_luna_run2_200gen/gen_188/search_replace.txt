@@ -1,0 +1,15 @@
+<NAME>
+relay_pressure_floor_065
+</NAME>
+
+<DESCRIPTION>
+Lower the minimum relay-pressure factor from 0.75 to 0.65, leaving incident-demand calculation and edge discounting unchanged. This controlled test gives low-incident nodes more support as transit relays, which may help the sampled topologies route traffic without overloading a small set of high-pressure nodes. The change is limited to the pressure floor so its effect can be compared directly with the current setting.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_pressure = np.maximum(0.75, incident / mean_incident)
+=======
+    node_pressure = np.maximum(0.65, incident / mean_incident)
+>>>>>>> REPLACE
+</DIFF>

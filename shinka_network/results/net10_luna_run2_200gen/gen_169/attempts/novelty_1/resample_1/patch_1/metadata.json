@@ -1,0 +1,14 @@
+{
+  "generation": 169,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_load_balance",
+  "patch_description": "This approach combines direct-link preference with two different signals. First, it distributes each OD pair\u2019s two-hop support across candidate relays according to estimated relay pressure and the direct traffic already using each leg. Second, it adds positive pairwise terms for links sharing an origin or destination, discouraging pairs of links that would concentrate substantial direct traffic around the same node. This approximates load balancing rather than rewarding every possible two-hop route equally. The quadratic term count remains below the allowed bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:20.602083",
+  "llm_cost": 0.0027686,
+  "llm_model": "gpt-6-luna"
+}

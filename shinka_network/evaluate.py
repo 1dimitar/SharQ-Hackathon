@@ -12,58 +12,23 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 from pathlib import Path
 
 from shinka.core import run_shinka_eval
 
 import problem
 
-# The surrogate must be built from the demand matrix alone: no LP, no solvers, no file access.
-FORBIDDEN = [
-    r"qoblib", r"\bproblem\b", r"scipy\.optimize", r"linprog", r"\bmilp\b", r"dimod", r"dwave",
-    r"\bneal\b", r"subprocess", r"os\.system", r"\bopen\(", r"\beval\(", r"\bexec\(", r"__import__",
-    r"importlib", r"\bsocket\b", r"requests", r"urllib",
-]  # fmt: skip
-SECONDS_PER_INSTANCE = 20.0
-
-
-def evolve_block(source: str) -> str:
-    m = re.search(r"EVOLVE-BLOCK-START(.*?)EVOLVE-BLOCK-END", source, flags=re.S)
-    return m.group(1) if m else source
-
-
-def forbidden_use(program_path: str) -> str | None:
-    code = evolve_block(Path(program_path).read_text())
-    code = re.sub(r'""".*?"""', "", code, flags=re.S)  # ignore docstrings
-    code = re.sub(r"#.*", "", code)
-    for pattern in FORBIDDEN:
-        if re.search(pattern, code):
-            return f"forbidden construct in the evolved code: {pattern}"
-    return None
-
 
 def main(program_path: str, results_dir: str, suite: str) -> None:
     os.makedirs(results_dir, exist_ok=True)
     instances = problem.load_suite(suite)
-    static_error = forbidden_use(program_path)
+    static_error = problem.forbidden_use(program_path)
 
     def get_kwargs(run_index: int) -> dict:
         return {"demand": instances[run_index].demand}
 
     def validate(result) -> tuple[bool, str | None]:
-        if static_error:
-            return False, static_error
-        if not isinstance(result, dict) or not {"n", "linear", "quadratic", "penalty_weight"} <= set(result):
-            return False, "run_surrogate must return the dict built by the fixed wrapper"
-        if result["seconds"] > SECONDS_PER_INSTANCE:
-            return False, (
-                f"surrogate_terms took {result['seconds']:.1f}s for n={result['n']} "
-                f"(limit {SECONDS_PER_INSTANCE:.0f}s)"
-            )
-        error = problem.validate_terms(
-            result["n"], result["linear"], result["quadratic"], result["penalty_weight"]
-        )
+        error = static_error or problem.check_result(result)
         return (error is None), error
 
     def aggregate(results: list) -> dict:

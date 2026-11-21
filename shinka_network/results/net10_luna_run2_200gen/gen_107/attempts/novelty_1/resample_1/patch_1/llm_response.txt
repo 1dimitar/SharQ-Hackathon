@@ -1,0 +1,63 @@
+<NAME>
+clamped_route_quality
+</NAME>
+
+<DESCRIPTION>
+The current two-hop reward applies across every possible intermediate node, so routes through relatively poor transit points can still receive substantial reward. This edit computes a quality for each candidate route from the existing transit-node and edge-pressure signals, normalizes those qualities to their per-OD mean, and clamps their relative influence to 0.8–1.4. The clamp limits how much any single route can dominate while still preferring better-supported, less-congested alternatives. The existing route reward, direct-link terms, and degree-penalty setting remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            normalized_demand = through_demand / scale
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * normalized_demand
+                    / (float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure))
+                )
+
+                # The product is symmetric in its two binary factors; store
+                # the key in canonical order for a stable representation.
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                quadratic[key] = weight
+=======
+            normalized_demand = through_demand / scale
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                route_quality = 1.0 / (
+                    float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure)
+                )
+                candidates.append((j, edge_pressure, route_quality))
+
+            mean_quality = (
+                sum(item[2] for item in candidates) / len(candidates)
+                if candidates else 1.0
+            )
+            if mean_quality <= 0.0:
+                mean_quality = 1.0
+
+            for j, edge_pressure, route_quality in candidates:
+                relative_quality = min(1.4, max(0.8, route_quality / mean_quality))
+                weight = (
+                    -path_strength * normalized_demand * relative_quality
+                    / (float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure))
+                )
+
+                # The product is symmetric in its two binary factors; store
+                # the key in canonical order for a stable representation.
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+</DIFF>

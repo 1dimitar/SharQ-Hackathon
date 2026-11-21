@@ -1,0 +1,33 @@
+<NAME>
+route_quality_clamp
+</NAME>
+
+<DESCRIPTION>
+Clamp each OD pair’s candidate two-hop route scores to 0.8–1.4 times their mean before allocating its indirect reward. This preserves route preferences while preventing a few intermediates from dominating the reward. The narrower range may make the low-energy region less dependent on uncertain route estimates and improve the typical sampled topology, without adding quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            scores = np.asarray(scores, dtype=float)
+            denom = float(np.sum(scores))
+            if denom <= 0.0:
+                continue
+
+            # A modest indirect budget avoids overvaluing routes that require
+            # multiple links, while still rewarding useful connectivity.
+=======
+            scores = np.asarray(scores, dtype=float)
+            mean_score = float(np.mean(scores))
+            if mean_score > 0.0:
+                # Keep route preferences useful but bounded, so uncertain
+                # relay estimates do not dominate an OD pair's reward.
+                scores = np.clip(scores, 0.8 * mean_score, 1.4 * mean_score)
+            denom = float(np.sum(scores))
+            if denom <= 0.0:
+                continue
+
+            # A modest indirect budget avoids overvaluing routes that require
+            # multiple links, while still rewarding useful connectivity.
+>>>>>>> REPLACE
+
+</DIFF>

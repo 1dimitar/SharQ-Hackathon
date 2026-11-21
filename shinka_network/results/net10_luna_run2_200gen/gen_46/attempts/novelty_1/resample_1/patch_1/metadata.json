@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This crossover keeps the stronger shared two-hop reward from the best-performing inspiration program, while retaining the current program\u2019s concave direct-demand signal so moderate demands still influence link selection. Two-hop rewards are divided across four potential routes and discounted at high-activity transit nodes to limit overcounting and congestion. Demand is clipped to nonnegative values, the diagonal is excluded, and the quadratic-term count stays within the stated limit. The evaluator continues to supply degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:35.778136",
+  "llm_cost": 0.0011808,
+  "llm_model": "gpt-6-luna"
+}

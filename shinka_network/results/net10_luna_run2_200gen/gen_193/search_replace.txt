@@ -1,0 +1,16 @@
+<NAME>
+moderate_path_strength
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop path reward coefficient from 0.52 to 0.46. Two-hop support can help identify useful indirect service, but rewarding it too strongly may favor topologies that route traffic indirectly instead of selecting valuable direct links. This targeted adjustment preserves the existing pressure estimates and congestion discount while testing a more conservative balance between direct-link and path rewards.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                benefit = 0.52 * raw / (1.0 + 0.65 * congestion)
+=======
+                benefit = 0.46 * raw / (1.0 + 0.65 * congestion)
+>>>>>>> REPLACE
+
+</DIFF>

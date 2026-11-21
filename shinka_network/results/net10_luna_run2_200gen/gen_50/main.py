@@ -1,0 +1,76 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return direct-link rewards and pressure-discounted two-hop rewards."""
+    raw = np.asarray(demand, dtype=float)
+    n = int(raw.shape[0])
+
+    d = np.maximum(raw, 0.0).copy()
+    np.fill_diagonal(d, 0.0)
+    scale = float(np.max(d))
+    if scale <= 0.0:
+        scale = 1.0
+    d /= scale
+
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+    pressure = row + col
+    pressure_scale = float(np.max(pressure))
+    if pressure_scale <= 0.0:
+        pressure_scale = 1.0
+    pressure /= pressure_scale
+
+    # A restrained concave component helps retain useful medium-demand links.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            value = float(d[i, j])
+            linear[(i, j)] = -(0.88 * value + 0.12 * np.sqrt(value))
+
+    # Each positive-demand OD pair can be served through candidate transit
+    # nodes. Congested transit nodes and already-demand-heavy edges are less
+    # attractive, but no demand is spread uniformly over all candidates.
+    quadratic = {}
+    for i in range(n):
+        for k in range(n):
+            od = float(d[i, k])
+            if i == k or od <= 0.0:
+                continue
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                transit_discount = 1.0 / (1.0 + 1.5 * float(pressure[j]))
+                edge_load = float(d[i, j]) + float(d[j, k])
+                edge_discount = 1.0 / (1.0 + 0.8 * edge_load)
+
+                reward = 0.20 * od * transit_discount * edge_discount
+                if reward > 0.0:
+                    quadratic[((i, j), (j, k))] = -reward
+
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

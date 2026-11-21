@@ -1,0 +1,23 @@
+<NAME>
+cap_indirect_budget
+</NAME>
+
+<DESCRIPTION>
+Cap each OD pair’s total two-hop reward relative to its direct-link signal, while keeping the existing evidence-based allocation among intermediate nodes. The current budget is proportional to demand but can still add substantial incentive for a pair even when the direct-link signal is already strong. Limiting it to 38% of the direct signal reduces the chance that several indirect path terms collectively overwhelm direct-link preferences, without removing path-specific guidance.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            budget = indirect_budget * float(dn[i, k])
+
+            for j, share in zip(mids, shares):
+=======
+            direct_signal = 0.78 * float(dn[i, k]) + 0.22 * float(np.sqrt(dn[i, k]))
+            budget = min(
+                indirect_budget * float(dn[i, k]),
+                0.38 * direct_signal,
+            )
+
+            for j, share in zip(mids, shares):
+>>>>>>> REPLACE
+</DIFF>

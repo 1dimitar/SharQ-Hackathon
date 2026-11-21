@@ -1,0 +1,35 @@
+<NAME>
+pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Use the maximum node load as the pressure normalizer and floor the inverse-pressure discount at 0.80. The current mean-based formula can strongly suppress paths through busy nodes, even though those nodes may be necessary to connect high-demand pairs. Maximum normalization makes the discount reflect relative pressure across the network, while the floor prevents it from overwhelming the two-hop demand reward. This is a targeted test of node-pressure scaling; all other terms remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_load = np.sum(demand, axis=0) + np.sum(demand, axis=1)
+    mean_load = float(np.mean(node_load)) or 1.0
+    quadratic = {}
+    indirect_fraction = 0.6
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            # High-demand nodes are less desirable transit points.
+            transit_factor = 2.0 * mean_load / (mean_load + float(node_load[j]))
+=======
+    node_load = np.sum(demand, axis=0) + np.sum(demand, axis=1)
+    pressure_scale = float(np.max(node_load)) or 1.0
+    quadratic = {}
+    indirect_fraction = 0.6
+    pressure_floor = 0.80
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            # Discount busy transit nodes, but retain a substantial route reward.
+            pressure = float(node_load[j]) / pressure_scale
+            transit_factor = max(pressure_floor, 1.0 / (1.0 + pressure))
+>>>>>>> REPLACE
+</DIFF>

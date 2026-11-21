@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop_blend",
+  "patch_description": "This crossover keeps the current program\u2019s direct-demand and two-hop structure, which performed best, while borrowing the inspiration program\u2019s concave demand signal and endpoint statistics. The linear weights are a conservative blend, so moderate demands gain some influence without losing the emphasis on high-demand direct links. Two-hop rewards retain the current degree-aware transit adjustment, with a small contribution from the inspiration program\u2019s shared-intermediate weighting. The implementation clips negative demands, avoids modifying the input array, and stays within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:39.389444",
+  "llm_cost": 0.0017944999999999999,
+  "llm_model": "gpt-6-luna"
+}

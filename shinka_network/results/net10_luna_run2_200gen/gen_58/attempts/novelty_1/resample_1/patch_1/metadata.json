@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_capacity_floor",
+  "patch_description": "The current transit discount ranges from 1.0 for the least-loaded node down to 0.5 for the busiest, which may discourage useful intermediates too strongly. Keep the existing maximum-incident normalization, support allocation, and indirect budget unchanged, but use a gentler capacity discount with a floor of 0.85. This tests whether preserving more incentive for busy transit nodes improves the low-energy topologies, particularly on the weak network10_s2 case.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:51.635185",
+  "llm_cost": 0.0010258,
+  "llm_model": "gpt-6-luna"
+}

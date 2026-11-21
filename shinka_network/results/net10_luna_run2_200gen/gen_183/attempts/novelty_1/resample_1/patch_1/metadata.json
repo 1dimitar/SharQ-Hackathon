@@ -1,0 +1,14 @@
+{
+  "generation": 183,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "path_strength_050",
+  "patch_description": "Increase only the two-hop path reward strength from 0.46 to 0.50. The current QUBO already uses selective, pressure-discounted path terms; a small isolated increase tests whether giving feasible two-hop service a little more influence improves sampled topologies without changing the direct-link reward or pressure calculation. This is a conservative calibration change rather than a larger shift that could over-reward paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:25.705414",
+  "llm_cost": 0.0007836000000000001,
+  "llm_model": "gpt-6-luna"
+}

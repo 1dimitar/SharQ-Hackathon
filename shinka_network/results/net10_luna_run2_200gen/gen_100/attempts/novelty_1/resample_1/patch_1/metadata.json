@@ -1,0 +1,14 @@
+{
+  "generation": 100,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_pressure_paths",
+  "patch_description": "This version keeps direct-demand rewards as the main signal and adds pressure-adjusted two-hop rewards. For each positive-demand OD pair, route quality determines how its reward is distributed among candidate intermediates; the distribution is not uniform. The total reward across those routes is capped at 28% of that pair\u2019s direct-link reward, limiting the influence of indirect paths while still favoring less congested relays and links. Degree penalties remain the evaluator\u2019s responsibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:27.123202",
+  "llm_cost": 0.0019627,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 171,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced-path-v2",
+  "patch_description": "The strongest prior configuration used a 0.85/0.15 direct-demand blend and stronger two-hop support; the current program shifts to 0.75/0.25 and weaker path support. This proposal uses an intermediate 0.80/0.20 blend and path strength 0.53, aiming to retain direct-link preference while giving useful indirect routes more influence. It keeps the existing node-pressure and edge-pressure discounts, which temper path rewards through busy nodes and links. The number of quadratic terms remains within the required bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:53.924818",
+  "llm_cost": 0.0013127,
+  "llm_model": "gpt-6-luna"
+}

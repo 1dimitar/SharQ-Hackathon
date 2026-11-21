@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mild_concave_direct_reward",
+  "patch_description": "Add a small concave component to the normalized direct-demand reward. The dominant 95% linear term preserves the useful signal favoring large OD demands, while the 5% square-root term gives moderate demands a little more influence. This may encourage links that serve additional OD pairs and improve typical routed load without substantially changing the preference for the largest demands. The existing quadratic terms remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:07.147787",
+  "llm_cost": 0.0009644,
+  "llm_model": "gpt-6-luna"
+}

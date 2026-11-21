@@ -1,0 +1,14 @@
+{
+  "generation": 149,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_discount",
+  "patch_description": "Increase the discount on two-hop rewards when either component link already carries substantial direct demand. The current factor, `1 + 0.5 * edge_pressure`, may still favor paths that concentrate traffic on busy links. Raising the coefficient to `0.85` tests a stronger congestion aversion while leaving node-pressure handling and all other terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:43.079646",
+  "llm_cost": 0.0010372,
+  "llm_model": "gpt-6-luna"
+}

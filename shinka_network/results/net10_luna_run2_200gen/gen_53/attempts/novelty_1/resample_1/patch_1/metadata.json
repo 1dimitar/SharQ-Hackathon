@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "raise_indirect_budget",
+  "patch_description": "Increase the two-hop reward budget from 0.25 to 0.62 while leaving the existing path support and pressure discounts unchanged. This tests whether the current QUBO underweights indirect service relative to direct-link rewards: with only two outgoing links per node, useful two-hop routes can be important alternatives to direct links. Keeping the support allocation fixed isolates the effect of reward strength and does not increase the number of quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:19.990740",
+  "llm_cost": 0.0007664000000000001,
+  "llm_model": "gpt-6-luna"
+}

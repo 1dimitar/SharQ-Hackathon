@@ -1,0 +1,22 @@
+<NAME>
+clamp_path_discount
+</NAME>
+
+<DESCRIPTION>
+Clamp the combined node- and edge-pressure discount to 0.7–1.5. The current discount can become very small for pressured transit nodes or large edge demands, suppressing useful two-hop alternatives and making the typical sampled topology less robust. A lower bound preserves some support for those routes, while the upper bound limits excessive rewards. This isolates the proposed multiplier-bound experiment without changing the linear terms or degree penalty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+=======
+                route_multiplier = 1.0 / (
+                    float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure)
+                )
+                route_multiplier = min(1.5, max(0.7, route_multiplier))
+                weight = -path_strength * path_support * route_multiplier
+>>>>>>> REPLACE
+</DIFF>

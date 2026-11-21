@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capacity_aware_paths",
+  "patch_description": "Keep the direct-demand reward, but add a restrained quadratic reward for completing two-hop routes. Unlike a fixed reward for every two-hop path, divide each demand\u2019s contribution among its possible intermediaries and discount intermediaries with high total in/out demand. This limits overcounting and makes transit capacity a consideration, while preserving the baseline as the dominant signal. The number of quadratic terms is at most n(n\u22121)(n\u22122), within the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:15:25.871007",
+  "llm_cost": 0.0008546000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,54 @@
+<NAME>
+cap_two_hop_budget
+</NAME>
+
+<DESCRIPTION>
+Cap the aggregate two-hop reward for each origin–destination pair at `indirect_fraction * demand[i, k] / scale`. The current per-intermediate reward is divided by four, reflecting the maximum number of such paths in a valid degree-two topology, but summing over all candidate intermediates can exceed that budget. Rescale an OD pair’s existing candidate rewards only when their sum exceeds the cap. This retains the current transit preference and supported-path structure while preventing many possible intermediates from collectively overwhelming the direct-link signal; it does not add quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            # High-demand nodes are less desirable transit points.
+            transit_factor = 2.0 * mean_load / (mean_load + float(node_load[j]))
+            for k in range(n):
+                if k == i or k == j or demand[i, k] == 0:
+                    continue
+                weight = (
+                    -indirect_fraction
+                    * float(demand[i, k]) / scale
+                    * transit_factor / 4.0
+                )
+                quadratic[((i, j), (j, k))] = weight
+=======
+    for i in range(n):
+        for k in range(n):
+            if k == i or demand[i, k] == 0:
+                continue
+
+            candidates = []
+            raw_weights = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                # High-demand nodes are less desirable transit points.
+                transit_factor = 2.0 * mean_load / (mean_load + float(node_load[j]))
+                raw_weight = (
+                    indirect_fraction
+                    * float(demand[i, k]) / scale
+                    * transit_factor / 4.0
+                )
+                candidates.append(j)
+                raw_weights.append(raw_weight)
+
+            total = sum(raw_weights)
+            budget = indirect_fraction * float(demand[i, k]) / scale
+            factor = min(1.0, budget / total) if total > 0.0 else 1.0
+            for j, raw_weight in zip(candidates, raw_weights):
+                quadratic[((i, j), (j, k))] = -raw_weight * factor
+>>>>>>> REPLACE
+
+</DIFF>
