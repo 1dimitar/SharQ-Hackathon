@@ -1,0 +1,19 @@
+<NAME>
+strengthen_degree_feasibility
+</NAME>
+
+<DESCRIPTION>
+Only 17% of the sampled topologies are valid before repair, so many QUBO samples may be substantially changed before they are scored. Increase the evaluator’s degree-penalty weight from 1 to 5 to make violations less attractive relative to the normalized surrogate costs. This should concentrate sampling on topologies that need less repair while retaining the existing demand-based terms. The penalty remains within the allowed range.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+=======
+    # Stronger degree penalties keep samples closer to valid topologies,
+    # reducing how much the evaluator's repair step must change them.
+    penalty_weight = 5.0
+>>>>>>> REPLACE
+
+</DIFF>

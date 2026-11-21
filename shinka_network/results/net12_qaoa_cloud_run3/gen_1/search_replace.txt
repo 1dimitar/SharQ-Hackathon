@@ -1,0 +1,19 @@
+<NAME>
+stronger_degree_enforcement
+</NAME>
+
+<DESCRIPTION>
+The reported feasible rate is only 17%, so many sampled low-energy assignments rely on repair rather than already satisfying the degree constraints. Increase the evaluator’s degree-penalty weight from 1 to 4. Since the cost terms are rescaled to have maximum absolute weight 1, this makes degree violations substantially more expensive while leaving the energy of every valid topology unchanged. That should encourage the sampler to produce more valid candidates and give local polishing better starting topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+=======
+    # Degree penalties are supplied by the evaluator. Make violations costly
+    # relative to the rescaled objective terms to favor valid sampled networks.
+    penalty_weight = 4.0
+>>>>>>> REPLACE
+
+</DIFF>

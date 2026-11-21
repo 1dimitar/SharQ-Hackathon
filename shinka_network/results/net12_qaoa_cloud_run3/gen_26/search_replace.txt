@@ -1,0 +1,40 @@
+<NAME>
+targeted_relay_options
+</NAME>
+
+<DESCRIPTION>
+Give the top 20% of positive-demand OD pairs up to four promising relay choices instead of two, while leaving the relay count for other pairs unchanged. This focuses additional QUBO interactions on the largest traffic demands, where a useful indirect route can most affect the maximum link load, without broadly increasing the model size. The deterministic ranking handles ties consistently, and even at four relays the quadratic-term count remains within the stated \(4n^3\) limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    max_relays = min(2, max(0, n - 2))
+    total_path_strength = 0.30
+=======
+    quadratic = {}
+    max_relays = min(4, max(0, n - 2))
+    positive_pairs = [
+        (float(normalized[i, k]), i, k)
+        for i in range(n)
+        for k in range(n)
+        if i != k and normalized[i, k] > 0.0
+    ]
+    positive_pairs.sort(key=lambda item: (-item[0], item[1], item[2]))
+    priority_count = (len(positive_pairs) + 4) // 5
+    priority_pairs = {
+        (i, k) for _, i, k in positive_pairs[:priority_count]
+    }
+    total_path_strength = 0.30
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            chosen = candidates[:max_relays]
+=======
+            relay_count = (
+                max_relays
+                if (i, k) in priority_pairs
+                else min(2, max_relays)
+            )
+            chosen = candidates[:relay_count]
+>>>>>>> REPLACE
+</DIFF>

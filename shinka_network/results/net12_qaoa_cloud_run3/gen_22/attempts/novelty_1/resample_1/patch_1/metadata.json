@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "calibrated_relay_pressure",
+  "patch_description": "Use a softer, power-calibrated relay-pressure discount in the two-hop reward. The current linear discount, `0.60 + 0.80 * pressure`, can strongly favor low-pressure relays over busy ones. Raising a positive-offset pressure score to an exponent below one compresses that difference, while still preferring less-loaded relays. This may reduce overconcentration on a small set of relays and improve the typical sampled topology. The change leaves the direct-link rewards and quadratic-term structure unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:38:28.242424",
+  "llm_cost": 0.0007937,
+  "llm_model": "gpt-6-luna"
+}

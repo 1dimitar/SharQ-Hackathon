@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_paths",
+  "patch_description": "This version keeps direct traffic as the main signal and makes two-hop support more conservative, so indirect routes are less likely to dominate direct links. Two-hop rewards are discounted when the intermediate node or path edges are already under demand pressure. The degree penalty is increased to encourage more feasible samples before repair. The quadratic terms remain limited to traffic-supported two-hop paths, well within the allowed term count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:20:58.564043",
+  "llm_cost": 0.0021702,
+  "llm_model": "gpt-6-luna"
+}

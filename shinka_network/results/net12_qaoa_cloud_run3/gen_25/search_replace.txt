@@ -1,0 +1,81 @@
+<NAME>
+balanced_sparse_relays
+</NAME>
+
+<DESCRIPTION>
+Keep only a small set of two-hop rewards per demand pair. Rank relays using a harmonic-mean affinity for the two legs, so one strong leg cannot compensate fully for a weak one, while retaining the existing pressure discounts in the reward. Reduce the degree penalty to 2.0 so the sparser objective has more influence during search; the evaluator still supplies the degree penalties and repairs samples.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.30
+
+    for i in range(n):
+=======
+    path_strength = 0.30
+    relay_budget = min(n - 2, max(2, int(np.ceil(np.sqrt(n)))))
+
+    for i in range(n):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            path_support = 0.72 * d + 0.28 * np.sqrt(d)
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = float(normalized[i, j] + normalized[j, k])
+                relay_discount = 0.60 + 0.80 * float(node_pressure[j])
+                edge_discount = 1.0 + 0.35 * edge_pressure
+
+                weight = (
+                    -path_strength
+                    * path_support
+                    / (relay_discount * edge_discount)
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            path_support = 0.72 * d + 0.28 * np.sqrt(d)
+            candidates = []
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                a = float(normalized[i, j])
+                b = float(normalized[j, k])
+                edge_pressure = a + b
+                relay_discount = 0.60 + 0.80 * float(node_pressure[j])
+                edge_discount = 1.0 + 0.35 * edge_pressure
+
+                weight = (
+                    -path_strength
+                    * path_support
+                    / (relay_discount * edge_discount)
+                )
+
+                # Rank by support for both legs, with a floor so that
+                # low-demand legs can still serve as transit links.
+                affinity = 0.20 + 0.80 * (2.0 * a * b / (a + b + 1.0e-12))
+                rank = affinity / (relay_discount * edge_discount)
+                candidates.append((rank, j, weight))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for _, j, weight in candidates[:relay_budget]:
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # The evaluator supplies the degree penalties; a stronger value discourages
+    # infeasible degree patterns before its repair step.
+    penalty_weight = 6.0
+=======
+    # The evaluator supplies the degree penalties and repairs its samples.
+    # Keep the penalty moderate so the sparse routing objective remains visible.
+    penalty_weight = 2.0
+>>>>>>> REPLACE
+</DIFF>

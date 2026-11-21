@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bilateral_relay_affinity",
+  "patch_description": "Score each candidate relay using both adjacent demand legs, rather than choosing relays solely by node pressure. The minimum-leg-sensitive geometric score suppresses relays with one strong leg but one weak leg, while retaining the existing pressure discount and distributing each OD pair\u2019s bounded reward over all candidate relays. This changes only the relay ranking signal; it adds no quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:40:04.073995",
+  "llm_cost": 0.0010765000000000002,
+  "llm_model": "gpt-6-luna"
+}

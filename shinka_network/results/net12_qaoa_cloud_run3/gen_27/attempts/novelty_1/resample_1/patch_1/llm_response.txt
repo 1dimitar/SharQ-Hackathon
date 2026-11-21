@@ -1,0 +1,22 @@
+<NAME>
+pressure_discount_sweep
+</NAME>
+
+<DESCRIPTION>
+The relay pressure discount currently uses \(1/(0.35+\text{pressure})\), which can strongly favor low-pressure relays. Use a slightly softer exponent, 0.85, to reduce that bias while retaining pressure awareness. Because the resulting relay scores determine both the normalized quadratic path rewards and the estimated transit loads, this applies the same pressure adjustment consistently to both. It is a focused test of the pressure discount rather than a change to the congestion model or term count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                # High-pressure nodes are less attractive as transit points.
+                relay_scores.append(1.0 / (0.35 + float(pressure[j])))
+=======
+                # Soften the pressure discount: low-pressure relays remain
+                # preferred, without concentrating path support too strongly.
+                pressure_exponent = 0.85
+                relay_scores.append(
+                    1.0 / ((0.35 + float(pressure[j])) ** pressure_exponent)
+                )
+>>>>>>> REPLACE
+
+</DIFF>

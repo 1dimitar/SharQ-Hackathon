@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "recalibrate_pressure_discount",
+  "patch_description": "Use a softened power-law pressure discount for relay nodes. The current floor compresses the difference between lightly and heavily loaded relays; the offset power form keeps pressure-aware ranking while making its strength tunable. Choosing an exponent of 0.75 tests a moderate adjustment rather than an extreme one, and the resulting `node_pressure` is used directly by the existing quadratic weights.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:29:41.381992",
+  "llm_cost": 0.0006745,
+  "llm_model": "gpt-6-luna"
+}

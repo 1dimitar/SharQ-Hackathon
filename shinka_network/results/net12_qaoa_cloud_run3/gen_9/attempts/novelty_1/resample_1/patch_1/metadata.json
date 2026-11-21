@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This version keeps direct traffic as the strongest link preference, while adding a restrained two-hop reward: for each positive-demand origin\u2013destination pair, it selects up to two relatively low-pressure relay candidates and shares a capped reward between them. This avoids letting the many possible paths overwhelm direct-link value. Relay ranking discounts paths that use pressured nodes or already busy direct links. The sparse path couplings also keep the interaction graph smaller than an all-relays construction. A stronger degree penalty encourages feasible samples; degree penalties are still left to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:30:35.347569",
+  "llm_cost": 0.0025437,
+  "llm_model": "gpt-6-luna"
+}

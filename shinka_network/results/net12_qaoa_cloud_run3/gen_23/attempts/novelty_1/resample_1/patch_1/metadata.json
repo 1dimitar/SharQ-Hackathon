@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_balanced_relays",
+  "patch_description": "Keeps the baseline direct-demand reward, but limits two-hop rewards to a few promising relays per demand pair. Relay ranking favors support on both path legs while discounting busy nodes and edges. The sparse rewards reduce competing interactions, and a stronger degree penalty encourages feasible samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:40:09.710110",
+  "llm_cost": 0.007376000000000001,
+  "llm_model": "gpt-6.1-terra"
+}

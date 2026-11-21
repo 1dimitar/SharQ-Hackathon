@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_diversity",
+  "patch_description": "This surrogate combines direct-demand rewards with a sparse approximation of useful two-hop routes, retaining only the two most promising relays for each OD pair. It also rewards pairs of links that provide alternative routes for similar traffic profiles. Unlike an all-path two-hop surrogate, it focuses interactions on selected relays and route diversity, keeping the QUBO smaller while representing both reachability and flow-splitting potential.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:38:05.280405",
+  "llm_cost": 0.0027234,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,18 @@
+<NAME>
+stronger_degree_penalty
+</NAME>
+
+<DESCRIPTION>
+The QUBO already rewards direct links and two-hop paths, but the evaluator reports that only 17% of sampled topologies are valid before repair. With the evaluator rescaling the cost terms to a maximum absolute weight of 1, a degree penalty of 1 can be too weak relative to the many cost terms: the solver may prefer an invalid topology that earns extra routing reward, leaving repair to fix it afterward. Raise the separate evaluator-supplied penalty to 6 so degree violations are substantially more expensive while preserving the existing cost-term ranking among valid topologies. This targets feasibility without adding quadratic terms or changing the cost model.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+=======
+    # Strongly discourage degree violations so samples need less repair.
+    penalty_weight = 6.0
+>>>>>>> REPLACE
+
+</DIFF>

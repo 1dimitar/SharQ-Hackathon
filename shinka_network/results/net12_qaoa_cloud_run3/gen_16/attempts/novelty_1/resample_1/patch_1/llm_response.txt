@@ -1,0 +1,17 @@
+<NAME>
+recalibrate_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Use a softened power-law pressure discount for relay nodes. The current floor compresses the difference between lightly and heavily loaded relays; the offset power form keeps pressure-aware ranking while making its strength tunable. Choosing an exponent of 0.75 tests a moderate adjustment rather than an extreme one, and the resulting `node_pressure` is used directly by the existing quadratic weights.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_pressure = np.maximum(0.65, incident / max_incident)
+=======
+    normalized_pressure = incident / max_incident
+    pressure_exponent = 0.75
+    node_pressure = np.power(0.75 + normalized_pressure, pressure_exponent)
+>>>>>>> REPLACE
+</DIFF>

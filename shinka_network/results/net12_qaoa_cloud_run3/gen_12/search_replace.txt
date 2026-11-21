@@ -1,0 +1,37 @@
+<NAME>
+adaptive_degree_penalty
+</NAME>
+
+<DESCRIPTION>
+The low pre-repair feasible rate suggests that the degree penalty is too weak relative to the accumulated link rewards. A link can participate in many quadratic terms, so comparing the penalty only with the largest individual QUBO coefficient understates its possible influence. Estimate the largest per-link objective change from its linear term and all incident quadratic terms, after accounting for the evaluator’s weight normalization, and set the penalty just above half that bound. A single-bit change from a valid topology changes two degree counts, incurring a penalty increase of twice the penalty weight; this makes such a change unattractive while keeping the penalty demand- and size-adaptive.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    # Degree penalties are supplied by the evaluator. Choose their scale
+    # relative to the largest possible one-link objective change after the
+    # evaluator's normalization of the QUBO coefficients.
+    coefficient_scale = max(
+        [abs(value) for value in linear.values()]
+        + [abs(value) for value in quadratic.values()]
+        + [1.0e-12]
+    )
+    link_influence = {
+        link: abs(value) / coefficient_scale
+        for link, value in linear.items()
+    }
+    for (first, second), value in quadratic.items():
+        normalized_value = abs(value) / coefficient_scale
+        link_influence[first] += normalized_value
+        link_influence[second] += normalized_value
+
+    max_influence = max(link_influence.values()) if link_influence else 0.0
+    penalty_weight = min(100.0, max(0.05, 0.55 * max_influence))
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

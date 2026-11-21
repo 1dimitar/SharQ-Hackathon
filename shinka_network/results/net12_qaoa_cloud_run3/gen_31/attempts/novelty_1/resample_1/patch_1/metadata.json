@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "conservative_leg_affinity",
+  "patch_description": "Scale each two-hop reward by a conservative affinity for its two legs, based on their normalized direct demands. The geometric mean reduces rewards when one leg has little demand support, while the 0.1 offset avoids eliminating paths with a zero-demand leg. Existing pressure discounting and the number of quadratic terms remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:47:34.992636",
+  "llm_cost": 0.0009956,
+  "llm_model": "gpt-6-luna"
+}

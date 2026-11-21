@@ -1,0 +1,75 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link rewards using a blend of linear and square-root demand. Adds two-hop rewards for demanded routes, discounted by relay-node pressure and edge demand; returns a fixed penalty weight of 1.0 for evaluator-supplied degree penalties.
+- **Performance**: Combined score was 0.83, with a 14.61% mean best-solution gap, 27.10% mean median gap, 17% mean feasibility rate, and 880 quadratic terms.
+- **Feedback**: On both network12 instances, best solutions were about 14–15% above the reference, while median gaps were about 27%; only 9–26% of QAOA solutions were feasible before repair. The largest gap was on `network12_s1` (+14.8%), indicating that the surrogate rewards produced varied topologies but did not reliably yield high-quality feasible solutions.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build negative direct-link rewards using a linear-plus-square-root mixture, and negative two-hop rewards using concave demand support discounted by relay pressure and edge traffic. It sets the evaluator’s degree-penalty weight to 4.0.
+- **Performance**: Combined score was 0.77, with a 17.37% mean best gap, 47.33% mean median gap, 10% mean feasible rate, and 880 quadratic terms.
+- **Feedback**: The best gaps were +22.3% on network12_s0 and +12.5% on network12_s1; only 16% and 3% of sampled solutions, respectively, were valid before repair. The especially poor median gaps and low feasibility suggest the surrogate’s rewards and fixed penalty do not reliably guide QAOA toward strong valid networks.
+**Program Identifier:** Generation 1 - Patch Name stronger_degree_enforcement - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for normalized, nonnegative off-diagonal demand, blending linear and square-root terms. Adds quadratic rewards for two-hop routes, discounted by relay-node pressure and edge demand, with a fixed degree-violation penalty of 10.
+- **Performance**: Combined score was 0.78; mean best and median gaps were 18.79% and 39.72%, mean feasible rate was 0.22, and each instance used 880 quadratic terms.
+- **Feedback**: The best solutions were 16.3% and 21.3% above reference, with the largest gap on network12_s1; only 15–30% of sampled solutions were valid before repair. The differing topology diversity (76 versus 45) and substantial median gaps indicate that the surrogate generated varied candidates but often missed strong solutions or feasibility.
+**Program Identifier:** Generation 3 - Patch Name stronger_degree_penalty - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build negative linear rewards for direct links, combining linear and square-root terms. It adds negative quadratic rewards for selected two-hop paths, choosing relays by leg affinity discounted by estimated node pressure, and sets the evaluator-supplied degree penalty weight to 1.5.
+- **Performance**: Combined score was 0.85, with mean best and median gaps of 11.36% and 25.86%, a 0.08 feasible rate, and 264 quadratic terms on average.
+- **Feedback**: On the two network12 instances, best gaps were +10.0% and +12.8%, with the latter the largest; only 6–10% of solutions were valid before repair. The 264-term models produced many distinct topologies, but low feasibility and weaker median results indicate that the surrogate’s rewards and relay selection did not reliably guide QAOA to high-quality feasible designs.
+**Program Identifier:** Generation 5 - Patch Name sparse_relay_support - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns concave demand-based rewards to direct links, and rewards two-hop paths with weights discounted by relay-node pressure and edge demand. It uses a fixed degree-penalty weight of 5.0.
+- **Performance**: Combined score was 0.78, with a 16.90% mean best gap, 40.47% mean median gap, 19% feasibility rate, and 880 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 14.3% and 19.5%; only 7–31% of QAOA solutions were valid before repair. The larger gap and lower feasibility on `network12_s1` suggest the surrogate’s topology rewards and penalty do not consistently guide sampling toward high-quality feasible designs.
+**Program Identifier:** Generation 8 - Patch Name strengthen_degree_feasibility - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **Sparse relay support is the strongest observed pattern.** The current best, **Generation 5 — `sparse_relay_support`**, scores **0.85**, ahead of the 0.83 initial program and the 0.77–0.78 results from the stronger-penalty variants. It limits each demanded OD pair to a small set of candidate relays, reducing the model from 880 to **264 quadratic terms** while also achieving the lowest mean best gap (**11.36%**).
+- **Rank relays by leg affinity and node pressure rather than rewarding every possible two-hop route.** In the current best, relay candidates are ranked by `sqrt((0.1+a)*(0.1+b)) / (0.75 + pressure)`. This selects relays with plausible demand on both legs while discounting heavily loaded nodes. Its best gaps, **+10.0%** and **+12.8%**, are better than those of the 880-term variants.
+- **Use concave demand support alongside direct-link rewards.** The current best’s linear-plus-square-root demand treatment retains rewards for moderate-demand traffic without dropping emphasis on heavy OD pairs. This pattern also appears in the initial program, which scored **0.83**, but the current best’s sparse relay selection coincides with better best-gap results.
+- **Treat the low fixed penalty in the context of the full reward design.** The current best uses a penalty weight of **1.5** and scores 0.85, while variants using 4.0, 5.0, or 10.0 scored 0.77–0.78. This comparison favors the current best’s combined sparse, pressure-discounted reward structure; it does not establish that a low penalty alone causes the improvement.
+
+## Ineffective Approaches
+- **Increasing degree penalties did not reliably improve feasibility or solution quality.** Generation 1 (`stronger_degree_enforcement`, penalty 4.0) scored **0.77**, with a **17.37%** mean best gap, **47.33%** median gap, and **10%** feasibility. Generation 3 (penalty 10) scored **0.78**, with an **18.79%** mean best gap and **22%** feasibility; Generation 8 (penalty 5) also scored **0.78**, with a **16.90%** best gap and **19%** feasibility. These results are worse overall than the current best.
+- **Broad two-hop reward sets were associated with weaker results and much larger models.** The 880-term Generation 0, 1, 3, and 8 variants had mean best gaps of **14.61%–18.79%** and scores of **0.77–0.83**. By contrast, the current best has 264 terms and an **11.36%** mean best gap. The evaluations support an association between sparse support and better results, though other reward and penalty details also differ.
+- **Feasibility remained poor even in the top-scoring variant.** The current best’s pre-repair valid rates are only **10%** on `network12_s0` and **6%** on `network12_s1`. The 880-term variants were also generally low (for example, Generation 0 averaged 17%), so neither broad support nor the current sparse model consistently steered QAOA samples to feasible designs before repair.
+- **Better best solutions did not translate into strong typical samples.** The current best’s mean median gap is **25.86%**, versus an **11.36%** mean best gap. The feedback reports median gaps of **24.0%** and **27.7%**, showing that the strong best-found results were not representative of most samples.
+
+## Implementation Insights
+- **The current best constructs sparse quadratic terms per demanded OD pair.** It skips pairs with zero traffic, computes a relay count of `min(n - 2, max(2, n // 4))`, ranks candidate relays, and retains only the top candidates. This yields exactly **264 quadratic terms** in the reported network12 evaluations, versus **880** for the denser variants.
+- **Relay scoring combines two-leg plausibility with a pressure discount.** The implementation uses a geometric-mean-style affinity with a small `0.1` floor for each leg, then divides by `0.75 + node_pressure[j]`. Pressure is based on the maximum of incoming and outgoing demand, normalized by its maximum and floored at 0.65. This explicitly avoids treating high-traffic relay nodes as equally available.
+- **Direct and two-hop rewards use normalized, nonnegative off-diagonal demand.** The current best clips negative demand to zero, clears the diagonal, and scales by maximum traffic before applying the linear-plus-square-root direct reward and concave two-hop support. This keeps reward magnitudes tied to comparable normalized values and avoids self-link traffic influencing the terms.
+- **Quadratic terms are canonicalized by sorting their edge keys.** The code maps each two-hop path’s two edges to a sorted tuple before inserting it into the quadratic dictionary. This helps prevent duplicate representations of the same edge pair from inflating the model; the measured result is the 264-term model.
+
+## Performance Analysis
+- **The current best leads on combined score and mean best gap.** Generation 5 scores **0.85** with an **11.36%** mean best gap, outperforming Generation 0 (**0.83**, **14.61%**) and the penalty-adjusted 880-term variants (**0.77–0.78**, **16.90%–18.79%**).
+- **Its best-gap gains coincide with a smaller QUBO.** The current best uses **264** quadratic terms compared with **880** in the other reported variants. Its feedback gives best gaps of **+10.0%** and **+12.8%**, while the 880-term programs report gaps ranging from **+12.5%** to **+22.3%** across their network12 cases.
+- **The score improvement is not accompanied by improved feasibility or median performance.** At **8%** mean feasibility, the current best is below Generation 0’s **17%**, Generation 3’s **22%**, and Generation 8’s **19%**. Its **25.86%** mean median gap is better than the 39.72% and 40.47% results for Generations 3 and 8, but worse than Generation 0’s **27.10%** only by a modest amount; Generation 1 is worse at **47.33%**.
+- **Results vary by instance even for the current best.** The best gap rises from **+10.0%** on `network12_s0` to **+12.8%** on `network12_s1`; feasibility likewise falls from **10%** to **6%**, and distinct topologies fall from 93 to 62. The `network12_s1` case is the weaker one in both best gap and pre-repair feasibility.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Tune the sparse relay count rather than restoring broad two-hop support.** Keep ranking relays by two-leg affinity discounted by node pressure, but test a few nearby budgets—for example, `max(1, n // 5)`, `n // 4`, and `n // 3`, capped at `n - 2`. The current sparse model’s 264 terms and 11.36% mean best gap outperform the 880-term variants, so controlled changes to support size are more promising than including every relay.
+
+2. **Make relay selection and reward strength depend on the OD pair’s demand.** Retain only a few relays for low-demand pairs, while allowing one or two additional candidates for the heaviest pairs; preserve the existing affinity and pressure ranking within each pair. This targets the current program’s strong best-gap performance while testing whether extra routing flexibility for important traffic can improve results without recreating the dense 880-term model.
+
+3. **Test alternative pressure discounts while preserving pressure-aware ranking.** Compare the current denominator with a milder or stronger exponent, such as `(0.75 + pressure) ** alpha` for a small set of `alpha` values around 1, and use the same form consistently in relay ranking and quadratic weights. The current best explicitly discounts loaded transit nodes, so this isolates whether its pressure treatment is well calibrated rather than abandoning a successful feature.
+
+4. **Improve the distinction between strong and weak relay legs in the affinity score.** Compare the geometric mean with a more bottleneck-sensitive score, such as a weighted geometric mean or `min(a, b)` with a small floor, while keeping sparse top-relay selection. This tests whether requiring both legs to be plausible can avoid rewarding paths supported by one strong and one weak leg, while retaining the compact model associated with the current best.
+
+5. **Tune the direct-versus-two-hop reward balance independently of the degree penalty.** Keep the current linear-plus-square-root direct reward, but test modest changes to the quadratic multiplier around `0.25` and the linear/square-root mixture around `0.75/0.25`; evaluate each change without simultaneously raising the penalty weight. The existing combined design beats stronger-penalty variants, and this controlled tuning may improve best solutions without assuming that higher penalties will fix the low pre-repair feasibility.

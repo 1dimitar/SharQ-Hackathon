@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_discount_sweep",
+  "patch_description": "The relay pressure discount currently uses \\(1/(0.35+\\text{pressure})\\), which can strongly favor low-pressure relays. Use a slightly softer exponent, 0.85, to reduce that bias while retaining pressure awareness. Because the resulting relay scores determine both the normalized quadratic path rewards and the estimated transit loads, this applies the same pressure adjustment consistently to both. It is a focused test of the pressure discount rather than a change to the congestion model or term count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:45:51.985916",
+  "llm_cost": 0.0009772000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,17 @@
+<NAME>
+stronger_degree_feasibility
+</NAME>
+
+<DESCRIPTION>
+Only 17% of sampled solutions are valid before repair, so too much of the search effort is being spent on topologies that must be altered before scoring. Increase the evaluator-supplied degree penalty from 1.0 to 5.0. This makes violations of the required two incoming and two outgoing links substantially more costly relative to the normalized surrogate terms, encouraging the QAOA search to produce valid topologies directly while leaving the traffic-based objective unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+=======
+    # Strongly favor the required degrees so fewer samples need repair.
+    penalty_weight = 5.0
+>>>>>>> REPLACE
+</DIFF>
