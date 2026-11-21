@@ -1,0 +1,56 @@
+<NAME>
+balanced_twohop_surrogate
+</NAME>
+
+<DESCRIPTION>
+Keep the baseline reward for direct demand, and add a restrained reward for two-hop routes. Scale each route reward down when either link already has high direct demand, so the surrogate favors paths that can use spare link capacity rather than blindly rewarding every two-hop path. Also reduce the reward for intermediates with high origin-destination traffic, as a rough proxy for avoiding already busy transit nodes. This makes the path couplings more capacity-aware than a uniform two-hop reward. Increase the degree penalty to make exact in/out degree choices more influential and reduce the number of samples that need repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    d = np.asarray(demand, dtype=float) / scale
+
+    # Preserve the direct-service signal from the baseline.
+    linear = {
+        (i, j): -float(d[i, j])
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Approximate useful two-hop routing, discounting routes whose links
+    # already have substantial direct traffic or whose intermediate node
+    # has high demand throughput.
+    row_load = np.sum(d, axis=1)
+    col_load = np.sum(d, axis=0)
+    node_pressure = np.sqrt(row_load * col_load)
+    max_pressure = float(np.max(node_pressure)) or 1.0
+
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+
+                # A lightly weighted route reward, reduced when its links
+                # are already likely to carry direct traffic.
+                spare = 1.0 / (1.0 + 0.5 * (d[i, j] + d[j, k]))
+                transit = 1.0 - float(node_pressure[j]) / max_pressure
+                route_weight = 0.24 * float(d[i, k]) * spare * (0.5 + 0.5 * transit)
+                if route_weight > 0.0:
+                    quadratic[((i, j), (j, k))] = -route_weight
+
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_paths",
+  "patch_description": "Keep direct-demand rewards, but temper them slightly for very large direct demands and add sparse two-hop interactions. A two-hop path is rewarded according to the traffic it can serve, with the reward reduced when its links already have high direct demand; a small congestion term offsets the reward for paths whose links are both heavily demanded. Reciprocal links are encouraged when demand is strong in both directions and mildly discouraged otherwise. These adjustments make the two-hop signal more selective than an unconditional path reward. Raising the degree penalty should also reduce the low feasible-sample rate, while leaving degree penalties out of the returned QUBO terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:46.268146",
+  "llm_cost": 0.0017324,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_balanced_paths",
+  "patch_description": "This design combines direct-demand rewards with a congestion-aware, distributed two-hop relay signal. Unlike an unweighted reward for every possible two-hop path, each OD pair distributes a fixed amount of relay value across its candidate intermediates, favoring paths whose two links have lower estimated load. Estimated link load includes both direct traffic and a simple row/column-based transit proxy. This keeps the path terms sparse at O(n\u00b3) while reducing the tendency to reward many overlapping routes indiscriminately. The evaluator supplies degree penalties, so the returned penalty weight is set separately to encourage valid degree-two topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:49.126784",
+  "llm_cost": 0.0028993,
+  "llm_model": "gpt-6-luna"
+}

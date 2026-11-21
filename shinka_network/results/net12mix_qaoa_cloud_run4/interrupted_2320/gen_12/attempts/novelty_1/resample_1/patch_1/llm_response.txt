@@ -1,0 +1,35 @@
+<NAME>
+capped_path_synergy
+</NAME>
+
+<DESCRIPTION>
+Add a modest, capped reward for two-link paths that can serve traffic not already well served by a direct link. Unlike an unrestricted two-hop reward, this discounts paths when the origin–destination demand is already covered directly, and caps each path’s contribution relative to the direct-link scale. The resulting couplings connect links that jointly provide useful routing options while limiting duplicated rewards that can encourage hub-heavy topologies. There is at most one term per directed two-hop path, well within the term limit. Keep the direct-demand linear terms and degree penalty unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    penalty_weight = 1.0
+=======
+    quadratic = {}
+    # A path i -> j -> k provides an alternative for i-to-k traffic.
+    # Discount it when a direct link can already capture that demand, and
+    # cap the synergy so multiple paths do not overwhelm the direct signal.
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                indirect = min(float(demand[i, j]), float(demand[j, k]))
+                direct = float(demand[i, k])
+                if indirect <= 0.0:
+                    continue
+                value = indirect * (1.0 - min(1.0, direct / (indirect + 1e-12)))
+                if value > 0.0:
+                    quadratic[((i, j), (j, k))] = -0.18 * value / scale
+    penalty_weight = 1.0
+>>>>>>> REPLACE
+
+</DIFF>

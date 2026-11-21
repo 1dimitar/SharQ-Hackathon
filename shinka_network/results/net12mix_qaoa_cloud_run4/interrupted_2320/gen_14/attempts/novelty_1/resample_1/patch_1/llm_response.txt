@@ -1,0 +1,147 @@
+<NAME>
+profiled_path_qubo
+</NAME>
+
+<DESCRIPTION>
+Separates demand preprocessing, path scoring, and redundancy scoring into small helpers. The QUBO combines direct-traffic rewards with discounted two-hop path rewards, while weak profile-overlap couplings discourage redundant links. The construction uses at most about \(2.5n^3\) quadratic terms and raises the degree penalty to favor valid topologies.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _demand_profiles(demand):
+    """Return cleaned demand data, node totals, and row/column profile similarities."""
+    a = np.asarray(demand, dtype=float)
+    n = a.shape[0]
+    a = np.nan_to_num(a, nan=0.0, posinf=0.0, neginf=0.0).copy()
+    np.maximum(a, 0.0, out=a)
+    np.fill_diagonal(a, 0.0)
+
+    scale = float(a.max()) if a.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    normalized = a / scale
+
+    row_norm = np.sqrt(np.sum(normalized * normalized, axis=1))
+    col_norm = np.sqrt(np.sum(normalized * normalized, axis=0))
+    row_den = np.outer(row_norm, row_norm)
+    col_den = np.outer(col_norm, col_norm)
+
+    row_sim = np.divide(
+        normalized @ normalized.T,
+        row_den,
+        out=np.zeros((n, n), dtype=float),
+        where=row_den > 0.0,
+    )
+    col_sim = np.divide(
+        normalized.T @ normalized,
+        col_den,
+        out=np.zeros((n, n), dtype=float),
+        where=col_den > 0.0,
+    )
+    np.clip(row_sim, 0.0, 1.0, out=row_sim)
+    np.clip(col_sim, 0.0, 1.0, out=col_sim)
+
+    row_load = np.sum(normalized, axis=1)
+    col_load = np.sum(normalized, axis=0)
+    return normalized, row_load, col_load, row_sim, col_sim
+
+
+def _add_pair_term(terms, first, second, weight):
+    """Accumulate a symmetric QUBO interaction under a canonical key."""
+    if first == second or weight == 0.0:
+        return
+    if second < first:
+        first, second = second, first
+    key = (first, second)
+    terms[key] = terms.get(key, 0.0) + float(weight)
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic cost terms for the directed-link QUBO."""
+    a, row_load, col_load, row_sim, col_sim = _demand_profiles(demand)
+    n = a.shape[0]
+
+    # Direct traffic is the clearest signal that a link is useful.
+    linear = {
+        (i, j): -float(a[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    # Reward useful two-hop routes. Discount routes through heavily loaded
+    # intermediate nodes to avoid making every route favor the same hub.
+    path_factor = 0.18
+    for i in range(n):
+        for middle in range(n):
+            if middle == i:
+                continue
+            for k in range(n):
+                if k == i or k == middle:
+                    continue
+                traffic = float(a[i, k])
+                if traffic <= 0.0:
+                    continue
+                transit_load = row_load[middle] + col_load[middle]
+                discount = 1.0 / (1.0 + 0.35 * transit_load)
+                _add_pair_term(
+                    quadratic,
+                    (i, middle),
+                    (middle, k),
+                    -path_factor * traffic * discount,
+                )
+
+    # Penalize choosing two links with strongly overlapping downstream
+    # (or upstream) traffic profiles. The node-load factor keeps these
+    # couplings modest when the corresponding node carries little traffic.
+    overlap_factor = 0.055
+    for source in range(n):
+        source_factor = min(1.0, float(row_load[source]))
+        if source_factor <= 0.0:
+            continue
+        links = [(source, j) for j in range(n) if j != source]
+        for p in range(len(links)):
+            j = links[p][1]
+            for q in range(p + 1, len(links)):
+                k = links[q][1]
+                overlap = float(row_sim[j, k])
+                if overlap > 0.0:
+                    _add_pair_term(
+                        quadratic,
+                        links[p],
+                        links[q],
+                        overlap_factor * source_factor * overlap,
+                    )
+
+    for destination in range(n):
+        destination_factor = min(1.0, float(col_load[destination]))
+        if destination_factor <= 0.0:
+            continue
+        links = [(i, destination) for i in range(n) if i != destination]
+        for p in range(len(links)):
+            i = links[p][0]
+            for q in range(p + 1, len(links)):
+                k = links[q][0]
+                overlap = float(col_sim[i, k])
+                if overlap > 0.0:
+                    _add_pair_term(
+                        quadratic,
+                        links[p],
+                        links[q],
+                        overlap_factor * destination_factor * overlap,
+                    )
+
+    # The evaluator applies the actual degree penalties separately.
+    penalty_weight = 5.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+```</CODE>

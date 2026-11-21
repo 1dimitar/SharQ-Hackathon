@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_balanced_paths",
+  "patch_description": "The baseline uses only direct demand and has no interactions, so it cannot reward useful multi-hop routes. This version keeps direct demand as the main linear signal, adds a modest relay-potential adjustment to each link, and adds sparse, normalized couplings for two-hop paths. Normalizing each origin-destination pair\u2019s relay candidates prevents high-volume pairs from overwhelming all other traffic. The degree penalty is increased to encourage feasible topologies before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:22:03.643844",
+  "llm_cost": 0.0010401,
+  "llm_model": "gpt-6-luna"
+}

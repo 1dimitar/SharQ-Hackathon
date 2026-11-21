@@ -1,0 +1,48 @@
+<NAME>
+distributed_relay_credit
+</NAME>
+
+<DESCRIPTION>
+Add a bounded two-hop reward, distributed across the possible relays for each OD pair rather than awarding the full demand to every candidate path. The relay weight uses the proposed endpoint factor, `0.25 + 0.75 * min(...)`, based on how strongly the adjacent links serve their endpoints. This gives endpoint suitability a useful but not exclusive influence: less-obvious relays still receive some credit, while promising two-hop routes can group their links through QUBO couplings. The total reward allocated for an OD pair is capped at 20% of its demand, so it supplements rather than overwhelms the direct-link signal. The added terms remain within the quadratic-term limit when combined with the existing terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+
+    # Penalize pairs of selected links that concentrate estimated exposure
+=======
+    quadratic = {}
+
+    # Distribute a limited two-hop service reward across possible relays.
+    # The endpoint factor ranges from 0.25 to 1: endpoint suitability guides
+    # relay choice without eliminating alternatives with weaker observed links.
+    for s in range(n):
+        for t in range(n):
+            flow = float(d[s, t])
+            if s == t or flow <= 0.0:
+                continue
+
+            candidates = []
+            weight_sum = 0.0
+            for h in range(n):
+                if h == s or h == t:
+                    continue
+                left = float(d[s, h]) / max(float(row[s]), 1e-12)
+                right = float(d[h, t]) / max(float(row[h]), 1e-12)
+                endpoint_factor = 0.25 + 0.75 * min(left, right)
+                candidates.append((h, endpoint_factor))
+                weight_sum += endpoint_factor
+
+            if weight_sum > 0.0:
+                for h, weight in candidates:
+                    # The total credit over all candidate relays is capped,
+                    # rather than duplicating the OD demand for each path.
+                    share = 0.20 * flow * weight / weight_sum
+                    a, b = (s, h), (h, t)
+                    key = (a, b) if a <= b else (b, a)
+                    quadratic[key] = quadratic.get(key, 0.0) - share / scale
+
+    # Penalize pairs of selected links that concentrate estimated exposure
+>>>>>>> REPLACE
+</DIFF>

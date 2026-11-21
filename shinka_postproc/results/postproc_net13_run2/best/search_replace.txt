@@ -1,0 +1,37 @@
+<NAME>
+elite_path_relink
+</NAME>
+
+<DESCRIPTION>
+Add targeted two-switch moves that insert links from other high-quality, already-scored networks into the current parent. For a desired link (a, b), the move finds a parent link (a, x) and a parent link (y, b), then replaces them with (a, b) and (y, x). This preserves every node’s in- and out-degree, and the existing validity filter rejects self-loops or duplicate links. These moves let the search systematically explore transitions toward elite networks instead of relying only on random swaps and rotations to discover their useful structure. They are screened and budgeted by the existing search machinery.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+        # Path-relink toward a few strong, distinct networks already found.
+        # Insert one target arc at a time with a degree-preserving two-switch.
+        elites = sorted(seen, key=seen.get)[:8]
+        for target in elites:
+            if target == net:
+                continue
+            target_arcs = set(target)
+            for a, b in target_arcs - current:
+                outgoing = [edge for edge in arcs if edge[0] == a]
+                incoming = [edge for edge in arcs if edge[1] == b]
+                for _, x in outgoing:
+                    for y, _ in incoming:
+                        if y == a or x == b:
+                            continue
+                        # Avoid creating a duplicate when replacing the two arcs.
+                        if (y, x) in current - {(a, x), (y, b)}:
+                            continue
+                        cand = tuple(sorted(
+                            (current - {(a, x), (y, b)}) | {(a, b), (y, x)}
+                        ))
+                        moves.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+</DIFF>

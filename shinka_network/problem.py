@@ -46,6 +46,7 @@ class Instance:
     ref: float  # best LP score we know for this instance (lower is better)
     num_reads: int  # annealing reads = number of topologies proposed
     seed: int
+    nodes: list[int] | None = None  # which of QOBLIB's 24 nodes the demand matrix covers
 
 
 # --------------------------------------------------------------------------- #
@@ -78,6 +79,9 @@ SUITES = {
     "net12": [("real", 12, s, 64) for s in range(4)],
     # Future: new instances from node subsets of the QOBLIB matrix.
     "sub10": [("sub", 10, s, 48) for s in range(4)],
+    # network12 plus five random 12-node subsets of the 24-node matrix (run 4). The references of
+    # the subsets come from analysis/subset_refs.py; compute them before evolving on this suite.
+    "net12mix": [("real", 12, 0, 64)] + [("sub", 12, s, 64) for s in range(1, 6)],
     # Pipeline test: small random matrices.
     "toy": [("toy", 6, 0, 32), ("toy", 6, 1, 32), ("toy", 7, 0, 32), ("toy", 7, 1, 32),
             ("toy", 8, 0, 32), ("toy", 8, 1, 32)],
@@ -95,9 +99,11 @@ def load_suite(suite: str) -> list[Instance]:
         raise ValueError(f"unknown suite {suite!r}; choose from {sorted(SUITES)}")
     instances = []
     for kind, n, seed, reads in SUITES[suite]:
+        nodes = None
         if kind == "real":
             demand = qt.load_network_demand(n)
             name, ref = f"network{n:02d}_s{seed}", float(BEST_KNOWN[n])
+            nodes = list(range(n))  # networkNN is the leading n x n block of network24
         elif kind == "sub":
             demand, nodes = subset_demand(n, seed)
             name = f"sub{n}_s{seed}"
@@ -106,7 +112,7 @@ def load_suite(suite: str) -> list[Instance]:
             demand = toy_demand(n, seed)
             name = f"toy_n{n}_s{seed}"
             ref = toy_reference(name, demand)
-        instances.append(Instance(name, demand, ref, reads, seed=17 + seed))
+        instances.append(Instance(name, demand, ref, reads, seed=17 + seed, nodes=nodes))
     return instances
 
 

@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_relay_paths",
+  "patch_description": "Add modest quadratic rewards for two-link paths, weighted by the relay node\u2019s balanced in/out traffic score raised to the power 1.5. This makes indirect-routing rewards more selective than a uniform two-hop bonus, while retaining the direct-demand linear baseline. Excluding paths that return to their starting node avoids rewarding unproductive two-cycles. The added terms are O(n\u00b3), within the term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:16:27.291701",
+  "llm_cost": 0.0006679,
+  "llm_model": "gpt-6-luna"
+}

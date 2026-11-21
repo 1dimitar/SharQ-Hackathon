@@ -1,0 +1,86 @@
+<NAME>
+balanced_path_surrogate
+</NAME>
+
+<DESCRIPTION>
+Separates demand normalization, node-capacity estimation, and term assembly. Direct traffic remains the main linear signal, while a restrained two-hop synergy rewards links that can jointly serve otherwise indirect demand. Pair terms are limited to composable paths, keeping the interaction graph sparse and within the term budget.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Sparse demand-aware QUBO surrogate for directed network design."""
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _normalise_demand(demand):
+    """Return nonnegative demand and a safe global scale."""
+    values = np.asarray(demand, dtype=float)
+    values = np.maximum(values, 0.0).copy()
+    np.fill_diagonal(values, 0.0)
+    scale = float(values.max()) if values.size else 0.0
+    return values, (scale if scale > 0.0 else 1.0)
+
+
+def _node_pressure(values, scale):
+    """Estimate how strongly each node is likely to need transit capacity."""
+    normalized = values / scale
+    outgoing = normalized.sum(axis=1)
+    incoming = normalized.sum(axis=0)
+    # A node with substantial traffic in both directions is a plausible transit
+    # point; the square root keeps the adjustment bounded and smooth.
+    return np.sqrt(outgoing * incoming)
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic QUBO terms from the demand matrix."""
+    values, scale = _normalise_demand(demand)
+    n = values.shape[0]
+    normalized = values / scale
+    pressure = _node_pressure(values, scale)
+
+    # Direct service is the strongest and most reliable signal. A small
+    # endpoint-capacity adjustment discourages links into already busy sinks.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            sink_load = normalized[:, j].sum()
+            source_load = normalized[i, :].sum()
+            capacity_factor = 1.0 / (1.0 + 0.06 * (sink_load + source_load))
+            linear[(i, j)] = -float(normalized[i, j] * capacity_factor)
+
+    # A pair of consecutive links can serve traffic that has no direct link.
+    # Use only a modest fraction of that demand: this captures path synergy
+    # without letting speculative indirect routing dominate direct traffic.
+    quadratic = {}
+    path_factor = 0.10
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            first = (i, j)
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                indirect = float(normalized[i, k])
+                if indirect <= 0.0:
+                    continue
+
+                # Transit nodes with stronger two-way demand are more plausible
+                # intermediates, while the denominator limits hub over-reward.
+                transit_discount = 1.0 / (
+                    1.0 + 0.15 * float(pressure[j])
+                )
+                weight = -path_factor * indirect * transit_discount
+                if weight:
+                    quadratic[(first, (j, k))] = weight
+
+    # This is deliberately separate from the evaluator's degree penalty.
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+# EVOLVE-BLOCK-END
+</CODE>

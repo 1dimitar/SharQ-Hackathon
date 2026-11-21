@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_load_balance",
+  "patch_description": "This approach treats topology choice as a load-balancing problem rather than rewarding two-hop routes. It uses linear terms to favor direct traffic while accounting for the traffic burden at each link\u2019s source and destination. Positive quadratic couplings discourage selecting links that compete for the same source or destination capacity, and discourage two-hop paths that would carry substantial traffic. These congestion-oriented interactions offer a different signal from the prior approach\u2019s indirect-service rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:11:01.491317",
+  "llm_cost": 0.0011512,
+  "llm_model": "gpt-6-luna"
+}

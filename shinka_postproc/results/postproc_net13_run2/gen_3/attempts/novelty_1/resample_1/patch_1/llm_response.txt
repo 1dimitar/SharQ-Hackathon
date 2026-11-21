@@ -1,0 +1,15 @@
+<NAME>
+adaptive_microbatches
+</NAME>
+
+<DESCRIPTION>
+Reduce the LP screening batch from 9 networks to 3. The current search commits several LP calls to moves generated from one parent before it can use their scores to choose the next parent. Smaller batches make the archive and parent selection respond sooner to LP results, which is valuable when the Hamiltonian energy is only loosely correlated with true congestion. The overall LP budget is unchanged; the trade-off is slightly more neighborhood-generation overhead, which should remain modest under the time limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+=======
+    def screen_batch(moves, parent, batch_size=3):
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,2945 @@
+{
+ "overall": {
+  "network12": {
+   "instance": "network12",
+   "n": 12,
+   "score": 276474.0,
+   "bkv": 276474,
+   "gap_pct": 0.0,
+   "method": "lp_local_search",
+   "label": "analysis/lp_local_search.py",
+   "quantum": false,
+   "source": "shinka_network/results/reports/network12_lp_local_search.json",
+   "found": "2026-11-21T18:41:15",
+   "logged": "2026-11-21T23:58:35",
+   "key": "df8fd31a2dbd",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ]
+   ],
+   "solution": "solutions/network12_276474_df8fd3.sol",
+   "solution_check": "valid"
+  },
+  "network10": {
+   "instance": "network10",
+   "n": 10,
+   "score": 210800.0,
+   "bkv": 210800,
+   "gap_pct": 0.0,
+   "method": "lp_local_search",
+   "label": "analysis/lp_local_search.py",
+   "quantum": false,
+   "source": "shinka_network/results/reports/network10_lp_local_search.json",
+   "found": "2026-11-21T18:15:22",
+   "logged": "2026-11-21T23:58:35",
+   "key": "2fccf665e86b",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     0
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     9,
+     3
+    ]
+   ],
+   "solution": "solutions/network10_210800_2fccf6.sol",
+   "solution_check": "valid"
+  },
+  "network13": {
+   "instance": "network13",
+   "n": 13,
+   "score": 299715.0,
+   "bkv": 300620,
+   "gap_pct": -0.301,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "run 1 gen 49, 20000 LP calls, pool network13_r3g128_seed0 (shinka_postproc/results/reports/network13_gen49_20k_r3g128.json)",
+   "quantum": true,
+   "source": "/private/tmp/claude-501/-Users-mostafataheri-Documents-SharQ-Hackathon/e54009ac-8067-40cd-aa4c-cb67238d852a/scratchpad/net13_299715.json",
+   "found": "2026-11-22T00:33:35",
+   "logged": "2026-11-22T00:33:35",
+   "key": "a176396fe0cd",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     12
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     12,
+     10
+    ]
+   ],
+   "solution": "solutions/network13_299715_a17639.sol",
+   "solution_check": "valid"
+  },
+  "network14": {
+   "instance": "network14",
+   "n": 14,
+   "score": 395500.0,
+   "bkv": 343091,
+   "gap_pct": 15.2755,
+   "method": "sa",
+   "label": "baseline (qoblib_tools surrogate)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-000031-6c5c46dd684f-sa",
+   "found": "2026-11-22T00:00:34",
+   "logged": "2026-11-22T00:00:34",
+   "key": "b504f36bcdde",
+   "details": {
+    "program": "programs/6c5c46dd684f.py",
+    "backend": "cloud",
+    "instance_run": "network14_s0"
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     8
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     5
+    ]
+   ],
+   "solution": "solutions/network14_395500_b504f3.sol",
+   "solution_check": "valid"
+  },
+  "network15": {
+   "instance": "network15",
+   "n": 15,
+   "score": 417400.0,
+   "bkv": 370870,
+   "gap_pct": 12.5462,
+   "method": "sa",
+   "label": "baseline (qoblib_tools surrogate)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-000031-6c5c46dd684f-sa",
+   "found": "2026-11-22T00:00:34",
+   "logged": "2026-11-22T00:00:34",
+   "key": "ce2a7939269b",
+   "details": {
+    "program": "programs/6c5c46dd684f.py",
+    "backend": "cloud",
+    "instance_run": "network15_s0"
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     13,
+     2
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     7
+    ]
+   ],
+   "solution": "solutions/network15_417400_ce2a79.sol",
+   "solution_check": "valid"
+  },
+  "network16": {
+   "instance": "network16",
+   "n": 16,
+   "score": 454334.0,
+   "bkv": 397908,
+   "gap_pct": 14.1807,
+   "method": "sa",
+   "label": "baseline (qoblib_tools surrogate)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-000031-6c5c46dd684f-sa",
+   "found": "2026-11-22T00:00:35",
+   "logged": "2026-11-22T00:00:35",
+   "key": "24c959de512a",
+   "details": {
+    "program": "programs/6c5c46dd684f.py",
+    "backend": "cloud",
+    "instance_run": "network16_s0"
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     12
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     14
+    ],
+    [
+     2,
+     15
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     15
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     10
+    ],
+    [
+     13,
+     14
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     3
+    ],
+    [
+     15,
+     13
+    ]
+   ],
+   "solution": "solutions/network16_454334_24c959.sol",
+   "solution_check": "valid"
+  },
+  "network17": {
+   "instance": "network17",
+   "n": 17,
+   "score": 482000.0,
+   "bkv": 437000,
+   "gap_pct": 10.2975,
+   "method": "sa",
+   "label": "run 2 best (gen 181)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-002923-9925d610403d-sa",
+   "found": "2026-11-22T00:29:26",
+   "logged": "2026-11-22T00:29:26",
+   "key": "6c8b6f4e63da",
+   "details": {
+    "program": "programs/9925d610403d.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network17_s1"
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     15
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     12
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     16
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     0
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     13,
+     2
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     15,
+     3
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     16,
+     5
+    ],
+    [
+     16,
+     12
+    ]
+   ],
+   "solution": "solutions/network17_482000_6c8b6f.sol",
+   "solution_check": "valid"
+  },
+  "network18": {
+   "instance": "network18",
+   "n": 18,
+   "score": 524462.0,
+   "bkv": 473375,
+   "gap_pct": 10.7921,
+   "method": "sa",
+   "label": "run 3 recommended (gen 128)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-003000-7e360acb6d47-sa",
+   "found": "2026-11-22T00:30:04",
+   "logged": "2026-11-22T00:30:04",
+   "key": "9dd4334a53d0",
+   "details": {
+    "program": "programs/7e360acb6d47.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network18_s1"
+   },
+   "arcs": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     12
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     12,
+     17
+    ],
+    [
+     13,
+     2
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     16
+    ],
+    [
+     15,
+     11
+    ],
+    [
+     15,
+     12
+    ],
+    [
+     16,
+     1
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     5
+    ],
+    [
+     17,
+     8
+    ]
+   ],
+   "solution": "solutions/network18_524462_9dd433.sol",
+   "solution_check": "valid"
+  },
+  "network19": {
+   "instance": "network19",
+   "n": 19,
+   "score": 541375.0,
+   "bkv": 492924,
+   "gap_pct": 9.8293,
+   "method": "sa",
+   "label": "run 3 recommended (gen 128)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-003000-7e360acb6d47-sa",
+   "found": "2026-11-22T00:30:07",
+   "logged": "2026-11-22T00:30:07",
+   "key": "033bd2eb9766",
+   "details": {
+    "program": "programs/7e360acb6d47.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network19_s1"
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     3
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     18
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     14
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     18
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     15
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     17
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     17,
+     0
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     17
+    ]
+   ],
+   "solution": "solutions/network19_541375_033bd2.sol",
+   "solution_check": "valid"
+  },
+  "network20": {
+   "instance": "network20",
+   "n": 20,
+   "score": 568527.0,
+   "bkv": 528528,
+   "gap_pct": 7.568,
+   "method": "sa",
+   "label": "run 2 best (gen 181)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-002923-9925d610403d-sa",
+   "found": "2026-11-22T00:29:31",
+   "logged": "2026-11-22T00:29:31",
+   "key": "d2b2ef84d376",
+   "details": {
+    "program": "programs/9925d610403d.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network20_s1"
+   },
+   "arcs": [
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     14
+    ],
+    [
+     1,
+     15
+    ],
+    [
+     2,
+     14
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     17
+    ],
+    [
+     5,
+     13
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     0
+    ],
+    [
+     9,
+     12
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     10,
+     16
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     13,
+     19
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     14,
+     16
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     18
+    ],
+    [
+     16,
+     1
+    ],
+    [
+     16,
+     12
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     17,
+     11
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     13
+    ],
+    [
+     19,
+     0
+    ],
+    [
+     19,
+     9
+    ]
+   ],
+   "solution": "solutions/network20_568527_d2b2ef.sol",
+   "solution_check": "valid"
+  },
+  "network21": {
+   "instance": "network21",
+   "n": 21,
+   "score": 630572.0,
+   "bkv": 569273,
+   "gap_pct": 10.7679,
+   "method": "sa",
+   "label": "run 3 recommended (gen 128)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-003000-7e360acb6d47-sa",
+   "found": "2026-11-22T00:30:12",
+   "logged": "2026-11-22T00:30:12",
+   "key": "949cee199417",
+   "details": {
+    "program": "programs/7e360acb6d47.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network21_s0"
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     2,
+     14
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     17
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     16
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     20
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     15
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     11,
+     15
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     10
+    ],
+    [
+     13,
+     18
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     15,
+     8
+    ],
+    [
+     15,
+     13
+    ],
+    [
+     16,
+     11
+    ],
+    [
+     16,
+     19
+    ],
+    [
+     17,
+     2
+    ],
+    [
+     17,
+     5
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     12
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     4
+    ],
+    [
+     20,
+     7
+    ]
+   ],
+   "solution": "solutions/network21_630572_949cee.sol",
+   "solution_check": "valid"
+  },
+  "network22": {
+   "instance": "network22",
+   "n": 22,
+   "score": 664600.0,
+   "bkv": 618135,
+   "gap_pct": 7.517,
+   "method": "sa",
+   "label": "run 3 recommended (gen 128)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-003000-7e360acb6d47-sa",
+   "found": "2026-11-22T00:30:12",
+   "logged": "2026-11-22T00:30:12",
+   "key": "9c51e3e122af",
+   "details": {
+    "program": "programs/7e360acb6d47.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network22_s0"
+   },
+   "arcs": [
+    [
+     0,
+     5
+    ],
+    [
+     0,
+     21
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     1,
+     16
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     21
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     14
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     13,
+     15
+    ],
+    [
+     13,
+     19
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     15,
+     10
+    ],
+    [
+     15,
+     11
+    ],
+    [
+     16,
+     13
+    ],
+    [
+     16,
+     18
+    ],
+    [
+     17,
+     8
+    ],
+    [
+     17,
+     16
+    ],
+    [
+     18,
+     6
+    ],
+    [
+     18,
+     20
+    ],
+    [
+     19,
+     4
+    ],
+    [
+     19,
+     20
+    ],
+    [
+     20,
+     0
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     21,
+     12
+    ],
+    [
+     21,
+     18
+    ]
+   ],
+   "solution": "solutions/network22_664600_9c51e3.sol",
+   "solution_check": "valid"
+  },
+  "network23": {
+   "instance": "network23",
+   "n": 23,
+   "score": 708297.0,
+   "bkv": 659369,
+   "gap_pct": 7.4204,
+   "method": "sa",
+   "label": "run 3 recommended (gen 128)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-003000-7e360acb6d47-sa",
+   "found": "2026-11-22T00:30:17",
+   "logged": "2026-11-22T00:30:17",
+   "key": "2079d6fed106",
+   "details": {
+    "program": "programs/7e360acb6d47.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network23_s1"
+   },
+   "arcs": [
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     21
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     22
+    ],
+    [
+     9,
+     18
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     12,
+     18
+    ],
+    [
+     13,
+     15
+    ],
+    [
+     13,
+     19
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     15,
+     11
+    ],
+    [
+     15,
+     21
+    ],
+    [
+     16,
+     1
+    ],
+    [
+     16,
+     20
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     17,
+     16
+    ],
+    [
+     18,
+     2
+    ],
+    [
+     18,
+     7
+    ],
+    [
+     19,
+     4
+    ],
+    [
+     19,
+     22
+    ],
+    [
+     20,
+     4
+    ],
+    [
+     20,
+     13
+    ],
+    [
+     21,
+     8
+    ],
+    [
+     21,
+     16
+    ],
+    [
+     22,
+     2
+    ],
+    [
+     22,
+     20
+    ]
+   ],
+   "solution": "solutions/network23_708297_2079d6.sol",
+   "solution_check": "valid, max flow 708298"
+  },
+  "network24": {
+   "instance": "network24",
+   "n": 24,
+   "score": 756493.0,
+   "bkv": 663688,
+   "gap_pct": 13.9832,
+   "method": "sa",
+   "label": "run 3 recommended (gen 128)",
+   "quantum": false,
+   "source": "shinka_network/results/size_evals/runs/20261122-003000-7e360acb6d47-sa",
+   "found": "2026-11-22T00:30:18",
+   "logged": "2026-11-22T00:30:18",
+   "key": "a0e1fb9d3ca9",
+   "details": {
+    "program": "programs/7e360acb6d47.py",
+    "backend": "cloud",
+    "cluster": "qoro_maestro",
+    "instance_run": "network24_s1"
+   },
+   "arcs": [
+    [
+     0,
+     8
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     1,
+     7
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     21
+    ],
+    [
+     2,
+     23
+    ],
+    [
+     3,
+     16
+    ],
+    [
+     3,
+     23
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     20
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     8,
+     12
+    ],
+    [
+     8,
+     18
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     9,
+     20
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     21
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     13,
+     16
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     19
+    ],
+    [
+     15,
+     10
+    ],
+    [
+     15,
+     18
+    ],
+    [
+     16,
+     15
+    ],
+    [
+     16,
+     22
+    ],
+    [
+     17,
+     0
+    ],
+    [
+     17,
+     3
+    ],
+    [
+     18,
+     17
+    ],
+    [
+     18,
+     19
+    ],
+    [
+     19,
+     1
+    ],
+    [
+     19,
+     4
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     20,
+     13
+    ],
+    [
+     21,
+     8
+    ],
+    [
+     21,
+     17
+    ],
+    [
+     22,
+     2
+    ],
+    [
+     22,
+     6
+    ],
+    [
+     23,
+     4
+    ],
+    [
+     23,
+     22
+    ]
+   ],
+   "solution": "solutions/network24_756493_a0e1fb.sol",
+   "solution_check": "valid"
+  }
+ },
+ "quantum": {
+  "network12": {
+   "instance": "network12",
+   "n": 12,
+   "score": 277572.0,
+   "bkv": 276474,
+   "gap_pct": 0.3971,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "postproc_net12_run1 gen 6 (network12_seed1)",
+   "quantum": true,
+   "source": "shinka_postproc/results/postproc_net12_run1/gen_6/results/best_network.json",
+   "found": "2026-11-21T21:36:12",
+   "logged": "2026-11-21T23:58:33",
+   "key": "2e762884a665",
+   "details": {
+    "lp_calls": 2000
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     8
+    ]
+   ],
+   "solution": "solutions/network12_277572_2e7628.sol",
+   "solution_check": "valid"
+  },
+  "network13": {
+   "instance": "network13",
+   "n": 13,
+   "score": 299715.0,
+   "bkv": 300620,
+   "gap_pct": -0.301,
+   "method": "postproc (QAOA pool + evolved LP search)",
+   "label": "run 1 gen 49, 20000 LP calls, pool network13_r3g128_seed0 (shinka_postproc/results/reports/network13_gen49_20k_r3g128.json)",
+   "quantum": true,
+   "source": "/private/tmp/claude-501/-Users-mostafataheri-Documents-SharQ-Hackathon/e54009ac-8067-40cd-aa4c-cb67238d852a/scratchpad/net13_299715.json",
+   "found": "2026-11-22T00:33:35",
+   "logged": "2026-11-22T00:33:35",
+   "key": "a176396fe0cd",
+   "details": {},
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     12
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     12,
+     10
+    ]
+   ],
+   "solution": "solutions/network13_299715_a17639.sol",
+   "solution_check": "valid"
+  },
+  "network14": {
+   "instance": "network14",
+   "n": 14,
+   "score": 399063.0,
+   "bkv": 343091,
+   "gap_pct": 16.314,
+   "method": "qaoa_partitioned",
+   "label": "run 2 best (gen 181)",
+   "quantum": true,
+   "source": "shinka_network/results/size_evals/runs/20261122-000111-9925d610403d-qaoa_partitioned",
+   "found": "2026-11-22T00:28:54",
+   "logged": "2026-11-22T00:28:54",
+   "key": "3bb38fa91b18",
+   "details": {
+    "program": "programs/9925d610403d.py",
+    "backend": "cloud",
+    "instance_run": "network14_s1"
+   },
+   "arcs": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     11
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     4,
+     13
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     12
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     13,
+     6
+    ]
+   ],
+   "solution": "solutions/network14_399063_3bb38f.sol",
+   "solution_check": "valid"
+  },
+  "network15": {
+   "instance": "network15",
+   "n": 15,
+   "score": 429334.0,
+   "bkv": 370870,
+   "gap_pct": 15.764,
+   "method": "qaoa_partitioned",
+   "label": "run 2 best (gen 181)",
+   "quantum": true,
+   "source": "shinka_network/results/size_evals/runs/20261122-000111-9925d610403d-qaoa_partitioned",
+   "found": "2026-11-22T00:43:03",
+   "logged": "2026-11-22T00:43:03",
+   "key": "b563ce343020",
+   "details": {
+    "program": "programs/9925d610403d.py",
+    "backend": "cloud",
+    "instance_run": "network15_s0"
+   },
+   "arcs": [
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     13
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     14
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     13,
+     12
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     12
+    ]
+   ],
+   "solution": "solutions/network15_429334_b563ce.sol",
+   "solution_check": "valid"
+  },
+  "network16": {
+   "instance": "network16",
+   "n": 16,
+   "score": 474106.0,
+   "bkv": 397908,
+   "gap_pct": 19.1497,
+   "method": "qaoa_partitioned",
+   "label": "run 2 best (gen 181)",
+   "quantum": true,
+   "source": "shinka_network/results/size_evals/runs/20261122-000111-9925d610403d-qaoa_partitioned",
+   "found": "2026-11-22T00:45:40",
+   "logged": "2026-11-22T00:45:40",
+   "key": "af55585a2ed7",
+   "details": {
+    "program": "programs/9925d610403d.py",
+    "backend": "cloud",
+    "instance_run": "network16_s0"
+   },
+   "arcs": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     8
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     8,
+     15
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     13,
+     5
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     15,
+     6
+    ],
+    [
+     15,
+     13
+    ]
+   ],
+   "solution": "solutions/network16_474106_af5558.sol",
+   "solution_check": "valid"
+  }
+ }
+}

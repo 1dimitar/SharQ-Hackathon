@@ -1,0 +1,1891 @@
+{
+  "unprocessed_programs": [
+    {
+      "id": "cf406e59-d6b0-4f88-a82f-af7d5a8f9f5b",
+      "code": "\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build linear and quadratic surrogate cost terms for a directed topology.\"\"\"\n    t = np.asarray(demand, dtype=float)\n    n = len(t)\n    if n < 2:\n        return {}, {}, 1.5\n\n    t = np.maximum(t, 0.0).copy()\n    np.fill_diagonal(t, 0.0)\n    scale = float(t.max())\n    if scale <= 0.0:\n        return ({(i, j): 0.0 for i in range(n) for j in range(n) if i != j},\n                {}, 1.5)\n\n    d = t / scale\n    links = [(i, j) for i in range(n) for j in range(n) if i != j]\n    linear = {(i, j): -float(d[i, j]) for i, j in links}\n    quadratic = {}\n\n    # A two-hop path is useful when its first and second arcs are plausible\n    # for the corresponding origin and destination. Normalize per OD pair so\n    # that relay rewards do not simply duplicate large raw demands.\n    relay_for_link = np.zeros((n, n), dtype=float)\n    for i in range(n):\n        for k in range(n):\n            if i == k or d[i, k] <= 0:\n                continue\n            candidates = []\n            for j in range(n):\n                if j != i and j != k:\n                    # A mild preference for relays with useful outgoing traffic.\n                    plausibility = 0.20 + 0.80 * np.sqrt(\n                        max(d[j, k], 0.0) / (float(d[j].max()) + 1e-12)\n                    )\n                    candidates.append((j, plausibility))\n            total = sum(v for _, v in candidates)\n            if total <= 0:\n                continue\n            for j, plausibility in candidates:\n                share = float(d[i, k]) * plausibility / total\n                relay_for_link[i, j] += share\n                relay_for_link[j, k] += share\n\n                # Reward completing a two-hop route. The small coefficient\n                # keeps this interaction subordinate to direct-demand terms.\n                a, b = (i, j), (j, k)\n                key = (a, b) if a < b else (b, a)\n                quadratic[key] = quadratic.get(key, 0.0) - 0.16 * share\n\n    # Small linear relay adjustment: a link can be valuable even when its own\n    # endpoint demand is modest, if it participates in many useful paths.\n    relay_scale = float(relay_for_link.max())\n    if relay_scale > 0:\n        for i, j in links:\n            linear[i, j] -= 0.12 * float(relay_for_link[i, j] / relay_scale)\n\n    # Keep the interaction graph sparse: only two-hop path pairs are emitted.\n    # Drop negligible numerical interactions to avoid needless couplings.\n    if quadratic:\n        cutoff = 1e-8\n        quadratic = {key: value for key, value in quadratic.items()\n                     if abs(value) > cutoff}\n\n    # Degree constraints are supplied externally; a stronger weight helps\n    # counter the many infeasible low-energy assignments from an unconstrained\n    # collection of link rewards.\n    penalty_weight = 2.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n",
+      "language": "python",
+      "parent_id": "efd24fb8-58bf-416e-bd8c-82ef9dd1e2cd",
+      "archive_inspiration_ids": [],
+      "top_k_inspiration_ids": [],
+      "island_idx": 4,
+      "generation": 9,
+      "timestamp": 1795304555.205712,
+      "code_diff": "--- a/original.py\n+++ b/original.py\n@@ -1,48 +1,93 @@\n \"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n \n import time\n \n # EVOLVE-BLOCK-START\n import numpy as np\n \n \n def surrogate_terms(demand):\n-    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n+    \"\"\"Build linear and quadratic surrogate cost terms for a directed topology.\"\"\"\n+    t = np.asarray(demand, dtype=float)\n+    n = len(t)\n+    if n < 2:\n+        return {}, {}, 1.5\n \n-    Args:\n-        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n-            (zero diagonal).\n+    t = np.maximum(t, 0.0).copy()\n+    np.fill_diagonal(t, 0.0)\n+    scale = float(t.max())\n+    if scale <= 0.0:\n+        return ({(i, j): 0.0 for i in range(n) for j in range(n) if i != j},\n+                {}, 1.5)\n \n-    Returns:\n-        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n-            (x_ij = 1 if the directed link i -> j is built), i != j.\n-        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n-        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n-            after rescaling these terms so the largest |weight| is 1.\n+    d = t / scale\n+    links = [(i, j) for i in range(n) for j in range(n) if i != j]\n+    linear = {(i, j): -float(d[i, j]) for i, j in links}\n+    quadratic = {}\n \n-    Lower energy must mean a better topology. Baseline: reward each link by the demand\n-    it carries directly.\n-    \"\"\"\n-    n = len(demand)\n-    scale = float(demand.max()) or 1.0\n-    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}\n-    quadratic = {}\n-    penalty_weight = 1.0\n+    # A two-hop path is useful when its first and second arcs are plausible\n+    # for the corresponding origin and destination. Normalize per OD pair so\n+    # that relay rewards do not simply duplicate large raw demands.\n+    relay_for_link = np.zeros((n, n), dtype=float)\n+    for i in range(n):\n+        for k in range(n):\n+            if i == k or d[i, k] <= 0:\n+                continue\n+            candidates = []\n+            for j in range(n):\n+                if j != i and j != k:\n+                    # A mild preference for relays with useful outgoing traffic.\n+                    plausibility = 0.20 + 0.80 * np.sqrt(\n+                        max(d[j, k], 0.0) / (float(d[j].max()) + 1e-12)\n+                    )\n+                    candidates.append((j, plausibility))\n+            total = sum(v for _, v in candidates)\n+            if total <= 0:\n+                continue\n+            for j, plausibility in candidates:\n+                share = float(d[i, k]) * plausibility / total\n+                relay_for_link[i, j] += share\n+                relay_for_link[j, k] += share\n+\n+                # Reward completing a two-hop route. The small coefficient\n+                # keeps this interaction subordinate to direct-demand terms.\n+                a, b = (i, j), (j, k)\n+                key = (a, b) if a < b else (b, a)\n+                quadratic[key] = quadratic.get(key, 0.0) - 0.16 * share\n+\n+    # Small linear relay adjustment: a link can be valuable even when its own\n+    # endpoint demand is modest, if it participates in many useful paths.\n+    relay_scale = float(relay_for_link.max())\n+    if relay_scale > 0:\n+        for i, j in links:\n+            linear[i, j] -= 0.12 * float(relay_for_link[i, j] / relay_scale)\n+\n+    # Keep the interaction graph sparse: only two-hop path pairs are emitted.\n+    # Drop negligible numerical interactions to avoid needless couplings.\n+    if quadratic:\n+        cutoff = 1e-8\n+        quadratic = {key: value for key, value in quadratic.items()\n+                     if abs(value) > cutoff}\n+\n+    # Degree constraints are supplied externally; a stronger weight helps\n+    # counter the many infeasible low-energy assignments from an unconstrained\n+    # collection of link rewards.\n+    penalty_weight = 2.0\n     return linear, quadratic, penalty_weight\n \n \n # EVOLVE-BLOCK-END\n \n \n def run_surrogate(demand):\n     \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n     demand = np.array(demand, dtype=float)\n     start = time.perf_counter()\n     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n     return {\n         \"n\": len(demand),\n         \"linear\": linear,\n         \"quadratic\": quadratic,\n         \"penalty_weight\": penalty_weight,\n         \"seconds\": time.perf_counter() - start,\n     }\n",
+      "combined_score": 0.7518010196641219,
+      "public_metrics": {
+        "sum_score": 4.510806117984732,
+        "num_instances": 6,
+        "score_network12_s0": 0.8185721727694484,
+        "score_sub12_s1": 0.7499911483797109,
+        "score_sub12_s2": 0.8244133710697858,
+        "score_sub12_s3": 0.8297134215001378,
+        "score_sub12_s4": 0.46348529072930644,
+        "score_sub12_s5": 0.8246307135363428,
+        "gap_best_pct_network12_s0": 14.8751781360996,
+        "gap_best_pct_sub12_s1": 20.398009950248763,
+        "gap_best_pct_sub12_s2": 11.812605200679705,
+        "gap_best_pct_sub12_s3": 13.881951004878811,
+        "gap_best_pct_sub12_s4": 58.614568873313154,
+        "gap_best_pct_sub12_s5": 12.750650171353573,
+        "mean_gap_best_pct": 22.055493889428934,
+        "mean_gap_median_pct": 68.13103805643178,
+        "mean_feasible_rate": 0.04,
+        "mean_quadratic_terms": 840.0,
+        "routine": "qaoa_partitioned",
+        "backend": "cloud"
+      },
+      "private_metrics": {
+        "circuits": 37575,
+        "quantum_seconds": 5277.187753207996,
+        "sampling_wall_seconds": 1225.0475831249933,
+        "parallel": 6,
+        "build_seconds": 0.015449875965714455,
+        "network12_s0": {
+          "score": 0.8185721727694484,
+          "best": 317600.0,
+          "median": 360633.5,
+          "ref": 276474.0,
+          "gap_best_pct": 14.8751781360996,
+          "gap_median_pct": 30.440294566577684,
+          "feasible_rate": 0.19,
+          "num_samples": 100,
+          "distinct": 79,
+          "num_quadratic": 880,
+          "circuits": 6012,
+          "quantum_seconds": 1199.7860403329978,
+          "started_s": 0.0006889590003993362,
+          "nodes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "best_arcs": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              6
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              4,
+              11
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              5,
+              8
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              10
+            ],
+            [
+              8,
+              9
+            ],
+            [
+              8,
+              11
+            ],
+            [
+              9,
+              2
+            ],
+            [
+              9,
+              7
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              11,
+              0
+            ],
+            [
+              11,
+              1
+            ]
+          ]
+        },
+        "sub12_s1": {
+          "score": 0.7499911483797109,
+          "best": 302500.0,
+          "median": 375334.0,
+          "ref": 251250.0,
+          "gap_best_pct": 20.398009950248763,
+          "gap_median_pct": 49.38666666666667,
+          "feasible_rate": 0.05,
+          "num_samples": 100,
+          "distinct": 78,
+          "num_quadratic": 840,
+          "circuits": 6012,
+          "quantum_seconds": 668.5722698750033,
+          "started_s": 0.0008863339899107814,
+          "nodes": [
+            0,
+            2,
+            5,
+            6,
+            7,
+            10,
+            11,
+            15,
+            18,
+            19,
+            21,
+            22
+          ],
+          "best_arcs": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              2,
+              10
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              9
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              10
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              8,
+              4
+            ],
+            [
+              9,
+              4
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              10,
+              7
+            ],
+            [
+              10,
+              11
+            ],
+            [
+              11,
+              7
+            ],
+            [
+              11,
+              8
+            ]
+          ]
+        },
+        "sub12_s2": {
+          "score": 0.8244133710697858,
+          "best": 278334.0,
+          "median": 329937.5,
+          "ref": 248929.0,
+          "gap_best_pct": 11.812605200679705,
+          "gap_median_pct": 32.54281341265983,
+          "feasible_rate": 0.0,
+          "num_samples": 100,
+          "distinct": 90,
+          "num_quadratic": 850,
+          "circuits": 6012,
+          "quantum_seconds": 748.3203659169958,
+          "started_s": 0.0010527499980526045,
+          "nodes": [
+            1,
+            3,
+            4,
+            7,
+            8,
+            10,
+            13,
+            14,
+            17,
+            18,
+            19,
+            20
+          ],
+          "best_arcs": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              2,
+              11
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              8
+            ],
+            [
+              4,
+              9
+            ],
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              6,
+              8
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              7,
+              1
+            ],
+            [
+              7,
+              5
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              8,
+              1
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              9,
+              10
+            ],
+            [
+              10,
+              7
+            ],
+            [
+              10,
+              11
+            ],
+            [
+              11,
+              3
+            ],
+            [
+              11,
+              4
+            ]
+          ]
+        },
+        "sub12_s3": {
+          "score": 0.8297134215001378,
+          "best": 264000.0,
+          "median": 296700.0,
+          "ref": 231819.0,
+          "gap_best_pct": 13.881951004878811,
+          "gap_median_pct": 27.987783572528556,
+          "feasible_rate": 0.0,
+          "num_samples": 100,
+          "distinct": 86,
+          "num_quadratic": 820,
+          "circuits": 6513,
+          "quantum_seconds": 699.3057811250037,
+          "started_s": 0.0011669999948935583,
+          "nodes": [
+            0,
+            1,
+            2,
+            3,
+            7,
+            10,
+            11,
+            14,
+            16,
+            18,
+            21,
+            23
+          ],
+          "best_arcs": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              2,
+              9
+            ],
+            [
+              2,
+              10
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              11
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              4,
+              7
+            ],
+            [
+              5,
+              8
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              7,
+              11
+            ],
+            [
+              8,
+              1
+            ],
+            [
+              8,
+              4
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              9,
+              4
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              3
+            ],
+            [
+              11,
+              0
+            ],
+            [
+              11,
+              6
+            ]
+          ]
+        },
+        "sub12_s4": {
+          "score": 0.46348529072930644,
+          "best": 348500.0,
+          "median": 741000.0,
+          "ref": 219715.0,
+          "gap_best_pct": 58.614568873313154,
+          "gap_median_pct": 237.25508044512208,
+          "feasible_rate": 0.0,
+          "num_samples": 100,
+          "distinct": 80,
+          "num_quadratic": 810,
+          "circuits": 7014,
+          "quantum_seconds": 1222.2173473750008,
+          "started_s": 0.0012794169888366014,
+          "nodes": [
+            1,
+            6,
+            8,
+            9,
+            13,
+            14,
+            15,
+            17,
+            18,
+            20,
+            21,
+            23
+          ],
+          "best_arcs": [
+            [
+              0,
+              6
+            ],
+            [
+              0,
+              11
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              3,
+              9
+            ],
+            [
+              3,
+              10
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              4,
+              10
+            ],
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              11
+            ],
+            [
+              7,
+              5
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              8,
+              7
+            ],
+            [
+              8,
+              9
+            ],
+            [
+              9,
+              5
+            ],
+            [
+              9,
+              7
+            ],
+            [
+              10,
+              2
+            ],
+            [
+              10,
+              6
+            ],
+            [
+              11,
+              1
+            ],
+            [
+              11,
+              4
+            ]
+          ]
+        },
+        "sub12_s5": {
+          "score": 0.8246307135363428,
+          "best": 278334.0,
+          "median": 323812.5,
+          "ref": 246858.0,
+          "gap_best_pct": 12.750650171353573,
+          "gap_median_pct": 31.17358967503585,
+          "feasible_rate": 0.0,
+          "num_samples": 100,
+          "distinct": 84,
+          "num_quadratic": 840,
+          "circuits": 6012,
+          "quantum_seconds": 738.9859485829948,
+          "started_s": 0.001345416996628046,
+          "nodes": [
+            0,
+            1,
+            5,
+            6,
+            7,
+            8,
+            9,
+            11,
+            12,
+            18,
+            20,
+            23
+          ],
+          "best_arcs": [
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              1,
+              11
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              5,
+              11
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              7,
+              1
+            ],
+            [
+              7,
+              2
+            ],
+            [
+              8,
+              7
+            ],
+            [
+              8,
+              10
+            ],
+            [
+              9,
+              4
+            ],
+            [
+              9,
+              8
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              4
+            ],
+            [
+              11,
+              0
+            ],
+            [
+              11,
+              10
+            ]
+          ]
+        }
+      },
+      "text_feedback": "network12_s0: score 0.819, best 317600 vs reference 276474 (gap +14.9%), median gap +30.4%, 19% of 100 qaoa_partitioned solutions valid before repair, 79 distinct topologies, 880 quadratic terms, 6012 circuits\nsub12_s1: score 0.750, best 302500 vs reference 251250 (gap +20.4%), median gap +49.4%, 5% of 100 qaoa_partitioned solutions valid before repair, 78 distinct topologies, 840 quadratic terms, 6012 circuits\nsub12_s2: score 0.824, best 278334 vs reference 248929 (gap +11.8%), median gap +32.5%, 0% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 850 quadratic terms, 6012 circuits\nsub12_s3: score 0.830, best 264000 vs reference 231819 (gap +13.9%), median gap +28.0%, 0% of 100 qaoa_partitioned solutions valid before repair, 86 distinct topologies, 820 quadratic terms, 6513 circuits\nsub12_s4: score 0.463, best 348500 vs reference 219715 (gap +58.6%), median gap +237.3%, 0% of 100 qaoa_partitioned solutions valid before repair, 80 distinct topologies, 810 quadratic terms, 7014 circuits\nsub12_s5: score 0.825, best 278334 vs reference 246858 (gap +12.8%), median gap +31.2%, 0% of 100 qaoa_partitioned solutions valid before repair, 84 distinct topologies, 840 quadratic terms, 6012 circuits\nLargest gap: sub12_s4 (+58.6%).",
+      "correct": true,
+      "children_count": 0,
+      "complexity": 1.0,
+      "embedding": [],
+      "embedding_pca_2d": [],
+      "embedding_pca_3d": [],
+      "embedding_cluster_id": null,
+      "migration_history": [],
+      "metadata": {
+        "api_costs": 0.0010401,
+        "patch_type": "full",
+        "patch_name": "relay_balanced_paths",
+        "patch_description": "The baseline uses only direct demand and has no interactions, so it cannot reward useful multi-hop routes. This version keeps direct demand as the main linear signal, adds a modest relay-potential adjustment to each link, and adds sparse, normalized couplings for two-hop paths. Normalizing each origin-destination pair\u2019s relay candidates prevents high-volume pairs from overwhelming all other traffic. The degree penalty is increased to encourage feasible topologies before repair.",
+        "num_applied": 1,
+        "error_attempt": null,
+        "diff_summary": {
+          "added": 45,
+          "deleted": 0,
+          "modified": 18
+        },
+        "novelty_attempt": 1,
+        "resample_attempt": 1,
+        "patch_attempt": 1,
+        "system_prompt_id": null,
+        "model_name": "gpt-6-luna",
+        "max_output_tokens": 32768,
+        "reasoning": {
+          "effort": "low",
+          "summary": "auto"
+        },
+        "llm_result": {
+          "content": "<NAME>\nrelay_balanced_paths\n</NAME>\n\n<DESCRIPTION>\nThe baseline uses only direct demand and has no interactions, so it cannot reward useful multi-hop routes. This version keeps direct demand as the main linear signal, adds a modest relay-potential adjustment to each link, and adds sparse, normalized couplings for two-hop paths. Normalizing each origin-destination pair\u2019s relay candidates prevents high-volume pairs from overwhelming all other traffic. The degree penalty is increased to encourage feasible topologies before repair.\n</DESCRIPTION>\n\n<CODE>\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build linear and quadratic surrogate cost terms for a directed topology.\"\"\"\n    t = np.asarray(demand, dtype=float)\n    n = len(t)\n    if n < 2:\n        return {}, {}, 1.5\n\n    t = np.maximum(t, 0.0).copy()\n    np.fill_diagonal(t, 0.0)\n    scale = float(t.max())\n    if scale <= 0.0:\n        return ({(i, j): 0.0 for i in range(n) for j in range(n) if i != j},\n                {}, 1.5)\n\n    d = t / scale\n    links = [(i, j) for i in range(n) for j in range(n) if i != j]\n    linear = {(i, j): -float(d[i, j]) for i, j in links}\n    quadratic = {}\n\n    # A two-hop path is useful when its first and second arcs are plausible\n    # for the corresponding origin and destination. Normalize per OD pair so\n    # that relay rewards do not simply duplicate large raw demands.\n    relay_for_link = np.zeros((n, n), dtype=float)\n    for i in range(n):\n        for k in range(n):\n            if i == k or d[i, k] <= 0:\n                continue\n            candidates = []\n            for j in range(n):\n                if j != i and j != k:\n                    # A mild preference for relays with useful outgoing traffic.\n                    plausibility = 0.20 + 0.80 * np.sqrt(\n                        max(d[j, k], 0.0) / (float(d[j].max()) + 1e-12)\n                    )\n                    candidates.append((j, plausibility))\n            total = sum(v for _, v in candidates)\n            if total <= 0:\n                continue\n            for j, plausibility in candidates:\n                share = float(d[i, k]) * plausibility / total\n                relay_for_link[i, j] += share\n                relay_for_link[j, k] += share\n\n                # Reward completing a two-hop route. The small coefficient\n                # keeps this interaction subordinate to direct-demand terms.\n                a, b = (i, j), (j, k)\n                key = (a, b) if a < b else (b, a)\n                quadratic[key] = quadratic.get(key, 0.0) - 0.16 * share\n\n    # Small linear relay adjustment: a link can be valuable even when its own\n    # endpoint demand is modest, if it participates in many useful paths.\n    relay_scale = float(relay_for_link.max())\n    if relay_scale > 0:\n        for i, j in links:\n            linear[i, j] -= 0.12 * float(relay_for_link[i, j] / relay_scale)\n\n    # Keep the interaction graph sparse: only two-hop path pairs are emitted.\n    # Drop negligible numerical interactions to avoid needless couplings.\n    if quadratic:\n        cutoff = 1e-8\n        quadratic = {key: value for key, value in quadratic.items()\n                     if abs(value) > cutoff}\n\n    # Degree constraints are supplied externally; a stronger weight helps\n    # counter the many infeasible low-energy assignments from an unconstrained\n    # collection of link rewards.\n    penalty_weight = 2.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n```\n</CODE>",
+          "msg": "\n# Current program\n\nHere is the current program we are trying to improve (you will need to propose a new program with the same inputs and outputs as the original program, but with improved internal implementation):\n\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    scale = float(demand.max()) or 1.0\n    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}\n    quadratic = {}\n    penalty_weight = 1.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n\n```\n\nHere are the performance metrics of the program:\n\nCombined score to maximize: 0.77\nsum_score: 4.64; num_instances: 6; score_network12_s0: 0.70; score_sub12_s1: 0.73; score_sub12_s2: 0.77; score_sub12_s3: 0.86; score_sub12_s4: 0.82; score_sub12_s5: 0.76; gap_best_pct_network12_s0: 32.20; gap_best_pct_sub12_s1: 18.08; gap_best_pct_sub12_s2: 18.91; gap_best_pct_sub12_s3: 8.27; gap_best_pct_sub12_s4: 12.49; gap_best_pct_sub12_s5: 20.31; mean_gap_best_pct: 18.38; mean_gap_median_pct: 44.06; mean_feasible_rate: 0.09; mean_quadratic_terms: 0.00; routine: qaoa_partitioned; backend: cloud\n\nHere is additional text feedback about the current program:\n\nnetwork12_s0: score 0.699, best 365500 vs reference 276474 (gap +32.2%), median gap +56.1%, 0% of 100 qaoa_partitioned solutions valid before repair, 46 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s1: score 0.731, best 296667 vs reference 251250 (gap +18.1%), median gap +62.6%, 15% of 100 qaoa_partitioned solutions valid before repair, 68 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s2: score 0.773, best 296000 vs reference 248929 (gap +18.9%), median gap +41.7%, 17% of 100 qaoa_partitioned solutions valid before repair, 69 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s3: score 0.861, best 251000 vs reference 231819 (gap +8.3%), median gap +25.3%, 0% of 100 qaoa_partitioned solutions valid before repair, 72 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s4: score 0.818, best 247154 vs reference 219715 (gap +12.5%), median gap +33.8%, 1% of 100 qaoa_partitioned solutions valid before repair, 65 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s5: score 0.761, best 297000 vs reference 246858 (gap +20.3%), median gap +44.9%, 19% of 100 qaoa_partitioned solutions valid before repair, 70 distinct topologies, 0 quadratic terms, 6012 circuits\nLargest gap: network12_s0 (+32.2%).\n\n\n# Task\n\nRewrite the program to improve its performance on the specified metrics.\nProvide the complete new program code.\n\nIMPORTANT: Make sure your rewritten program maintains the same inputs and outputs as the original program, but with improved internal implementation.",
+          "system_msg": "You are an expert in combinatorial optimisation, network design and QUBO modelling. You are improving one Python function, `surrogate_terms(demand)`, that builds the cost part of a QUBO.\n\n## The problem (QOBLIB 08, network design)\nGiven an n x n traffic demand matrix t (t[i, j] = traffic from node i to node j, zero diagonal), build a directed network on n nodes in which every node has exactly 2 outgoing and 2 incoming links (no self-loops). All traffic is then routed over the links, flows may split over several paths, and the score of the network is the largest total flow on any single link. Lower is better. The exact score of a topology comes from a routing linear program; it is not a quadratic function of the link variables, so the QUBO can only approximate it.\n\n## What you write\nOne binary variable x_ij per possible directed link (i != j). `surrogate_terms(demand)` returns `(linear, quadratic, penalty_weight)`:\n- `linear`: dict {(i, j): weight}, the weight on x_ij.\n- `quadratic`: dict {((i, j), (k, l)): weight}, the weight on the product x_ij * x_kl.\n- `penalty_weight`: float in [0.05, 100].\nLower energy must mean a better network.\n\n## How it is used and scored\n1. Your terms are rescaled so the largest |weight| is 1.\n2. The evaluator adds penalty_weight * [ sum_i (outdeg_i - 2)^2 + sum_j (indeg_j - 2)^2 ]. Do not add degree penalties yourself.\n3. The QUBO is split into communities of at most 12 variables by community detection on its interaction graph; each part is solved by QAOA on Qoro's quantum simulator, the parts are recombined by beam search and polished by local search, and the 100 best combined solutions are taken. How your couplings group variables into communities therefore matters. Each sample is repaired to the nearest valid topology and scored by the routing LP.\n4. Per run: score = 0.5 * ref / best + 0.5 * ref / median, where best and median are over the sampled topologies and ref is the best score known for that demand matrix (the proven optimum where one exists). The combined score is the mean over several demand matrices and/or seeds; 1.0 would mean every sample is optimal.\nSo the low-energy region of your QUBO must consist of topologies with a low maximum link load: the best sample matters, and so does the typical sample.\n\n## Rules\n- Use only the demand matrix. Pure Python and numpy (math, itertools are fine). No LP or MILP solvers, no optimisation or sampling libraries, no file or network access, no randomness that changes between calls.\n- It must work for any n from 5 to 24 and run in a few seconds for n = 24 (hard limit 20 s per matrix).\n- At most 4 * n^3 quadratic terms. Fewer terms are better when the score is equal: the QUBO is also run on quantum hardware simulators.\n- Keys must be links (i, j) with i != j and integer node indices.\n- Keep the function name, arguments and return format.\n\n## What is known\n- The baseline rewards each link by its own demand: linear[(i, j)] = -t[i, j] / max(t), no quadratic terms. It ignores that most traffic travels over several hops and that the score is a maximum, not a sum.\n- Simply adding a reward -0.5 * t[i, k] on x_ij * x_jk for every two-hop path i -> j -> k scored worse than the baseline, so naive two-hop rewards are not enough.\n\n## Directions worth exploring\n- Each node has only 2 outgoing and 2 incoming links, so they must carry all of its own traffic plus transit traffic. Think about which pairs deserve a direct link and which can be served in two or three hops.\n- Load balance: penalise pairs of links whose combination would overload one link or one node, for example heavy demands that would have to share a link.\n- Estimate link loads under shortest-path style routing and build quadratic terms from a second-order expansion of a load-balancing objective such as the sum of squared loads.\n- Node-level statistics (row sums, column sums, in/out imbalance) to decide where transit capacity is needed.\n- Structure: reciprocal links (i -> j and j -> i), short cycles, hubs, and connectivity affect how far traffic must travel.\n- The relative scale of linear and quadratic terms and the penalty weight matter a lot.\n\nThe feedback after each evaluation lists, per demand matrix, the gap of the best and of the median sampled topology to the reference, how many samples were valid before repair, and the number of quadratic terms. Use it to see what fails.\n\n# Potential Recommendations\nThe following are potential recommendations for the next program generation:\n\n**Add a modest reward for complementary traffic on a built link.** Test a small linear adjustment based on the link\u2019s participation in useful two-hop paths, such as rewarding `i \u2192 j` in proportion to the demand-weighted relay potential of `j`, while retaining the existing direct-demand reward and pairwise path terms. This could make the linear signal better reflect the current program\u2019s successful balanced-relay insight without relying exclusively on quadratic interactions.\n\nAnalyze the current program to identify its key parameters and algorithmic components, then design a new algorithm with different parameter settings and configurations.\nYou MUST respond using a short summary name, description and the full code:\n\n<NAME>\nA shortened name summarizing the code you are proposing. Lowercase, no \nspaces, underscores allowed.\n</NAME>\n\n<DESCRIPTION>\nIdentify the key parameters in the current approach and explain how your new parameter choices or algorithmic configuration will lead to better performance.\n</DESCRIPTION>\n\n<CODE>\n```{language}\n# The new parametric algorithm implementation here.\n```\n</CODE>\n\n* Keep the markers \"EVOLVE-BLOCK-START\" and \"EVOLVE-BLOCK-END\" in the code.\n* Identify parameters like: learning rates, iteration counts, thresholds, weights, selection criteria, etc.\n* Design a new algorithm with different parameter values or configurations.\n* Consider adaptive parameters, different optimization strategies, or alternative heuristics.\n* Maintain the same inputs and outputs as the original program.\n* Use the <NAME>, <DESCRIPTION>, and <CODE> delimiters to structure your response. It will be parsed afterwards.",
+          "new_msg_history": [
+            {
+              "role": "user",
+              "content": "\n# Current program\n\nHere is the current program we are trying to improve (you will need to propose a new program with the same inputs and outputs as the original program, but with improved internal implementation):\n\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    scale = float(demand.max()) or 1.0\n    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}\n    quadratic = {}\n    penalty_weight = 1.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n\n```\n\nHere are the performance metrics of the program:\n\nCombined score to maximize: 0.77\nsum_score: 4.64; num_instances: 6; score_network12_s0: 0.70; score_sub12_s1: 0.73; score_sub12_s2: 0.77; score_sub12_s3: 0.86; score_sub12_s4: 0.82; score_sub12_s5: 0.76; gap_best_pct_network12_s0: 32.20; gap_best_pct_sub12_s1: 18.08; gap_best_pct_sub12_s2: 18.91; gap_best_pct_sub12_s3: 8.27; gap_best_pct_sub12_s4: 12.49; gap_best_pct_sub12_s5: 20.31; mean_gap_best_pct: 18.38; mean_gap_median_pct: 44.06; mean_feasible_rate: 0.09; mean_quadratic_terms: 0.00; routine: qaoa_partitioned; backend: cloud\n\nHere is additional text feedback about the current program:\n\nnetwork12_s0: score 0.699, best 365500 vs reference 276474 (gap +32.2%), median gap +56.1%, 0% of 100 qaoa_partitioned solutions valid before repair, 46 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s1: score 0.731, best 296667 vs reference 251250 (gap +18.1%), median gap +62.6%, 15% of 100 qaoa_partitioned solutions valid before repair, 68 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s2: score 0.773, best 296000 vs reference 248929 (gap +18.9%), median gap +41.7%, 17% of 100 qaoa_partitioned solutions valid before repair, 69 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s3: score 0.861, best 251000 vs reference 231819 (gap +8.3%), median gap +25.3%, 0% of 100 qaoa_partitioned solutions valid before repair, 72 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s4: score 0.818, best 247154 vs reference 219715 (gap +12.5%), median gap +33.8%, 1% of 100 qaoa_partitioned solutions valid before repair, 65 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s5: score 0.761, best 297000 vs reference 246858 (gap +20.3%), median gap +44.9%, 19% of 100 qaoa_partitioned solutions valid before repair, 70 distinct topologies, 0 quadratic terms, 6012 circuits\nLargest gap: network12_s0 (+32.2%).\n\n\n# Task\n\nRewrite the program to improve its performance on the specified metrics.\nProvide the complete new program code.\n\nIMPORTANT: Make sure your rewritten program maintains the same inputs and outputs as the original program, but with improved internal implementation."
+            },
+            {
+              "role": "assistant",
+              "content": "<NAME>\nrelay_balanced_paths\n</NAME>\n\n<DESCRIPTION>\nThe baseline uses only direct demand and has no interactions, so it cannot reward useful multi-hop routes. This version keeps direct demand as the main linear signal, adds a modest relay-potential adjustment to each link, and adds sparse, normalized couplings for two-hop paths. Normalizing each origin-destination pair\u2019s relay candidates prevents high-volume pairs from overwhelming all other traffic. The degree penalty is increased to encourage feasible topologies before repair.\n</DESCRIPTION>\n\n<CODE>\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build linear and quadratic surrogate cost terms for a directed topology.\"\"\"\n    t = np.asarray(demand, dtype=float)\n    n = len(t)\n    if n < 2:\n        return {}, {}, 1.5\n\n    t = np.maximum(t, 0.0).copy()\n    np.fill_diagonal(t, 0.0)\n    scale = float(t.max())\n    if scale <= 0.0:\n        return ({(i, j): 0.0 for i in range(n) for j in range(n) if i != j},\n                {}, 1.5)\n\n    d = t / scale\n    links = [(i, j) for i in range(n) for j in range(n) if i != j]\n    linear = {(i, j): -float(d[i, j]) for i, j in links}\n    quadratic = {}\n\n    # A two-hop path is useful when its first and second arcs are plausible\n    # for the corresponding origin and destination. Normalize per OD pair so\n    # that relay rewards do not simply duplicate large raw demands.\n    relay_for_link = np.zeros((n, n), dtype=float)\n    for i in range(n):\n        for k in range(n):\n            if i == k or d[i, k] <= 0:\n                continue\n            candidates = []\n            for j in range(n):\n                if j != i and j != k:\n                    # A mild preference for relays with useful outgoing traffic.\n                    plausibility = 0.20 + 0.80 * np.sqrt(\n                        max(d[j, k], 0.0) / (float(d[j].max()) + 1e-12)\n                    )\n                    candidates.append((j, plausibility))\n            total = sum(v for _, v in candidates)\n            if total <= 0:\n                continue\n            for j, plausibility in candidates:\n                share = float(d[i, k]) * plausibility / total\n                relay_for_link[i, j] += share\n                relay_for_link[j, k] += share\n\n                # Reward completing a two-hop route. The small coefficient\n                # keeps this interaction subordinate to direct-demand terms.\n                a, b = (i, j), (j, k)\n                key = (a, b) if a < b else (b, a)\n                quadratic[key] = quadratic.get(key, 0.0) - 0.16 * share\n\n    # Small linear relay adjustment: a link can be valuable even when its own\n    # endpoint demand is modest, if it participates in many useful paths.\n    relay_scale = float(relay_for_link.max())\n    if relay_scale > 0:\n        for i, j in links:\n            linear[i, j] -= 0.12 * float(relay_for_link[i, j] / relay_scale)\n\n    # Keep the interaction graph sparse: only two-hop path pairs are emitted.\n    # Drop negligible numerical interactions to avoid needless couplings.\n    if quadratic:\n        cutoff = 1e-8\n        quadratic = {key: value for key, value in quadratic.items()\n                     if abs(value) > cutoff}\n\n    # Degree constraints are supplied externally; a stronger weight helps\n    # counter the many infeasible low-energy assignments from an unconstrained\n    # collection of link rewards.\n    penalty_weight = 2.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n```\n</CODE>"
+            }
+          ],
+          "model_name": "gpt-6-luna",
+          "kwargs": {
+            "max_output_tokens": 32768,
+            "reasoning": {
+              "effort": "low",
+              "summary": "auto"
+            }
+          },
+          "input_tokens": 2546,
+          "output_tokens": 979,
+          "thinking_tokens": 592,
+          "cost": 0.0010401,
+          "input_cost": 0.0002546,
+          "output_cost": 0.0007855,
+          "thought": "**Evaluating penalty weight**\n\nI\u2019m considering a return penalty weight, maybe around 2.5. I think about normalizing terms and looking at validity rates, adjusting the degree penalty evaluator\u2019s weights to 1 might be beneficial. The penalty could range from 1.5 to 3. I need to keep in mind that degree deviations could cost around 1 to 2, which sounds reasonable. So, I\u2019m trying to ensure this whole process is clear and effective.",
+          "model_posteriors": {
+            "gpt-6-luna": 1.0
+          },
+          "num_tool_calls": 0,
+          "num_total_queries": 1,
+          "incomplete_reason": null
+        },
+        "novelty_checks_performed": 0,
+        "novelty_cost": 0.0,
+        "novelty_explanation": "",
+        "max_similarity": 0.9714095592498779,
+        "similarity_scores": [
+          0.9714095592498779
+        ],
+        "meta_recommendations": "**Add a modest reward for complementary traffic on a built link.** Test a small linear adjustment based on the link\u2019s participation in useful two-hop paths, such as rewarding `i \u2192 j` in proportion to the demand-weighted relay potential of `j`, while retaining the existing direct-demand reward and pairwise path terms. This could make the linear signal better reflect the current program\u2019s successful balanced-relay insight without relying exclusively on quadratic interactions.\n",
+        "meta_summary": "**Program Name: Demand-Reward Linear QUBO Surrogate**\n- **Implementation**: Assigns each directed link a linear weight equal to its negative demand, normalized by the maximum demand; includes no quadratic terms and sets the degree-penalty weight to 1. The wrapper converts demand to a NumPy array and records runtime.\n- **Performance**: Combined score was **0.77** across six instances, with a mean best-gap of **18.38%** and mean feasibility rate of **9%**.\n- **Feedback**: The demand-only objective produced varied topologies but no quadratic terms, and most sampled solutions were infeasible before repair. Results ranged from an 8.3% best-gap on `sub12_s3` to the largest gap of 32.2% on `network12_s0`, indicating inconsistent solution quality.\n**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True\n\n**Program Name: Demand-Weighted Relay Surrogate QUBO**\n- **Implementation**: Normalizes demand by its maximum, rewards direct links with negative linear weights, and adds discounted quadratic rewards for two-hop paths through balanced in/out-demand relays. Relay rewards are distributed across candidate intermediates, with a fixed degree-penalty weight of 3.0.\n- **Performance**: Achieved a combined score of 0.82 across six instances, with a mean best-solution gap of 13.44%, mean feasible rate of 7%, and about 840 quadratic terms per instance.\n- **Feedback**: Sub-12 instances scored 0.82\u20130.85, while network12_s0 was weakest at 0.77 and had the largest gap (20.5%). Validity before repair was generally low (0\u201314%), and median gaps averaged 31.62%, suggesting the surrogate\u2019s topology incentives leave substantial room for improvement.\n**Program Identifier:** Generation 1 - Patch Name capacity_aware_paths - Correct Program: True\n\n**Program Name: Demand-Weighted Surrogate QUBO**\n- **Implementation**: Builds negative linear rewards for directed links from normalized demand plus a small endpoint-traffic term, and adds normalized, weak negative couplings for two-hop routes. It uses a fixed degree-penalty weight of 4.0.\n- **Performance**: Combined score was 0.80 across six instances, with mean best-solution gap of 15.55% and mean feasibility rate of 0.07.\n- **Feedback**: Scores ranged from 0.737 to 0.852; sub12_s1 was weakest, with the largest gap at 25.5%, while sub12_s4 had the smallest gap at 9.6%. Only 0\u201317% of samples were valid before repair, indicating that feasibility remains a major weakness despite varied topologies.\n**Program Identifier:** Generation 2 - Patch Name path_balance_surrogate - Correct Program: True\n\n**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**\n- **Implementation**: Assigns negative linear weights to directed links proportional to normalized direct demand, and negative quadratic weights to two-hop paths serving demanded origin-destination pairs. Discounts paths through high-load intermediates and sets the degree-penalty weight to 4.0.\n- **Performance**: Achieved a combined score of 0.79 across six instances, with a mean best gap of 16.51% and mean feasible rate of 0.14.\n- **Feedback**: Scores ranged from 0.762 to 0.850; sub12_s4 had the smallest gap (8.0%), while sub12_s1 had the largest (23.7%). Low pre-repair feasibility on several instances suggests degree-constraint satisfaction remains a weakness despite the demand-based link and path rewards.\n**Program Identifier:** Generation 3 - Patch Name congestion_aware_twohop - Correct Program: True\n\n**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**\n- **Implementation**: Assigns each directed link a negative weight proportional to its direct demand, then adds discounted two-hop rewards scaled by traffic pressure at the endpoints. Uses a fixed degree-penalty weight of 4.0.\n- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 15.02% and mean feasible rate of 9%.\n- **Feedback**: Scores ranged from 0.757 to 0.833; sub12_s1 was weakest, with the largest gap at 24.7%. Despite generating 810\u2013880 quadratic terms per instance, pre-repair validity was often low (1\u201325%), indicating that the surrogate and penalty did not reliably produce feasible topologies.\n**Program Identifier:** Generation 4 - Patch Name balanced_twohop_routing - Correct Program: True",
+        "meta_scratch_pad": "## Successful Algorithmic Patterns\n- **Adding demand-weighted two-hop rewards improved on a purely linear demand objective.** Generation 0, *Demand-Reward Linear QUBO*, scored **0.77** with an **18.38%** mean best-gap. Generation 1, *Demand-Weighted Relay Surrogate QUBO*, added discounted two-hop rewards and scored **0.82**, with a lower **13.44%** mean best-gap.\n- **The current best program\u2019s relay-aware path allocation is its strongest pattern.** It retains normalized direct-demand rewards, then distributes each OD pair\u2019s indirect reward across candidate relays according to relay balance and pair suitability. It scored **0.82** overall, including **0.85** on `sub12_s4` (9.23% best-gap) and **0.83** on `sub12_s2` (10.87% gap).\n- **Balanced in/out traffic is a useful relay signal.** The current best computes relay potential as the square root of normalized row traffic times column traffic. This explicitly downweights one-sided nodes, while its suitability factor also favors relays connected to the OD pair\u2019s endpoints. The strong sub-12 scores are consistent with this richer two-hop structure outperforming the linear-only baseline.\n\n## Ineffective Approaches\n- **Two-hop rewards alone did not reliably improve on the current best.** Generation 2, *Demand-Weighted Surrogate QUBO*, scored **0.80** with a **15.55%** mean best-gap; Generation 3, *Demand-Weighted Two-Hop Surrogate QUBO*, scored **0.79** with a **16.51%** gap; and Generation 4, *Demand-Weighted Two-Hop Surrogate QUBO*, scored **0.81** with a **15.02%** gap. Their alternative path scaling, congestion discounts, or endpoint-pressure rewards did not match Generation 1\u2019s **0.82 / 13.44%** result.\n- **Feasibility remained weak across the path-based variants.** The current best had only **7%** mean pre-repair feasibility (0\u201314% by instance), and its median gap averaged **31.62%**. Generation 3 and Generation 4 also reported low feasibility, despite their path-based rewards. Thus, improved best-sample gaps did not mean the surrogate consistently generated valid topologies.\n- **The largest instance remained a consistent weakness.** The current best scored **0.77** on `network12_s0`, with a **20.52%** best-gap and **40.5%** median gap. Its result was weaker than all five sub-12 scores (0.82\u20130.85), showing that the current gains were not uniform across instances.\n\n## Implementation Insights\n- **The current best combines direct and indirect incentives rather than replacing direct demand rewards.** It assigns every non-diagonal link a linear weight of `-ds[i, j]`, then adds negative quadratic terms for paths serving positive-demand OD pairs. This preserves the baseline direct-service signal while representing two-hop service.\n- **Reward distribution controls interaction bias.** For each OD pair, the program divides its indirect reward among candidate relays in proportion to suitability, instead of assigning the full reward to every candidate path. The path reward is discounted by `0.30 * ds[i, k]`; this generated about **840 quadratic terms per instance** and the best mean gap among the evaluated programs.\n- **Normalization and balanced relay scoring are central to the design.** Demand is divided by its maximum, while relay scores use normalized row and column totals and their geometric mean. This makes relay suitability depend on both incoming and outgoing traffic; the additional endpoint-demand term (`0.25 + 0.75 * min(1, ds[i,j] + ds[j,k])`) favors relays connected to the particular OD pair.\n- **The fixed penalty does not ensure feasibility.** The current program sets `penalty_weight = 3.0`, yet only 0\u201314% of samples were valid before repair. Other variants used fixed weights of 4.0 and also reported low validity, so the evaluated results do not show that simply increasing this fixed penalty resolved the constraint issue.\n\n## Performance Analysis\n- **Generation 1 is the strongest evaluated program by mean best-gap:** its **13.44%** gap is lower than Generation 0\u2019s **18.38%**, Generation 2\u2019s **15.55%**, Generation 3\u2019s **16.51%**, and Generation 4\u2019s **15.02%**. Its combined score of **0.82** is tied with the best reported score, while its best-gap is better than the other variants.\n- **Performance gains are concentrated in the sub-12 instances.** The current best\u2019s scores range from **0.82 to 0.85** there, but fall to **0.77** on `network12_s0`; its best-gap likewise rises from **9.23\u201313.60%** on sub-12 instances to **20.52%** on the larger instance.\n- **The current best finds strong best samples more reliably than its median results suggest.** Its **13.44%** mean best-gap contrasts with a **31.62%** mean median gap, and individual median gaps range from **28.1% to 40.5%**. The broad gap between best and median performance accompanies low pre-repair feasibility and indicates that good samples were comparatively uncommon.\n- **Quadratic-term count alone does not explain score differences.** The current best generated about **840** terms per instance and scored **0.82**; other path-based programs generated roughly **810\u2013880** terms but scored **0.79\u20130.81**. The reward structure and allocation of those terms, rather than their count alone, distinguish the best result.",
+        "api_charge_id": "fb6d63e1-3a40-463d-9bc6-dcb1c6d697a8",
+        "embed_cost": 1.7480000000000002e-05,
+        "stdout_log": "\u256d\u2500\u2500 Program Failure (Programs ('P0', 11), ('P1', 7), ('P2', 11) and 11 more) \u2500\u2500\u256e\n\u2502 ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\nsub12_s4: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/14 programs completed before failure.); retrying in 40s\n\u256d\u2500\u2500 Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) \u2500\u2500\u256e\n\u2502 ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\nnetwork12_s0: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 18s\nsub12_s1: done in 669s, score 0.750\nsub12_s3: done in 699s, score 0.830\n\u256d\u2500\u2500 Program Failure (Programs ('P0', 11), ('P1', 7), ('P2', 11) and 11 more) \u2500\u2500\u256e\n\u2502 ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\nsub12_s4: sampling attempt 2 failed (RuntimeError: Ensemble execution failed: 0/14 programs completed before failure.); retrying in 38s\nsub12_s5: done in 739s, score 0.825\nsub12_s2: done in 748s, score 0.824\nnetwork12_s0: done in 1200s, score 0.819\nsub12_s4: done in 1222s, score 0.463\ncorrect: True | error: None | 1225s\ncombined_score: 0.7518010196641219\nnetwork12_s0: score 0.819, best 317600 vs reference 276474 (gap +14.9%), median gap +30.4%, 19% of 100 qaoa_partitioned solutions valid before repair, 79 distinct topologies, 880 quadratic terms, 6012 circuits\nsub12_s1: score 0.750, best 302500 vs reference 251250 (gap +20.4%), median gap +49.4%, 5% of 100 qaoa_partitioned solutions valid before repair, 78 distinct topologies, 840 quadratic terms, 6012 circuits\nsub12_s2: score 0.824, best 278334 vs reference 248929 (gap +11.8%), median gap +32.5%, 0% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 850 quadratic terms, 6012 circuits\nsub12_s3: score 0.830, best 264000 vs reference 231819 (gap +13.9%), median gap +28.0%, 0% of 100 qaoa_partitioned solutions valid before repair, 86 distinct topologies, 820 quadratic terms, 6513 circuits\nsub12_s4: score 0.463, best 348500 vs reference 219715 (gap +58.6%), median gap +237.3%, 0% of 100 qaoa_partitioned solutions valid before repair, 80 distinct topologies, 810 quadratic terms, 7014 circuits\nsub12_s5: score 0.825, best 278334 vs reference 246858 (gap +12.8%), median gap +31.2%, 0% of 100 qaoa_partitioned solutions valid before repair, 84 distinct topologies, 840 quadratic terms, 6012 circuits\nLargest gap: sub12_s4 (+58.6%).\n",
+        "stderr_log": "",
+        "results_missing": false,
+        "safe_processing": true,
+        "postprocess_db_maintenance_applied": true,
+        "source_job_id": "ProcessWithLogging(PID: 99306)|gen=9|submitted=1795303325.213519",
+        "source_generation": 9,
+        "timeline_lane_mode": "pool_slots",
+        "sampling_worker_id": null,
+        "evaluation_worker_id": 1,
+        "postprocess_worker_id": 2,
+        "active_proposals_at_start": 1,
+        "running_eval_jobs_at_submit": 3,
+        "db_workers_in_use_at_postprocess_start": 1,
+        "sampling_worker_capacity": 4,
+        "evaluation_worker_capacity": 3,
+        "postprocess_worker_capacity": 2,
+        "pipeline_started_at": 1795303304.7089841,
+        "sampling_started_at": 1795303304.7089841,
+        "sampling_finished_at": 1795303325.213519,
+        "evaluation_started_at": 1795303325.213519,
+        "evaluation_finished_at": 1795304555.1656268,
+        "postprocess_started_at": 1795304555.198376,
+        "postprocess_finished_at": 1795304555.373764,
+        "sampling_seconds": 20.50453495979309,
+        "evaluation_seconds": 1229.952107667923,
+        "postprocess_seconds": 0.17538809776306152,
+        "pipeline_seconds": 1250.6647799015045,
+        "post_eval_queue_wait_seconds": 0.032749176025390625,
+        "pipeline_accounted_seconds": 1250.6647799015045,
+        "pipeline_unaccounted_seconds": 0.0,
+        "compute_time": 1229.952107667923,
+        "code_analysis_metrics": {
+          "cyclomatic_complexity": 27,
+          "average_cyclomatic_complexity": 13.5,
+          "halstead_volume": 516.8545880631268,
+          "halstead_difficulty": 8.045454545454545,
+          "halstead_effort": 4158.33009487152,
+          "lines_of_code": 93,
+          "logical_lines_of_code": 57,
+          "comments": 15,
+          "maintainability_index": 11.984831135219252,
+          "max_nesting_depth": 5,
+          "complexity_score": 1.0
+        },
+        "postprocess_db_maintenance_started_at": 1795304555.37635,
+        "postprocess_db_maintenance_finished_at": 1795304555.3784618,
+        "postprocess_db_maintenance_seconds": 0.0021119117736816406,
+        "postprocess_apply_started_at": 1795304555.374219,
+        "postprocess_apply_finished_at": 1795304555.418182,
+        "postprocess_apply_wait_seconds": 0.00045490264892578125,
+        "postprocess_apply_seconds": 0.043962955474853516,
+        "end_to_end_with_side_effects_seconds": 1250.7091977596283,
+        "end_to_end_accounted_seconds": 1250.7091977596283,
+        "end_to_end_unaccounted_seconds": 0.0,
+        "postprocess_side_effects_applied": true
+      },
+      "in_archive": false,
+      "system_prompt_id": null
+    },
+    {
+      "id": "6da88661-dd06-43f8-9152-7efca3a9ecea",
+      "code": "\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    d = np.asarray(demand, dtype=float)\n    scale = float(d.max()) or 1.0\n    row = d.sum(axis=1)\n    col = d.sum(axis=0)\n\n    # Direct service remains the strongest signal; two-hop paths get a\n    # discounted reward, normalized by the traffic pressure at their endpoints.\n    linear = {\n        (i, j): -float(d[i, j]) / scale\n        for i in range(n) for j in range(n) if i != j\n    }\n    quadratic = {}\n    # Lower-demand nodes are preferred as relays. Normalize suitability for\n    # each endpoint pair so the total reward does not grow with relay count.\n    node_pressure = row + col\n    for i in range(n):\n        for k in range(n):\n            traffic = float(d[i, k])\n            if i == k or traffic <= 0.0:\n                continue\n            relays = [j for j in range(n) if j != i and j != k]\n            suitability = [1.0 / (1.0 + float(node_pressure[j]) / scale) for j in relays]\n            suitability_total = sum(suitability)\n            pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n            pair_reward = 0.30 * (traffic / scale) * (scale / pressure)\n            for j, fit in zip(relays, suitability):\n                value = -pair_reward * (fit / suitability_total)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n\n    penalty_weight = 4.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n",
+      "language": "python",
+      "parent_id": "9ad0e472-c522-4f15-b02a-aa7a5cf59ebe",
+      "archive_inspiration_ids": [
+        "7ae41539-429e-4f90-9964-1c250a05df52"
+      ],
+      "top_k_inspiration_ids": [],
+      "island_idx": 0,
+      "generation": 11,
+      "timestamp": 1795304670.088843,
+      "code_diff": "--- a/original.py\n+++ b/original.py\n@@ -1,72 +1,75 @@\n \"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n \n import time\n \n # EVOLVE-BLOCK-START\n import numpy as np\n \n \n def surrogate_terms(demand):\n     \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n \n     Args:\n         demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n             (zero diagonal).\n \n     Returns:\n         linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n             (x_ij = 1 if the directed link i -> j is built), i != j.\n         quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n         penalty_weight: float. Strength of the degree penalty that the evaluator adds\n             after rescaling these terms so the largest |weight| is 1.\n \n     Lower energy must mean a better topology. Baseline: reward each link by the demand\n     it carries directly.\n     \"\"\"\n     n = len(demand)\n     d = np.asarray(demand, dtype=float)\n     scale = float(d.max()) or 1.0\n     row = d.sum(axis=1)\n     col = d.sum(axis=0)\n \n     # Direct service remains the strongest signal; two-hop paths get a\n     # discounted reward, normalized by the traffic pressure at their endpoints.\n     linear = {\n         (i, j): -float(d[i, j]) / scale\n         for i in range(n) for j in range(n) if i != j\n     }\n     quadratic = {}\n+    # Lower-demand nodes are preferred as relays. Normalize suitability for\n+    # each endpoint pair so the total reward does not grow with relay count.\n+    node_pressure = row + col\n     for i in range(n):\n-        for j in range(n):\n-            if i == j:\n+        for k in range(n):\n+            traffic = float(d[i, k])\n+            if i == k or traffic <= 0.0:\n                 continue\n-            for k in range(n):\n-                if k == j or k == i:\n-                    continue\n-                traffic = float(d[i, k])\n-                if traffic <= 0.0:\n-                    continue\n-                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n-                value = -0.20 * (traffic / scale) * (scale / pressure)\n+            relays = [j for j in range(n) if j != i and j != k]\n+            suitability = [1.0 / (1.0 + float(node_pressure[j]) / scale) for j in relays]\n+            suitability_total = sum(suitability)\n+            pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n+            pair_reward = 0.30 * (traffic / scale) * (scale / pressure)\n+            for j, fit in zip(relays, suitability):\n+                value = -pair_reward * (fit / suitability_total)\n                 if value:\n                     quadratic[((i, j), (j, k))] = value\n \n     penalty_weight = 4.0\n     return linear, quadratic, penalty_weight\n \n \n # EVOLVE-BLOCK-END\n \n \n def run_surrogate(demand):\n     \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n     demand = np.array(demand, dtype=float)\n     start = time.perf_counter()\n     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n     return {\n         \"n\": len(demand),\n         \"linear\": linear,\n         \"quadratic\": quadratic,\n         \"penalty_weight\": penalty_weight,\n         \"seconds\": time.perf_counter() - start,\n     }\n",
+      "combined_score": 0.7500434737983417,
+      "public_metrics": {
+        "sum_score": 4.50026084279005,
+        "num_instances": 6,
+        "score_network12_s0": 0.7728109044666984,
+        "score_sub12_s1": 0.7916046744710017,
+        "score_sub12_s2": 0.7007761274035553,
+        "score_sub12_s3": 0.8078078349811197,
+        "score_sub12_s4": 0.8082766747330673,
+        "score_sub12_s5": 0.6189846267346073,
+        "gap_best_pct_network12_s0": 15.878889154133846,
+        "gap_best_pct_sub12_s1": 17.038407960199,
+        "gap_best_pct_sub12_s2": 22.6253269004415,
+        "gap_best_pct_sub12_s3": 15.019476401847998,
+        "gap_best_pct_sub12_s4": 16.514575700339073,
+        "gap_best_pct_sub12_s5": 32.05972664446768,
+        "mean_gap_best_pct": 19.85606712690485,
+        "mean_gap_median_pct": 54.70581970134018,
+        "mean_feasible_rate": 0.08666666666666667,
+        "mean_quadratic_terms": 840.0,
+        "routine": "qaoa_partitioned",
+        "backend": "cloud"
+      },
+      "private_metrics": {
+        "circuits": 38577,
+        "quantum_seconds": 4267.18581866601,
+        "sampling_wall_seconds": 923.8341173340013,
+        "parallel": 6,
+        "build_seconds": 0.002633500989759341,
+        "network12_s0": {
+          "score": 0.7728109044666984,
+          "best": 320375.0,
+          "median": 405000.0,
+          "ref": 276474.0,
+          "gap_best_pct": 15.878889154133846,
+          "gap_median_pct": 46.48755398337639,
+          "feasible_rate": 0.12,
+          "num_samples": 100,
+          "distinct": 90,
+          "num_quadratic": 880,
+          "circuits": 6012,
+          "quantum_seconds": 714.7744041249971,
+          "started_s": 0.0010826250072568655,
+          "nodes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "best_arcs": [
+            [
+              0,
+              6
+            ],
+            [
+              0,
+              8
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              1,
+              11
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              2,
+              7
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              7,
+              10
+            ],
+            [
+              8,
+              4
+            ],
+            [
+              8,
+              9
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              11,
+              1
+            ],
+            [
+              11,
+              2
+            ]
+          ]
+        },
+        "sub12_s1": {
+          "score": 0.7916046744710017,
+          "best": 294059.0,
+          "median": 344750.0,
+          "ref": 251250.0,
+          "gap_best_pct": 17.038407960199,
+          "gap_median_pct": 37.21393034825871,
+          "feasible_rate": 0.13,
+          "num_samples": 100,
+          "distinct": 89,
+          "num_quadratic": 840,
+          "circuits": 6513,
+          "quantum_seconds": 607.9467496669968,
+          "started_s": 0.02545954199740663,
+          "nodes": [
+            0,
+            2,
+            5,
+            6,
+            7,
+            10,
+            11,
+            15,
+            18,
+            19,
+            21,
+            22
+          ],
+          "best_arcs": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              8
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              4,
+              11
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              6,
+              3
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              7,
+              5
+            ],
+            [
+              7,
+              10
+            ],
+            [
+              8,
+              7
+            ],
+            [
+              8,
+              9
+            ],
+            [
+              9,
+              5
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              2
+            ],
+            [
+              11,
+              1
+            ],
+            [
+              11,
+              8
+            ]
+          ]
+        },
+        "sub12_s2": {
+          "score": 0.7007761274035553,
+          "best": 305250.0,
+          "median": 424750.0,
+          "ref": 248929.0,
+          "gap_best_pct": 22.6253269004415,
+          "gap_median_pct": 70.63098313173637,
+          "feasible_rate": 0.04,
+          "num_samples": 100,
+          "distinct": 90,
+          "num_quadratic": 850,
+          "circuits": 7014,
+          "quantum_seconds": 716.0891170000104,
+          "started_s": 0.05241666699294001,
+          "nodes": [
+            1,
+            3,
+            4,
+            7,
+            8,
+            10,
+            13,
+            14,
+            17,
+            18,
+            19,
+            20
+          ],
+          "best_arcs": [
+            [
+              0,
+              9
+            ],
+            [
+              0,
+              10
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              5
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              3,
+              8
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              4,
+              11
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              6,
+              4
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              7,
+              0
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              8,
+              1
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              9,
+              4
+            ],
+            [
+              9,
+              5
+            ],
+            [
+              10,
+              7
+            ],
+            [
+              10,
+              11
+            ],
+            [
+              11,
+              1
+            ],
+            [
+              11,
+              3
+            ]
+          ]
+        },
+        "sub12_s3": {
+          "score": 0.8078078349811197,
+          "best": 266637.0,
+          "median": 310667.0,
+          "ref": 231819.0,
+          "gap_best_pct": 15.019476401847998,
+          "gap_median_pct": 34.0127427001238,
+          "feasible_rate": 0.0,
+          "num_samples": 100,
+          "distinct": 48,
+          "num_quadratic": 820,
+          "circuits": 6012,
+          "quantum_seconds": 665.0131049580086,
+          "started_s": 0.05766308399324771,
+          "nodes": [
+            0,
+            1,
+            2,
+            3,
+            7,
+            10,
+            11,
+            14,
+            16,
+            18,
+            21,
+            23
+          ],
+          "best_arcs": [
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              1,
+              9
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              2,
+              10
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              3,
+              11
+            ],
+            [
+              4,
+              9
+            ],
+            [
+              4,
+              11
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              8
+            ],
+            [
+              7,
+              5
+            ],
+            [
+              7,
+              6
+            ],
+            [
+              8,
+              1
+            ],
+            [
+              8,
+              4
+            ],
+            [
+              9,
+              2
+            ],
+            [
+              9,
+              5
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              7
+            ],
+            [
+              11,
+              0
+            ],
+            [
+              11,
+              6
+            ]
+          ]
+        },
+        "sub12_s4": {
+          "score": 0.8082766747330673,
+          "best": 256000.0,
+          "median": 289750.0,
+          "ref": 219715.0,
+          "gap_best_pct": 16.514575700339073,
+          "gap_median_pct": 31.875384020207996,
+          "feasible_rate": 0.1,
+          "num_samples": 100,
+          "distinct": 88,
+          "num_quadratic": 810,
+          "circuits": 6012,
+          "quantum_seconds": 921.239814540997,
+          "started_s": 0.0658113340032287,
+          "nodes": [
+            1,
+            6,
+            8,
+            9,
+            13,
+            14,
+            15,
+            17,
+            18,
+            20,
+            21,
+            23
+          ],
+          "best_arcs": [
+            [
+              0,
+              6
+            ],
+            [
+              0,
+              11
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              1,
+              9
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              4,
+              7
+            ],
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              7,
+              5
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              8,
+              11
+            ],
+            [
+              9,
+              4
+            ],
+            [
+              9,
+              10
+            ],
+            [
+              10,
+              2
+            ],
+            [
+              10,
+              3
+            ],
+            [
+              11,
+              4
+            ],
+            [
+              11,
+              9
+            ]
+          ]
+        },
+        "sub12_s5": {
+          "score": 0.6189846267346073,
+          "best": 326000.0,
+          "median": 513500.0,
+          "ref": 246858.0,
+          "gap_best_pct": 32.05972664446768,
+          "gap_median_pct": 108.01432402433787,
+          "feasible_rate": 0.13,
+          "num_samples": 100,
+          "distinct": 90,
+          "num_quadratic": 840,
+          "circuits": 7014,
+          "quantum_seconds": 642.1226283750002,
+          "started_s": 0.07399908399384003,
+          "nodes": [
+            0,
+            1,
+            5,
+            6,
+            7,
+            8,
+            9,
+            11,
+            12,
+            18,
+            20,
+            23
+          ],
+          "best_arcs": [
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              6
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              11
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              2,
+              7
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              3,
+              11
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              4,
+              8
+            ],
+            [
+              5,
+              4
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              8,
+              6
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              9,
+              10
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              10,
+              5
+            ],
+            [
+              11,
+              7
+            ],
+            [
+              11,
+              10
+            ]
+          ]
+        }
+      },
+      "text_feedback": "network12_s0: score 0.773, best 320375 vs reference 276474 (gap +15.9%), median gap +46.5%, 12% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 880 quadratic terms, 6012 circuits\nsub12_s1: score 0.792, best 294059 vs reference 251250 (gap +17.0%), median gap +37.2%, 13% of 100 qaoa_partitioned solutions valid before repair, 89 distinct topologies, 840 quadratic terms, 6513 circuits\nsub12_s2: score 0.701, best 305250 vs reference 248929 (gap +22.6%), median gap +70.6%, 4% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 850 quadratic terms, 7014 circuits\nsub12_s3: score 0.808, best 266637 vs reference 231819 (gap +15.0%), median gap +34.0%, 0% of 100 qaoa_partitioned solutions valid before repair, 48 distinct topologies, 820 quadratic terms, 6012 circuits\nsub12_s4: score 0.808, best 256000 vs reference 219715 (gap +16.5%), median gap +31.9%, 10% of 100 qaoa_partitioned solutions valid before repair, 88 distinct topologies, 810 quadratic terms, 6012 circuits\nsub12_s5: score 0.619, best 326000 vs reference 246858 (gap +32.1%), median gap +108.0%, 13% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 840 quadratic terms, 7014 circuits\nLargest gap: sub12_s5 (+32.1%).",
+      "correct": true,
+      "children_count": 0,
+      "complexity": 1.0,
+      "embedding": [],
+      "embedding_pca_2d": [],
+      "embedding_pca_3d": [],
+      "embedding_cluster_id": null,
+      "migration_history": [],
+      "metadata": {
+        "api_costs": 0.0010943,
+        "patch_type": "diff",
+        "patch_name": "relay_balanced_indirect_rewards",
+        "patch_description": "Distribute each demand pair\u2019s two-hop reward among its possible relay nodes instead of giving every relay the same full reward. Favor relays with lower combined incoming and outgoing demand, which are plausible candidates for carrying transit traffic. This avoids accumulating a large reward simply because many two-hop paths exist, while retaining the direct-demand linear terms. The modest multiplier increase from 0.20 to 0.30 tests a stronger indirect signal without making it the dominant term.",
+        "num_applied": 1,
+        "error_attempt": null,
+        "diff_summary": {
+          "added": 3,
+          "deleted": 0,
+          "modified": 10
+        },
+        "novelty_attempt": 1,
+        "resample_attempt": 1,
+        "patch_attempt": 1,
+        "system_prompt_id": null,
+        "model_name": "gpt-6-luna",
+        "max_output_tokens": 32768,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        },
+        "llm_result": {
+          "content": "<NAME>\nrelay_balanced_indirect_rewards\n</NAME>\n\n<DESCRIPTION>\nDistribute each demand pair\u2019s two-hop reward among its possible relay nodes instead of giving every relay the same full reward. Favor relays with lower combined incoming and outgoing demand, which are plausible candidates for carrying transit traffic. This avoids accumulating a large reward simply because many two-hop paths exist, while retaining the direct-demand linear terms. The modest multiplier increase from 0.20 to 0.30 tests a stronger indirect signal without making it the dominant term.\n</DESCRIPTION>\n\n<DIFF>\n<<<<<<< SEARCH\n    quadratic = {}\n    for i in range(n):\n        for j in range(n):\n            if i == j:\n                continue\n            for k in range(n):\n                if k == j or k == i:\n                    continue\n                traffic = float(d[i, k])\n                if traffic <= 0.0:\n                    continue\n                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n                value = -0.20 * (traffic / scale) * (scale / pressure)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n=======\n    quadratic = {}\n    # Lower-demand nodes are preferred as relays. Normalize suitability for\n    # each endpoint pair so the total reward does not grow with relay count.\n    node_pressure = row + col\n    for i in range(n):\n        for k in range(n):\n            traffic = float(d[i, k])\n            if i == k or traffic <= 0.0:\n                continue\n            relays = [j for j in range(n) if j != i and j != k]\n            suitability = [1.0 / (1.0 + float(node_pressure[j]) / scale) for j in relays]\n            suitability_total = sum(suitability)\n            pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n            pair_reward = 0.30 * (traffic / scale) * (scale / pressure)\n            for j, fit in zip(relays, suitability):\n                value = -pair_reward * (fit / suitability_total)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n>>>>>>> REPLACE\n</DIFF>",
+          "msg": "Here are the performance metrics of a set of previously implemented programs:\n\n# Prior programs\n\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    scale = float(demand.max()) or 1.0\n    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}\n    quadratic = {}\n    penalty_weight = 1.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n\n```\n\nPerformance metrics:\nCombined score to maximize: 0.77\nsum_score: 4.64; num_instances: 6; score_network12_s0: 0.70; score_sub12_s1: 0.73; score_sub12_s2: 0.77; score_sub12_s3: 0.86; score_sub12_s4: 0.82; score_sub12_s5: 0.76; gap_best_pct_network12_s0: 32.20; gap_best_pct_sub12_s1: 18.08; gap_best_pct_sub12_s2: 18.91; gap_best_pct_sub12_s3: 8.27; gap_best_pct_sub12_s4: 12.49; gap_best_pct_sub12_s5: 20.31; mean_gap_best_pct: 18.38; mean_gap_median_pct: 44.06; mean_feasible_rate: 0.09; mean_quadratic_terms: 0.00; routine: qaoa_partitioned; backend: cloud\n\nText feedback:\nnetwork12_s0: score 0.699, best 365500 vs reference 276474 (gap +32.2%), median gap +56.1%, 0% of 100 qaoa_partitioned solutions valid before repair, 46 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s1: score 0.731, best 296667 vs reference 251250 (gap +18.1%), median gap +62.6%, 15% of 100 qaoa_partitioned solutions valid before repair, 68 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s2: score 0.773, best 296000 vs reference 248929 (gap +18.9%), median gap +41.7%, 17% of 100 qaoa_partitioned solutions valid before repair, 69 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s3: score 0.861, best 251000 vs reference 231819 (gap +8.3%), median gap +25.3%, 0% of 100 qaoa_partitioned solutions valid before repair, 72 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s4: score 0.818, best 247154 vs reference 219715 (gap +12.5%), median gap +33.8%, 1% of 100 qaoa_partitioned solutions valid before repair, 65 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s5: score 0.761, best 297000 vs reference 246858 (gap +20.3%), median gap +44.9%, 19% of 100 qaoa_partitioned solutions valid before repair, 70 distinct topologies, 0 quadratic terms, 6012 circuits\nLargest gap: network12_s0 (+32.2%).\n\n\n# Current program\n\nHere is the current program we are trying to improve (you will need to propose a modification to it below):\n\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    d = np.asarray(demand, dtype=float)\n    scale = float(d.max()) or 1.0\n    row = d.sum(axis=1)\n    col = d.sum(axis=0)\n\n    # Direct service remains the strongest signal; two-hop paths get a\n    # discounted reward, normalized by the traffic pressure at their endpoints.\n    linear = {\n        (i, j): -float(d[i, j]) / scale\n        for i in range(n) for j in range(n) if i != j\n    }\n    quadratic = {}\n    for i in range(n):\n        for j in range(n):\n            if i == j:\n                continue\n            for k in range(n):\n                if k == j or k == i:\n                    continue\n                traffic = float(d[i, k])\n                if traffic <= 0.0:\n                    continue\n                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n                value = -0.20 * (traffic / scale) * (scale / pressure)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n\n    penalty_weight = 4.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n\n```\n\nHere are the performance metrics of the program:\n\nCombined score to maximize: 0.81\nsum_score: 4.84; num_instances: 6; score_network12_s0: 0.81; score_sub12_s1: 0.76; score_sub12_s2: 0.83; score_sub12_s3: 0.81; score_sub12_s4: 0.83; score_sub12_s5: 0.80; gap_best_pct_network12_s0: 14.44; gap_best_pct_sub12_s1: 24.69; gap_best_pct_sub12_s2: 10.56; gap_best_pct_sub12_s3: 11.24; gap_best_pct_sub12_s4: 11.39; gap_best_pct_sub12_s5: 17.78; mean_gap_best_pct: 15.02; mean_gap_median_pct: 34.68; mean_feasible_rate: 0.09; mean_quadratic_terms: 840.00; routine: qaoa_partitioned; backend: cloud\n\nHere is additional text feedback about the current program:\n\nnetwork12_s0: score 0.813, best 316400 vs reference 276474 (gap +14.4%), median gap +33.1%, 6% of 100 qaoa_partitioned solutions valid before repair, 61 distinct topologies, 880 quadratic terms, 6012 circuits\nsub12_s1: score 0.757, best 313286 vs reference 251250 (gap +24.7%), median gap +40.3%, 15% of 100 qaoa_partitioned solutions valid before repair, 86 distinct topologies, 840 quadratic terms, 6012 circuits\nsub12_s2: score 0.833, best 275223 vs reference 248929 (gap +10.6%), median gap +31.4%, 1% of 100 qaoa_partitioned solutions valid before repair, 74 distinct topologies, 850 quadratic terms, 6012 circuits\nsub12_s3: score 0.811, best 257875 vs reference 231819 (gap +11.2%), median gap +38.3%, 1% of 100 qaoa_partitioned solutions valid before repair, 73 distinct topologies, 820 quadratic terms, 6012 circuits\nsub12_s4: score 0.831, best 244750 vs reference 219715 (gap +11.4%), median gap +31.0%, 25% of 100 qaoa_partitioned solutions valid before repair, 63 distinct topologies, 810 quadratic terms, 6513 circuits\nsub12_s5: score 0.797, best 290750 vs reference 246858 (gap +17.8%), median gap +34.1%, 3% of 100 qaoa_partitioned solutions valid before repair, 83 distinct topologies, 840 quadratic terms, 6012 circuits\nLargest gap: sub12_s1 (+24.7%).\n\n\n# Instructions\n\nMake sure that the changes you propose are consistent with each other. For example, if you refer to a new config variable somewhere, you should also propose a change to add that variable.\n\nNote that the changes you propose will be applied sequentially, so you should assume that the previous changes have already been applied when writing the SEARCH block.\n\n# Task\n\nSuggest a new idea to improve the performance of the code that is inspired by your expert knowledge of the considered subject.\nYour goal is to maximize the `combined_score` of the program.\nDescribe each change with a SEARCH/REPLACE block.\n\nIMPORTANT: Do not rewrite the entire program - focus on targeted improvements.",
+          "system_msg": "You are an expert in combinatorial optimisation, network design and QUBO modelling. You are improving one Python function, `surrogate_terms(demand)`, that builds the cost part of a QUBO.\n\n## The problem (QOBLIB 08, network design)\nGiven an n x n traffic demand matrix t (t[i, j] = traffic from node i to node j, zero diagonal), build a directed network on n nodes in which every node has exactly 2 outgoing and 2 incoming links (no self-loops). All traffic is then routed over the links, flows may split over several paths, and the score of the network is the largest total flow on any single link. Lower is better. The exact score of a topology comes from a routing linear program; it is not a quadratic function of the link variables, so the QUBO can only approximate it.\n\n## What you write\nOne binary variable x_ij per possible directed link (i != j). `surrogate_terms(demand)` returns `(linear, quadratic, penalty_weight)`:\n- `linear`: dict {(i, j): weight}, the weight on x_ij.\n- `quadratic`: dict {((i, j), (k, l)): weight}, the weight on the product x_ij * x_kl.\n- `penalty_weight`: float in [0.05, 100].\nLower energy must mean a better network.\n\n## How it is used and scored\n1. Your terms are rescaled so the largest |weight| is 1.\n2. The evaluator adds penalty_weight * [ sum_i (outdeg_i - 2)^2 + sum_j (indeg_j - 2)^2 ]. Do not add degree penalties yourself.\n3. The QUBO is split into communities of at most 12 variables by community detection on its interaction graph; each part is solved by QAOA on Qoro's quantum simulator, the parts are recombined by beam search and polished by local search, and the 100 best combined solutions are taken. How your couplings group variables into communities therefore matters. Each sample is repaired to the nearest valid topology and scored by the routing LP.\n4. Per run: score = 0.5 * ref / best + 0.5 * ref / median, where best and median are over the sampled topologies and ref is the best score known for that demand matrix (the proven optimum where one exists). The combined score is the mean over several demand matrices and/or seeds; 1.0 would mean every sample is optimal.\nSo the low-energy region of your QUBO must consist of topologies with a low maximum link load: the best sample matters, and so does the typical sample.\n\n## Rules\n- Use only the demand matrix. Pure Python and numpy (math, itertools are fine). No LP or MILP solvers, no optimisation or sampling libraries, no file or network access, no randomness that changes between calls.\n- It must work for any n from 5 to 24 and run in a few seconds for n = 24 (hard limit 20 s per matrix).\n- At most 4 * n^3 quadratic terms. Fewer terms are better when the score is equal: the QUBO is also run on quantum hardware simulators.\n- Keys must be links (i, j) with i != j and integer node indices.\n- Keep the function name, arguments and return format.\n\n## What is known\n- The baseline rewards each link by its own demand: linear[(i, j)] = -t[i, j] / max(t), no quadratic terms. It ignores that most traffic travels over several hops and that the score is a maximum, not a sum.\n- Simply adding a reward -0.5 * t[i, k] on x_ij * x_jk for every two-hop path i -> j -> k scored worse than the baseline, so naive two-hop rewards are not enough.\n\n## Directions worth exploring\n- Each node has only 2 outgoing and 2 incoming links, so they must carry all of its own traffic plus transit traffic. Think about which pairs deserve a direct link and which can be served in two or three hops.\n- Load balance: penalise pairs of links whose combination would overload one link or one node, for example heavy demands that would have to share a link.\n- Estimate link loads under shortest-path style routing and build quadratic terms from a second-order expansion of a load-balancing objective such as the sum of squared loads.\n- Node-level statistics (row sums, column sums, in/out imbalance) to decide where transit capacity is needed.\n- Structure: reciprocal links (i -> j and j -> i), short cycles, hubs, and connectivity affect how far traffic must travel.\n- The relative scale of linear and quadratic terms and the penalty weight matter a lot.\n\nThe feedback after each evaluation lists, per demand matrix, the gap of the best and of the median sampled topology to the reference, how many samples were valid before repair, and the number of quadratic terms. Use it to see what fails.\n\n# Potential Recommendations\nThe following are potential recommendations for the next program generation:\n\n**Tune the indirect-reward discount while preserving reward distribution across relays.** Sweep the current `0.30` multiplier over a small range (for example, `0.15`, `0.25`, `0.40`) while retaining the suitability-weighted allocation and direct-demand linear terms. This tests whether two-hop service can be emphasized more without letting quadratic rewards overwhelm the direct-service signal.\n\nYou MUST respond using an edit name, description, and the exact SEARCH/REPLACE diff format shown below to indicate changes:\n\n<NAME>\nA shortened name summarizing the edit you are proposing. Lowercase, no spaces, underscores allowed.\n</NAME>\n\n<DESCRIPTION>\nA description and argumentation process of the edit you are proposing.\n</DESCRIPTION>\n\n<DIFF>\n<<<<<<< SEARCH\n# Original code to find and replace (must match exactly including indentation)\n=======\n# New replacement code\n>>>>>>> REPLACE\n\n</DIFF>\n\n\nExample of a valid diff format:\n<DIFF>\n<<<<<<< SEARCH\nfor i in range(m):\n    for j in range(p):\n        for k in range(n):\n            C[i, j] += A[i, k] * B[k, j]\n=======\n# Reorder loops for better memory access pattern\nfor i in range(m):\n    for k in range(n):\n        for j in range(p):\n            C[i, j] += A[i, k] * B[k, j]\n>>>>>>> REPLACE\n\n</DIFF>\n\n* You may only modify text that lies below a line containing \"EVOLVE-BLOCK-START\" and above the next \"EVOLVE-BLOCK-END\". Everything outside those markers is read-only.\n* Do not repeat the markers \"EVOLVE-BLOCK-START\" and \"EVOLVE-BLOCK-END\" in the SEARCH/REPLACE blocks.  \n* Every block\u2019s SEARCH section must be copied **verbatim** from the current file, including indentation.\n* You can propose multiple independent edits. SEARCH/REPLACE blocks follow one after another. DO NOT ADD ANY OTHER TEXT BETWEEN THESE BLOCKS.\n* Make sure the file still runs after your changes.",
+          "new_msg_history": [
+            {
+              "role": "user",
+              "content": "Here are the performance metrics of a set of previously implemented programs:\n\n# Prior programs\n\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    scale = float(demand.max()) or 1.0\n    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}\n    quadratic = {}\n    penalty_weight = 1.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n\n```\n\nPerformance metrics:\nCombined score to maximize: 0.77\nsum_score: 4.64; num_instances: 6; score_network12_s0: 0.70; score_sub12_s1: 0.73; score_sub12_s2: 0.77; score_sub12_s3: 0.86; score_sub12_s4: 0.82; score_sub12_s5: 0.76; gap_best_pct_network12_s0: 32.20; gap_best_pct_sub12_s1: 18.08; gap_best_pct_sub12_s2: 18.91; gap_best_pct_sub12_s3: 8.27; gap_best_pct_sub12_s4: 12.49; gap_best_pct_sub12_s5: 20.31; mean_gap_best_pct: 18.38; mean_gap_median_pct: 44.06; mean_feasible_rate: 0.09; mean_quadratic_terms: 0.00; routine: qaoa_partitioned; backend: cloud\n\nText feedback:\nnetwork12_s0: score 0.699, best 365500 vs reference 276474 (gap +32.2%), median gap +56.1%, 0% of 100 qaoa_partitioned solutions valid before repair, 46 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s1: score 0.731, best 296667 vs reference 251250 (gap +18.1%), median gap +62.6%, 15% of 100 qaoa_partitioned solutions valid before repair, 68 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s2: score 0.773, best 296000 vs reference 248929 (gap +18.9%), median gap +41.7%, 17% of 100 qaoa_partitioned solutions valid before repair, 69 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s3: score 0.861, best 251000 vs reference 231819 (gap +8.3%), median gap +25.3%, 0% of 100 qaoa_partitioned solutions valid before repair, 72 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s4: score 0.818, best 247154 vs reference 219715 (gap +12.5%), median gap +33.8%, 1% of 100 qaoa_partitioned solutions valid before repair, 65 distinct topologies, 0 quadratic terms, 6012 circuits\nsub12_s5: score 0.761, best 297000 vs reference 246858 (gap +20.3%), median gap +44.9%, 19% of 100 qaoa_partitioned solutions valid before repair, 70 distinct topologies, 0 quadratic terms, 6012 circuits\nLargest gap: network12_s0 (+32.2%).\n\n\n# Current program\n\nHere is the current program we are trying to improve (you will need to propose a modification to it below):\n\n```python\n\"\"\"Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block.\"\"\"\n\nimport time\n\n# EVOLVE-BLOCK-START\nimport numpy as np\n\n\ndef surrogate_terms(demand):\n    \"\"\"Build the surrogate cost terms of the topology QUBO from the demand matrix.\n\n    Args:\n        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j\n            (zero diagonal).\n\n    Returns:\n        linear: dict {(i, j): weight}. Weight on the binary variable x_ij\n            (x_ij = 1 if the directed link i -> j is built), i != j.\n        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.\n        penalty_weight: float. Strength of the degree penalty that the evaluator adds\n            after rescaling these terms so the largest |weight| is 1.\n\n    Lower energy must mean a better topology. Baseline: reward each link by the demand\n    it carries directly.\n    \"\"\"\n    n = len(demand)\n    d = np.asarray(demand, dtype=float)\n    scale = float(d.max()) or 1.0\n    row = d.sum(axis=1)\n    col = d.sum(axis=0)\n\n    # Direct service remains the strongest signal; two-hop paths get a\n    # discounted reward, normalized by the traffic pressure at their endpoints.\n    linear = {\n        (i, j): -float(d[i, j]) / scale\n        for i in range(n) for j in range(n) if i != j\n    }\n    quadratic = {}\n    for i in range(n):\n        for j in range(n):\n            if i == j:\n                continue\n            for k in range(n):\n                if k == j or k == i:\n                    continue\n                traffic = float(d[i, k])\n                if traffic <= 0.0:\n                    continue\n                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n                value = -0.20 * (traffic / scale) * (scale / pressure)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n\n    penalty_weight = 4.0\n    return linear, quadratic, penalty_weight\n\n\n# EVOLVE-BLOCK-END\n\n\ndef run_surrogate(demand):\n    \"\"\"Fixed entry point called by the evaluator, once per demand matrix.\"\"\"\n    demand = np.array(demand, dtype=float)\n    start = time.perf_counter()\n    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())\n    return {\n        \"n\": len(demand),\n        \"linear\": linear,\n        \"quadratic\": quadratic,\n        \"penalty_weight\": penalty_weight,\n        \"seconds\": time.perf_counter() - start,\n    }\n\n```\n\nHere are the performance metrics of the program:\n\nCombined score to maximize: 0.81\nsum_score: 4.84; num_instances: 6; score_network12_s0: 0.81; score_sub12_s1: 0.76; score_sub12_s2: 0.83; score_sub12_s3: 0.81; score_sub12_s4: 0.83; score_sub12_s5: 0.80; gap_best_pct_network12_s0: 14.44; gap_best_pct_sub12_s1: 24.69; gap_best_pct_sub12_s2: 10.56; gap_best_pct_sub12_s3: 11.24; gap_best_pct_sub12_s4: 11.39; gap_best_pct_sub12_s5: 17.78; mean_gap_best_pct: 15.02; mean_gap_median_pct: 34.68; mean_feasible_rate: 0.09; mean_quadratic_terms: 840.00; routine: qaoa_partitioned; backend: cloud\n\nHere is additional text feedback about the current program:\n\nnetwork12_s0: score 0.813, best 316400 vs reference 276474 (gap +14.4%), median gap +33.1%, 6% of 100 qaoa_partitioned solutions valid before repair, 61 distinct topologies, 880 quadratic terms, 6012 circuits\nsub12_s1: score 0.757, best 313286 vs reference 251250 (gap +24.7%), median gap +40.3%, 15% of 100 qaoa_partitioned solutions valid before repair, 86 distinct topologies, 840 quadratic terms, 6012 circuits\nsub12_s2: score 0.833, best 275223 vs reference 248929 (gap +10.6%), median gap +31.4%, 1% of 100 qaoa_partitioned solutions valid before repair, 74 distinct topologies, 850 quadratic terms, 6012 circuits\nsub12_s3: score 0.811, best 257875 vs reference 231819 (gap +11.2%), median gap +38.3%, 1% of 100 qaoa_partitioned solutions valid before repair, 73 distinct topologies, 820 quadratic terms, 6012 circuits\nsub12_s4: score 0.831, best 244750 vs reference 219715 (gap +11.4%), median gap +31.0%, 25% of 100 qaoa_partitioned solutions valid before repair, 63 distinct topologies, 810 quadratic terms, 6513 circuits\nsub12_s5: score 0.797, best 290750 vs reference 246858 (gap +17.8%), median gap +34.1%, 3% of 100 qaoa_partitioned solutions valid before repair, 83 distinct topologies, 840 quadratic terms, 6012 circuits\nLargest gap: sub12_s1 (+24.7%).\n\n\n# Instructions\n\nMake sure that the changes you propose are consistent with each other. For example, if you refer to a new config variable somewhere, you should also propose a change to add that variable.\n\nNote that the changes you propose will be applied sequentially, so you should assume that the previous changes have already been applied when writing the SEARCH block.\n\n# Task\n\nSuggest a new idea to improve the performance of the code that is inspired by your expert knowledge of the considered subject.\nYour goal is to maximize the `combined_score` of the program.\nDescribe each change with a SEARCH/REPLACE block.\n\nIMPORTANT: Do not rewrite the entire program - focus on targeted improvements."
+            },
+            {
+              "role": "assistant",
+              "content": "<NAME>\nrelay_balanced_indirect_rewards\n</NAME>\n\n<DESCRIPTION>\nDistribute each demand pair\u2019s two-hop reward among its possible relay nodes instead of giving every relay the same full reward. Favor relays with lower combined incoming and outgoing demand, which are plausible candidates for carrying transit traffic. This avoids accumulating a large reward simply because many two-hop paths exist, while retaining the direct-demand linear terms. The modest multiplier increase from 0.20 to 0.30 tests a stronger indirect signal without making it the dominant term.\n</DESCRIPTION>\n\n<DIFF>\n<<<<<<< SEARCH\n    quadratic = {}\n    for i in range(n):\n        for j in range(n):\n            if i == j:\n                continue\n            for k in range(n):\n                if k == j or k == i:\n                    continue\n                traffic = float(d[i, k])\n                if traffic <= 0.0:\n                    continue\n                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n                value = -0.20 * (traffic / scale) * (scale / pressure)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n=======\n    quadratic = {}\n    # Lower-demand nodes are preferred as relays. Normalize suitability for\n    # each endpoint pair so the total reward does not grow with relay count.\n    node_pressure = row + col\n    for i in range(n):\n        for k in range(n):\n            traffic = float(d[i, k])\n            if i == k or traffic <= 0.0:\n                continue\n            relays = [j for j in range(n) if j != i and j != k]\n            suitability = [1.0 / (1.0 + float(node_pressure[j]) / scale) for j in relays]\n            suitability_total = sum(suitability)\n            pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))\n            pair_reward = 0.30 * (traffic / scale) * (scale / pressure)\n            for j, fit in zip(relays, suitability):\n                value = -pair_reward * (fit / suitability_total)\n                if value:\n                    quadratic[((i, j), (j, k))] = value\n>>>>>>> REPLACE\n</DIFF>"
+            }
+          ],
+          "model_name": "gpt-6-luna",
+          "kwargs": {
+            "max_output_tokens": 32768,
+            "reasoning": {
+              "effort": "medium",
+              "summary": "auto"
+            }
+          },
+          "input_tokens": 3993,
+          "output_tokens": 486,
+          "thinking_tokens": 904,
+          "cost": 0.0010943,
+          "input_cost": 0.00039930000000000006,
+          "output_cost": 0.000695,
+          "thought": "**Considering recommendations for scaling**\n\nI need to suggest specific changes regarding the multiplier while ensuring suitability in the weighted allocation. The current code utilizes a value of -0.20, which seems to involve traffic and scale interaction. There\u2019s potential to preserve distribution and adjust it to a range around 0.30, yet I\u2019m concerned about overwhelming results from a direct adjustment. I should also assess the current score and evaluate whether it might yield improvement at a lower value, adjusting further if necessary.\n**Refining allocation strategies**\n\nI'm noticing that the reward is duplicated for each relay, which complicates the suitability weight based on row and column data. Adjusting the parameter to .25 might strengthen it relative to the current .20 by reflecting improvements. Perhaps adding relay suitability based on intermediary capacities could help too. The existing pressure focuses on endpoints, so I think it could be beneficial to revise how we allocate rewards across the relay nodes while considering their capacity to reduce bottlenecks effectively.\n**Assessing node transit suitability**\n\nI'm looking at node transit suitability, which seems to depend on low row and column totals. However, nodes with high traffic demand might not make good relays. For each pair (i, k), I'd calculate distinct candidate intermediaries (j), with suitability inversely related to the sum of row and column values. I could normalize this across the relays. Then, applying a value of -0.25 multiplied by endpoint traffic over pressure might yield a total reward magnitude similar to the old method, currently set at .2.",
+          "model_posteriors": {
+            "gpt-6-luna": 1.0
+          },
+          "num_tool_calls": 0,
+          "num_total_queries": 1,
+          "incomplete_reason": null
+        },
+        "novelty_checks_performed": 1,
+        "novelty_cost": 0.00020240000000000001,
+        "novelty_explanation": "NOVEL\n\nThe quadratic reward calculation changes substantially. The existing code assigns each two-hop path a fixed discounted reward, while the proposed code divides each traffic pair\u2019s reward among possible relay nodes according to their node pressure, favoring lower-pressure relays. It also changes the total two-hop reward coefficient from 0.20 to 0.30. These changes alter the resulting QUBO weights and topology preferences.",
+        "max_similarity": 0.9986332058906555,
+        "similarity_scores": [
+          0.9942854642868042,
+          0.9986332058906555
+        ],
+        "meta_recommendations": "**Tune the indirect-reward discount while preserving reward distribution across relays.** Sweep the current `0.30` multiplier over a small range (for example, `0.15`, `0.25`, `0.40`) while retaining the suitability-weighted allocation and direct-demand linear terms. This tests whether two-hop service can be emphasized more without letting quadratic rewards overwhelm the direct-service signal.\n",
+        "meta_summary": "**Program Name: Demand-Reward Linear QUBO Surrogate**\n- **Implementation**: Assigns each directed link a linear weight equal to its negative demand, normalized by the maximum demand; includes no quadratic terms and sets the degree-penalty weight to 1. The wrapper converts demand to a NumPy array and records runtime.\n- **Performance**: Combined score was **0.77** across six instances, with a mean best-gap of **18.38%** and mean feasibility rate of **9%**.\n- **Feedback**: The demand-only objective produced varied topologies but no quadratic terms, and most sampled solutions were infeasible before repair. Results ranged from an 8.3% best-gap on `sub12_s3` to the largest gap of 32.2% on `network12_s0`, indicating inconsistent solution quality.\n**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True\n\n**Program Name: Demand-Weighted Relay Surrogate QUBO**\n- **Implementation**: Normalizes demand by its maximum, rewards direct links with negative linear weights, and adds discounted quadratic rewards for two-hop paths through balanced in/out-demand relays. Relay rewards are distributed across candidate intermediates, with a fixed degree-penalty weight of 3.0.\n- **Performance**: Achieved a combined score of 0.82 across six instances, with a mean best-solution gap of 13.44%, mean feasible rate of 7%, and about 840 quadratic terms per instance.\n- **Feedback**: Sub-12 instances scored 0.82\u20130.85, while network12_s0 was weakest at 0.77 and had the largest gap (20.5%). Validity before repair was generally low (0\u201314%), and median gaps averaged 31.62%, suggesting the surrogate\u2019s topology incentives leave substantial room for improvement.\n**Program Identifier:** Generation 1 - Patch Name capacity_aware_paths - Correct Program: True\n\n**Program Name: Demand-Weighted Surrogate QUBO**\n- **Implementation**: Builds negative linear rewards for directed links from normalized demand plus a small endpoint-traffic term, and adds normalized, weak negative couplings for two-hop routes. It uses a fixed degree-penalty weight of 4.0.\n- **Performance**: Combined score was 0.80 across six instances, with mean best-solution gap of 15.55% and mean feasibility rate of 0.07.\n- **Feedback**: Scores ranged from 0.737 to 0.852; sub12_s1 was weakest, with the largest gap at 25.5%, while sub12_s4 had the smallest gap at 9.6%. Only 0\u201317% of samples were valid before repair, indicating that feasibility remains a major weakness despite varied topologies.\n**Program Identifier:** Generation 2 - Patch Name path_balance_surrogate - Correct Program: True\n\n**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**\n- **Implementation**: Assigns negative linear weights to directed links proportional to normalized direct demand, and negative quadratic weights to two-hop paths serving demanded origin-destination pairs. Discounts paths through high-load intermediates and sets the degree-penalty weight to 4.0.\n- **Performance**: Achieved a combined score of 0.79 across six instances, with a mean best gap of 16.51% and mean feasible rate of 0.14.\n- **Feedback**: Scores ranged from 0.762 to 0.850; sub12_s4 had the smallest gap (8.0%), while sub12_s1 had the largest (23.7%). Low pre-repair feasibility on several instances suggests degree-constraint satisfaction remains a weakness despite the demand-based link and path rewards.\n**Program Identifier:** Generation 3 - Patch Name congestion_aware_twohop - Correct Program: True\n\n**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**\n- **Implementation**: Assigns each directed link a negative weight proportional to its direct demand, then adds discounted two-hop rewards scaled by traffic pressure at the endpoints. Uses a fixed degree-penalty weight of 4.0.\n- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 15.02% and mean feasible rate of 9%.\n- **Feedback**: Scores ranged from 0.757 to 0.833; sub12_s1 was weakest, with the largest gap at 24.7%. Despite generating 810\u2013880 quadratic terms per instance, pre-repair validity was often low (1\u201325%), indicating that the surrogate and penalty did not reliably produce feasible topologies.\n**Program Identifier:** Generation 4 - Patch Name balanced_twohop_routing - Correct Program: True",
+        "meta_scratch_pad": "## Successful Algorithmic Patterns\n- **Adding demand-weighted two-hop rewards improved on a purely linear demand objective.** Generation 0, *Demand-Reward Linear QUBO*, scored **0.77** with an **18.38%** mean best-gap. Generation 1, *Demand-Weighted Relay Surrogate QUBO*, added discounted two-hop rewards and scored **0.82**, with a lower **13.44%** mean best-gap.\n- **The current best program\u2019s relay-aware path allocation is its strongest pattern.** It retains normalized direct-demand rewards, then distributes each OD pair\u2019s indirect reward across candidate relays according to relay balance and pair suitability. It scored **0.82** overall, including **0.85** on `sub12_s4` (9.23% best-gap) and **0.83** on `sub12_s2` (10.87% gap).\n- **Balanced in/out traffic is a useful relay signal.** The current best computes relay potential as the square root of normalized row traffic times column traffic. This explicitly downweights one-sided nodes, while its suitability factor also favors relays connected to the OD pair\u2019s endpoints. The strong sub-12 scores are consistent with this richer two-hop structure outperforming the linear-only baseline.\n\n## Ineffective Approaches\n- **Two-hop rewards alone did not reliably improve on the current best.** Generation 2, *Demand-Weighted Surrogate QUBO*, scored **0.80** with a **15.55%** mean best-gap; Generation 3, *Demand-Weighted Two-Hop Surrogate QUBO*, scored **0.79** with a **16.51%** gap; and Generation 4, *Demand-Weighted Two-Hop Surrogate QUBO*, scored **0.81** with a **15.02%** gap. Their alternative path scaling, congestion discounts, or endpoint-pressure rewards did not match Generation 1\u2019s **0.82 / 13.44%** result.\n- **Feasibility remained weak across the path-based variants.** The current best had only **7%** mean pre-repair feasibility (0\u201314% by instance), and its median gap averaged **31.62%**. Generation 3 and Generation 4 also reported low feasibility, despite their path-based rewards. Thus, improved best-sample gaps did not mean the surrogate consistently generated valid topologies.\n- **The largest instance remained a consistent weakness.** The current best scored **0.77** on `network12_s0`, with a **20.52%** best-gap and **40.5%** median gap. Its result was weaker than all five sub-12 scores (0.82\u20130.85), showing that the current gains were not uniform across instances.\n\n## Implementation Insights\n- **The current best combines direct and indirect incentives rather than replacing direct demand rewards.** It assigns every non-diagonal link a linear weight of `-ds[i, j]`, then adds negative quadratic terms for paths serving positive-demand OD pairs. This preserves the baseline direct-service signal while representing two-hop service.\n- **Reward distribution controls interaction bias.** For each OD pair, the program divides its indirect reward among candidate relays in proportion to suitability, instead of assigning the full reward to every candidate path. The path reward is discounted by `0.30 * ds[i, k]`; this generated about **840 quadratic terms per instance** and the best mean gap among the evaluated programs.\n- **Normalization and balanced relay scoring are central to the design.** Demand is divided by its maximum, while relay scores use normalized row and column totals and their geometric mean. This makes relay suitability depend on both incoming and outgoing traffic; the additional endpoint-demand term (`0.25 + 0.75 * min(1, ds[i,j] + ds[j,k])`) favors relays connected to the particular OD pair.\n- **The fixed penalty does not ensure feasibility.** The current program sets `penalty_weight = 3.0`, yet only 0\u201314% of samples were valid before repair. Other variants used fixed weights of 4.0 and also reported low validity, so the evaluated results do not show that simply increasing this fixed penalty resolved the constraint issue.\n\n## Performance Analysis\n- **Generation 1 is the strongest evaluated program by mean best-gap:** its **13.44%** gap is lower than Generation 0\u2019s **18.38%**, Generation 2\u2019s **15.55%**, Generation 3\u2019s **16.51%**, and Generation 4\u2019s **15.02%**. Its combined score of **0.82** is tied with the best reported score, while its best-gap is better than the other variants.\n- **Performance gains are concentrated in the sub-12 instances.** The current best\u2019s scores range from **0.82 to 0.85** there, but fall to **0.77** on `network12_s0`; its best-gap likewise rises from **9.23\u201313.60%** on sub-12 instances to **20.52%** on the larger instance.\n- **The current best finds strong best samples more reliably than its median results suggest.** Its **13.44%** mean best-gap contrasts with a **31.62%** mean median gap, and individual median gaps range from **28.1% to 40.5%**. The broad gap between best and median performance accompanies low pre-repair feasibility and indicates that good samples were comparatively uncommon.\n- **Quadratic-term count alone does not explain score differences.** The current best generated about **840** terms per instance and scored **0.82**; other path-based programs generated roughly **810\u2013880** terms but scored **0.79\u20130.81**. The reward structure and allocation of those terms, rather than their count alone, distinguish the best result.",
+        "api_charge_id": "3aa2d89e-6150-4be3-9de9-524a3268e2b8",
+        "embed_cost": 1.398e-05,
+        "stdout_log": "\u256d\u2500\u2500 Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) \u2500\u2500\u256e\n\u2502 ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\nsub12_s4: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 31s\n\u256d\u2500\u2500 Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) \u2500\u2500\u256e\n\u2502 ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\nsub12_s4: sampling attempt 2 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 62s\nsub12_s1: done in 608s, score 0.792\nsub12_s5: done in 642s, score 0.619\nsub12_s3: done in 665s, score 0.808\nnetwork12_s0: done in 715s, score 0.773\nsub12_s2: done in 716s, score 0.701\nsub12_s4: done in 921s, score 0.808\ncorrect: True | error: None | 924s\ncombined_score: 0.7500434737983417\nnetwork12_s0: score 0.773, best 320375 vs reference 276474 (gap +15.9%), median gap +46.5%, 12% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 880 quadratic terms, 6012 circuits\nsub12_s1: score 0.792, best 294059 vs reference 251250 (gap +17.0%), median gap +37.2%, 13% of 100 qaoa_partitioned solutions valid before repair, 89 distinct topologies, 840 quadratic terms, 6513 circuits\nsub12_s2: score 0.701, best 305250 vs reference 248929 (gap +22.6%), median gap +70.6%, 4% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 850 quadratic terms, 7014 circuits\nsub12_s3: score 0.808, best 266637 vs reference 231819 (gap +15.0%), median gap +34.0%, 0% of 100 qaoa_partitioned solutions valid before repair, 48 distinct topologies, 820 quadratic terms, 6012 circuits\nsub12_s4: score 0.808, best 256000 vs reference 219715 (gap +16.5%), median gap +31.9%, 10% of 100 qaoa_partitioned solutions valid before repair, 88 distinct topologies, 810 quadratic terms, 6012 circuits\nsub12_s5: score 0.619, best 326000 vs reference 246858 (gap +32.1%), median gap +108.0%, 13% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 840 quadratic terms, 7014 circuits\nLargest gap: sub12_s5 (+32.1%).\n",
+        "stderr_log": "",
+        "results_missing": false,
+        "safe_processing": true,
+        "postprocess_db_maintenance_applied": true,
+        "source_job_id": "ProcessWithLogging(PID: 2496)|gen=11|submitted=1795303742.713346",
+        "source_generation": 11,
+        "timeline_lane_mode": "pool_slots",
+        "sampling_worker_id": null,
+        "evaluation_worker_id": 3,
+        "postprocess_worker_id": 1,
+        "active_proposals_at_start": 1,
+        "running_eval_jobs_at_submit": 3,
+        "db_workers_in_use_at_postprocess_start": 1,
+        "sampling_worker_capacity": 4,
+        "evaluation_worker_capacity": 3,
+        "postprocess_worker_capacity": 2,
+        "pipeline_started_at": 1795303723.640828,
+        "sampling_started_at": 1795303723.640828,
+        "sampling_finished_at": 1795303742.713346,
+        "evaluation_started_at": 1795303742.713346,
+        "evaluation_finished_at": 1795304669.9574609,
+        "postprocess_started_at": 1795304670.047404,
+        "postprocess_finished_at": 1795304670.3157399,
+        "sampling_seconds": 19.07251811027527,
+        "evaluation_seconds": 927.2441148757935,
+        "postprocess_seconds": 0.26833581924438477,
+        "pipeline_seconds": 946.6749119758606,
+        "post_eval_queue_wait_seconds": 0.08994317054748535,
+        "pipeline_accounted_seconds": 946.6749119758606,
+        "pipeline_unaccounted_seconds": 0.0,
+        "compute_time": 927.2441148757935,
+        "code_analysis_metrics": {
+          "cyclomatic_complexity": 16,
+          "average_cyclomatic_complexity": 8.0,
+          "halstead_volume": 384.4297167430772,
+          "halstead_difficulty": 6.571428571428571,
+          "halstead_effort": 2526.2524243116504,
+          "lines_of_code": 75,
+          "logical_lines_of_code": 37,
+          "comments": 6,
+          "maintainability_index": 21.762941744882625,
+          "max_nesting_depth": 5,
+          "complexity_score": 1.0
+        },
+        "postprocess_db_maintenance_started_at": 1795304670.3214238,
+        "postprocess_db_maintenance_finished_at": 1795304670.3228621,
+        "postprocess_db_maintenance_seconds": 0.0014383792877197266
+      },
+      "in_archive": false,
+      "system_prompt_id": null
+    }
+  ],
+  "meta_summary": "**Program Name: Demand-Reward Linear QUBO Surrogate**\n- **Implementation**: Assigns each directed link a linear weight equal to its negative demand, normalized by the maximum demand; includes no quadratic terms and sets the degree-penalty weight to 1. The wrapper converts demand to a NumPy array and records runtime.\n- **Performance**: Combined score was **0.77** across six instances, with a mean best-gap of **18.38%** and mean feasibility rate of **9%**.\n- **Feedback**: The demand-only objective produced varied topologies but no quadratic terms, and most sampled solutions were infeasible before repair. Results ranged from an 8.3% best-gap on `sub12_s3` to the largest gap of 32.2% on `network12_s0`, indicating inconsistent solution quality.\n**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True\n\n**Program Name: Demand-Weighted Relay Surrogate QUBO**\n- **Implementation**: Normalizes demand by its maximum, rewards direct links with negative linear weights, and adds discounted quadratic rewards for two-hop paths through balanced in/out-demand relays. Relay rewards are distributed across candidate intermediates, with a fixed degree-penalty weight of 3.0.\n- **Performance**: Achieved a combined score of 0.82 across six instances, with a mean best-solution gap of 13.44%, mean feasible rate of 7%, and about 840 quadratic terms per instance.\n- **Feedback**: Sub-12 instances scored 0.82\u20130.85, while network12_s0 was weakest at 0.77 and had the largest gap (20.5%). Validity before repair was generally low (0\u201314%), and median gaps averaged 31.62%, suggesting the surrogate\u2019s topology incentives leave substantial room for improvement.\n**Program Identifier:** Generation 1 - Patch Name capacity_aware_paths - Correct Program: True\n\n**Program Name: Demand-Weighted Surrogate QUBO**\n- **Implementation**: Builds negative linear rewards for directed links from normalized demand plus a small endpoint-traffic term, and adds normalized, weak negative couplings for two-hop routes. It uses a fixed degree-penalty weight of 4.0.\n- **Performance**: Combined score was 0.80 across six instances, with mean best-solution gap of 15.55% and mean feasibility rate of 0.07.\n- **Feedback**: Scores ranged from 0.737 to 0.852; sub12_s1 was weakest, with the largest gap at 25.5%, while sub12_s4 had the smallest gap at 9.6%. Only 0\u201317% of samples were valid before repair, indicating that feasibility remains a major weakness despite varied topologies.\n**Program Identifier:** Generation 2 - Patch Name path_balance_surrogate - Correct Program: True\n\n**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**\n- **Implementation**: Assigns negative linear weights to directed links proportional to normalized direct demand, and negative quadratic weights to two-hop paths serving demanded origin-destination pairs. Discounts paths through high-load intermediates and sets the degree-penalty weight to 4.0.\n- **Performance**: Achieved a combined score of 0.79 across six instances, with a mean best gap of 16.51% and mean feasible rate of 0.14.\n- **Feedback**: Scores ranged from 0.762 to 0.850; sub12_s4 had the smallest gap (8.0%), while sub12_s1 had the largest (23.7%). Low pre-repair feasibility on several instances suggests degree-constraint satisfaction remains a weakness despite the demand-based link and path rewards.\n**Program Identifier:** Generation 3 - Patch Name congestion_aware_twohop - Correct Program: True\n\n**Program Name: Demand-Weighted Two-Hop Surrogate QUBO**\n- **Implementation**: Assigns each directed link a negative weight proportional to its direct demand, then adds discounted two-hop rewards scaled by traffic pressure at the endpoints. Uses a fixed degree-penalty weight of 4.0.\n- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 15.02% and mean feasible rate of 9%.\n- **Feedback**: Scores ranged from 0.757 to 0.833; sub12_s1 was weakest, with the largest gap at 24.7%. Despite generating 810\u2013880 quadratic terms per instance, pre-repair validity was often low (1\u201325%), indicating that the surrogate and penalty did not reliably produce feasible topologies.\n**Program Identifier:** Generation 4 - Patch Name balanced_twohop_routing - Correct Program: True\n\n**Program Name: Demand-Weighted Direct and Two-Hop QUBO Surrogate**\n- **Implementation**: Normalizes nonnegative demand, rewards direct links, and assigns limited two-hop path credit across candidate hubs weighted by demand affinity and estimated transit pressure. It scales all coefficients and returns a fixed degree-penalty weight of 3.0.\n- **Performance**: Mean score was 0.81 across six instances, with a 14.14% mean gap to best references and a 15% mean pre-repair feasible rate.\n- **Feedback**: Scores ranged from 0.754 to 0.853; sub12_s1 was weakest at a 20.8% gap, while sub12_s4 was strongest at a 10.1% gap. Feasibility varied sharply\u20140% on sub12_s3\u2014and median gaps remained high at 33.16%, indicating that good scores did not consistently translate into valid or near-best solutions.\n**Program Identifier:** Generation 5 - Patch Name hub_balanced_path_cover - Correct Program: True\n\n**Program Name: Demand-Weighted Surrogate QUBO**\n- **Implementation**: Assigns each directed link a linear reward based on its direct demand, normalized by maximum demand. Adds quadratic penalties for pairs of links sharing a sender or receiver, weighted by estimated endpoint exposure, with a fixed degree-penalty weight of 4.\n- **Performance**: Achieved a combined score of 0.82 across six instances, with a mean best-solution gap of 12.64% and mean feasible rate of 18%.\n- **Feedback**: The surrogate produced 1,320 quadratic terms per instance and found solutions within 9.8\u201315.5% of the reference best; sub12_s3 had the largest gap and only 5% of solutions were valid before repair. Median gaps were substantially larger than best gaps (mean 31.82%), indicating inconsistent solution quality.\n**Program Identifier:** Generation 6 - Patch Name balanced_link_load - Correct Program: True\n\n**Program Name: Demand-Weighted Surrogate QUBO**\n- **Implementation**: Normalizes demand and builds directed-link linear costs from direct traffic rewards and endpoint-load penalties. Adds positive quadratic couplings for competing incoming/outgoing links and two-hop routes, rescales coefficients, and returns a fixed penalty weight of 2.5.\n- **Performance**: Combined score was 0.80 across six instances (mean best gap 15.01%); the weakest result was sub12_s5 at 0.73 score and a 22.2% gap.\n- **Feedback**: The model generated about 2,160 quadratic terms per instance, but only 0\u201326% of QAOA solutions were valid before repair, and median gaps averaged 37.08%. Its relatively consistent scores on five instances suggest the demand-based terms provide useful guidance, while sub12_s5\u2019s larger gap indicates limited robustness across demand patterns.\n**Program Identifier:** Generation 7 - Patch Name endpoint_load_balance - Correct Program: True\n\n**Program Name: Demand-Weighted Relay QUBO Surrogate**\n- **Implementation**: Assigns negative linear weights to directed links in proportion to normalized direct demand, and adds modest negative quadratic rewards for two-link paths, scaled by demand and a relay score based on balanced incoming and outgoing traffic. Sets the degree-penalty weight to 1.0.\n- **Performance**: Combined score was 0.82 across six instances, with a mean best-solution gap of 12.64% and mean feasible rate of 7%.\n- **Feedback**: Scores ranged from 0.75 to 0.85; the largest gap was 21.2% on `sub12_s1`, while `sub12_s5` had the smallest gap at 6.6%. Low pre-repair feasibility (0\u201315%) suggests the surrogate rewards alone do not reliably guide QAOA toward valid topologies.\n**Program Identifier:** Generation 8 - Patch Name selective_relay_paths - Correct Program: True\n\n**Program Name: Sparse Two-Hop Network Design QUBO**\n- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and adds sparse quadratic rewards for selected two-hop routes. Relay candidates are ranked by traffic balance and observed endpoint demand; coefficients are normalized, with a fixed penalty weight of 2.5.\n- **Performance**: Combined score was 0.81 across six instances, with a mean best-solution gap of 13.92% and 336 quadratic terms on average.\n- **Feedback**: Best performance was on network12_s0 (score 0.875, gap 6.7%); sub12_s1 was weakest (score 0.736, gap 22.6%). Pre-repair feasibility was very low (0\u20137%), and median gaps averaged 34.63%, suggesting the surrogate rewards produced varied topologies but did not reliably guide QAOA toward strong feasible solutions.\n**Program Identifier:** Generation 10 - Patch Name sparse_relay_surrogate - Correct Program: True",
+  "meta_scratch_pad": "## Successful Algorithmic Patterns\n- **Balanced endpoint-load penalties improved the mean best-gap while preserving a competitive score.** Generation 6, *Demand-Weighted Surrogate QUBO*, penalizes pairs of links sharing a sender or receiver, weighted by endpoint exposure. It scored **0.82** with a **12.64% mean best-gap**, improving on Generation 7\u2019s endpoint-load variant (**0.80**, **15.01% gap**) and Generation 10\u2019s sparse two-hop design (**0.81**, **13.92% gap**). This matches the earlier finding that incorporating structural information beyond direct demand can help.\n- **The current best\u2019s relay-aware allocation remains the strongest established pattern.** Generation 1 combines normalized direct-demand rewards with two-hop rewards distributed among suitable relays, using balanced in/out traffic and endpoint affinity. It scored **0.82** with a **13.44% mean best-gap** and delivered strong sub-12 results, including **0.85** on `sub12_s4`. Across the evaluated programs, its structured allocation of indirect reward remains a more reliable path-based result than variants that add broader or differently scaled couplings.\n- **The current best Generation 6 is strongest on several individual instances.** Its endpoint-exposure formulation achieved **0.844** on `network12_s0` and **0.865** on `sub12_s4`, with best-gaps of **11.29%** and **9.76%** respectively. `sub12_s4` was also the best result among Generation 6\u2019s six instances, consistent with demand-informed link scoring working well on that instance.\n\n## Ineffective Approaches\n- **Adding broad endpoint and path interactions did not consistently improve over more selective path allocation.** Generation 7\u2019s endpoint-load and two-hop model scored **0.80** with a **15.01% gap** and generated about **2,160 quadratic terms**; Generation 10\u2019s sparse relay model scored **0.81** with a **13.92% gap**. Both underperformed Generation 6\u2019s **0.82 / 12.64%**, while earlier two-hop variants likewise trailed Generation 1\u2019s relay-aware allocation.\n- **The current best\u2019s best-sample quality masks inconsistent results.** Generation 6\u2019s mean best-gap is **12.64%**, but its mean median gap is **31.82%**. In particular, `sub12_s5` has a **41.2% median gap** and only **5%** pre-repair feasibility; `sub12_s3` has the largest best-gap (**15.5%**) and also only **5%** feasibility. Strong best samples therefore do not indicate consistently good or valid QAOA outputs.\n- **Fixed degree-penalty weights have not resolved feasibility.** Generation 6 uses a fixed weight of **4.0**, but only **18%** of samples were feasible on average, ranging from **5%** on `sub12_s3` and `sub12_s5` to **40%** on `sub12_s1`. Other variants with fixed weights from **1.0 to 3.0** also reported very low feasibility, so the reported results do not show a simple relationship between a larger fixed penalty and reliable validity.\n\n## Implementation Insights\n- **Generation 6 combines a simple direct-service signal with explicit load competition.** Its linear coefficient is `-direct / scale`; quadratic terms pair links sharing a sender or receiver and weight them by the product of endpoint exposures. Exposure combines direct demand with a modest row/column traffic-pressure estimate. This produced **1,320 quadratic terms per instance** and the best mean gap among the new evaluations.\n- **Scaling and signs matter to the intended objective.** Generation 6 normalizes direct rewards by maximum demand and scales its positive quadratic congestion terms by `0.18 / scale`, with a further division by `scale` in the exposure product. The linear terms reward direct traffic, while positive pair terms discourage concentrating estimated exposure at shared endpoints.\n- **Selective interaction structure appears more effective than term count alone.** Generation 6\u2019s **1,320** terms accompany a **12.64%** mean gap, while Generation 7\u2019s roughly **2,160** terms accompany a **15.01%** gap and Generation 10\u2019s **336** terms accompany a **13.92%** gap. As earlier comparisons also showed for Generation 1\u2019s roughly **840** terms, the number of terms by itself does not explain performance; the interaction design and reward allocation distinguish outcomes.\n- **The earlier best\u2019s relay scoring complements the direct-demand baseline differently from endpoint-load penalties.** Generation 1 distributes indirect reward across candidate relays using balanced incoming/outgoing traffic and pair suitability, rather than penalizing every same-sender or same-receiver pair. Its **13.44%** mean gap and strong sub-12 scores remain evidence for the value of carefully allocated path credit, while Generation 6 shows that endpoint exposure can also produce a competitive result.\n\n## Performance Analysis\n- **Generation 6 leads the new comparisons by mean best-gap, while matching the top combined score.** It scored **0.82** with a **12.64%** gap, compared with Generation 5\u2019s **0.81 / 14.14%**, Generation 7\u2019s **0.80 / 15.01%**, Generation 8\u2019s **0.82 / 12.64%**, and Generation 10\u2019s **0.81 / 13.92%**. Its gap is also slightly lower than the earlier Generation 1 result of **13.44%**, although both have a combined score of **0.82**.\n- **Generation 6\u2019s instance results are uneven despite the best overall gap.** Best-gaps range from **9.76%** on `sub12_s4` to **15.50%** on `sub12_s3`; scores range from **0.798** on `sub12_s5` to **0.865** on `sub12_s4`. The largest gap is specifically `sub12_s3`, whereas Generation 5\u2019s weakest case was `sub12_s1` at **20.8%**, and Generation 10\u2019s weakest was also `sub12_s1` at **22.6%**.\n- **The mean best-gap improved relative to several variants, but feasibility and median quality remain weak.** Generation 6\u2019s **12.64%** mean best-gap is better than Generation 5\u2019s **14.14%**, Generation 7\u2019s **15.01%**, and Generation 10\u2019s **13.92%**. However, its **18%** mean feasible rate and **31.82%** mean median gap show that this improvement chiefly reflects best samples, not uniformly strong QAOA outcomes.\n- **Results vary with instance and do not track quadratic-term count monotonically.** Generation 6 obtains its best gap on `sub12_s4` despite using the same **1,320** terms on every instance, and its weakest feasibility occurs on `sub12_s3` and `sub12_s5`. Across programs, both denser endpoint/path models and the sparse Generation 10 model trail it, reinforcing that term count alone is not a predictor of score.",
+  "meta_recommendations": "1. **Tune endpoint-exposure congestion strength while preserving its current structure.** Sweep the `0.18` pair scale over a modest range, such as `0.10`, `0.14`, and `0.24`, keeping the direct-demand rewards and exposure calculation fixed. Generation 6\u2019s selective same-sender/same-receiver penalties produced the best mean gap, but its low feasibility suggests testing whether slightly weaker congestion terms improve the balance between useful links and endpoint spreading.\n\n2. **Make endpoint exposure more demand-sensitive without broadening the interaction graph.** Compare the current `direct + 0.10 * pressure` exposure with a few nearby pressure weights, such as `0.05` and `0.20`, or apply a concave transform to the normalized exposure before forming pair products. This directly tests the successful demand-weighted endpoint pattern while limiting changes to the already effective set of 1,320 pair terms.\n\n3. **Combine endpoint-load penalties with selective relay credit.** Add a small, normalized linear reward for links that serve as useful relays, distributing each OD pair\u2019s two-hop reward across eligible relays rather than duplicating it. Generation 1\u2019s relay-aware allocation was a strong independent pattern, and testing a modest contribution alongside Generation 6\u2019s congestion penalties could capture path value without adopting the broader interactions that underperformed.\n\n4. **Adapt congestion penalties to endpoint load instead of applying one global pair scale.** Scale each same-sender or same-receiver pair penalty using a normalized estimate of that node\u2019s traffic pressure, while keeping penalties bounded and the interaction structure unchanged. This may target overloaded endpoints more effectively; it is motivated by Generation 6\u2019s exposure-based success and could address the especially poor feasibility on `sub12_s3` and `sub12_s5`.\n\n5. **Reduce dominance by the largest demands in the direct reward.** Test replacing `direct / scale` with a concave normalized reward such as `sqrt(direct / scale)`, while retaining the current exposure-based pair penalties and separately normalizing the two components to comparable magnitudes. This probes whether smaller demands deserve more influence across topologies, without discarding the proven direct-service signal or the best program\u2019s selective endpoint competition.",
+  "meta_recommendations_history": [
+    "1. **Tune the indirect-reward discount while preserving reward distribution across relays.** Sweep the current `0.30` multiplier over a small range (for example, `0.15`, `0.25`, `0.40`) while retaining the suitability-weighted allocation and direct-demand linear terms. This tests whether two-hop service can be emphasized more without letting quadratic rewards overwhelm the direct-service signal.\n\n2. **Make relay scoring more selective for the largest instance.** Keep the geometric-mean in/out traffic score, but test a power such as `relay ** 1.5` before normalizing it. This would concentrate indirect rewards on stronger balanced relays, a promising way to address `network12_s0`, where the current best has its largest gap, while preserving the successful relay-aware structure.\n\n3. **Vary how strongly endpoint suitability affects relay allocation.** Sweep the endpoint factor from `0.25 + 0.75 * min(...)` toward either a more uniform allocation or a stronger endpoint preference, keeping each OD pair\u2019s total indirect reward distributed rather than duplicated. Comparing these settings can reveal whether the current relay balance or direct endpoint connections are the more useful discriminator across instances.\n\n4. **Add a modest reward for complementary traffic on a built link.** Test a small linear adjustment based on the link\u2019s participation in useful two-hop paths, such as rewarding `i \u2192 j` in proportion to the demand-weighted relay potential of `j`, while retaining the existing direct-demand reward and pairwise path terms. This could make the linear signal better reflect the current program\u2019s successful balanced-relay insight without relying exclusively on quadratic interactions.\n\n5. **Test demand normalization that reduces dominance by the largest OD pairs.** Replace `d / d.max()` with a concave transformation such as `sqrt(d / d.max())` for both direct and indirect demand weights, then compare against the current normalization. This may give smaller but still meaningful demands more influence, potentially improving topology choices where broad network service matters, while keeping the proven direct-plus-two-hop reward design intact.",
+    "1. **Tune endpoint-exposure congestion strength while preserving its current structure.** Sweep the `0.18` pair scale over a modest range, such as `0.10`, `0.14`, and `0.24`, keeping the direct-demand rewards and exposure calculation fixed. Generation 6\u2019s selective same-sender/same-receiver penalties produced the best mean gap, but its low feasibility suggests testing whether slightly weaker congestion terms improve the balance between useful links and endpoint spreading.\n\n2. **Make endpoint exposure more demand-sensitive without broadening the interaction graph.** Compare the current `direct + 0.10 * pressure` exposure with a few nearby pressure weights, such as `0.05` and `0.20`, or apply a concave transform to the normalized exposure before forming pair products. This directly tests the successful demand-weighted endpoint pattern while limiting changes to the already effective set of 1,320 pair terms.\n\n3. **Combine endpoint-load penalties with selective relay credit.** Add a small, normalized linear reward for links that serve as useful relays, distributing each OD pair\u2019s two-hop reward across eligible relays rather than duplicating it. Generation 1\u2019s relay-aware allocation was a strong independent pattern, and testing a modest contribution alongside Generation 6\u2019s congestion penalties could capture path value without adopting the broader interactions that underperformed.\n\n4. **Adapt congestion penalties to endpoint load instead of applying one global pair scale.** Scale each same-sender or same-receiver pair penalty using a normalized estimate of that node\u2019s traffic pressure, while keeping penalties bounded and the interaction structure unchanged. This may target overloaded endpoints more effectively; it is motivated by Generation 6\u2019s exposure-based success and could address the especially poor feasibility on `sub12_s3` and `sub12_s5`.\n\n5. **Reduce dominance by the largest demands in the direct reward.** Test replacing `direct / scale` with a concave normalized reward such as `sqrt(direct / scale)`, while retaining the current exposure-based pair penalties and separately normalizing the two components to comparable magnitudes. This probes whether smaller demands deserve more influence across topologies, without discarding the proven direct-service signal or the best program\u2019s selective endpoint competition."
+  ],
+  "total_programs_meta_processed": 10
+}

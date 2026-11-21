@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop_routing",
+  "patch_description": "Add a discounted two-hop routing reward only for paths whose endpoints have meaningful demand, scaled by the source\u2019s total demand and destination\u2019s total inbound demand. This favors link pairs that can carry traffic indirectly without letting a single large demand dominate every coupling, as can happen with a raw two-hop reward. The cubic number of candidate paths stays within the term limit. Increase the degree penalty weight to make valid degree-2 topologies more competitive before repair, addressing the low feasible rate in the feedback.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:57:45.276259",
+  "llm_cost": 0.0007909,
+  "llm_model": "gpt-6-luna"
+}

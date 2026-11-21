@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptivebottleneck",
+  "patch_description": "The current search spends many LP calls on large screened batches, while its move-generation effort grows with a parent's stall count. This version uses smaller batches and an adaptive, score-aware search: it focuses on positive-price links when available, but still samples unrestricted exchanges and three-link rotations to escape narrow neighborhoods. It keeps a diverse archive, chooses parents using both score and diversity, and applies a cooling acceptance rule so promising non-improving moves can seed further exploration. Candidate starts are selected from a larger repaired pool using surrogate rank and topology diversity; surrogate energy is used only for screening, not as a substitute for LP scores.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:39:31.025971",
+  "llm_cost": 0.0016659,
+  "llm_model": "gpt-6-luna"
+}

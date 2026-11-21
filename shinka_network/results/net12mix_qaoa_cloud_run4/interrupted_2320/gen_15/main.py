@@ -1,0 +1,76 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
+
+    Args:
+        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+            (zero diagonal).
+
+    Returns:
+        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+            (x_ij = 1 if the directed link i -> j is built), i != j.
+        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+            after rescaling these terms so the largest |weight| is 1.
+
+    Lower energy must mean a better topology. Baseline: reward each link by the demand
+    it carries directly.
+    """
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Approximate useful short routes, but discount intermediates that already
+    # have substantial traffic and are therefore more likely to be bottlenecks.
+    row_load = np.asarray(demand, dtype=float).sum(axis=1)
+    col_load = np.asarray(demand, dtype=float).sum(axis=0)
+    mean_node_load = float(np.mean(row_load + col_load)) or 1.0
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                path_demand = float(demand[i, k])
+                if path_demand <= 0.0:
+                    continue
+                intermediate_load = float(row_load[j] + col_load[j])
+                congestion_discount = 1.0 / (
+                    1.0 + intermediate_load / (2.0 * mean_node_load)
+                )
+                links = tuple(sorted(((i, j), (j, k))))
+                quadratic[links] = quadratic.get(links, 0.0) - (
+                    0.18 * path_demand / scale * congestion_discount
+                )
+
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

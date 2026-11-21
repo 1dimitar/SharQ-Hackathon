@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_synergy",
+  "patch_description": "Keep the baseline\u2019s direct-demand reward, but add modest, demand-scaled pair rewards for two-hop paths and mutually useful reciprocal links. The two-hop reward is discounted across the available intermediates, avoiding the large aggregate incentive of rewarding every path equally. Reciprocal synergy is stronger when demand runs in both directions. Finally, raise the degree-penalty weight so degree violations are less attractive relative to the normalized cost terms. The number of quadratic terms remains below the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:59.297014",
+  "llm_cost": 0.0019214,
+  "llm_model": "gpt-6-luna"
+}

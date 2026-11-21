@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "path_balance_surrogate",
+  "patch_description": "Separates demand preprocessing, link scoring, and sparse path-coupling construction. Direct-link rewards combine pair demand with endpoint traffic intensity, while a restrained two-link path bonus represents useful transit options without letting indirect-path rewards dominate. Couplings are limited to valid two-hop paths, keeping the term count below the allowed bound; a stronger external degree penalty supports feasible topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:44:05.331392",
+  "llm_cost": 0.0010077999999999999,
+  "llm_model": "gpt-6-luna"
+}

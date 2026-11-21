@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_relative_screening",
+  "patch_description": "Rank fresh moves using three signals: energy improvement over the parent, absolute surrogate energy, and distance from the best LP-scored archive networks. Combining ranks rather than raw values avoids relying on the surrogate\u2019s scale. The archive-distance term modestly favors candidates that explore a different region, while the existing diversity filter and batch limit remain in place.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:46:18.059336",
+  "llm_cost": 0.0021892,
+  "llm_model": "gpt-6-luna"
+}

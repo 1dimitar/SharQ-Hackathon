@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "distributed_relay_credit",
+  "patch_description": "Add a bounded two-hop reward, distributed across the possible relays for each OD pair rather than awarding the full demand to every candidate path. The relay weight uses the proposed endpoint factor, `0.25 + 0.75 * min(...)`, based on how strongly the adjacent links serve their endpoints. This gives endpoint suitability a useful but not exclusive influence: less-obvious relays still receive some credit, while promising two-hop routes can group their links through QUBO couplings. The total reward allocated for an OD pair is capped at 20% of its demand, so it supplements rather than overwhelms the direct-link signal. The added terms remain within the quadratic-term limit when combined with the existing terms.",
+  "error_msg": "SEARCH text not found in editable regions\n\nLooking for 3-line block starting with: 'quadratic = {}'\n\nFull search pattern:\n```\nquadratic = {}\n\n    # Penalize pairs of selected links that concentrate estimated exposure\n```\n\nFound similar code block at line 43 (\u2713 editable):\n\nDifferences between search pattern and actual code:\n```diff\n-  quadratic = {}\n+              linear[i, j] = -direct / scale\n```\n\nEditable regions where you can make changes:\n  Region 1 (lines 5-65):\n    import numpy as np\n    \n    \n    ... (51 more lines)\n    \n        penalty_weight = 4.0\n        return linear, quadratic, penalty_weight\n\nQuick fixes:\n\u2022 Check indentation - search text must match exactly including spaces/tabs\n\u2022 Look for typos in the search text\n\u2022 Try searching for just the first line instead of the full block",
+  "timestamp": "2026-11-22T00:41:26.876903",
+  "llm_cost": 0.0015218,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive-mixed-search",
+  "patch_description": "The current search spends many rounds generating large neighborhoods and uses a mostly fixed mix of two-switches and rotations. This version bounds neighborhood generation, adds multi-switch kicks, and adapts the sampling mix according to which move types actually improve LP scores. It evaluates five diverse proposals per round, favoring low-energy moves while reserving slots for exploration. A compact elite-and-diversity archive, occasional uphill acceptance, and bottleneck-focused moves aim to balance exploitation with escape from local optima while keeping the LP budget productive.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:46:07.222057",
+  "llm_cost": 0.0030231,
+  "llm_model": "gpt-6-luna"
+}

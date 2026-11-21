@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "Keep direct-demand links as the primary signal, but add a deliberately modest bonus when two selected links form a two-hop route for an OD pair. The bonus is divided across possible intermediates and damped for high-traffic relay nodes, so it is less likely to overvalue chains that funnel traffic through an already busy node. These couplings also give the partitioner useful path structure without exceeding the quadratic-term budget. Increase the external degree-penalty weight to encourage valid 2-in/2-out topologies before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:03.098898",
+  "llm_cost": 0.0016719,
+  "llm_model": "gpt-6-luna"
+}

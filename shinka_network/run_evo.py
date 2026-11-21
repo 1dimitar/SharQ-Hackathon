@@ -83,6 +83,21 @@ SAMPLER_TEXT = {
 }
 
 
+class CloudBoundRunner(ShinkaEvolveRunner):
+    """ShinkaEvolveRunner without the one-evaluation-per-CPU-core cap.
+
+    ShinkaEvolve assumes local evaluations are CPU-bound and clamps max_evaluation_jobs to the
+    number of cores. Quantum evaluations on Qoro's cloud spend most of their time waiting on the
+    cloud, so for those the requested number of evaluation jobs is granted as is.
+    """
+
+    def _validate_concurrency_settings(self, max_evaluation_jobs, max_proposal_jobs, max_db_workers, cpu_count):
+        _, max_proposal_jobs, max_db_workers = super()._validate_concurrency_settings(
+            1, max_proposal_jobs, max_db_workers, cpu_count
+        )
+        return max_evaluation_jobs, max_proposal_jobs, max_db_workers
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--suite", default="net10", help="instance suite, see problem.SUITES")
@@ -101,7 +116,12 @@ def main() -> None:
                         help="sa: local simulated annealing (evaluate.py); pce / qaoa_partitioned: Divi (evaluate_qoro.py)")
     parser.add_argument("--backend", choices=["cloud", "local"], default="cloud",
                         help="quantum samplers only: Qoro cloud or the local Maestro simulator")
-    parser.add_argument("--max-runs", type=int, default=2, help="quantum samplers only: seeds per evaluation")
+    parser.add_argument("--max-runs", type=int, default=2,
+                        help="quantum samplers only: instances of the suite per evaluation (the first k)")
+    parser.add_argument("--parallel-instances", type=int, default=1,
+                        help="quantum samplers only: instances sampled at once inside one evaluation")
+    parser.add_argument("--parent-lambda", type=float, default=10.0,
+                        help="sharpness of parent selection; lower is softer, for noisy scores")
     parser.add_argument("--eval-python", default=None, help="Python for evaluate_qoro.py (default: ../.venv)")
     parser.add_argument("--eval-time", default=None, help="time limit per evaluation, HH:MM:SS")
     args = parser.parse_args()
@@ -115,7 +135,8 @@ def main() -> None:
         eval_python = args.eval_python or str(HERE.parent / ".venv" / "bin" / "python")
         if not Path(eval_python).exists():
             sys.exit(f"{eval_python} not found: run `uv sync` in the repository root (the notebook environment).")
-        eval_args = {"suite": args.suite, "routine": args.sampler, "backend": args.backend, "max_runs": args.max_runs}
+        eval_args = {"suite": args.suite, "routine": args.sampler, "backend": args.backend, "max_runs": args.max_runs,
+                     "parallel": args.parallel_instances}
         eval_time = args.eval_time or "01:00:00"
 
     models = args.models.split(",")
@@ -164,7 +185,7 @@ def main() -> None:
         migration_rate=0.1,
         island_elitism=True,
         parent_selection_strategy="weighted",
-        parent_selection_lambda=10.0,
+        parent_selection_lambda=args.parent_lambda,
     )
     job_config = LocalJobConfig(
         eval_program_path=eval_program,
@@ -173,7 +194,8 @@ def main() -> None:
         python_executable=eval_python,
         eval_verbose=False,
     )
-    runner = ShinkaEvolveRunner(
+    runner_cls = ShinkaEvolveRunner if args.sampler == "sa" else CloudBoundRunner
+    runner = runner_cls(
         evo_config=evo_config,
         job_config=job_config,
         db_config=db_config,

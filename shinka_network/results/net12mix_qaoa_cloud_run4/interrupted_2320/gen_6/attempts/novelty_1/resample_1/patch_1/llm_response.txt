@@ -1,0 +1,58 @@
+<NAME>
+congestion_aware_twohop
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, but add a restrained bonus when two selected links form a two-hop route for a demand pair. Scale that bonus down for relays with high total incoming and outgoing demand, since they are more likely to become congested. This preserves useful routing synergies without applying the same unconditional two-hop reward to every path. The resulting interactions are sparse—at most one per ordered two-hop path—and naturally connect links that can jointly serve traffic. Increase the degree penalty so violating the required degree is less attractive than improving the surrogate cost.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    demand = np.asarray(demand, dtype=float)
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+
+    # Keep direct service valuable, while allowing a pair of links to earn a
+    # smaller joint reward when it provides a two-hop route for a commodity.
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    row_load = demand.sum(axis=1)
+    col_load = demand.sum(axis=0)
+    node_load = row_load + col_load
+    mean_load = float(node_load.mean()) or 1.0
+
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            first = (i, j)
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+
+                # Downweight relays whose own traffic suggests they may be
+                # heavily used; the square root keeps this attenuation mild.
+                relay_factor = (mean_load / (mean_load + float(node_load[j]))) ** 0.5
+                weight = -0.28 * (traffic / scale) * relay_factor
+                second = (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    penalty_weight = 2.5
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

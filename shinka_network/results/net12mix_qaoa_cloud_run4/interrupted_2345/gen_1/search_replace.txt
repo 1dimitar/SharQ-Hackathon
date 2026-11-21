@@ -1,0 +1,49 @@
+<NAME>
+conservative_two_hop
+</NAME>
+
+<DESCRIPTION>
+Keep direct-demand rewards as the dominant signal, but add a conservative interaction reward for selecting both links of a two-hop route. The reward is divided across possible intermediate nodes so a high-demand pair is not counted repeatedly as though every possible route were used. These wedge interactions also give the QUBO a routing-informed interaction graph, unlike the current purely linear model. Increasing the degree penalty modestly may help reduce the low valid-sample rate, while leaving degree penalties out of the returned terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Give a small reward when two selected links form a route i -> j -> k.
+    # Distribute each OD pair's indirect-route signal across its possible
+    # intermediates, keeping direct-demand rewards dominant.
+    quadratic = {}
+    path_scale = 0.35 / max(1, n - 2)
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            first = (i, j)
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+                second = (j, k)
+                key = tuple(sorted((first, second)))
+                quadratic[key] = quadratic.get(key, 0.0) - path_scale * traffic / scale
+
+    penalty_weight = 2.5
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

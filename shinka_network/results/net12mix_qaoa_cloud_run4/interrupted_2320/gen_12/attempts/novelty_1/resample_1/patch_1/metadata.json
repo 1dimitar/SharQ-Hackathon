@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_path_synergy",
+  "patch_description": "Add a modest, capped reward for two-link paths that can serve traffic not already well served by a direct link. Unlike an unrestricted two-hop reward, this discounts paths when the origin\u2013destination demand is already covered directly, and caps each path\u2019s contribution relative to the direct-link scale. The resulting couplings connect links that jointly provide useful routing options while limiting duplicated rewards that can encourage hub-heavy topologies. There is at most one term per directed two-hop path, well within the term limit. Keep the direct-demand linear terms and degree penalty unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:16.025968",
+  "llm_cost": 0.0006514,
+  "llm_model": "gpt-6-luna"
+}

@@ -12,6 +12,11 @@ QAOA / simulated annealing -> top solutions -> repair -> routing LP. Scored exac
 evaluate.py: combined_score = mean of 0.5*ref/best + 0.5*ref/median (1.0 = perfect).
 --backend cloud sends every circuit to Qoro's qoro_maestro simulator (uses credits); --backend
 local runs the same circuits on the local Maestro simulator (free, for testing).
+
+--parallel k samples up to k instances at once, in threads with one backend each (the QUBOs are
+built first, in the main thread). metrics.json keeps every instance's result: public has each
+instance's score and gap (shown to the LLM), private has best, median, reference, nodes and the
+best topology per instance, so no instance has to be re-evaluated to read its result.
 """
 
 from __future__ import annotations
@@ -20,10 +25,12 @@ import argparse
 import importlib.util
 import json
 import os
+import random
 import signal
 import sys
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import problem  # puts the repository root on sys.path
@@ -31,6 +38,10 @@ import problem  # puts the repository root on sys.path
 
 class SurrogateTimeout(Exception):
     pass
+
+
+class SamplingFailed(Exception):
+    """Quantum sampling kept failing (network or cloud trouble, not the program's fault)."""
 
 
 def _alarm(signum, frame):
@@ -125,9 +136,10 @@ def evaluate(args) -> tuple[dict, bool, str | None]:
         return {}, False, f"program failed to load: {type(exc).__name__}: {exc}"
 
     instances = problem.load_suite(args.suite)[: args.max_runs]
-    backend = None if args.routine == "sa" else make_backend(args.backend, args.shots)
-    sampler = {"pce": sample_pce, "qaoa_partitioned": sample_qaoa_partitioned}.get(args.routine)
-    rows, built_seconds = [], []
+
+    # 1) Build every QUBO in the main thread: the surrogate time limit uses SIGALRM, which only
+    #    works there, and an invalid program should fail before any circuit is sent.
+    jobs, built_seconds = [], []
     signal.signal(signal.SIGALRM, _alarm)
     for inst in instances:
         signal.alarm(int(problem.SECONDS_PER_INSTANCE) + 5)
@@ -143,10 +155,8 @@ def evaluate(args) -> tuple[dict, bool, str | None]:
         if error:
             return {}, False, error
         built_seconds.append(result["seconds"])
-
         if args.routine == "sa":
-            row = problem.score_terms(inst, result["linear"], result["quadratic"], result["penalty_weight"])
-            row.update(circuits=0, quantum_seconds=0.0)
+            jobs.append((inst, result, None))
         else:
             bqm, surrogate, arcs = problem.build_bqm(
                 inst.demand, result["linear"], result["quadratic"], result["penalty_weight"]
@@ -154,29 +164,27 @@ def evaluate(args) -> tuple[dict, bool, str | None]:
             bqm = in_arc_order(bqm, len(arcs))
             bqm.normalize()
             assert list(bqm.variables) == list(range(len(arcs))), "variable order must match arcs"
-            start = time.perf_counter()
-            waits = [30, 60, 120, 240, 480]  # ~15 min in total: rides out network outages or sleep
-            for attempt in range(len(waits) + 1):
-                try:
-                    samples, circuits = sampler(bqm, backend, inst.seed, args)
-                    break
-                except Exception as exc:  # noqa: BLE001
-                    if attempt == len(waits):
-                        return {}, False, (
-                            f"quantum sampling failed ({args.backend}) after {attempt + 1} attempts - a network or "
-                            f"cloud failure, not caused by the program: {type(exc).__name__}: {exc}"
-                        )
-                    print(f"sampling attempt {attempt + 1} failed ({type(exc).__name__}: {str(exc)[:150]}); "
-                          f"retrying in {waits[attempt]}s", flush=True)
-                    time.sleep(waits[attempt])
-            row = problem.score_samples(inst, samples, arcs, surrogate.num_interactions)
-            row.update(circuits=int(circuits), quantum_seconds=time.perf_counter() - start)
-        rows.append(row)
+            jobs.append((inst, result, (bqm, surrogate, arcs)))
+
+    # 2) Sample the instances, up to --parallel at once.
+    t0 = time.perf_counter()
+    workers = max(1, min(args.parallel, len(jobs)))
+    rows, failures = [], []
+    with ThreadPoolExecutor(workers, thread_name_prefix="instance") as pool:
+        futures = [pool.submit(sample_instance, job, args, t0) for job in jobs]
+        for future in futures:  # suite order; an unexpected exception propagates (evaluator crash)
+            try:
+                rows.append(future.result())
+            except SamplingFailed as exc:
+                failures.append(str(exc))
+    sampling_wall = time.perf_counter() - t0
+    if failures:
+        return {}, False, failures[0]
 
     lines = [
-        f"{r['name']}: best {r['best']:.0f} vs reference {r['ref']:.0f} (gap {r['gap_best_pct']:+.1f}%), "
-        f"median gap {r['gap_median_pct']:+.1f}%, {r['feasible_rate']:.0%} of {r['num_samples']} "
-        f"{args.routine} solutions valid before repair, {r['distinct']} distinct topologies, "
+        f"{r['name']}: score {r['score']:.3f}, best {r['best']:.0f} vs reference {r['ref']:.0f} "
+        f"(gap {r['gap_best_pct']:+.1f}%), median gap {r['gap_median_pct']:+.1f}%, {r['feasible_rate']:.0%} of "
+        f"{r['num_samples']} {args.routine} solutions valid before repair, {r['distinct']} distinct topologies, "
         f"{r['num_quadratic']} quadratic terms, {r['circuits']} circuits"
         for r in rows
     ]
@@ -184,11 +192,18 @@ def evaluate(args) -> tuple[dict, bool, str | None]:
     lines.append(f"Largest gap: {worst['name']} ({worst['gap_best_pct']:+.1f}%).")
     mean = lambda key: float(sum(r[key] for r in rows) / len(rows))  # noqa: E731
     (Path(args.results_dir) / "best_topologies.json").write_text(
-        json.dumps({r["name"]: {"score": r["best"], "arcs": r["best_arcs"]} for r in rows})
+        json.dumps({r["name"]: {"score": r["best"], "arcs": r["best_arcs"], "nodes": r["nodes"]} for r in rows})
     )
+    per_instance_keys = ("score", "best", "median", "ref", "gap_best_pct", "gap_median_pct", "feasible_rate",
+                         "num_samples", "distinct", "num_quadratic", "circuits", "quantum_seconds",
+                         "started_s", "nodes", "best_arcs")
     metrics = {
         "combined_score": mean("score"),
         "public": {
+            "sum_score": float(sum(r["score"] for r in rows)),
+            "num_instances": len(rows),
+            **{f"score_{r['name']}": r["score"] for r in rows},
+            **{f"gap_best_pct_{r['name']}": r["gap_best_pct"] for r in rows},
             "mean_gap_best_pct": mean("gap_best_pct"),
             "mean_gap_median_pct": mean("gap_median_pct"),
             "mean_feasible_rate": mean("feasible_rate"),
@@ -199,12 +214,49 @@ def evaluate(args) -> tuple[dict, bool, str | None]:
         "private": {
             "circuits": int(sum(r["circuits"] for r in rows)),
             "quantum_seconds": float(sum(r["quantum_seconds"] for r in rows)),
+            "sampling_wall_seconds": sampling_wall,
+            "parallel": workers,
             "build_seconds": float(sum(built_seconds)),
-            **{r["name"]: {k: r[k] for k in ("best", "median", "ref")} for r in rows},
+            **{r["name"]: {k: r[k] for k in per_instance_keys} for r in rows},
         },
         "text_feedback": "\n".join(lines),
     }
     return metrics, True, None
+
+
+def sample_instance(job, args, t0: float) -> dict:
+    """Sample one instance, repair and LP-score its solutions. Runs in a worker thread."""
+    inst, result, built = job
+    nodes = list(inst.nodes) if inst.nodes is not None else None
+    started = time.perf_counter()
+    if built is None:  # simulated annealing
+        row = problem.score_terms(inst, result["linear"], result["quadratic"], result["penalty_weight"])
+        row.update(circuits=0, quantum_seconds=time.perf_counter() - started, started_s=started - t0, nodes=nodes)
+        return row
+    bqm, surrogate, arcs = built
+    sampler = {"pce": sample_pce, "qaoa_partitioned": sample_qaoa_partitioned}[args.routine]
+    backend = make_backend(args.backend, args.shots)  # one per thread: no shared job state
+    # ~15 min in total: rides out network outages or sleep. Random jitter (x0.5-1.5) keeps parallel
+    # instances and evaluations from retrying in lockstep and re-saturating the upload link.
+    waits = [w * random.uniform(0.5, 1.5) for w in (30, 60, 120, 240, 480)]
+    for attempt in range(len(waits) + 1):
+        try:
+            samples, circuits = sampler(bqm, backend, inst.seed, args)
+            break
+        except Exception as exc:  # noqa: BLE001
+            if attempt == len(waits):
+                raise SamplingFailed(
+                    f"quantum sampling failed for {inst.name} ({args.backend}) after {attempt + 1} attempts - a "
+                    f"network or cloud failure, not caused by the program: {type(exc).__name__}: {exc}"
+                ) from exc
+            print(f"{inst.name}: sampling attempt {attempt + 1} failed ({type(exc).__name__}: {str(exc)[:150]}); "
+                  f"retrying in {waits[attempt]:.0f}s", flush=True)
+            time.sleep(waits[attempt])
+    quantum_seconds = time.perf_counter() - started
+    row = problem.score_samples(inst, samples, arcs, surrogate.num_interactions)
+    row.update(circuits=int(circuits), quantum_seconds=quantum_seconds, started_s=started - t0, nodes=nodes)
+    print(f"{inst.name}: done in {quantum_seconds:.0f}s, score {row['score']:.3f}", flush=True)
+    return row
 
 
 def write_results(results_dir: str, metrics: dict, correct: bool, error: str | None) -> None:
@@ -225,7 +277,8 @@ def main() -> None:
     parser.add_argument("--program_path", default="initial.py")
     parser.add_argument("--results_dir", default="results/manual_qoro")
     parser.add_argument("--suite", default="net12")
-    parser.add_argument("--max_runs", type=int, default=1, help="use the first k seeds of the suite")
+    parser.add_argument("--max_runs", type=int, default=1, help="use the first k instances of the suite")
+    parser.add_argument("--parallel", type=int, default=1, help="instances sampled at once (threads)")
     parser.add_argument("--routine", choices=["pce", "qaoa_partitioned", "sa"], default="pce")
     parser.add_argument("--backend", choices=["cloud", "local"], default="cloud")
     parser.add_argument("--shots", type=int, default=10_000)

@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_pressure",
+  "patch_description": "Keep the direct-demand reward, but add a congestion proxy based on the product of each link\u2019s origin row traffic and destination column traffic. This discourages pairing high-pressure origins with high-pressure destinations, approximating a more balanced distribution of load across links without applying the ineffective blanket two-hop reward.\n\nAdd a small reciprocal-link bonus when demand is large in both directions, which can make direct service of bidirectional traffic more attractive. The reciprocal terms are sparse\u2014one per unordered node pair\u2014and the stronger degree penalty is intended to improve the rate of valid topologies before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:02:27.123155",
+  "llm_cost": 0.0019179,
+  "llm_model": "gpt-6-luna"
+}

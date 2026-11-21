@@ -78,13 +78,23 @@ def improve(demand, candidates, tools, rng):
 
 def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
     """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
     import signal
+    from pathlib import Path
 
     import oracle
-    from hamiltonian import surrogate_terms
 
     pool = json.load(open(pool_path))
     import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+        from hamiltonian import surrogate_terms
 
     n = int(pool["instance"][-2:])
     demand = qt.load_network_demand(n)

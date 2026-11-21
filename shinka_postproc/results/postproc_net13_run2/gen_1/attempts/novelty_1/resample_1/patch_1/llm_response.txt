@@ -1,0 +1,80 @@
+<NAME>
+bottleneck_aware_screening
+</NAME>
+
+<DESCRIPTION>
+Rank screened moves first by their effect on the parent’s positive-price links, then by surrogate-energy change. A two-switch that removes a bottleneck link without adding another is more promising for reducing the LP objective than an energy-favored move that leaves the bottlenecks untouched. Keeping energy as the secondary criterion retains the existing pool-specific guidance, while the unchanged batch size limits the extra LP-call cost. Pass the already-computed LP detail into screening at both call sites.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+=======
+    def screen_batch(moves, parent, detail, batch_size=9):
+        """Prioritize moves that improve bottleneck links, then surrogate energy."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, a)) for a, p in prices.items() if p > 0}
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            # A negative delta means the move removes more priced links than it adds.
+            hot_delta = len(set(net) & hot) - len(set(parent) & hot)
+            ranked.append((hot_delta, energy(net) - base_e, net))
+        ranked.sort(key=lambda item: (item[0], item[1]))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+=======
+        for _, _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+=======
+        for _, _, net in ranked:
+            if len(selected) >= batch_size:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        tail = [net for _, net in ranked if net not in selected]
+=======
+        tail = [net for _, _, net in ranked if net not in selected]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        batch = screen_batch(moves, parent)
+=======
+        batch = screen_batch(moves, parent, detail)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                batch = screen_batch(make_moves(parent, detail), parent)
+=======
+                batch = screen_batch(make_moves(parent, detail), parent, detail)
+>>>>>>> REPLACE
+
+</DIFF>
