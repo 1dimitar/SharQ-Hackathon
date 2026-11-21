@@ -90,6 +90,8 @@ def main() -> None:
     parser.add_argument("--budget", type=float, default=5.0, help="max LLM spend in USD")
     parser.add_argument("--islands", type=int, default=4)
     parser.add_argument("--models", default="gpt-6-luna", help="comma-separated proposal models")
+    parser.add_argument("--model-probs", default=None,
+                        help="comma-separated fixed sampling probabilities for --models (default: adaptive UCB)")
     parser.add_argument("--helper-model", default="gpt-6-luna", help="model for novelty checks and meta-recommendations")
     parser.add_argument("--eval-jobs", type=int, default=4)
     parser.add_argument("--proposal-jobs", type=int, default=4)
@@ -116,6 +118,15 @@ def main() -> None:
         eval_args = {"suite": args.suite, "routine": args.sampler, "backend": args.backend, "max_runs": args.max_runs}
         eval_time = args.eval_time or "01:00:00"
 
+    models = args.models.split(",")
+    if args.model_probs:
+        probs = [float(p) for p in args.model_probs.split(",")]
+        if len(probs) != len(models) or abs(sum(probs) - 1.0) > 1e-9:
+            sys.exit("--model-probs needs one probability per model, summing to 1")
+        llm_selection, llm_selection_kwargs = "fixed", {"prior_probs": probs}
+    else:
+        llm_selection, llm_selection_kwargs = "ucb1", {"exploration_coef": 1.0, "cost_aware_coef": 0.5}
+
     results_dir = args.results_dir or f"results/{args.suite}_{time.strftime('%m%d_%H%M%S')}"
     evo_config = EvolutionConfig(
         task_sys_msg=TASK_SYS_MSG.replace("{sampler_text}", SAMPLER_TEXT[args.sampler]),
@@ -127,10 +138,10 @@ def main() -> None:
         max_patch_attempts=1,
         job_type="local",
         language="python",
-        llm_models=args.models.split(","),
+        llm_models=models,
         llm_kwargs={"temperatures": [0.0, 0.5, 1.0], "reasoning_efforts": ["low", "medium"], "max_tokens": 32768},
-        llm_dynamic_selection="ucb1",
-        llm_dynamic_selection_kwargs={"exploration_coef": 1.0, "cost_aware_coef": 0.5},
+        llm_dynamic_selection=llm_selection,
+        llm_dynamic_selection_kwargs=llm_selection_kwargs,
         meta_rec_interval=5,
         meta_llm_models=[args.helper_model],
         meta_llm_kwargs={"temperatures": [0.0], "max_tokens": 16384},
