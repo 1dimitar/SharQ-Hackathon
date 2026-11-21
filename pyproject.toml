@@ -14,7 +14,11 @@ dependencies = [
     "jupyterlab>=4.6.6",
     "networkx",
     "numpy",
+    "qoblib-tools",
     "qoro-divi[jupyter,qubo-decompose]==0.16.2",
     "requests",
     "scipy>=1.18.1",
 ]
+
+[tool.uv.sources]
+qoblib-tools = { path = "packages/qoblib_tools" }

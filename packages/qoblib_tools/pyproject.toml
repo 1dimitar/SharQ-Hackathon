@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qoblib-tools"
+version = "0.1.0"
+description = "Standalone Qoro hackathon helpers for QOBLIB network and portfolio benchmarks"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = ["dimod>=0.12,<0.13", "numpy>=1.23", "requests>=2", "scipy>=1.11"]
+
+[tool.setuptools]
+packages = ["qoblib_tools"]
+
+[tool.setuptools.package-data]
+qoblib_tools = ["demand.txt"]
