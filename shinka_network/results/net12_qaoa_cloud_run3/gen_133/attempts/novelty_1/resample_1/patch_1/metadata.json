@@ -1,0 +1,14 @@
+{
+  "generation": 133,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_sparse",
+  "patch_description": "This variant emphasizes large direct demands using the suggested 0.85/0.15 blend, while retaining a concave component so moderate demands still influence link selection. It adds sparse two-hop rewards for promising relay paths, ranking relays by the strength of both legs and discounting nodes with high incident traffic. The relay budget is kept small to limit interaction-graph density and preserve useful QAOA communities. Degree penalties remain the evaluator\u2019s responsibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:42:33.326211",
+  "llm_cost": 0.0013692,
+  "llm_model": "gpt-6-luna"
+}

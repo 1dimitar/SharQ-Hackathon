@@ -1,0 +1,15 @@
+<NAME>
+stronger_direct_demand
+</NAME>
+
+<DESCRIPTION>
+Increase the direct-link reward’s emphasis on heavy demands while retaining a concave component for moderate flows. This tests whether directly serving more of the largest flows improves link-load balance, without changing relay selection or coupling count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
+=======
+        (i, j): -float(0.85 * normalized[i, j] + 0.15 * roots[i, j])
+>>>>>>> REPLACE
+</DIFF>

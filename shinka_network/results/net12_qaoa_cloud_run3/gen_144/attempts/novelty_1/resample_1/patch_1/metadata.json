@@ -1,0 +1,14 @@
+{
+  "generation": 144,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_075",
+  "patch_description": "This variant isolates the milder pressure discount: it ranks candidate relays by the existing affinity divided by node pressure raised to 0.75. The affinity formula, relay budget, direct-link rewards, and path-reward formula remain unchanged, making the comparison with a 1.25 pressure exponent informative. It retains sparse two-hop interactions and leaves degree penalties to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:28:57.910303",
+  "llm_cost": 0.0012762,
+  "llm_model": "gpt-6-luna"
+}

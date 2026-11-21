@@ -1,0 +1,14 @@
+{
+  "generation": 117,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "weaker_leg_rank",
+  "patch_description": "Reduce the strong-leg contribution in the relay affinity from 0.30 to 0.25. This ranks candidate relays more by the strength of their weaker leg, favoring two-hop routes that are useful on both links rather than routes with one strong and one weak leg. The change preserves the existing pressure adjustment, relay budget, and reward formula.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:22:58.506283",
+  "llm_cost": 0.0008361,
+  "llm_model": "gpt-6-luna"
+}

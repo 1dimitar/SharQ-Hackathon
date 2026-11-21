@@ -1,0 +1,158 @@
+<NAME>
+balanced_relay
+</NAME>
+
+<DESCRIPTION>
+This design keeps the direct-link reward, but chooses relay paths using a bottleneck-aware affinity: the weaker leg matters most, while the stronger leg still contributes. It combines that affinity with relay pressure and an estimate of how loaded the two legs already are, then retains only a small number of promising relays per OD pair. This draws on the prior programs’ sparse path couplings and the recommendation to strengthen the weaker-leg safeguard, while changing relay selection to explicitly account for leg congestion. Sparse interactions are intended to preserve useful communities for partitioned solving.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and sparse, congestion-aware relay rewards."""
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.maximum(np.nan_to_num(matrix, nan=0.0), 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    traffic /= scale
+
+    # Concavity gives moderate direct demands some influence, while retaining
+    # a stronger preference for directly serving the largest OD pairs.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(traffic[i, j])
+                linear[(i, j)] = -(0.72 * value + 0.28 * np.sqrt(value))
+
+    # Normalize relay pressure to [0, 1]. Both incoming and outgoing traffic
+    # matter because a relay needs capacity in each direction.
+    incoming = np.sum(traffic, axis=0)
+    outgoing = np.sum(traffic, axis=1)
+    incident = np.maximum(incoming, outgoing)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident > 0.0:
+        pressure = incident / max_incident
+    else:
+        pressure = np.zeros(n, dtype=float)
+
+    quadratic = {}
+    relay_budget = min(n - 2, max(1, n // 8))
+    path_strength = 0.38
+
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+
+            od = float(traffic[i, k])
+            if od <= 0.0:
+                continue
+
+            # Smooth support for both large and moderate OD demands.
+            support = 0.68 * od + 0.32 * np.sqrt(od)
+            candidates = []
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first = float(traffic[i, j])
+                second = float(traffic[j, k])
+
+                # Bottleneck-aware affinity: the weaker leg is decisive, but
+                # the stronger leg provides useful secondary evidence.
+                weak = min(first, second)
+                strong = max(first, second)
+                affinity = weak + 0.25 * strong
+
+                # Discount busy relays and legs already carrying substantial
+                # direct demand; this favors viable, less congested detours.
+                leg_load = first + second
+                rank = affinity / (
+                    0.75
+                    + float(pressure[j])
+                    + 0.30 * leg_load
+                )
+                candidates.append((rank, j, affinity, leg_load))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            if not candidates:
+                continue
+
+            best_rank = max(candidates[0][0], 1e-12)
+            for rank, j, affinity, leg_load in candidates[:relay_budget]:
+                relative_rank = min(1.0, rank / best_rank)
+                quality = 0.65 + 0.35 * relative_rank
+
+                # A mild leg-quality factor prevents arbitrary relays from
+                # receiving the same reward as routes with usable legs.
+                leg_quality = 0.55 + 0.45 * np.sqrt(max(0.0, affinity))
+                pressure_discount = 1.0 / (
+                    0.85 + 0.75 * float(pressure[j])
+                )
+                congestion_discount = 1.0 / (1.0 + 0.20 * leg_load)
+
+                weight = (
+                    -path_strength
+                    * support
+                    * quality
+                    * leg_quality
+                    * pressure_discount
+                    * congestion_discount
+                )
+
+                first_link = (i, j)
+                second_link = (j, k)
+                key = (
+                    (first_link, second_link)
+                    if first_link < second_link
+                    else (second_link, first_link)
+                )
+                quadratic[key] = weight
+
+    # Normalize the QUBO coefficient scale without changing relative weights.
+    max_weight = 0.0
+    for value in linear.values():
+        max_weight = max(max_weight, abs(float(value)))
+    for value in quadratic.values():
+        max_weight = max(max_weight, abs(float(value)))
+    if max_weight > 0.0:
+        inv = 1.0 / max_weight
+        linear = {key: float(value) * inv for key, value in linear.items()}
+        quadratic = {key: float(value) * inv for key, value in quadratic.items()}
+
+    # Degree penalties are added by the evaluator.
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

@@ -1,0 +1,16 @@
+<NAME>
+stronger_relay_leg
+</NAME>
+
+<DESCRIPTION>
+The current affinity already includes the weak-leg safeguard, but gives the stronger relay leg only a 0.25 coefficient. Increase that coefficient modestly to 0.35 while leaving candidate selection, path weights, and pressure discounting unchanged. This lets a relay with one particularly useful leg rank somewhat better without broadly increasing relay coverage or removing the safeguard against a nearly unsupported leg.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = min(left, right) + 0.25 * max(left, right) + 0.01
+=======
+                affinity = min(left, right) + 0.35 * max(left, right) + 0.01
+>>>>>>> REPLACE
+
+</DIFF>

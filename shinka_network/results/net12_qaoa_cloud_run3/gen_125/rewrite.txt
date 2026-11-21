@@ -1,0 +1,113 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import math
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Return nonnegative, off-diagonal demand normalized by its maximum."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale > 0.0:
+        traffic /= scale
+    return traffic
+
+
+def _direct_link_terms(traffic):
+    """Reward direct links, retaining signal from moderate demands."""
+    n = traffic.shape[0]
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(traffic[i, j])
+                linear[(i, j)] = -(0.75 * value + 0.25 * math.sqrt(value))
+    return linear
+
+
+def _relay_pressures(traffic):
+    """Estimate relay burden from each node's larger traffic direction."""
+    incoming = np.sum(traffic, axis=0)
+    outgoing = np.sum(traffic, axis=1)
+    incident = np.maximum(incoming, outgoing)
+    maximum = float(np.max(incident)) if incident.size else 0.0
+    if maximum <= 0.0:
+        maximum = 1.0
+    return np.maximum(0.65, incident / maximum)
+
+
+def _relay_terms(traffic, pressure):
+    """Add sparse, pressure-adjusted rewards for promising two-hop routes."""
+    n = traffic.shape[0]
+    relay_budget = min(n - 2, max(2, int(math.sqrt(n))))
+    path_strength = 0.30
+    quadratic = {}
+
+    for source in range(n):
+        for target in range(n):
+            if source == target:
+                continue
+
+            od = float(traffic[source, target])
+            if od <= 0.0:
+                continue
+            support = 0.70 * od + 0.30 * math.sqrt(od)
+
+            candidates = []
+            for relay in range(n):
+                if relay == source or relay == target:
+                    continue
+
+                first_leg = float(traffic[source, relay])
+                second_leg = float(traffic[relay, target])
+                local_pressure = float(pressure[relay]) * (
+                    1.0 + 0.5 * (first_leg + second_leg)
+                )
+                # Preserve a preference for a useful weaker leg while allowing
+                # the stronger leg to contribute to route affinity.
+                affinity = min(first_leg, second_leg) + 0.25 * max(
+                    first_leg, second_leg
+                )
+                candidates.append((affinity / local_pressure, relay, local_pressure))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for _, relay, local_pressure in candidates[:relay_budget]:
+                first = (source, relay)
+                second = (relay, target)
+                key = (first, second) if first < second else (second, first)
+                weight = -path_strength * support / local_pressure
+                quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    return quadratic
+
+
+def surrogate_terms(demand):
+    """Build direct-link and sparse relay-based QUBO cost terms."""
+    traffic = _prepare_demand(demand)
+    linear = _direct_link_terms(traffic)
+    pressure = _relay_pressures(traffic)
+    quadratic = _relay_terms(traffic, pressure)
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 1.5
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

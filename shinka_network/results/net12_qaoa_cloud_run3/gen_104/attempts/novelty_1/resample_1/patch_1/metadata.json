@@ -1,0 +1,14 @@
+{
+  "generation": 104,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "percentile_relay_pipeline",
+  "patch_description": "Reorganizes term construction into a preparation stage and separate direct-link and relay-term builders. It preserves the current relay ranking and budget while applying a deterministic 80th-percentile demand adjustment: high-demand OD pairs receive 1.1\u00d7 relay weight and the rest receive 0.9\u00d7. The sparse interaction structure and degree-penalty handling remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:01:32.595707",
+  "llm_cost": 0.0015329,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,16 @@
+<NAME>
+emphasize_large_demands
+</NAME>
+
+<DESCRIPTION>
+Increase the linear share of the direct-link reward from 0.75 to 0.85. This makes link selection more responsive to the largest demands while preserving some incentive for moderate flows and leaving the relay logic unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                linear[(i, j)] = -(0.75 * value + 0.25 * math.sqrt(value))
+=======
+                linear[(i, j)] = -(0.85 * value + 0.15 * math.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,23 @@
+<NAME>
+scale_relay_rewards
+</NAME>
+
+<DESCRIPTION>
+Scale the two-hop reward by OD demand tier while leaving direct-link rewards, relay candidates, and relay budgets unchanged. OD pairs at or above the existing 80th-percentile cutoff receive a 1.1 multiplier; other positive-demand pairs receive 0.9. This modestly emphasizes relay paths for the largest flows without increasing the number of quadratic terms, testing whether stronger support for high-impact traffic improves the low-energy topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for _, j, pressure in candidates[:relay_budget]:
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * support / pressure
+=======
+            relay_scale = 1.1 if value >= high_cutoff else 0.9
+            for _, j, pressure in candidates[:relay_budget]:
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * relay_scale * support / pressure
+>>>>>>> REPLACE
+
+</DIFF>

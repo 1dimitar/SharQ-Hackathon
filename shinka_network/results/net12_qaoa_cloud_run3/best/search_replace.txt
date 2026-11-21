@@ -1,39 +1,38 @@
 <NAME>
-targeted_high_demand_relays
+selective_relay_budget
 </NAME>
 
 <DESCRIPTION>
-Add two relay candidates only for OD pairs in the top demand quintile, leaving the existing relay budget unchanged for the rest. High-volume pairs are most likely to dominate the maximum link load, and extra candidate routes give the QUBO a chance to support them without adding relay couplings for every pair. The added terms remain well below the allowed quadratic-term cap; the existing aggregation also avoids duplicate keys.
+Reduce the number of relay interactions for ordinary OD pairs, while retaining extra relay options for the heaviest demands. The current square-root budget gives every positive-demand pair the same number of relay couplings; fewer routine couplings may simplify the interaction communities and reduce competition among paths. A deterministic 80th-percentile cutoff allocates up to two extra relays to high-demand pairs, preserving additional routing support where it is most valuable.
 </DESCRIPTION>
 
 <DIFF>
 <<<<<<< SEARCH
-    quadratic = {}
-    relay_count = min(n - 2, max(2, n // 4))
-    path_strength = 0.28
+    # Limit the number of competing relay interactions per OD pair.
+    relay_budget = min(n - 2, max(2, int(math.sqrt(n))))
 
-    for i in range(n):
+    quadratic = {}
 =======
-    quadratic = {}
-    relay_count = min(n - 2, max(2, n // 4))
-    path_strength = 0.28
-
-    # Spend a small extra relay budget on the highest-demand OD pairs.
-    positive_od = traffic[traffic > 0.0]
-    high_demand_cutoff = (
-        float(np.quantile(positive_od, 0.80)) if positive_od.size else float("inf")
+    # Give ordinary OD pairs a small relay budget, reserving extra choices
+    # for the largest demands.
+    positive_demands = normalized[normalized > 0.0]
+    high_cutoff = (
+        float(np.quantile(positive_demands, 0.80))
+        if positive_demands.size else float("inf")
     )
-    extra_relays = min(2, max(0, n - 2 - relay_count))
+    base_relays = min(n - 2, max(1, n // 5))
+    extra_relays = min(2, max(0, n - 2 - base_relays))
 
-    for i in range(n):
+    quadratic = {}
 >>>>>>> REPLACE
 <<<<<<< SEARCH
-            for rank, j in candidates[:relay_count]:
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for _, j, pressure in candidates[:relay_budget]:
 =======
-            pair_relay_count = relay_count
-            if od >= high_demand_cutoff:
-                pair_relay_count = min(n - 2, relay_count + extra_relays)
-
-            for rank, j in candidates[:pair_relay_count]:
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            relay_budget = base_relays
+            if value >= high_cutoff:
+                relay_budget += extra_relays
+            for _, j, pressure in candidates[:relay_budget]:
 >>>>>>> REPLACE
 </DIFF>

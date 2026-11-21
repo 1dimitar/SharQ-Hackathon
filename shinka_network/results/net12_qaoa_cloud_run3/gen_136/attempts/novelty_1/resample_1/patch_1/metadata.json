@@ -1,0 +1,14 @@
+{
+  "generation": 136,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_high_flow_relays",
+  "patch_description": "Keep the current base relay budget, but allow up to two additional relay choices only for the largest-demand OD pairs. Use the 90th percentile of positive off-diagonal demand as the cutoff, concentrating the extra interactions on flows most likely to benefit from alternate paths. The cap keeps the added QUBO sparse, while the percentile is computed over positive demands so zero entries do not distort the threshold.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:50:19.598804",
+  "llm_cost": 0.0012265,
+  "llm_model": "gpt-6-luna"
+}

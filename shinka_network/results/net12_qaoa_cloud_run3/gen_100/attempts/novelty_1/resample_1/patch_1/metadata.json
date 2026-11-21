@@ -1,0 +1,14 @@
+{
+  "generation": 100,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_rank_125",
+  "patch_description": "Rank relay candidates with a stronger pressure sensitivity, using exponent 1.25, while retaining the existing 0.75 pressure discount in the quadratic reward itself. This isolates the effect of choosing less congested relays without changing the overall coupling scale or reward formula. It is a focused test of the suggested ranking adjustment and leaves the existing edge-overlap discount intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:59:01.688935",
+  "llm_cost": 0.0009762000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 139,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_affinity",
+  "patch_description": "This keeps the existing direct-link rewards, relay budget, pressure adjustment, congestion terms, normalization, and degree penalty unchanged. The relay allocation now considers both legs of each candidate two-hop path: `min(a, b) + 0.25 * max(a, b) + 0.01`. The minimum-leg term favors paths whose two legs are both useful, while the modest stronger-leg contribution gives some credit to paths with one especially promising leg. Pressure still reduces the attractiveness of heavily loaded relay nodes.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:54:53.618095",
+  "llm_cost": 0.001178,
+  "llm_model": "gpt-6-luna"
+}

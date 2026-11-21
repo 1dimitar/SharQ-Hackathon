@@ -1,0 +1,19 @@
+<NAME>
+relay_pressure_rank125
+</NAME>
+
+<DESCRIPTION>
+Increase the pressure sensitivity used to rank relay candidates from power 1 to 1.25. This makes high-pressure nodes less likely to be selected as relays, which may reduce transit concentration and improve load balance. The reward’s existing pressure discount remains unchanged, isolating the effect to candidate selection.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                relay_pressure = float(pressure[relay])
+                rank = affinity / (0.75 + relay_pressure)
+                candidates.append((rank, relay, affinity, relay_pressure))
+=======
+                relay_pressure = float(pressure[relay])
+                rank = affinity / (0.75 + relay_pressure) ** 1.25
+                candidates.append((rank, relay, affinity, relay_pressure))
+>>>>>>> REPLACE
+</DIFF>

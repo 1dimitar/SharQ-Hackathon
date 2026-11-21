@@ -1,0 +1,14 @@
+{
+  "generation": 132,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_affinity",
+  "patch_description": "Rank relay candidates by a bottleneck-aware affinity instead of the sum of their two leg demands. The current sum can favor a relay with one strong leg and one nearly unusable leg; a minimum-plus-fractional-maximum score still values a strong leg but makes the weaker leg matter more. This affects which relays enter the sparse interaction set while leaving the existing pressure discount, reward construction, and term budget unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:42:22.802085",
+  "llm_cost": 0.0009497000000000002,
+  "llm_model": "gpt-6-luna"
+}

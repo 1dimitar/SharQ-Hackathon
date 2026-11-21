@@ -1,0 +1,14 @@
+{
+  "generation": 101,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mild_pressure_rank",
+  "patch_description": "This variant tests a less aggressive pressure discount when ranking candidate relays: affinity is divided by `(0.75 + pressure) ** 0.75` rather than the current first power. It retains the existing pressure discount in the reward itself, so relay selection is more sensitive to route affinity without removing the preference for relays with spare capacity. Direct-link rewards, demand-adaptive relay budgets, and the degree penalty remain unchanged. The construction is deterministic and sparse.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:59:43.180031",
+  "llm_cost": 0.0017971999999999999,
+  "llm_model": "gpt-6-luna"
+}

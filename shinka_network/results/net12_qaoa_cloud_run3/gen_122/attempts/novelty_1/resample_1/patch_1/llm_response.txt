@@ -1,0 +1,16 @@
+<NAME>
+stronger_relay_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Raise the pressure exponent in candidate ranking from 1 to 1.25. This makes relay selection more selective against nodes with high incident demand, which are less attractive as transit hubs because they already face substantial traffic. The relay reward itself remains unchanged, isolating the effect of the ranking adjustment. The number of selected relays and quadratic terms is also unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                candidates.append((affinity / pressure, j, pressure))
+=======
+                candidates.append((affinity / (pressure ** 1.25), j, pressure))
+>>>>>>> REPLACE
+
+</DIFF>

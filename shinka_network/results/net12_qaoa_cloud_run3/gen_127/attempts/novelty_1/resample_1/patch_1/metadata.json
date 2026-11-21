@@ -1,0 +1,14 @@
+{
+  "generation": 127,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_relay_reward",
+  "patch_description": "Increase the two-hop relay reward coefficient from 0.30 to 0.35 while leaving the support formula, pressure calculation, and relay budget unchanged. This is a targeted test of whether relay support is underweighted relative to direct-link rewards: stronger two-hop interactions may help the QUBO favor topologies that can serve traffic through plausible relays. The change preserves the existing sparsity and coupling structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:34:13.526858",
+  "llm_cost": 0.0008093,
+  "llm_model": "gpt-6-luna"
+}

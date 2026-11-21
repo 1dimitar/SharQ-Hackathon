@@ -1,0 +1,16 @@
+<NAME>
+high_demand_relay_cutoff
+</NAME>
+
+<DESCRIPTION>
+Raise the cutoff for the additional relay from the 80th to the 90th percentile of positive OD demands. This keeps the base relay count, two-relay cap, candidate ranking, and reward formulas unchanged, while reserving the extra interactions for the most important traffic pairs. The smaller set of extra relay terms may help prioritize high-impact routes without substantially increasing the QUBO’s interaction count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    important_cutoff = float(np.quantile(positive, 0.80)) if positive.size else 0.0
+=======
+    important_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+>>>>>>> REPLACE
+
+</DIFF>

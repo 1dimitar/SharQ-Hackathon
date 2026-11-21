@@ -1,0 +1,14 @@
+{
+  "generation": 105,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_share",
+  "patch_description": "This design keeps direct demand as the main link reward, but estimates relay quality from a proxy for link and node congestion rather than preferring relays with already-demanded legs. For each OD pair, it assigns a limited share of its two-hop reward across the most promising relays. Capping the total share helps avoid rewarding a topology repeatedly for providing many alternatives to the same traffic. The degree penalty remains evaluator-supplied and is set strongly to encourage feasible topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:11:40.700975",
+  "llm_cost": 0.0028476,
+  "llm_model": "gpt-6-luna"
+}

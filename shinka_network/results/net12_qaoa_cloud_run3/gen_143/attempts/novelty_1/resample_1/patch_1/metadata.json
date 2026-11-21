@@ -1,0 +1,14 @@
+{
+  "generation": 143,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_direct_reward",
+  "patch_description": "Increase the direct-link blend from 0.75 value + 0.25 square-root value to 0.85 value + 0.15 square-root value, leaving normalization and all relay logic unchanged. This gives heavy OD pairs more influence on link selection, which may help the larger network12_s1 gap while keeping the edit controlled and easy to evaluate.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:15.362268",
+  "llm_cost": 0.0008122,
+  "llm_model": "gpt-6-luna"
+}

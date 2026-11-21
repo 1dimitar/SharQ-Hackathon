@@ -1,0 +1,14 @@
+{
+  "generation": 123,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay",
+  "patch_description": "This design keeps the direct-link reward, but chooses relay paths using a bottleneck-aware affinity: the weaker leg matters most, while the stronger leg still contributes. It combines that affinity with relay pressure and an estimate of how loaded the two legs already are, then retains only a small number of promising relays per OD pair. This draws on the prior programs\u2019 sparse path couplings and the recommendation to strengthen the weaker-leg safeguard, while changing relay selection to explicitly account for leg congestion. Sparse interactions are intended to preserve useful communities for partitioned solving.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:32:38.624667",
+  "llm_cost": 0.0024898999999999998,
+  "llm_model": "gpt-6-luna"
+}

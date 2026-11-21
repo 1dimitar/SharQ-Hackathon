@@ -1,0 +1,14 @@
+{
+  "generation": 119,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_relay_pressure",
+  "patch_description": "Increase the pressure exponent used to rank relay candidates from 1 to 1.25. This makes relay selection more cautious about routing through nodes with high incident demand, which may otherwise become transit bottlenecks. The final quadratic reward and relay budget remain unchanged, isolating the effect to which relays are selected.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:23:22.094434",
+  "llm_cost": 0.0009199000000000001,
+  "llm_model": "gpt-6-luna"
+}
