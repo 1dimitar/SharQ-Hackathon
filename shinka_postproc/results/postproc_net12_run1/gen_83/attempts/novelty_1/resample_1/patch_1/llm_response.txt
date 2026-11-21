@@ -1,0 +1,141 @@
+<NAME>
+underexplored_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+When the search stagnates, select less-visited non-elite archive members more often instead of repeatedly exploring the incumbent’s basin. Add a small, bounded set of degree-preserving multi-switch kicks to each neighborhood; bias some switches toward priced links but leave others unrestricted. These proposals still pass through the existing energy and diversity screening before any LP calls, so dual information helps generate moves without being the sole selection criterion.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        result.discard(parent)
+        return [x for x in result if tools.is_valid(x)]
+
+    stale = 0
+    kick = 1
+    while tools.lp_calls_left > 0:
+        # Usually explore the incumbent neighborhood; occasionally restart
+        # from another high-quality archived basin.
+        if len(archive) > 1 and rng.random() < min(0.65, 0.20 + stale * 0.025):
+            choices = archive[:min(8, len(archive))]
+            weights = [1.0 / (1.0 + i) for i in range(len(choices))]
+            parent = choices[int(rng.choice(len(choices), p=[w / sum(weights) for w in weights]))]
+        else:
+            parent = best_net
+
+        info = detail(parent)
+=======
+        # Bounded degree-preserving kicks provide a route out of exhausted
+        # one-switch neighborhoods. Some start at a priced edge; the rest are
+        # unrestricted so dual degeneracy cannot exclude useful moves.
+        for _ in range(min(12, 3 + kick)):
+            cur = set(parent)
+            for step in range(2 + int(rng.integers(3))):
+                arcs_now = list(cur)
+                hot_now = [i for i, edge in enumerate(arcs_now) if edge in hot_ids_edges]
+                if hot_now and rng.random() < 0.65:
+                    p = int(rng.choice(hot_now))
+                else:
+                    p = int(rng.integers(len(arcs_now)))
+                q = int(rng.integers(len(arcs_now) - 1))
+                if q >= p:
+                    q += 1
+                (a, b), (c, d) = arcs_now[p], arcs_now[q]
+                x, y = (a, d), (c, b)
+                if a != d and c != b and x not in cur and y not in cur:
+                    cur.remove((a, b))
+                    cur.remove((c, d))
+                    cur.add(x)
+                    cur.add(y)
+            if cur != current:
+                result.add(canon(cur))
+
+        result.discard(parent)
+        return [x for x in result if tools.is_valid(x)]
+
+    stale = 0
+    kick = 1
+    parent_visits = {}
+    while tools.lp_calls_left > 0:
+        # On stagnation, explore less-visited non-elite archive regions. At
+        # other times retain the existing quality-biased incumbent restarts.
+        if stale >= 5 and len(archive) > 5 and rng.random() < 0.65:
+            choices = archive[5:]
+            weights = [1.0 / math.sqrt(1.0 + parent_visits.get(x, 0)) for x in choices]
+            parent = choices[int(rng.choice(len(choices), p=[w / sum(weights) for w in weights]))]
+        elif len(archive) > 1 and rng.random() < min(0.65, 0.20 + stale * 0.025):
+            choices = archive[:min(8, len(archive))]
+            weights = [1.0 / (1.0 + i) for i in range(len(choices))]
+            parent = choices[int(rng.choice(len(choices), p=[w / sum(weights) for w in weights]))]
+        else:
+            parent = best_net
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+
+        info = detail(parent)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        # A few rotations provide jumps between basins not reachable by a
+        # single switch. Increase their number as the search becomes stagnant.
+        tries = min(100, 12 + 5 * kick)
+        for _ in range(tries):
+            if len(arcs) < 3:
+                break
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            new = {(a, d), (c, f), (e, b)}
+            if len(new) != 3 or any(x == y for x, y in new):
+                continue
+            if new & (current - old):
+                continue
+            result.add(canon((current - old) | new))
+
+        result.discard(parent)
+=======
+        # A few rotations provide jumps between basins not reachable by a
+        # single switch. Increase their number as the search becomes stagnant.
+        tries = min(100, 12 + 5 * kick)
+        for _ in range(tries):
+            if len(arcs) < 3:
+                break
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            new = {(a, d), (c, f), (e, b)}
+            if len(new) != 3 or any(x == y for x, y in new):
+                continue
+            if new & (current - old):
+                continue
+            result.add(canon((current - old) | new))
+
+        # Build a small set of multi-switch kicks. Favor hot links for some
+        # first choices while keeping unrestricted steps for exploration.
+        hot_edges = {arcs[i] for i in hot_ids}
+        for _ in range(min(12, 3 + kick)):
+            cur = set(parent)
+            for step in range(2 + int(rng.integers(3))):
+                arcs_now = list(cur)
+                hot_now = [i for i, edge in enumerate(arcs_now) if edge in hot_edges]
+                if hot_now and rng.random() < 0.65:
+                    p = int(rng.choice(hot_now))
+                else:
+                    p = int(rng.integers(len(arcs_now)))
+                q = int(rng.integers(len(arcs_now) - 1))
+                if q >= p:
+                    q += 1
+                (a, b), (c, d) = arcs_now[p], arcs_now[q]
+                x, y = (a, d), (c, b)
+                if a != d and c != b and x not in cur and y not in cur:
+                    cur.remove((a, b))
+                    cur.remove((c, d))
+                    cur.add(x)
+                    cur.add(y)
+            if cur != current:
+                result.add(canon(cur))
+
+        result.discard(parent)
+>>>>>>> REPLACE
+</DIFF>

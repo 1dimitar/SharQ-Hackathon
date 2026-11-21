@@ -1,0 +1,77 @@
+<NAME>
+adaptive_neighborhood_effort
+</NAME>
+
+<DESCRIPTION>
+Adapt the number of random kicks and sampled rotations to recent search progress. When an LP batch improves the incumbent, reduce these broader exploration proposals and spend more effort on the focused two-switch neighborhood. During stagnation, increase them up to a fixed cap to encourage escaping the current basin. This preserves a minimum exploration quota, bounds proposal-generation work, and uses actual LP improvement rather than surrogate scores to guide the allocation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+=======
+    iteration = 0
+    stagnant_batches = 0
+    while tools.lp_calls_left > 0:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            # Random multi-switch kicks and cyclic rotations add moves beyond
+            # the immediate two-switch neighborhood.
+            for _ in range(24):
+                steps = 2 + int(rng.integers(5))
+                child = kick(parent, steps)
+                if child != parent:
+                    proposals.add(child)
+            proposals.update(rotations(parent, 36))
+=======
+            # Adapt broad exploration effort to recent LP progress. The total
+            # remains bounded, while focused two-switches are always retained.
+            kick_count = min(36, 8 + 4 * stagnant_batches)
+            rotation_count = min(48, 12 + 4 * stagnant_batches)
+            for _ in range(kick_count):
+                steps = 2 + int(rng.integers(5))
+                child = kick(parent, steps)
+                if child != parent:
+                    proposals.add(child)
+            proposals.update(rotations(parent, rotation_count))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        old_best = best_score
+        calls_used = 0
+        for net in batch:
+=======
+        old_best = best_score
+        calls_used = 0
+        for net in batch:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for parent in set((first, second)):
+            parent_calls[parent] = parent_calls.get(parent, 0) + calls_used / max(
+                1, len(set((first, second)))
+            )
+            if best_score < old_best:
+                parent_gains[parent] = parent_gains.get(parent, 0) + (
+                    old_best - best_score
+                ) / max(1.0, old_best)
+
+        iteration += 1
+=======
+        improved = best_score < old_best
+        stagnant_batches = 0 if improved else min(10, stagnant_batches + 1)
+        for parent in set((first, second)):
+            parent_calls[parent] = parent_calls.get(parent, 0) + calls_used / max(
+                1, len(set((first, second)))
+            )
+            if improved:
+                parent_gains[parent] = parent_gains.get(parent, 0) + (
+                    old_best - best_score
+                ) / max(1.0, old_best)
+
+        iteration += 1
+>>>>>>> REPLACE
+
+</DIFF>

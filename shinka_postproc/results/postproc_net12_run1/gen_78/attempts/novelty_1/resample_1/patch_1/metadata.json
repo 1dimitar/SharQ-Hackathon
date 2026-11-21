@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_diverse_search",
+  "patch_description": "Combines the stronger candidate initialization and dual-guided search from the prior implementations with a small random-start hedge, rather than spending a large fixed budget on random networks. The search ranks moves using both surrogate energy and LP dual prices, preserves a diverse shortlist, and mixes elite exploration with annealing and bottleneck-focused kicks. Cached networks are skipped so LP calls are directed toward new topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:08:48.564407",
+  "llm_cost": 0.0037737,
+  "llm_model": "gpt-6-luna"
+}

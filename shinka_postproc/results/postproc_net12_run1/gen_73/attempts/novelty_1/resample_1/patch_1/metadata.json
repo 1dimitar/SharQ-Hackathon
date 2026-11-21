@@ -1,0 +1,14 @@
+{
+  "generation": 73,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_portfolio_search",
+  "patch_description": "Separates initialization, neighborhood generation, proposal screening, and portfolio management into distinct stages. It builds a diverse set of repaired starts, then adapts proposal selection to the topology clustering of the best surrogate-ranked moves: tightly clustered proposals trigger stronger diversity selection, while already-diverse proposals favor energy rank. LP evaluations remain batched and dual-guided, with an elite portfolio providing restart points.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:05:29.332056",
+  "llm_cost": 0.0031072,
+  "llm_model": "gpt-6-luna"
+}

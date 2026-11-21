@@ -1,0 +1,98 @@
+<NAME>
+archive_biased_kicks
+</NAME>
+
+<DESCRIPTION>
+After a parent has repeatedly stalled, perturb a non-elite archive member rather than repeatedly kicking the current parent. Bias the kick toward links with positive LP prices, falling back to the most heavily loaded links. Keep the archive member unchanged, and send both the kicked network and a surrogate-screened batch from its neighborhood to LP evaluation. This adds a targeted way to explore a different basin while preserving elite networks and reusing the existing proposal ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def random_kick(net, count):
+        """Apply a few random legal switches to produce a distant proposal."""
+        cur = net
+        for _ in range(count):
+            arcs = list(cur)
+            pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+            if not pairs:
+                break
+            rng.shuffle(pairs)
+            cur_set = set(cur)
+            for p, q in pairs:
+                (a, b), (c, d) = arcs[p], arcs[q]
+                x, y = (a, d), (c, b)
+                if a != d and c != b and x not in cur_set and y not in cur_set:
+                    cur = canonical((cur_set - {arcs[p], arcs[q]}) | {x, y})
+                    break
+        return cur
+=======
+    def random_kick(net, count, hot=None):
+        """Apply legal switches, preferentially changing links in the hot set."""
+        cur = net
+        hot = set(hot or ())
+        for _ in range(count):
+            arcs = list(cur)
+            pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+            if not pairs:
+                break
+            if hot:
+                focused = [(p, q) for p, q in pairs
+                           if arcs[p] in hot or arcs[q] in hot]
+                if focused and rng.random() < 0.8:
+                    pairs = focused
+            rng.shuffle(pairs)
+            cur_set = set(cur)
+            for p, q in pairs:
+                (a, b), (c, d) = arcs[p], arcs[q]
+                x, y = (a, d), (c, b)
+                if a != d and c != b and x not in cur_set and y not in cur_set:
+                    cur = canonical((cur_set - {arcs[p], arcs[q]}) | {x, y})
+                    break
+        return cur
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    while tools.lp_calls_left > 0 and iteration < max_iterations:
+        parent = choose_parent()
+        batch = propose_batch(parent)
+        if not batch:
+=======
+    while tools.lp_calls_left > 0 and iteration < max_iterations:
+        parent = choose_parent()
+        batch = []
+
+        # On repeated stalls, kick a non-elite archive member so the elite
+        # remains intact while a different basin gets a targeted restart.
+        if rotation_stalls.get(parent, 0) >= 4 and len(archive) > 3:
+            ranked_archive = sorted(archive, key=lambda net: scores[net])
+            source_pool = ranked_archive[3:]
+            source = source_pool[int(rng.integers(len(source_pool)))]
+            try:
+                detail = tools.lp_detail(source)
+                prices = detail.get("prices", {})
+                hot = {tuple(map(int, arc)) for arc, price in prices.items()
+                       if float(price) > 0.0}
+                if not hot:
+                    loads = detail.get("loads", {})
+                    hot = {
+                        tuple(map(int, arc))
+                        for arc, _ in sorted(
+                            loads.items(), key=lambda item: float(item[1]), reverse=True
+                        )[:6]
+                    }
+            except Exception:
+                hot = set()
+
+            kicked = random_kick(source, 2 + int(rng.integers(3)), hot)
+            if (kicked != source and kicked not in scores
+                    and not tools.is_cached(kicked) and tools.is_valid(kicked)):
+                neighbors = propose_batch(kicked)
+                batch = [kicked] + neighbors[:max(0, batch_size - 1)]
+                parent = kicked
+
+        if not batch:
+            batch = propose_batch(parent)
+        if not batch:
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 80,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "yield_guided_search",
+  "patch_description": "Reorganizes the search around an adaptive archive of scored networks. Each archive parent tracks how often it has been explored and how often its neighborhood produced improvements; parent selection uses those results while reserving searches for underexplored, diverse basins. Move generation, inexpensive ranking, and LP evaluation are separated, with each batch mixing dual-guided, surrogate-ranked, and exploratory moves.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:10:33.255711",
+  "llm_cost": 0.0039283,
+  "llm_model": "gpt-6-luna"
+}

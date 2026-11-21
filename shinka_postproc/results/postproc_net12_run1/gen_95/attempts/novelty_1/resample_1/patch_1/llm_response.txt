@@ -1,0 +1,57 @@
+<NAME>
+stagnation_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+After sustained stagnation, deliberately sample a non-elite archive parent and build a short random walk of valid degree-preserving switches from it. This explores archive regions that ordinary parent selection and single-switch neighborhoods may undersample, while keeping the kick bounded to a few steps and drawing each step from the existing LP/price-guided switch generator. The kicked topology is included in the existing batch screening, so it consumes an LP call only if it survives the normal freshness and validity checks.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Select a good basin most of the time, but periodically explore
+        # lower-ranked archive members to avoid overfocusing the incumbent.
+        if len(archive) > 1 and rng.random() < min(0.60, 0.20 + 0.025 * stale):
+            width = min(8, len(archive))
+            weights = np.array([1.0 / (1.0 + 0.8 * i) for i in range(width)])
+            parent = archive[int(rng.choice(width, p=weights / weights.sum()))]
+        else:
+            parent = best_net
+
+        prices = get_prices(parent)
+        moves = switches(parent, prices, exhaustive=(stale < 5))
+        fresh = [m for m in moves
+                 if m not in scores and not tools.is_cached(m)]
+=======
+        # Select a good basin most of the time. During prolonged stagnation,
+        # explicitly probe a less-elite archive region as well.
+        if len(archive) > 1 and stale >= 6 and rng.random() < 0.45:
+            parent = archive[int(rng.integers(min(5, len(archive)), len(archive)))]
+        elif len(archive) > 1 and rng.random() < min(0.60, 0.20 + 0.025 * stale):
+            width = min(8, len(archive))
+            weights = np.array([1.0 / (1.0 + 0.8 * i) for i in range(width)])
+            parent = archive[int(rng.choice(width, p=weights / weights.sum()))]
+        else:
+            parent = best_net
+
+        prices = get_prices(parent)
+        moves = switches(parent, prices, exhaustive=(stale < 5))
+
+        # A short bounded random walk makes a degree-preserving kick from this
+        # parent. Each step uses the existing switch generator and positive-
+        # price guidance, then the endpoint competes in the ordinary batch.
+        if stale >= 3:
+            kicked = parent
+            for _ in range(min(4, 1 + stale // 5)):
+                step_prices = get_prices(kicked)
+                step_moves = switches(kicked, step_prices, exhaustive=False)
+                if not step_moves:
+                    break
+                kicked = step_moves[int(rng.integers(len(step_moves)))]
+            if kicked != parent and tools.is_valid(kicked):
+                moves.append(kicked)
+
+        fresh = [m for m in moves
+                 if m not in scores and not tools.is_cached(m)]
+>>>>>>> REPLACE
+
+</DIFF>

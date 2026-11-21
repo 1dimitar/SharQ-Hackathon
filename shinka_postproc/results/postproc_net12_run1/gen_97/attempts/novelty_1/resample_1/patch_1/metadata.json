@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "magnitude_adaptive_moves",
+  "patch_description": "Estimate each move type\u2019s usefulness from the magnitude of its score improvement, rather than treating every improvement as an identical binary success. Keep a fixed nine-slot energy-ranked batch with at least two slots for each move type; allocate the remaining five slots according to the smoothed estimates. This preserves neighborhood coverage while allowing consistently productive move types to receive more evaluations. The gain signal is clipped and normalized to avoid letting unusually large improvements dominate the adaptation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:20:06.499513",
+  "llm_cost": 0.0020508,
+  "llm_model": "gpt-6-luna"
+}

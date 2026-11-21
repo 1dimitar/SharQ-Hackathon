@@ -1,0 +1,14 @@
+{
+  "generation": 81,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_move_mix",
+  "patch_description": "Track which move families\u2014dual-focused switches, unrestricted switches, rotations, and multi-switch kicks\u2014actually produce LP improvements. Each iteration allocates a fixed total of 64 proposal slots across two parents, reserving a minimum for every family and distributing the remainder according to its observed improvement rate. This preserves all move types while reducing effort spent on consistently unproductive ones. LP outcomes credit every family that generated a successful proposal; the LP-call budget and batch size remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:10:33.929513",
+  "llm_cost": 0.0031091,
+  "llm_model": "gpt-6-luna"
+}

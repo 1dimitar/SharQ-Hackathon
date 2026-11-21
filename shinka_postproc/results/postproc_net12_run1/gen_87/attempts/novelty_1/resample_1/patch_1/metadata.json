@@ -1,0 +1,14 @@
+{
+  "generation": 87,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "stagnation_archive_kicks",
+  "patch_description": "When the search stalls, deliberately branch from archive members that have been selected least often, including non-elite members. Their existing two-switch and three-link-rotation neighborhoods provide degree-preserving kicks; the current surrogate and dual screens still determine which moves receive LP calls. This adds structured exploration of underrepresented regions without changing the LP budget or replacing the normal search when it is making progress.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:13:37.390800",
+  "llm_cost": 0.0022547,
+  "llm_model": "gpt-6-luna"
+}

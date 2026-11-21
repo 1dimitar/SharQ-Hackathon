@@ -1,0 +1,63 @@
+<NAME>
+archive_yield_selection
+</NAME>
+
+<DESCRIPTION>
+Track whether searches from archive parents produce incumbent improvements, and use that yield to modestly favor productive parents. Keep a fixed 30% exploration share, choosing from the least-visited available parents so that distant or under-tested archive members continue to receive attention. This makes the selection rule more responsive than weighting by the tiny fractional size of an improvement, while retaining coverage.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Reserve one quarter of selections for archive-order exploration;
+        # the remainder favors parents with productive recent searches.
+        if rng.random() < 0.25:
+            return choices[int(rng.integers(len(choices)))]
+        weights = []
+        for p in choices:
+            calls = parent_calls.get(p, 0)
+            gains = parent_gains.get(p, 0)
+            rate = (gains + 0.25) / (calls + 2.0)
+            # A mild uncertainty bonus favors under-tested parents.
+            uncertainty = 1.0 / math.sqrt(calls + 1.0)
+            weights.append(rate + 0.35 * uncertainty)
+        weights = np.asarray(weights, dtype=float)
+        weights /= weights.sum()
+        return choices[int(rng.choice(len(choices), p=weights))]
+=======
+        # Preserve a fixed exploration share for the least-visited available
+        # parents; the rest of selections favor neighborhoods that have yielded
+        # incumbent improvements.
+        if rng.random() < 0.30:
+            visits = [parent_calls.get(p, 0) for p in choices]
+            least = min(visits)
+            under_visited = [
+                p for p, count in zip(choices, visits) if count <= least + 1.0
+            ]
+            return under_visited[int(rng.integers(len(under_visited)))]
+        weights = []
+        for p in choices:
+            calls = parent_calls.get(p, 0)
+            successes = parent_gains.get(p, 0)
+            # Smoothed improvement yield avoids overcommitting to a parent
+            # after a single lucky result and still favors lightly-tested ones.
+            yield_rate = (successes + 0.5) / (calls + 3.0)
+            uncertainty = 0.15 / math.sqrt(calls + 1.0)
+            weights.append(yield_rate + uncertainty)
+        weights = np.asarray(weights, dtype=float)
+        weights /= weights.sum()
+        return choices[int(rng.choice(len(choices), p=weights))]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            if best_score < old_best:
+                parent_gains[parent] = parent_gains.get(parent, 0) + (
+                    old_best - best_score
+                ) / max(1.0, old_best)
+=======
+            if best_score < old_best:
+                # Record an improvement event as neighborhood yield rather
+                # than its fractional magnitude, which is often too small to
+                # influence parent selection meaningfully.
+                parent_gains[parent] = parent_gains.get(parent, 0) + 1
+>>>>>>> REPLACE
+</DIFF>

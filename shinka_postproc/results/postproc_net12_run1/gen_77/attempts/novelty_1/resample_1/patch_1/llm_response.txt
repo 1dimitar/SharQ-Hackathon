@@ -1,0 +1,62 @@
+<NAME>
+adaptive_neighborhood_diversity
+</NAME>
+
+<DESCRIPTION>
+The current neighborhood screen always spends its first nine LP evaluations on the same energy-first ordering. When those moves are topologically similar, that can waste evaluations exploring nearly identical changes. Measure pairwise topology distance among the 40 best surrogate-ranked moves and adapt the initial batch: use more far-apart representatives when the pool is clustered, and retain more energy-ranked moves when it is already diverse. Keep the existing dual-guided and random reservations afterward, so this changes only the energy/diversity portion of screening.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Keep the energy-ranked batch, but reserve slots for moves whose
+        # removed links have greater dual price than their replacement links.
+        old_links = set(source)
+        fresh.sort(key=lambda net: (
+            tools.energy(net),
+            not bool((old_links - set(net)) & focus),
+        ))
+        selected = fresh[:9]
+=======
+        # Adapt the energy/diversity mix to the topology spread of the best
+        # surrogate-ranked moves. Clustered pools get more diverse representatives.
+        old_links = set(source)
+        fresh.sort(key=lambda net: (
+            tools.energy(net),
+            not bool((old_links - set(net)) & focus),
+        ))
+        pool = fresh[:min(40, len(fresh))]
+        if len(pool) > 1:
+            pair_distances = [
+                len(set(pool[i]).symmetric_difference(set(pool[j])))
+                for i in range(len(pool))
+                for j in range(i + 1, len(pool))
+            ]
+            mean_distance = sum(pair_distances) / len(pair_distances)
+        else:
+            mean_distance = 0.0
+
+        diverse_slots = min(9, len(pool), 7 if mean_distance < 9.0 else 4)
+        selected = [pool[0]] if pool else []
+        while len(selected) < diverse_slots:
+            remaining_pool = [net for net in pool if net not in selected]
+            if not remaining_pool:
+                break
+            ranks = {net: i for i, net in enumerate(fresh)}
+            chosen = max(
+                remaining_pool,
+                key=lambda net: (
+                    min(len(set(net).symmetric_difference(set(old)))
+                        for old in selected)
+                    - 0.12 * ranks[net]
+                ),
+            )
+            selected.append(chosen)
+
+        for net in fresh:
+            if len(selected) >= min(9, len(fresh)):
+                break
+            if net not in selected:
+                selected.append(net)
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,290 @@
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    population = []
+    details = {}
+
+    def canon(net):
+        return tuple(sorted(tuple(map(int, a)) for a in net))
+
+    def dist(a, b):
+        return len(set(a) ^ set(b))
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net in seen:
+            return seen[net]
+        if not tools.is_valid(net) or tools.lp_calls_left <= 0:
+            return float("inf")
+        score = float(tools.lp(net))
+        seen[net] = score
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    # Build a broad initial set without spending LP calls on near-duplicates.
+    repaired = set()
+    for cand in candidates:
+        try:
+            x = canon(tools.repair(cand))
+            if tools.is_valid(x):
+                repaired.add(x)
+        except Exception:
+            pass
+    if not repaired:
+        try:
+            x = canon(tools.repair([]))
+            if tools.is_valid(x):
+                repaired.add(x)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    for x in ordered:
+        if all(dist(x, y) >= 4 for y in starts):
+            starts.append(x)
+        if len(starts) >= 18:
+            break
+    for x in ordered:
+        if len(starts) >= 30:
+            break
+        if x not in starts:
+            starts.append(x)
+
+    for x in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(x)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+    if best_net is None:
+        return list(starts[0]) if starts else []
+
+    def refresh_population():
+        nonlocal population
+        ranked = sorted(seen, key=seen.get)
+        chosen = ranked[:6]
+        rest = ranked[6:]
+        while rest and len(chosen) < 24:
+            # Quality penalty avoids retaining arbitrary poor outliers.
+            pick = max(rest, key=lambda x:
+                min(dist(x, y) for y in chosen)
+                - 0.12 * (seen[x] - seen[ranked[0]]) / max(1.0, seen[ranked[0]]))
+            chosen.append(pick)
+            rest.remove(pick)
+        population = chosen
+
+    def get_detail(net):
+        if net not in details:
+            try:
+                details[net] = tools.lp_detail(net)
+            except Exception:
+                details[net] = {"prices": {}, "loads": {}}
+        return details[net]
+
+    def switch(net, i, j):
+        arcs = list(net)
+        (a, b), (c, d) = arcs[i], arcs[j]
+        cur = set(net)
+        u, v = (a, d), (c, b)
+        if a == d or c == b or u in cur or v in cur:
+            return None
+        cur.remove((a, b)); cur.remove((c, d))
+        cur.add(u); cur.add(v)
+        return tuple(sorted(cur))
+
+    def child_of(parent, other):
+        # Inherit a random subset of the other topology, then let the
+        # problem's degree-aware repair complete the partial link set.
+        p, q = set(parent), set(other)
+        common = p & q
+        inherited = set(common)
+        for e in q - common:
+            if rng.random() < 0.45:
+                inherited.add(e)
+        # Preserve much of the primary parent as a useful structural backbone.
+        for e in p - inherited:
+            if rng.random() < 0.62:
+                inherited.add(e)
+        try:
+            child = canon(tools.repair(list(inherited)))
+            return child if tools.is_valid(child) else None
+        except Exception:
+            return None
+
+    while tools.lp_calls_left > 0:
+        refresh_population()
+        if not population:
+            break
+
+        # Most parents are elite; a minority are sampled across the diverse pool.
+        if rng.random() < 0.58:
+            parent = population[int(rng.integers(min(7, len(population))))]
+        else:
+            parent = population[int(rng.integers(len(population)))]
+
+        moves = set()
+        arcs = list(parent)
+        detail = get_detail(parent)
+        prices = {tuple(k): float(v) for k, v in detail.get("prices", {}).items()}
+        loads = {tuple(k): float(v) for k, v in detail.get("loads", {}).items()}
+        hot = {e for e in arcs if prices.get(e, 0.0) > 0}
+        if not hot:
+            hot = set(sorted(arcs, key=lambda e: loads.get(e, 0.0), reverse=True)[:6])
+
+        # Enumerate swaps touching a bottleneck; sample unrestricted swaps too.
+        for i in range(len(arcs)):
+            for j in range(i + 1, len(arcs)):
+                if arcs[i] in hot or arcs[j] in hot:
+                    x = switch(parent, i, j)
+                    if x is not None:
+                        moves.add(x)
+        for _ in range(90):
+            i = int(rng.integers(len(arcs)))
+            j = int(rng.integers(len(arcs) - 1))
+            if j >= i:
+                j += 1
+            x = switch(parent, i, j)
+            if x is not None:
+                moves.add(x)
+
+        # Recombine with structurally different population members.
+        partners = population[:]
+        rng.shuffle(partners)
+        for other in partners[:4]:
+            if other != parent:
+                x = child_of(parent, other)
+                if x is not None and x != parent:
+                    moves.add(x)
+
+        # Occasional short compound perturbation crosses local basins.
+        for _ in range(5):
+            cur = parent
+            for _ in range(2 + int(rng.integers(4))):
+                aa = list(cur)
+                i = int(rng.integers(len(aa)))
+                j = int(rng.integers(len(aa) - 1))
+                if j >= i:
+                    j += 1
+                x = switch(cur, i, j)
+                if x is not None:
+                    cur = x
+            if cur != parent:
+                moves.add(cur)
+
+        fresh = [x for x in moves
+                 if x not in seen and not tools.is_cached(x) and tools.is_valid(x)]
+        if not fresh:
+            continue
+
+        # Rank using both the free Hamiltonian and parent-specific LP prices.
+        parent_set = set(parent)
+        ranked = []
+        for x in fresh:
+            removed = parent_set - set(x)
+            added = set(x) - parent_set
+            dual_gain = (sum(prices.get(e, 0.0) for e in removed)
+                         - sum(prices.get(e, 0.0) for e in added))
+            ranked.append((x, energy(x), dual_gain))
+        ranked.sort(key=lambda z: (z[1], -z[2]))
+
+        batch = []
+        # A few candidates from each signal, plus randomized coverage.
+        batch.extend(x for x, _, _ in ranked[:5])
+        dual_sorted = sorted(ranked, key=lambda z: z[2], reverse=True)
+        for x, _, _ in dual_sorted[:3]:
+            if x not in batch:
+                batch.append(x)
+        tail = [x for x, _, _ in ranked if x not in batch]
+        if tail:
+            rng.shuffle(tail)
+            batch.extend(tail[:2])
+        batch = batch[:9]
+
+        for x in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(x)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import signal
+
+    import oracle
+    from hamiltonian import surrogate_terms
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

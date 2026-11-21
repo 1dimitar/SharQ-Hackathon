@@ -1,0 +1,110 @@
+<NAME>
+adaptive_move_effort
+</NAME>
+
+<DESCRIPTION>
+Track whether bottleneck-focused switches, unrestricted switches, and crossover proposals produce new incumbent bests. Adapt their proposal effort based on those measured outcomes, while keeping a minimum exploration share for every move type. This directs LP budget toward move types that are working without permanently abandoning alternatives that may help escape the current basin.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Spend LP calls on a mixture of promising neighborhoods and recombinations.
+    iteration = 0
+    while True:
+=======
+    # Allocate proposal effort according to each move type's observed success.
+    move_types = ("hot", "free", "cross")
+    move_weight = {kind: 1.0 for kind in move_types}
+    move_trials = {kind: 0 for kind in move_types}
+    move_wins = {kind: 0 for kind in move_types}
+
+    # Spend LP calls on a mixture of promising neighborhoods and recombinations.
+    iteration = 0
+    while True:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        proposed = switches(parent, hot)
+        if len(ranked) > 1 and (iteration % 3 == 0):
+            other = ranked[int(rng.integers(len(ranked)))]
+            if other != parent:
+                child = crossover(parent, other)
+                if child is not None and child != parent:
+                    proposed.append(child)
+
+        # Introduce a few unconstrained switches to escape bottleneck-only
+        # neighborhoods; duplicate and already-known networks cost nothing but
+        # are omitted before ranking.
+        if iteration % 2 == 0:
+            proposed.extend(switches(parent, None))
+
+        unique = {net for net in proposed
+                  if net not in population and not tools.is_cached(net)}
+=======
+        # Normalize adaptive weights with a small exploration floor. Proposal
+        # counts respond gradually, so one early success cannot suppress a move.
+        total_weight = sum(move_weight.values())
+        effort = {
+            kind: 0.15 + 0.55 * move_weight[kind] / total_weight
+            for kind in move_types
+        }
+        proposed = []
+        origin = {}
+
+        def remember(net, kind):
+            proposed.append(net)
+            origin.setdefault(net, set()).add(kind)
+
+        hot_moves = switches(parent, hot)
+        free_moves = switches(parent, None)
+        rng.shuffle(hot_moves)
+        rng.shuffle(free_moves)
+        hot_count = min(len(hot_moves), max(1, int(24 * effort["hot"])))
+        free_count = min(len(free_moves), max(1, int(24 * effort["free"])))
+        for net in hot_moves[:hot_count]:
+            remember(net, "hot")
+        for net in free_moves[:free_count]:
+            remember(net, "free")
+
+        cross_count = max(1, int(4 * effort["cross"]))
+        for _ in range(cross_count):
+            if len(ranked) <= 1:
+                break
+            other = ranked[int(rng.integers(len(ranked)))]
+            if other != parent:
+                child = crossover(parent, other)
+                if child is not None and child != parent:
+                    remember(child, "cross")
+
+        unique = {net for net in proposed
+                  if net not in population and not tools.is_cached(net)}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for net in batch:
+            if tools.is_cached(net):
+                continue
+            add(net)
+        iteration += 1
+=======
+        incumbent_before = best_score
+        batch_kinds = {kind for net in batch for kind in origin.get(net, ())}
+        for kind in batch_kinds:
+            move_trials[kind] += 1
+        for net in batch:
+            if tools.is_cached(net):
+                continue
+            add(net)
+
+        # Reward only move types represented in a batch that establishes a new
+        # best. Exponential smoothing makes adaptation stable across iterations.
+        if best_score < incumbent_before:
+            for kind in batch_kinds:
+                move_wins[kind] += 1
+        for kind in move_types:
+            rate = (move_wins[kind] + 1.0) / (move_trials[kind] + 4.0)
+            move_weight[kind] = 0.75 * move_weight[kind] + 0.25 * rate
+
+        iteration += 1
+>>>>>>> REPLACE
+</DIFF>

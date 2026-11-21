@@ -1,0 +1,54 @@
+<NAME>
+underexplored_archive_restarts
+</NAME>
+
+<DESCRIPTION>
+Track how often each archived network is selected as a search parent. During stagnation, preferentially restart from a less-visited non-elite archive member instead of repeatedly exploring the incumbent’s basin. This directs the existing bounded move generation and surrogate/diversity batch screen toward underexplored regions, while retaining the current quality-biased parent choice during normal progress.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def choose_parent(stale):
+        if len(archive) <= 1 or rng.random() < 0.28:
+            return best_net
+        top = archive[:min(8, len(archive))]
+        if stale > 8 and len(archive) > len(top) and rng.random() < 0.45:
+            return archive[int(rng.integers(len(archive)))]
+        weights = np.asarray([1.0 / (1.0 + 0.8 * i) for i in range(len(top))])
+        return top[int(rng.choice(len(top), p=weights / weights.sum()))]
+
+    stale = 0
+=======
+    parent_visits = {}
+
+    def choose_parent(stale):
+        # After a stall, explore less-visited non-elite basins rather than
+        # spending repeated kicks around the same few strong networks.
+        if stale > 6 and len(archive) > 5 and rng.random() < 0.70:
+            alternatives = archive[5:]
+            weights = np.asarray([
+                (1.0 / (1.0 + parent_visits.get(net, 0))) *
+                (1.0 / (1.0 + 0.12 * (archive.index(net) - 5)))
+                for net in alternatives
+            ])
+            return alternatives[int(rng.choice(
+                len(alternatives), p=weights / weights.sum()
+            ))]
+        if len(archive) <= 1 or rng.random() < 0.28:
+            return best_net
+        top = archive[:min(8, len(archive))]
+        weights = np.asarray([1.0 / (1.0 + 0.8 * i) for i in range(len(top))])
+        return top[int(rng.choice(len(top), p=weights / weights.sum()))]
+
+    stale = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent = choose_parent(stale)
+        parent_score = scores.get(parent, best_score)
+=======
+        parent = choose_parent(stale)
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        parent_score = scores.get(parent, best_score)
+>>>>>>> REPLACE
+</DIFF>

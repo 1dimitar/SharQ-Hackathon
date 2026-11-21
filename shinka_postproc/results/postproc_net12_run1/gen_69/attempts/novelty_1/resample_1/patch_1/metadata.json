@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "hotmix_search",
+  "patch_description": "Combines the current program\u2019s bottleneck-guided two-switch search with the inspiration program\u2019s diverse repaired seeds, crossover, and multi-switch mutations. It screens offspring using cached surrogate energy, evaluates small batches to preserve LP budget for continued search, and maintains a score-ranked, diverse population. The neighborhood work is capped per iteration to keep runtime practical.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:04:04.497392",
+  "llm_cost": 0.0026517,
+  "llm_model": "gpt-6-luna"
+}

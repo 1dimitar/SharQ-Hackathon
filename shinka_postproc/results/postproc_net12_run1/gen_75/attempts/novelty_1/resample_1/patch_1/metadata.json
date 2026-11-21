@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "repair_crossover_evolution",
+  "patch_description": "Replaces neighborhood descent and dual-guided swaps with a repair-based evolutionary search. It seeds a diverse population from repaired QAOA samples, then repeatedly combines edge sets from different parents and perturbs partial networks; the free repair tool turns these partial proposals into valid topologies. Surrogate energy screens offspring before LP evaluation, while population diversity and occasional random restarts help preserve distinct search regions. This explores combinations of candidate networks that a local switch search may not reach directly.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:06:56.771564",
+  "llm_cost": 0.0026379000000000003,
+  "llm_model": "gpt-6-luna"
+}

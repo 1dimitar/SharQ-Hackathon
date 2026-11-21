@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_model_eda",
+  "patch_description": "Replaces neighborhood search with an edge-frequency estimation-of-distribution algorithm. It learns which links recur in strong scored networks, samples new valid topologies as pairs of perfect matchings, and uses the free energy surrogate to screen each batch before spending LP calls. Dual prices from the current best topology reduce the sampling probability of bottleneck links. This explores combinations not limited to one- or two-switch moves from existing networks.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:00:02.385454",
+  "llm_cost": 0.0043108999999999995,
+  "llm_model": "gpt-6-luna"
+}

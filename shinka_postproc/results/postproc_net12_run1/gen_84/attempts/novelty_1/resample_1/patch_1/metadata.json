@@ -1,0 +1,14 @@
+{
+  "generation": 84,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual-guided-diverse-search",
+  "patch_description": "The current approach spends heavily on broad kicks and uses energy to rank most proposals, even though energy is only loosely correlated with routing quality. This version reserves a small initial quota for kicked starts, then concentrates LP calls on exhaustive two-switch neighborhoods ranked by both dual-price gain and energy. It keeps a compact, diverse archive, searches the incumbent frequently, and uses occasional rotations and longer kicks to escape local basins. Batches are smaller than the current program\u2019s nine-call batches to allow more frequent adaptation to LP results.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:12:59.559033",
+  "llm_cost": 0.0039826,
+  "llm_model": "gpt-6-luna"
+}

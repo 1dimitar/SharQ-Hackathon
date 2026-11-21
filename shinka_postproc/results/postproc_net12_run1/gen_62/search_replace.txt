@@ -1,0 +1,44 @@
+<NAME>
+random_start_hedge
+</NAME>
+
+<DESCRIPTION>
+Add a small quota of random valid topologies to the initial scored seeds, while keeping the repaired QAOA seeds intact. Each topology is built as the union of two distinct derangement permutations, which guarantees exactly two incoming and outgoing links per node and no self-loops. This provides a modest hedge against pools where repaired QAOA candidates are weak without displacing the stronger QAOA initializations.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        evaluate(net)
+        remember(net)
+=======
+    # Hedge the QAOA-derived starts with two independently generated valid
+    # topologies. A pair of distinct derangements gives every node degree 2
+    # in both directions and excludes self-loops by construction.
+    random_seeds = set()
+    attempts = 0
+    while len(random_seeds) < 2 and attempts < 100:
+        attempts += 1
+        permutations = []
+        for _ in range(2):
+            for _ in range(100):
+                perm = [int(x) for x in rng.permutation(n)]
+                if all(perm[i] != i for i in range(n)):
+                    permutations.append(perm)
+                    break
+        if len(permutations) == 2:
+            arcs = {(i, perm[i]) for perm in permutations for i in range(n)}
+            net = canon(arcs)
+            if len(arcs) == 2 * n and tools.is_valid(net) and net not in repairs:
+                random_seeds.add(net)
+
+    for net in seeds + list(random_seeds):
+        if tools.lp_calls_left <= 0:
+            break
+        evaluate(net)
+        remember(net)
+>>>>>>> REPLACE
+
+</DIFF>

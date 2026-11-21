@@ -1,0 +1,73 @@
+<NAME>
+stagnation_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+When the search stalls, deliberately branch from archive members that have been selected least often, including non-elite members. Their existing two-switch and three-link-rotation neighborhoods provide degree-preserving kicks; the current surrogate and dual screens still determine which moves receive LP calls. This adds structured exploration of underrepresented regions without changing the LP budget or replacing the normal search when it is making progress.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+
+        # Branch from the current annealing state or another archive member.
+        if len(archive) > 1 and rng.random() < 0.30:
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+
+        focus = bottleneck_links(source)
+=======
+    iteration = 0
+    stagnation = 0
+    parent_uses = {}
+    while tools.lp_calls_left > 0:
+        iteration += 1
+
+        # After a stall, kick from a least-used non-elite archive parent.
+        # Otherwise retain the usual mixture of annealing and archive branches.
+        if stagnation >= 8 and len(archive) > 2 and rng.random() < 0.70:
+            tail = archive[2:]
+            least_used = min(parent_uses.get(net, 0) for net, _ in tail)
+            choices = [item for item in tail
+                       if parent_uses.get(item[0], 0) == least_used]
+            source, source_score = choices[int(rng.integers(len(choices)))]
+        elif len(archive) > 1 and rng.random() < 0.30:
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+
+        parent_uses[source] = parent_uses.get(source, 0) + 1
+        focus = bottleneck_links(source)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        evaluated = []
+        exhausted = False
+        for net in selected:
+=======
+        iteration_best = best_score
+        evaluated = []
+        exhausted = False
+        for net in selected:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+            winner, winner_score = evaluated[0]
+=======
+        if best_score < iteration_best:
+            stagnation = 0
+        else:
+            stagnation += 1
+
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+            winner, winner_score = evaluated[0]
+>>>>>>> REPLACE
+</DIFF>

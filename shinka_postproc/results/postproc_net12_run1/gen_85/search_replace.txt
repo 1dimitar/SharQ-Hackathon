@@ -1,0 +1,74 @@
+<NAME>
+stagnation_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+When the search stalls, diversify from archive members that have been selected least often rather than repeatedly branching from the current elite. Build a short degree-preserving kick by applying a few randomly chosen two-switches, then let the existing surrogate and dual-price screening decide which resulting neighbors merit LP calls. A bounded kick and retry limit keep this exploration from consuming excessive runtime, while ordinary iterations retain the existing selection behavior.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+
+        # Branch from the current annealing state or another archive member.
+        if len(archive) > 1 and rng.random() < 0.30:
+=======
+    iteration = 0
+    stagnant = 0
+    archive_visits = {}
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        old_best_score = best_score
+
+        # After a stall, kick a rarely selected archive member to explore a
+        # different basin; retry only a bounded number of times for freshness.
+        if stagnant >= 8 and archive:
+            for _attempt in range(5):
+                ranked = sorted(
+                    archive,
+                    key=lambda item: (
+                        archive_visits.get(item[0], 0),
+                        item[1],
+                        float(rng.random()),
+                    ),
+                )
+                source, source_score = ranked[0]
+                archive_visits[source] = archive_visits.get(source, 0) + 1
+                for _step in range(2 + int(rng.integers(3))):
+                    neighbors = list(propose(source))
+                    if neighbors:
+                        source = neighbors[int(rng.integers(len(neighbors)))]
+                if tools.is_valid(source):
+                    break
+            stagnant = 0
+        # Otherwise branch from the current annealing state or archive.
+        elif len(archive) > 1 and rng.random() < 0.30:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+=======
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if exhausted:
+            break
+
+    return list(best_net) if best_net is not None else []
+=======
+        if best_score < old_best_score:
+            stagnant = 0
+        else:
+            stagnant += 1
+
+        if exhausted:
+            break
+
+    return list(best_net) if best_net is not None else []
+>>>>>>> REPLACE
+</DIFF>

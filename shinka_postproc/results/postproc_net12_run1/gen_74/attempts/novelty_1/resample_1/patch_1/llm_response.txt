@@ -1,0 +1,85 @@
+<NAME>
+archive_yield_selection
+</NAME>
+
+<DESCRIPTION>
+Track how often each archive parent is explored and whether its evaluated batches improve on that parent. Use these results to modestly favor productive parents, while reserving a share of archive selections for uniform exploration so less-tested and diverse members still get opportunities. This directs search effort using observed LP outcomes rather than relying only on archive score rank.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    scores = {}
+    archive = []
+    best_net = None
+=======
+    scores = {}
+    archive = []
+    # Per-parent batch count and EMA of percentage improvement over that parent.
+    parent_yield = {}
+    best_net = None
+=======
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    current, current_score = best_net, best_score
+
+    def bottleneck_links(net):
+=======
+    current, current_score = best_net, best_score
+
+    def choose_archive_parent(uniform=False):
+        if uniform or len(archive) == 1:
+            return archive[int(rng.integers(len(archive)))]
+        weights = []
+        for net, _ in archive:
+            batches, gain_ema = parent_yield.get(net, (0, 0.0))
+            # Favor demonstrated yield, with an uncertainty bonus for underexplored parents.
+            weights.append(1.0 + min(4.0, 0.5 * gain_ema)
+                           + 2.0 / math.sqrt(1.0 + batches))
+        probabilities = np.asarray(weights, dtype=float)
+        probabilities /= probabilities.sum()
+        return archive[int(rng.choice(len(archive), p=probabilities))]
+
+    def bottleneck_links(net):
+=======
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Branch from the current annealing state or another archive member.
+        if len(archive) > 1 and rng.random() < 0.30:
+            source, source_score = archive[int(rng.integers(len(archive)))]
+        elif rng.random() < 0.65:
+            source, source_score = current, current_score
+        else:
+            source, source_score = archive[int(rng.integers(min(5, len(archive))))]
+
+        focus = bottleneck_links(source)
+=======
+        # Keep a current-state branch, but allocate archive effort between
+        # yield-weighted parents and uniform coverage of the diverse archive.
+        if len(archive) > 1 and rng.random() < 0.25:
+            source, source_score = choose_archive_parent(uniform=True)
+        elif rng.random() < 0.55:
+            source, source_score = current, current_score
+        else:
+            source, source_score = choose_archive_parent()
+
+        focus = bottleneck_links(source)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+            winner, winner_score = evaluated[0]
+=======
+        if evaluated:
+            evaluated.sort(key=lambda item: item[1])
+            winner, winner_score = evaluated[0]
+
+            batches, gain_ema = parent_yield.get(source, (0, 0.0))
+            gain_pct = max(0.0, 100.0 * (source_score - winner_score)
+                           / max(1.0, source_score))
+            parent_yield[source] = (batches + 1, 0.75 * gain_ema + 0.25 * gain_pct)
+>>>>>>> REPLACE
+
+</DIFF>

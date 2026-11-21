@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_random_seed_quota",
+  "patch_description": "Reserve up to eight initial LP evaluations for random valid topologies, providing a hedge when repaired QAOA samples miss a strong region. Use the remaining initial evaluations on energy-ranked QAOA repairs, preferring networks that differ from already selected starts, then backfill from the energy ranking. This limits redundant initialization while preserving QAOA-led search.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:05:05.838412",
+  "llm_cost": 0.0024389,
+  "llm_model": "gpt-6-luna"
+}

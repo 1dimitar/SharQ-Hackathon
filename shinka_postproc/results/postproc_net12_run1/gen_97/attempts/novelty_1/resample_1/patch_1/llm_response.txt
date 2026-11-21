@@ -1,0 +1,36 @@
+<NAME>
+magnitude_adaptive_moves
+</NAME>
+
+<DESCRIPTION>
+Estimate each move type’s usefulness from the magnitude of its score improvement, rather than treating every improvement as an identical binary success. Keep a fixed nine-slot energy-ranked batch with at least two slots for each move type; allocate the remaining five slots according to the smoothed estimates. This preserves neighborhood coverage while allowing consistently productive move types to receive more evaluations. The gain signal is clipped and normalized to avoid letting unusually large improvements dominate the adaptation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Guarantee two slots to each neighborhood, then allocate the
+        # remaining five in proportion to their smoothed improvement rates.
+        extra_two = int(round(
+            5.0 * move_rates[2] / (move_rates[2] + move_rates[3])
+        ))
+        quotas = {2: 2 + extra_two, 3: 7 - extra_two}
+=======
+        # Guarantee two slots to each neighborhood, then allocate the
+        # remaining five according to smoothed, magnitude-based gains.
+        share_two = move_rates[2] / (move_rates[2] + move_rates[3])
+        extra_two = int(round(5.0 * share_two))
+        quotas = {2: 2 + extra_two, 3: 7 - extra_two}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                kind = move_kind(net, source)
+                improved = 1.0 if value < source_score else 0.0
+                move_rates[kind] = 0.90 * move_rates[kind] + 0.10 * improved
+=======
+                kind = move_kind(net, source)
+                # Reward a move type in proportion to relative score reduction,
+                # with a small floor so unsuccessful moves do not erase coverage.
+                gain = max(0.0, (source_score - value) / max(1.0, source_score))
+                reward = min(1.0, 0.05 + 20.0 * gain)
+                move_rates[kind] = 0.90 * move_rates[kind] + 0.10 * reward
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,34 @@
+<NAME>
+broaden_initial_seeds
+</NAME>
+
+<DESCRIPTION>
+The current initialization scores at most 22 repaired candidates, despite having a large candidate pool and a 2,000-call budget. Increase the number of structurally diverse repairs considered first, then expand the low-energy fill set. This spends only a small fraction of the LP budget on starts, while giving the search a better chance of finding a strong basin before neighborhood exploration begins.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for net in ordered:
+        if all(len(set(net) ^ set(old)) >= 6 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= 12:
+            break
+    for net in ordered:
+        if len(seeds) >= 22:
+            break
+        if net not in seeds:
+            seeds.append(net)
+=======
+    for net in ordered:
+        if all(len(set(net) ^ set(old)) >= 6 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= 28:
+            break
+    for net in ordered:
+        if len(seeds) >= 48:
+            break
+        if net not in seeds:
+            seeds.append(net)
+>>>>>>> REPLACE
+
+</DIFF>

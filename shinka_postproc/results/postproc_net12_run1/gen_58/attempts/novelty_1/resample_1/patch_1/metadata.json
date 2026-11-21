@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_dual_search",
+  "patch_description": "This version treats each promising network as a search parent and allocates LP evaluations according to both its historical productivity and its structural diversity. Parents that produce incumbent improvements receive more attention, while under-tested and distant parents retain a guaranteed exploration chance.\n\nFor each parent, the search prioritizes degree-preserving two-switches that remove bottleneck links, using dual prices and QUBO energy as inexpensive filters. It also samples three-link rotations and occasional random switches to escape local structure. A small batch is evaluated per visit so that poor parents do not consume the budget in one burst; every valid, uncached evaluation can update a diverse elite archive. Initial repaired candidates are likewise ranked by energy while preserving structural variety.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:59:12.908602",
+  "llm_cost": 0.0032172,
+  "llm_model": "gpt-6-luna"
+}
