@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_relay_support",
+  "patch_description": "Separates demand normalization, relay selection, and term construction into small functions. It preserves the current scoring weights while reserving extra relay support for demands at or above the 90th percentile.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:14.104175",
+  "llm_cost": 0.011814999999999999,
+  "llm_model": "gpt-6.1-terra"
+}

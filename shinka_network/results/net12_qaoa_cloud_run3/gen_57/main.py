@@ -1,0 +1,121 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-demand rewards and neighborhood-diversity couplings."""
+    traffic = np.asarray(demand, dtype=float)
+    n = traffic.shape[0]
+
+    # Ignore negative, diagonal, or non-finite values.
+    traffic = np.maximum(np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0), 0.0)
+    traffic = traffic.copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    d = traffic / scale
+
+    # A concave blend retains some value for moderate direct demands.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(d[i, j])
+                linear[(i, j)] = -(0.68 * value + 0.32 * np.sqrt(value))
+
+    if n < 3 or not np.any(traffic):
+        return linear, {}, 1.5
+
+    # Compare nodes by both the origins they attract and the destinations
+    # they send traffic toward. L2-normalized profiles yield cosine similarity.
+    row_norm = np.sqrt(np.sum(d * d, axis=1))
+    col_norm = np.sqrt(np.sum(d * d, axis=0))
+    row_profile = np.zeros_like(d)
+    col_profile = np.zeros_like(d)
+    for i in range(n):
+        if row_norm[i] > 0.0:
+            row_profile[i] = d[i] / row_norm[i]
+        if col_norm[i] > 0.0:
+            col_profile[:, i] = d[:, i] / col_norm[i]
+
+    row_sim = np.clip(row_profile @ row_profile.T, 0.0, 1.0)
+    col_sim = np.clip(col_profile.T @ col_profile, 0.0, 1.0)
+
+    incident = np.maximum(np.sum(d, axis=0), np.sum(d, axis=1))
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident > 0.0:
+        pressure = incident / max_incident
+    else:
+        pressure = np.zeros(n, dtype=float)
+
+    quadratic = {}
+
+    def add_pair(edge_a, edge_b, value):
+        if edge_a == edge_b or value == 0.0:
+            return
+        key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    # For a common source, its two selected destinations should provide
+    # complementary neighborhoods rather than duplicate traffic profiles.
+    # High-pressure, similar destinations instead incur a mild conflict cost.
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            edge_a = (i, j)
+            for k in range(j + 1, n):
+                if k == i:
+                    continue
+                similarity = 0.5 * (float(row_sim[j, k]) + float(col_sim[j, k]))
+                pressure_pair = np.sqrt(float(pressure[j]) * float(pressure[k]))
+                value = 0.14 * pressure_pair * (similarity - 0.35)
+                add_pair(edge_a, (i, k), value)
+
+    # Apply the analogous diversity criterion to the two sources entering
+    # each destination. This helps avoid redundant local connectivity.
+    for j in range(n):
+        for i in range(n):
+            if i == j:
+                continue
+            edge_a = (i, j)
+            for k in range(i + 1, n):
+                if k == j:
+                    continue
+                similarity = 0.5 * (float(row_sim[i, k]) + float(col_sim[i, k]))
+                pressure_pair = np.sqrt(float(pressure[i]) * float(pressure[k]))
+                value = 0.14 * pressure_pair * (similarity - 0.35)
+                add_pair(edge_a, (k, j), value)
+
+    # A small mutual-traffic bonus makes useful reciprocal connectivity
+    # attractive without overwhelming the direct-demand terms.
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual = np.sqrt(float(d[i, j]) * float(d[j, i]))
+            if mutual > 0.0:
+                add_pair((i, j), (j, i), -0.08 * mutual)
+
+    return linear, quadratic, 1.5
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

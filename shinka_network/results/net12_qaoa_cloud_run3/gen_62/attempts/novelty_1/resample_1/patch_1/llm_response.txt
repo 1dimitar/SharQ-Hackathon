@@ -1,0 +1,15 @@
+<NAME>
+direct_heavy_blend
+</NAME>
+
+<DESCRIPTION>
+Increase the emphasis on high-demand direct links by changing only the direct-link blend from 0.75/0.25 to 0.85/0.15. Direct links avoid consuming extra capacity on relay edges, while the current quadratic relay terms already provide incentives for indirect service. This controlled change tests whether reducing the influence of moderate-demand direct links improves the sampled topologies without changing the relay model.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+=======
+            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+>>>>>>> REPLACE
+</DIFF>

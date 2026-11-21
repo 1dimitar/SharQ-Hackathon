@@ -1,0 +1,17 @@
+<NAME>
+targeted_relay_fourth
+</NAME>
+
+<DESCRIPTION>
+Give only the highest-demand OD pairs one additional relay candidate, increasing their selection from three to four while leaving the budget for other pairs unchanged. This tests the suggested targeted-support strategy without adding broad two-hop interactions. Even if every OD pair qualifies, the number of generated relay terms remains below the \(4n^3\) limit; in practice, the demand quantile should keep the increase smaller.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            keep = 3 if traffic[i, k] >= important_cutoff else 2
+=======
+            # Reserve one extra relay for the heaviest OD pairs; keep the
+            # interaction budget small for the bulk of the demand matrix.
+            keep = 4 if traffic[i, k] >= important_cutoff else 2
+>>>>>>> REPLACE
+</DIFF>

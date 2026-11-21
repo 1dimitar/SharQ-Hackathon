@@ -7,75 +7,79 @@ import numpy as np
 
 
 def surrogate_terms(demand):
-    """Build direct-link and pressure-discounted two-hop cost terms."""
+    """Build sparse direct-link and relay-discounted two-hop cost terms."""
     matrix = np.asarray(demand, dtype=float)
     n = len(matrix)
 
-    # Use nonnegative off-diagonal traffic and handle the zero-demand case.
     traffic = np.maximum(matrix, 0.0).copy()
     np.fill_diagonal(traffic, 0.0)
     scale = float(np.max(traffic)) if traffic.size else 0.0
     if scale <= 0.0:
         scale = 1.0
+    traffic /= scale
 
-    # A concave component makes moderate-demand direct links meaningful,
-    # without abandoning the preference for directly serving heavy OD pairs.
+    # Direct links are valuable for heavy OD pairs, with a concave component
+    # retaining influence for moderate demands.
     linear = {}
     for i in range(n):
         for j in range(n):
-            if i == j:
-                continue
-            value = float(traffic[i, j]) / scale
-            linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+            if i != j:
+                value = float(traffic[i, j])
+                linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
 
-    # Incident demand is a rough measure of how costly it is to use a node
-    # as transit; discount paths through nodes with greater pressure.
+    # Estimate relay pressure from the larger of its total incoming and
+    # outgoing demand. A floor avoids completely excluding any relay.
     incoming = np.sum(traffic, axis=0)
     outgoing = np.sum(traffic, axis=1)
-    # A relay needs capacity in both directions; its more heavily loaded
-    # direction is the more informative bottleneck estimate.
     incident = np.maximum(incoming, outgoing)
     max_incident = float(np.max(incident)) if incident.size else 0.0
     if max_incident <= 0.0:
         max_incident = 1.0
     node_pressure = np.maximum(0.65, incident / max_incident)
 
-    # Reward two-hop paths according to the OD traffic they could carry.
-    # The concave path support preserves some influence for smaller demands.
     quadratic = {}
-    path_strength = 0.46
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+
     for i in range(n):
         for k in range(n):
             if i == k:
                 continue
-            through_demand = float(traffic[i, k])
-            if through_demand <= 0.0:
+
+            od = float(traffic[i, k])
+            if od <= 0.0:
                 continue
+            support = 0.75 * od + 0.25 * np.sqrt(od)
 
-            normalized_demand = through_demand / scale
-            path_support = (
-                0.70 * normalized_demand
-                + 0.30 * np.sqrt(normalized_demand)
-            )
-
+            candidates = []
             for j in range(n):
                 if j == i or j == k:
                     continue
 
-                edge_pressure = (
-                    float(traffic[i, j]) + float(traffic[j, k])
-                ) / scale
-                weight = (
-                    -path_strength * path_support
-                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
-                )
+                # A relay is more plausible when both legs have useful direct
+                # traffic, but pressure at the intermediate node reduces its
+                # attractiveness.
+                first_leg = float(traffic[i, j])
+                second_leg = float(traffic[j, k])
+                affinity = np.sqrt((0.1 + first_leg) * (0.1 + second_leg))
+                rank = affinity / (0.75 + float(node_pressure[j]))
+                candidates.append((rank, j))
 
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for rank, j in candidates[:relay_count]:
+                # The mild rank factor distinguishes plausible relays without
+                # letting a single candidate dominate the OD pair.
+                rank_factor = 0.8 + 0.2 * rank / (1.0 + rank)
+                weight = (
+                    -path_strength * support * rank_factor
+                    / (0.75 + float(node_pressure[j]))
+                )
                 first, second = (i, j), (j, k)
                 key = (first, second) if first < second else (second, first)
-                quadratic[key] = weight
+                quadratic[key] = quadratic.get(key, 0.0) + weight
 
     # Degree penalties are supplied by the evaluator.
-    penalty_weight = 1.0
+    penalty_weight = 1.5
     return linear, quadratic, penalty_weight
 
 

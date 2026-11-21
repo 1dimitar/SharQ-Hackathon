@@ -1,0 +1,147 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build an endpoint-congestion QUBO from estimated directed link loads."""
+    traffic = np.asarray(demand, dtype=float)
+    n = len(traffic)
+
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    max_traffic = float(np.max(traffic)) if traffic.size else 0.0
+    if max_traffic <= 0.0:
+        max_traffic = 1.0
+    t = traffic / max_traffic
+
+    # Estimate transit pressure at each node. A node with large incoming or
+    # outgoing demand is a less attractive relay for additional traffic.
+    incoming = np.sum(t, axis=0)
+    outgoing = np.sum(t, axis=1)
+    incident = np.maximum(incoming, outgoing)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident > 0.0:
+        pressure = incident / max_incident
+    else:
+        pressure = np.zeros(n, dtype=float)
+
+    # Estimate link load as direct traffic plus a fractional share of traffic
+    # that could use the link as one leg of a two-hop route. For each OD pair,
+    # relay shares favor lower-pressure nodes and links with less direct demand.
+    estimated = t.copy()
+    transit_fraction = 0.32
+
+    for source in range(n):
+        for target in range(n):
+            if source == target:
+                continue
+            od = float(t[source, target])
+            if od <= 0.0:
+                continue
+
+            relays = []
+            scores = []
+            for relay in range(n):
+                if relay == source or relay == target:
+                    continue
+
+                leg_load = float(t[source, relay] + t[relay, target])
+                score = 1.0 / (
+                    (0.35 + float(pressure[relay])) * (1.0 + 0.8 * leg_load)
+                )
+                relays.append(relay)
+                scores.append(score)
+
+            total_score = float(sum(scores))
+            if total_score <= 0.0:
+                continue
+
+            transit = transit_fraction * od
+            for relay, score in zip(relays, scores):
+                share = transit * score / total_score
+                estimated[source, relay] += share
+                estimated[relay, target] += share
+
+    # Normalize estimated burden while keeping the direct-demand signal
+    # prominent in the linear objective.
+    peak = float(np.max(estimated)) if estimated.size else 0.0
+    if peak > 0.0:
+        burden = estimated / peak
+    else:
+        burden = np.zeros_like(estimated)
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(t[i, j])
+            transit_value = float(burden[i, j])
+            utility = (
+                0.70 * (0.75 * direct + 0.25 * np.sqrt(direct))
+                + 0.30 * transit_value
+            )
+            linear[(i, j)] = -utility
+
+    # Penalize pairs of selected links that concentrate estimated load at the
+    # same source or destination. These endpoint interactions form O(n^3)
+    # terms and avoid the dense, path-by-path interaction graph.
+    quadratic = {}
+    congestion_strength = 0.24
+
+    def add_pair(edge_a, edge_b):
+        a = float(burden[edge_a[0], edge_a[1]])
+        b = float(burden[edge_b[0], edge_b[1]])
+        value = congestion_strength * a * b
+        if value == 0.0:
+            return
+        key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+        quadratic[key] = value
+
+    for node in range(n):
+        outgoing_edges = [(node, j) for j in range(n) if j != node]
+        incoming_edges = [(i, node) for i in range(n) if i != node]
+
+        for edges in (outgoing_edges, incoming_edges):
+            for a in range(len(edges)):
+                for b in range(a + 1, len(edges)):
+                    add_pair(edges[a], edges[b])
+
+    # Normalize all objective coefficients together; the evaluator adds the
+    # degree penalties separately.
+    max_weight = max(
+        [abs(value) for value in linear.values()]
+        + [abs(value) for value in quadratic.values()]
+        + [1.0e-12]
+    )
+    linear = {key: float(value) / max_weight for key, value in linear.items()}
+    quadratic = {
+        key: float(value) / max_weight
+        for key, value in quadratic.items()
+        if value != 0.0
+    }
+
+    penalty_weight = 2.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

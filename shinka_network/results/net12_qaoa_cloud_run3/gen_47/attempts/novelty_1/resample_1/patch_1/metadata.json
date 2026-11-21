@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elite-relay-sparse",
+  "patch_description": "The earlier sparse configuration performed better than dense two-hop rewards, so this version keeps direct-link rewards for every OD pair but limits relay rewards to the highest-demand 10% of positive OD pairs. It selects at most two relays per selected pair, using a deterministic ranking that favors useful legs and lower-pressure transit nodes. This applies the suggested 90th-percentile focus while keeping the quadratic graph compact. The total indirect reward per OD pair is capped at 0.34, and the degree penalty is raised to 2.0 to encourage feasible samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:12:10.650945",
+  "llm_cost": 0.0021011,
+  "llm_model": "gpt-6-luna"
+}

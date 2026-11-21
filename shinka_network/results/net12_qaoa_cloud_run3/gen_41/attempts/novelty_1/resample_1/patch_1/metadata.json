@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fractional_congestion",
+  "patch_description": "This approach estimates how much traffic each link could attract using a fractional, demand-weighted two-hop routing model. It uses those estimates to reward useful direct links and penalize pairs of links that are likely to carry correlated traffic. Unlike a broad reward for every two-hop path, the sparse positive couplings emphasize congestion and diminishing returns, encouraging a more balanced low-energy network. Couplings are limited to links sharing an endpoint, keeping the interaction graph manageable.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:11:27.237585",
+  "llm_cost": 0.0014284,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,80 @@
+<NAME>
+ranked_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Restrict each OD pair’s two-hop reward to the three most promising relays for n=12 (using the established `min(n-2, max(2, n//4))` budget). Rank relays by the magnitude of the existing reward, so the selected terms preserve the current scoring rule while dropping weaker interactions. This reduces QUBO density from 880 terms to roughly 264 for n=12, which should make the interaction graph more manageable for partitioned QAOA. The budget also remains bounded for smaller n.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.46
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+    quadratic = {}
+    path_strength = 0.46
+    relay_count = min(n - 2, max(2, n // 4))
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                denominator = (
+                    float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure)
+                )
+                candidates.append((denominator, j, edge_pressure))
+
+            candidates.sort(key=lambda item: (item[0], item[1]))
+            for denominator, j, _ in candidates[:relay_count]:
+                weight = -path_strength * path_support / denominator
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+
+</DIFF>

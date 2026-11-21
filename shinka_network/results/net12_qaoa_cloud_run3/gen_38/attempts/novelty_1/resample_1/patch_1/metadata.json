@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse-relay-pressure",
+  "patch_description": "The current program creates a quadratic reward for every two-hop relay, yielding 880 terms on the n=12 examples. This version keeps the direct-link reward but limits each demanded OD pair to the best `max(1, n//5)` relays, ranked by leg affinity and relay pressure. That budget performed better than the full relay set in the reported results and keeps the interaction graph sparser. A degree penalty of 5.0 also replaces the current value of 1.0, encouraging more valid topologies before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:52:46.121420",
+  "llm_cost": 0.0019146,
+  "llm_model": "gpt-6-luna"
+}

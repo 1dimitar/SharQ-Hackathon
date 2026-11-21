@@ -1,0 +1,130 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.maximum(matrix, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    a = traffic / scale
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                v = float(a[i, j])
+                linear[(i, j)] = -(0.68 * v + 0.32 * np.sqrt(v))
+
+    if n < 3 or not np.any(traffic):
+        return linear, {}, 1.5
+
+    incoming = traffic.sum(axis=0)
+    outgoing = traffic.sum(axis=1)
+    pressure = np.maximum(incoming, outgoing)
+    pmax = float(np.max(pressure))
+    if pmax > 0:
+        pressure = pressure / pmax
+    pressure = np.maximum(pressure, 0.05)
+
+    positive = a[a > 0]
+    cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
+    # Conservative relay budget, increased modestly for high-demand OD pairs.
+    ordinary_budget = min(n - 2, max(1, n // 5))
+    quadratic = {}
+
+    for i in range(n):
+        for k in range(n):
+            d = float(a[i, k])
+            if i == k or d <= 0:
+                continue
+
+            support = 0.65 * d + 0.35 * np.sqrt(d)
+            choices = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                leg_load = float(a[i, j] + a[j, k])
+                # Spare links and lightly pressured transit nodes are useful
+                # alternatives to direct service on already busy corridors.
+                spare = 1.0 / (0.35 + leg_load)
+                relay = 1.0 / (0.55 + float(pressure[j]))
+                merit = spare * relay
+                choices.append((merit, j, leg_load))
+
+            choices.sort(key=lambda z: (-z[0], z[1]))
+            budget = ordinary_budget + (1 if d >= cutoff and n >= 8 else 0)
+            budget = min(budget, len(choices))
+
+            for rank, (merit, j, leg_load) in enumerate(choices[:budget]):
+                # Rank taper reduces redundant reward for many substitutes.
+                taper = 1.0 / (1.0 + 0.18 * rank)
+                weight = -0.34 * support * taper * merit
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    # Bound repeated credit when a link participates in many selected routes.
+    for key, value in list(quadratic.items()):
+        quadratic[key] = max(value, -0.95)
+
+    # Sparse congestion interactions: when two high-demand links share an
+    # endpoint, mildly discourage choosing both. These terms complement the
+    # evaluator's degree penalties rather than reproducing them.
+    # Keep only a few busiest links at each node to preserve compactness.
+    for node in range(n):
+        incident = []
+        for other in range(n):
+            if other == node:
+                continue
+            incident.append(((node, other), float(a[node, other])))
+            incident.append(((other, node), float(a[other, node])))
+
+        # Separate outgoing and incoming links; only same-side pairs can
+        # compete for the corresponding node's limited routing capacity.
+        for direction in (0, 1):
+            side = []
+            for other in range(n):
+                edge = (node, other) if direction == 0 else (other, node)
+                side.append((float(a[edge]), edge))
+            side.sort(key=lambda z: (-z[0], z[1]))
+            selected = side[:min(4, n - 1)]
+            for x in range(len(selected)):
+                va, ea = selected[x]
+                if va <= 0:
+                    continue
+                for y in range(x + 1, len(selected)):
+                    vb, eb = selected[y]
+                    if vb <= 0:
+                        continue
+                    key = (ea, eb) if ea < eb else (eb, ea)
+                    # Small positive cost, scaled to traffic on both links.
+                    quadratic[key] = quadratic.get(key, 0.0) + 0.055 * np.sqrt(va * vb)
+
+    return linear, quadratic, 1.5
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,81 +1,39 @@
 <NAME>
-sparse_relay_support
+targeted_high_demand_relays
 </NAME>
 
 <DESCRIPTION>
-Replace the dense two-hop rewards with a few promising relays per OD pair. Rank relays by the existing demand affinity of both legs and discount nodes with high incident traffic. This reduces redundant path rewards and interaction density while preserving the direct-demand signal. Increase the degree penalty modestly to encourage feasibility before repair.
+Add two relay candidates only for OD pairs in the top demand quintile, leaving the existing relay budget unchanged for the rest. High-volume pairs are most likely to dominate the maximum link load, and extra candidate routes give the QUBO a chance to support them without adding relay couplings for every pair. The added terms remain well below the allowed quadratic-term cap; the existing aggregation also avoids duplicate keys.
 </DESCRIPTION>
 
 <DIFF>
 <<<<<<< SEARCH
-    # Reward two-hop paths according to the OD traffic they could carry.
-    # The concave path support preserves some influence for smaller demands.
-    quadratic = {}
-    path_strength = 0.46
-    for i in range(n):
-        for k in range(n):
-            if i == k:
-                continue
-            through_demand = float(traffic[i, k])
-            if through_demand <= 0.0:
-                continue
-
-            normalized_demand = through_demand / scale
-            path_support = (
-                0.70 * normalized_demand
-                + 0.30 * np.sqrt(normalized_demand)
-            )
-
-            for j in range(n):
-                if j == i or j == k:
-                    continue
-
-                edge_pressure = (
-                    float(traffic[i, j]) + float(traffic[j, k])
-                ) / scale
-                weight = (
-                    -path_strength * path_support
-                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
-                )
-
-                first, second = (i, j), (j, k)
-                key = (first, second) if first < second else (second, first)
-                quadratic[key] = weight
-
-    # Degree penalties are supplied by the evaluator.
-    penalty_weight = 1.0
-=======
-    # A path is useful only if both its links are plausible choices. Keep
-    # a small number of candidate relays, favouring balanced leg affinities
-    # and avoiding nodes whose own traffic already consumes capacity.
     quadratic = {}
     relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+
     for i in range(n):
-        for k in range(n):
-            if i == k or traffic[i, k] <= 0.0:
-                continue
+=======
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
 
-            value = float(traffic[i, k]) / scale
-            support = 0.75 * value + 0.25 * np.sqrt(value)
-            candidates = []
-            for j in range(n):
-                if j == i or j == k:
-                    continue
-                a = float(traffic[i, j]) / scale
-                b = float(traffic[j, k]) / scale
-                affinity = np.sqrt((0.1 + a) * (0.1 + b))
-                rank = affinity / (0.75 + float(node_pressure[j]))
-                candidates.append((rank, j))
+    # Spend a small extra relay budget on the highest-demand OD pairs.
+    positive_od = traffic[traffic > 0.0]
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.80)) if positive_od.size else float("inf")
+    )
+    extra_relays = min(2, max(0, n - 2 - relay_count))
 
-            candidates.sort(key=lambda item: (-item[0], item[1]))
-            for _, j in candidates[:relay_count]:
-                weight = -0.25 * support / (0.75 + float(node_pressure[j]))
-                first, second = (i, j), (j, k)
-                key = (first, second) if first < second else (second, first)
-                quadratic[key] = weight
-
-    # Degree penalties are supplied by the evaluator.
-    penalty_weight = 1.5
+    for i in range(n):
 >>>>>>> REPLACE
+<<<<<<< SEARCH
+            for rank, j in candidates[:relay_count]:
+=======
+            pair_relay_count = relay_count
+            if od >= high_demand_cutoff:
+                pair_relay_count = min(n - 2, relay_count + extra_relays)
 
+            for rank, j in candidates[:pair_relay_count]:
+>>>>>>> REPLACE
 </DIFF>

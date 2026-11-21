@@ -1,0 +1,27 @@
+{
+    "combined_score": 0.828688621049533,
+    "public": {
+        "mean_gap_best_pct": 11.65914335525221,
+        "mean_gap_median_pct": 31.47710092088225,
+        "mean_feasible_rate": 0.09,
+        "mean_quadratic_terms": 264.0,
+        "routine": "qaoa_partitioned",
+        "backend": "cloud"
+    },
+    "private": {
+        "circuits": 12024,
+        "quantum_seconds": 555.7408849170024,
+        "build_seconds": 0.0018810420006047934,
+        "network12_s0": {
+            "best": 313250.0,
+            "median": 376750.0,
+            "ref": 276474.0
+        },
+        "network12_s1": {
+            "best": 304167.0,
+            "median": 350250.0,
+            "ref": 276474.0
+        }
+    },
+    "text_feedback": "network12_s0: best 313250 vs reference 276474 (gap +13.3%), median gap +36.3%, 9% of 100 qaoa_partitioned solutions valid before repair, 75 distinct topologies, 264 quadratic terms, 6012 circuits\nnetwork12_s1: best 304167 vs reference 276474 (gap +10.0%), median gap +26.7%, 9% of 100 qaoa_partitioned solutions valid before repair, 82 distinct topologies, 264 quadratic terms, 6012 circuits\nLargest gap: network12_s0 (+13.3%)."
+}

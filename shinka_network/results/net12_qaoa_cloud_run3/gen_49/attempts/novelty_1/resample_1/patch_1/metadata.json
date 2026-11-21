@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "spare_capacity_relays",
+  "patch_description": "This design keeps direct-link rewards but selects sparse two-hop paths using a different criterion: it favors relays whose incident pressure is low and whose two links have relatively little direct demand, treating them as spare-capacity routes. It also adds a small, sparse positive coupling between selected links that share a tail or head when both are already associated with heavy demand. That discourages concentrating traffic on a few links without making the interaction graph dense. The relay budget scales conservatively with network size, and accumulated path rewards are capped to limit domination by OD pairs with many overlapping routes.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:31.813106",
+  "llm_cost": 0.0015716,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,16 @@
+<NAME>
+stronger_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Make the relay-pressure discount more sensitive by replacing the current affine denominator with a power-law denominator using α = 1.25. This preserves the existing candidate features and path ranking structure while more strongly discouraging routes through high-pressure relays, which may reduce overload and improve typical topology quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                relay_discount = 0.60 + 0.80 * float(node_pressure[j])
+=======
+                relay_discount = (0.75 + float(node_pressure[j])) ** 1.25
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "pressure_discount_075",
+  "patch_description": "Apply a mild exponent of 0.75 to the pressure discount in both relay ranking and path reward. This tunes pressure avoidance consistently: highly pressured relays are still discounted, but less sharply than with the current linear denominator. That may preserve useful two-hop alternatives and improve solution diversity without changing the sparse interaction structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:51:48.213351",
+  "llm_cost": 0.0005636,
+  "llm_model": "gpt-6-luna"
+}

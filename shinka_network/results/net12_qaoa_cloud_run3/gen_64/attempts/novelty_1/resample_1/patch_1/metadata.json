@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_ranking",
+  "patch_description": "Replace the geometric-mean relay affinity with `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)`. This follows the suggested bottleneck-sensitive ranking while retaining the existing pressure discounts, rank ordering, and relay budgets. The additive score gives more credit to relays with one strong leg without letting that leg count as much as two strong legs, potentially improving relay selection when useful two-hop alternatives are scarce.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:33.651171",
+  "llm_cost": 0.0011259,
+  "llm_model": "gpt-6-luna"
+}

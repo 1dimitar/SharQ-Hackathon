@@ -1,0 +1,110 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and sparse, pressure-discounted path rewards."""
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.maximum(matrix, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    normalized = traffic / scale
+
+    # Favor direct service of large OD pairs, while retaining signal for
+    # moderate-demand pairs.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(normalized[i, j])
+                linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+
+    incoming = np.sum(traffic, axis=0)
+    outgoing = np.sum(traffic, axis=1)
+    incident = np.maximum(incoming, outgoing)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    node_pressure = np.maximum(0.65, incident / max_incident)
+
+    # Restrict each OD pair to a small number of plausible relays. This
+    # preserves useful path interactions without making the QUBO dense.
+    relay_count = min(max(2, n // 4), max(0, n - 2))
+    quadratic = {}
+
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+
+            demand_ik = float(normalized[i, k])
+            if demand_ik <= 0.0 or relay_count == 0:
+                continue
+
+            support = 0.70 * demand_ik + 0.30 * np.sqrt(demand_ik)
+            candidates = []
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first_demand = float(normalized[i, j])
+                second_demand = float(normalized[j, k])
+
+                # Leg affinity favors links that are independently useful.
+                affinity = np.sqrt(
+                    (0.1 + first_demand) * (0.1 + second_demand)
+                )
+                pressure = float(node_pressure[j])
+                leg_pressure = first_demand + second_demand
+
+                # Damp selection of already pressured relays and path legs.
+                rank = affinity / (
+                    (0.75 + pressure) * (1.0 + 0.25 * leg_pressure)
+                )
+                candidates.append((rank, j, leg_pressure))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+
+            for _, j, leg_pressure in candidates[:relay_count]:
+                # Selected paths get a bounded reward: the OD demand sets
+                # the benefit, and relay/leg pressure discounts congestion.
+                weight = (
+                    -0.34 * support
+                    / (
+                        float(node_pressure[j])
+                        * (1.0 + 0.5 * leg_pressure)
+                    )
+                )
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

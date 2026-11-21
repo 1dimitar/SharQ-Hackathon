@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_budget",
+  "patch_description": "Rank each OD pair\u2019s candidate relays by the strength of its weaker leg, with a smaller contribution from the stronger leg. This favors paths where both links can plausibly serve traffic rather than paths with one attractive and one weak link. Retain the existing relay-pressure and edge-overlap discounts, but keep only the best four relay combinations per OD pair. This reduces interaction-graph size and focuses QUBO communities on the most promising two-hop routes, while preserving the existing path-strength and demand-support scales.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:11:53.889596",
+  "llm_cost": 0.0010808,
+  "llm_model": "gpt-6-luna"
+}

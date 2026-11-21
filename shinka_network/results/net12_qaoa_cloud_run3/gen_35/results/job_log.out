@@ -1,0 +1,9 @@
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ReadTimeout: HTTPSConnectionPool(host='app.qoroquantum.net', port=443): Read │
+│ timed out. (read timeout=100)                                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+correct: False | error: quantum sampling failed (cloud): RuntimeError: Ensemble execution failed: 0/12 programs completed before failure. | 411s
+combined_score: 0.0

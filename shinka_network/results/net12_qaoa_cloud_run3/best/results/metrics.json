@@ -1,27 +1,27 @@
 {
-    "combined_score": 0.8464052002162348,
+    "combined_score": 0.8505683659207536,
     "public": {
-        "mean_gap_best_pct": 11.36490230546091,
-        "mean_gap_median_pct": 25.857223464050872,
-        "mean_feasible_rate": 0.08,
-        "mean_quadratic_terms": 264.0,
+        "mean_gap_best_pct": 10.864855284764563,
+        "mean_gap_median_pct": 25.171173419562056,
+        "mean_feasible_rate": 0.17,
+        "mean_quadratic_terms": 304.0,
         "routine": "qaoa_partitioned",
         "backend": "cloud"
     },
     "private": {
         "circuits": 12024,
-        "quantum_seconds": 491.87300420900283,
-        "build_seconds": 0.0017939579993253574,
+        "quantum_seconds": 327.9182267500073,
+        "build_seconds": 0.002265374998387415,
         "network12_s0": {
-            "best": 304000.0,
-            "median": 342925.0,
+            "best": 302625.0,
+            "median": 349667.0,
             "ref": 276474.0
         },
         "network12_s1": {
-            "best": 311790.0,
-            "median": 353000.0,
+            "best": 310400.0,
+            "median": 342464.5,
             "ref": 276474.0
         }
     },
-    "text_feedback": "network12_s0: best 304000 vs reference 276474 (gap +10.0%), median gap +24.0%, 10% of 100 qaoa_partitioned solutions valid before repair, 93 distinct topologies, 264 quadratic terms, 6012 circuits\nnetwork12_s1: best 311790 vs reference 276474 (gap +12.8%), median gap +27.7%, 6% of 100 qaoa_partitioned solutions valid before repair, 62 distinct topologies, 264 quadratic terms, 6012 circuits\nLargest gap: network12_s1 (+12.8%)."
+    "text_feedback": "network12_s0: best 302625 vs reference 276474 (gap +9.5%), median gap +26.5%, 20% of 100 qaoa_partitioned solutions valid before repair, 80 distinct topologies, 304 quadratic terms, 6012 circuits\nnetwork12_s1: best 310400 vs reference 276474 (gap +12.3%), median gap +23.9%, 14% of 100 qaoa_partitioned solutions valid before repair, 86 distinct topologies, 304 quadratic terms, 6012 circuits\nLargest gap: network12_s1 (+12.3%)."
 }

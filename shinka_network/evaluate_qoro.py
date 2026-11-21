@@ -155,14 +155,20 @@ def evaluate(args) -> tuple[dict, bool, str | None]:
             bqm.normalize()
             assert list(bqm.variables) == list(range(len(arcs))), "variable order must match arcs"
             start = time.perf_counter()
-            for attempt in range(2):  # one retry for transient cloud failures
+            waits = [30, 60, 120, 240, 480]  # ~15 min in total: rides out network outages or sleep
+            for attempt in range(len(waits) + 1):
                 try:
                     samples, circuits = sampler(bqm, backend, inst.seed, args)
                     break
                 except Exception as exc:  # noqa: BLE001
-                    if attempt == 1:
-                        return {}, False, f"quantum sampling failed ({args.backend}): {type(exc).__name__}: {exc}"
-                    time.sleep(10)
+                    if attempt == len(waits):
+                        return {}, False, (
+                            f"quantum sampling failed ({args.backend}) after {attempt + 1} attempts - a network or "
+                            f"cloud failure, not caused by the program: {type(exc).__name__}: {exc}"
+                        )
+                    print(f"sampling attempt {attempt + 1} failed ({type(exc).__name__}: {str(exc)[:150]}); "
+                          f"retrying in {waits[attempt]}s", flush=True)
+                    time.sleep(waits[attempt])
             row = problem.score_samples(inst, samples, arcs, surrogate.num_interactions)
             row.update(circuits=int(circuits), quantum_seconds=time.perf_counter() - start)
         rows.append(row)

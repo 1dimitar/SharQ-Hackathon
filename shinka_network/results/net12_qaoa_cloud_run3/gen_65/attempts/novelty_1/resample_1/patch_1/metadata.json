@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_high_demand_relays",
+  "patch_description": "Raise the high-demand cutoff from the 80th to the 90th percentile while keeping the relay cap and all other settings unchanged. This concentrates the two extra relay options on the most exceptional OD pairs, which may improve best-topology quality without increasing the 304-term interaction graph or changing its community structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:41.179419",
+  "llm_cost": 0.0004940000000000001,
+  "llm_model": "gpt-6-luna"
+}
