@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "rank_gated_route_cover",
+  "patch_description": "This replaces the blanket two-hop reward with a rank-gated route-cover surrogate. Direct links remain attractive, while indirect routes receive more incentive when an OD pair\u2019s direct link is unlikely to win its source and destination link slots. For each OD pair, only the two most promising relays are coupled, with relay quality discounted for endpoint competition and traffic pressure. This keeps the interaction graph sparse and concentrates its couplings on plausible routes rather than rewarding every possible two-hop path equally.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:24:22.186919",
+  "llm_cost": 0.0028096999999999996,
+  "llm_model": "gpt-6-luna"
+}

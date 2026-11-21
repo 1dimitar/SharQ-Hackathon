@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "priced_swap_order",
+  "patch_description": "Use the LP\u2019s dual prices and link loads to prioritize exchanges that remove heavily loaded, positively priced links. Discount moves whose replacement links connect high-demand node pairs, since those additions are more likely to become bottlenecks. This spends the limited LP budget first on exchanges with a stronger directional signal, while retaining the existing descent and its validity checks.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:36:02.891921",
+  "llm_cost": 0.0007127,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_archive_kicks",
+  "patch_description": "The current search repeatedly explores one-switch neighborhoods, even after they stop producing progress. Add adaptive multi-switch kicks when the best score has stagnated, while choosing kick origins from the diverse archive as well as the incumbent. Kicks preserve the in/out degree constraints by applying valid two-switches. Their size grows with stagnation and resets after an improvement, balancing focused local search with broader exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:37:19.257700",
+  "llm_cost": 0.0010736,
+  "llm_model": "gpt-6-luna"
+}

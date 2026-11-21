@@ -1,0 +1,37 @@
+<NAME>
+diverse_restarts
+</NAME>
+
+<DESCRIPTION>
+The current iterated search always kicks the incumbent best network, which can repeatedly revisit the same basin. Keep the incumbent as the main start, but regularly restart from a repaired network among the best 20 initial candidates. These starts preserve diversity from the QAOA pool while still favoring promising candidates. Apply a slightly larger random kick to restart starts, then use the existing descent to exploit the resulting basin. This uses the existing LP budget and search operators, without spending calls on a separate scoring phase.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    while True:
+        net = best_net
+        for _ in range(2 + int(rng.integers(3))):
+            net = next(swaps(net), net)
+        net, score = descend(net, tools.lp(net))
+        if score < best:
+            best_net, best = net, score
+=======
+    # Alternate incumbent exploitation with restarts from diverse, promising
+    # repaired QAOA samples to escape the incumbent's local basin.
+    restart_pool = ranked[:min(20, len(ranked))]
+    while True:
+        restart = bool(restart_pool) and rng.random() < 0.35
+        if restart:
+            net = restart_pool[int(rng.integers(len(restart_pool)))]
+            kicks = 3 + int(rng.integers(4))
+        else:
+            net = best_net
+            kicks = 2 + int(rng.integers(3))
+        for _ in range(kicks):
+            net = next(swaps(net), net)
+        net, score = descend(net, tools.lp(net))
+        if score < best:
+            best_net, best = net, score
+>>>>>>> REPLACE
+
+</DIFF>

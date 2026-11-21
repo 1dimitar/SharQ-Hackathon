@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_guided_swaps",
+  "patch_description": "Prioritize 2-exchanges that touch links with positive dual prices in the current network. These links are active congestion bottlenecks, so changing them is more promising than spending LP calls on exchanges among links that do not currently constrain the score. The dual information is free to query, and randomized ordering among equally promising exchanges retains exploration. The existing validity checks and LP-based acceptance remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:33:53.271261",
+  "llm_cost": 0.0007235,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,315 @@
+--- a/original.py
++++ b/original.py
+@@ -1,131 +1,255 @@
+ """Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import json
+ import time
+ 
+ import numpy as np
+ 
+ # EVOLVE-BLOCK-START
+ import math
+ 
+ 
+ def improve(demand, candidates, tools, rng):
+-    """Turn raw QAOA candidates into the best valid network you can find.
+-
+-    Args:
+-        demand: (n, n) int array, demand[i, j] = traffic from node i to node j.
+-        candidates: list of raw QAOA solutions, best QUBO energy first. Each is a list of links
+-            (i, j); most break the degree rules (2 out, 2 in per node) and need correcting.
+-        tools: the only way to reach the routing LP (see the task description):
+-            tools.lp(arcs) / tools.lp_detail(arcs)  - budgeted, 1 call per new valid network
+-            tools.repair(arcs), tools.is_valid(arcs), tools.energy(arcs), tools.is_cached(arcs)
+-            tools.lp_calls_left, tools.n
+-        rng: numpy Generator; use it for all randomness.
+-
+-    Returns:
+-        The best valid network found, as a list of links. The LP budget raising
+-        BudgetExhausted is fine: the evaluator then uses the best network the LP has scored.
+-
+-    Baseline: repair every candidate, 2-exchange descent from the best few, then iterated
+-    local search with random kicks until the LP budget is spent.
+-    """
+-    pool = {}
++    """Repair and improve candidate networks using bottleneck-guided local search."""
++    n = tools.n
++    all_arcs = [(i, j) for i in range(n) for j in range(n) if i != j]
++    evaluated = {}
++    details = {}
++
++    def key(arcs):
++        return tuple(sorted(arcs))
++
++    def score(net):
++        net = key(net)
++        if net not in evaluated:
++            try:
++                evaluated[net] = tools.lp(net)
++            except Exception as exc:
++                if type(exc).__name__ == "BudgetExhausted":
++                    raise
++                evaluated[net] = float("inf")
++        return evaluated[net]
++
++    def get_detail(net):
++        net = key(net)
++        if net not in details:
++            try:
++                details[net] = tools.lp_detail(net)
++            except Exception as exc:
++                if type(exc).__name__ == "BudgetExhausted":
++                    raise
++                details[net] = {"prices": {}, "loads": {}}
++        return details[net]
++
++    # Repair freely, then use surrogate energy and link overlap to choose diverse starts.
++    repaired = set()
+     for cand in candidates:
+-        net = tuple(sorted(tools.repair(cand)))
+-        if net not in pool:
+-            pool[net] = tools.lp(net)
+-    ranked = sorted(pool, key=pool.get)
+-    best_net, best = ranked[0], pool[ranked[0]]
+-
+-    def swaps(net):
++        try:
++            net = key(tools.repair(cand))
++            if tools.is_valid(net):
++                repaired.add(net)
++        except Exception:
++            continue
++
++    if not repaired:
++        net = key(tools.repair([]))
++        repaired.add(net)
++
++    ordered = sorted(repaired, key=lambda x: tools.energy(x))
++    starts = []
++    for net in ordered:
++        if all(len(set(net) & set(old)) < len(net) - 2 for old in starts):
++            starts.append(net)
++        if len(starts) >= 24:
++            break
++    for net in ordered:
++        if len(starts) >= 32:
++            break
++        if net not in starts:
++            starts.append(net)
++
++    # Seed a useful evaluated population, prioritizing predicted quality and diversity.
++    for net in starts:
++        if tools.lp_calls_left <= 0:
++            break
++        try:
++            score(net)
++        except Exception as exc:
++            if type(exc).__name__ == "BudgetExhausted":
++                break
++
++    if not evaluated:
++        return starts[0]
++
++    best_net = min(evaluated, key=evaluated.get)
++    best_score = evaluated[best_net]
++    elite = sorted(evaluated, key=evaluated.get)[:8]
++
++    def neighbors(net, bottlenecks=None):
+         arcs = list(net)
+-        pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+-        rng.shuffle(pairs)
+-        cur = set(net)
+-        for p, q in pairs:
+-            (a, b), (c, d) = arcs[p], arcs[q]
+-            if a == d or c == b or (a, d) in cur or (c, b) in cur:
++        current = set(net)
++        candidates_out = set()
++        bottlenecks = set(bottlenecks or ())
++        # Degree-preserving two-arc exchange; target changes involving priced links first.
++        for p in range(len(arcs)):
++            a, b = arcs[p]
++            for q in range(p + 1, len(arcs)):
++                c, d = arcs[q]
++                if bottlenecks and (arcs[p] not in bottlenecks and arcs[q] not in bottlenecks):
++                    continue
++                if a != d and c != b and (a, d) not in current and (c, b) not in current:
++                    candidates_out.add(key((current - {(a, b), (c, d)}) | {(a, d), (c, b)}))
++                # Alternative exchange of destinations, still preserving in/out degrees.
++                if a != c and b != d and (a, d) not in current and (c, b) not in current:
++                    candidates_out.add(key((current - {(a, b), (c, d)}) | {(a, d), (c, b)}))
++        # If prices are unavailable or the focused neighborhood is exhausted, broaden it.
++        if not candidates_out and bottlenecks:
++            return neighbors(net, None)
++        # Three-link destination rotation adds useful moves beyond pair exchanges.
++        if len(arcs) >= 3:
++            for _ in range(min(90, len(arcs) * 4)):
++                ix = rng.choice(len(arcs), size=3, replace=False)
++                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ix)
++                if bottlenecks and not any(x in bottlenecks for x in ((a, b), (c, d), (e, f))):
++                    continue
++                new = {(a, d), (c, f), (e, b)}
++                old = {(a, b), (c, d), (e, f)}
++                if all(x != y for x, y in new) and not (new & (current - old)) and len(new) == 3:
++                    candidates_out.add(key((current - old) | new))
++        return [x for x in candidates_out if tools.is_valid(x)]
++
++    iteration = 0
++    while tools.lp_calls_left > 0:
++        iteration += 1
++        # Rotate through elite incumbents; occasionally restart from a diverse repaired start.
++        if iteration % 7 == 0 and starts:
++            base = starts[int(rng.integers(len(starts)))]
++        else:
++            base = elite[int(rng.integers(min(len(elite), 5)))]
++        detail = get_detail(base)
++        prices = detail.get("prices", {})
++        hot = {tuple(a) for a, p in prices.items() if p > 0}
++        if not hot:
++            # Loads can identify near-bottleneck links when dual prices are degenerate.
++            loads = detail.get("loads", {})
++            vals = list(loads.values())
++            threshold = sorted(vals)[max(0, int(0.7 * (len(vals) - 1)))] if vals else float("inf")
++            hot = {tuple(a) for a, v in loads.items() if v >= threshold}
++
++        moves = neighbors(base, hot)
++        if not moves:
++            moves = neighbors(base, None)
++        fresh = [m for m in moves if m not in evaluated and not tools.is_cached(m)]
++        # Rank cheaply with the fixed QUBO surrogate; mix in randomized choices to retain exploration.
++        fresh.sort(key=lambda x: tools.energy(x))
++        batch = fresh[:10]
++        if len(fresh) > 10:
++            tail = fresh[10:]
++            take = min(3, len(tail))
++            if take:
++                batch.extend(tail[i] for i in rng.choice(len(tail), size=take, replace=False))
++        if not batch:
++            # Cached networks can still be considered, but avoid spending time revisiting them.
++            if fresh:
++                batch = fresh[:1]
++            else:
++                if tools.lp_calls_left <= 0:
++                    break
+                 continue
+-            yield tuple(sorted((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+-
+-    def descend(net, score):
+-        improved = True
+-        while improved:
+-            improved = False
+-            for cand in swaps(net):
+-                s = tools.lp(cand)
+-                if s < score:
+-                    net, score, improved = cand, s, True
++
++        for cand in batch:
++            try:
++                s = score(cand)
++            except Exception as exc:
++                if type(exc).__name__ == "BudgetExhausted":
+                     break
+-        return net, score
+-
+-    for start in ranked[:5]:
+-        net, score = descend(start, pool[start])
+-        if score < best:
+-            best_net, best = net, score
+-
+-    while True:
+-        net = best_net
+-        for _ in range(2 + int(rng.integers(3))):
+-            net = next(swaps(net), net)
+-        net, score = descend(net, tools.lp(net))
+-        if score < best:
+-            best_net, best = net, score
++                continue
++            if s < best_score:
++                best_net, best_score = cand, s
++            if cand not in elite:
++                elite.append(cand)
++        elite = sorted(set(elite), key=lambda x: evaluated.get(x, float("inf")))[:8]
++
++        # Add an occasional multi-exchange kick from the incumbent for basin escape.
++        if iteration % 4 == 0 and tools.lp_calls_left > 0:
++            kick = list(best_net)
++            cur = set(kick)
++            for _ in range(2 + int(rng.integers(3))):
++                p, q = rng.choice(len(kick), size=2, replace=False)
++                a, b = kick[int(p)]
++                c, d = kick[int(q)]
++                if a != d and c != b and (a, d) not in cur and (c, b) not in cur:
++                    cur.remove((a, b))
++                    cur.remove((c, d))
++                    cur.update(((a, d), (c, b)))
++                    kick = list(cur)
++            kn = key(cur)
++            if tools.is_valid(kn) and kn not in evaluated and not tools.is_cached(kn):
++                try:
++                    s = score(kn)
++                    if s < best_score:
++                        best_net, best_score = kn, s
++                    elite.append(kn)
++                    elite = sorted(set(elite), key=lambda x: evaluated.get(x, float("inf")))[:8]
++                except Exception as exc:
++                    if type(exc).__name__ == "BudgetExhausted":
++                        break
++    return best_net
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+     """Fixed entry point called by the evaluator: one run on one candidate pool."""
+     import signal
+ 
+     import oracle
+     from hamiltonian import surrogate_terms
+ 
+     pool = json.load(open(pool_path))
+     import qoblib_tools as qt
+ 
+     n = int(pool["instance"][-2:])
+     demand = qt.load_network_demand(n)
+     linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+     tools = oracle.Tools(demand, lp_budget, (
+         {tuple(map(int, a)): float(w) for a, w in linear.items()},
+         {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+     ))
+     candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+     if control:  # same number of random valid networks instead of QAOA output
+         crng = np.random.default_rng(10_000 + seed)
+         candidates = [qt.random_topology(n, crng) for _ in candidates]
+     def _timeout(signum, frame):
+         raise oracle.RunTimeout()
+ 
+     start = time.perf_counter()
+     returned, error, timed_out = None, None, False
+     signal.signal(signal.SIGALRM, _timeout)
+     signal.alarm(int(time_limit))
+     try:
+         returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+     except oracle.BudgetExhausted:
+         pass
+     except oracle.RunTimeout:
+         timed_out = True
+     except Exception as exc:  # noqa: BLE001
+         error = f"{type(exc).__name__}: {exc}"
+     finally:
+         signal.alarm(0)
+     best_score, best_arcs = tools.certified_best()
+     if returned is not None:
+         try:
+             ret = [tuple(map(int, a)) for a in returned]
+             if qt.is_valid_topology(n, ret):
+                 s = qt.route_min_congestion(demand, ret).objective
+                 if s < best_score:
+                     best_score, best_arcs = s, tuple(sorted(ret))
+         except Exception:  # noqa: BLE001
+             pass
+     return {
+         "pool": pool_path, "control": control, "n": n, "error": error,
+         "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+         "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+     }

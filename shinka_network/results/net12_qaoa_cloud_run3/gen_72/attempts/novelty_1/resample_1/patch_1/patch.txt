@@ -1,0 +1,177 @@
+--- a/original.py
++++ b/original.py
+@@ -1,96 +1,119 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build direct-link and pressure-discounted two-hop cost terms."""
+-    matrix = np.asarray(demand, dtype=float)
+-    n = len(matrix)
++    """Build direct-link rewards and gateway-profile diversity penalties."""
++    traffic = np.asarray(demand, dtype=float)
++    n = len(traffic)
++    traffic = np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0)
++    traffic = np.maximum(traffic, 0.0).copy()
++    np.fill_diagonal(traffic, 0.0)
+ 
+-    # Use nonnegative off-diagonal traffic and handle the zero-demand case.
+-    traffic = np.maximum(matrix, 0.0).copy()
+-    np.fill_diagonal(traffic, 0.0)
+     scale = float(np.max(traffic)) if traffic.size else 0.0
+     if scale <= 0.0:
+         scale = 1.0
++    q = traffic / scale
+ 
+-    # A concave component makes moderate-demand direct links meaningful,
+-    # without abandoning the preference for directly serving heavy OD pairs.
++    # Concave direct-service reward retains influence for moderate demands.
+     linear = {}
+     for i in range(n):
+         for j in range(n):
+-            if i == j:
++            if i != j:
++                value = float(q[i, j])
++                linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
++
++    # A row profile describes which destinations a node's traffic tends to
++    # reach; a column profile describes which origins tend to send to it.
++    # Normalization makes profile similarity independent of total volume.
++    row_sums = np.sum(q, axis=1)
++    col_sums = np.sum(q, axis=0)
++    row_profiles = np.zeros_like(q)
++    col_profiles = np.zeros_like(q)
++    for i in range(n):
++        if row_sums[i] > 0.0:
++            row_profiles[i] = q[i] / row_sums[i]
++        if col_sums[i] > 0.0:
++            col_profiles[:, i] = q[:, i] / col_sums[i]
++
++    max_row = float(np.max(row_sums)) if n else 0.0
++    max_col = float(np.max(col_sums)) if n else 0.0
++    if max_row <= 0.0:
++        max_row = 1.0
++    if max_col <= 0.0:
++        max_col = 1.0
++
++    quadratic = {}
++    strength = 0.14
++
++    # Competing first-hop gateways from one source should offer different
++    # destination profiles. Their overlap is a redundancy cost.
++    for source in range(n):
++        importance = 0.55 + 0.45 * float(row_sums[source] / max_row)
++        for a in range(n):
++            if a == source:
+                 continue
+-            value = float(traffic[i, j]) / scale
+-            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+-
+-    # Incident demand is a rough measure of how costly it is to use a node
+-    # as transit; discount paths through nodes with greater pressure.
+-    incoming = np.sum(traffic, axis=0)
+-    outgoing = np.sum(traffic, axis=1)
+-    # A relay needs capacity in both directions; its more heavily loaded
+-    # direction is the more informative bottleneck estimate.
+-    incident = np.maximum(incoming, outgoing)
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-    node_pressure = np.maximum(0.65, incident / max_incident)
+-
+-    # Reward two-hop paths according to the OD traffic they could carry.
+-    # The concave path support preserves some influence for smaller demands.
+-    quadratic = {}
+-    path_strength = 0.46
+-    for i in range(n):
+-        for k in range(n):
+-            if i == k:
+-                continue
+-            through_demand = float(traffic[i, k])
+-            if through_demand <= 0.0:
+-                continue
+-
+-            normalized_demand = through_demand / scale
+-            path_support = (
+-                0.70 * normalized_demand
+-                + 0.30 * np.sqrt(normalized_demand)
+-            )
+-
+-            for j in range(n):
+-                if j == i or j == k:
++            for b in range(a + 1, n):
++                if b == source:
+                     continue
+ 
+-                edge_pressure = (
+-                    float(traffic[i, j]) + float(traffic[j, k])
+-                ) / scale
+-                weight = (
+-                    -path_strength * path_support
+-                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+-                )
++                # Exclude the source itself from both profiles.
++                overlap = 0.0
++                for dest in range(n):
++                    if dest != source:
++                        overlap += min(
++                            float(row_profiles[a, dest]),
++                            float(row_profiles[b, dest]),
++                        )
++                if overlap > 0.025:
++                    first, second = (source, a), (source, b)
++                    key = (first, second) if first < second else (second, first)
++                    quadratic[key] = strength * importance * overlap
+ 
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = weight
++    # Competing last-hop gateways into one destination should likewise serve
++    # different traffic-origin profiles.
++    for dest in range(n):
++        importance = 0.55 + 0.45 * float(col_sums[dest] / max_col)
++        for a in range(n):
++            if a == dest:
++                continue
++            for b in range(a + 1, n):
++                if b == dest:
++                    continue
++
++                overlap = 0.0
++                for origin in range(n):
++                    if origin != dest:
++                        overlap += min(
++                            float(col_profiles[origin, a]),
++                            float(col_profiles[origin, b]),
++                        )
++                if overlap > 0.025:
++                    first, second = (a, dest), (b, dest)
++                    key = (first, second) if first < second else (second, first)
++                    quadratic[key] = strength * importance * overlap
+ 
+     # Degree penalties are supplied by the evaluator.
+-    penalty_weight = 1.0
++    penalty_weight = 1.25
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

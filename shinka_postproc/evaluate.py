@@ -16,6 +16,7 @@ import re
 from pathlib import Path
 
 from shinka.core import run_shinka_eval
+from shinka.core.wrap_eval import save_json_results
 
 HERE = Path(__file__).resolve().parent
 BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908}
@@ -27,6 +28,7 @@ FORBIDDEN = [
     r"getattr", r"setattr", r"globals\(", r"locals\(", r"\binspect\b", r"\bgc\b", r"\bsys\b", r"\bos\b",
     r"\bopen\(", r"subprocess", r"importlib", r"__import__", r"\beval\(", r"\bexec\(", r"pickle",
     r"socket", r"requests", r"urllib", r"multiprocessing", r"concurrent", r"threading", r"\bjson\b",
+    r"\bsignal\b", r"\bvars\(", r"__class__", r"__setattr__", r"__getattribute__", r"\btype\(tools", r"\bobject\.",
 ]  # fmt: skip
 
 
@@ -46,9 +48,15 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int) -> Non
     pool_paths = [str(HERE / "pools" / p) for p in pools.split(",")]
     runs = [(p, False) for p in pool_paths] + [(p, True) for p in pool_paths]
     static_error = forbidden_use(program_path)
+    if static_error:  # never execute a program that breaks the rules
+        save_json_results(results_dir, {"combined_score": 0.0, "public": {}, "private": {},
+                                        "text_feedback": f"INVALID: {static_error}"}, False, static_error)
+        print("correct: False | error:", static_error)
+        return
 
     def get_kwargs(i: int) -> dict:
-        return {"pool_path": runs[i][0], "lp_budget": lp_budget, "seed": i % len(pool_paths), "control": runs[i][1]}
+        return {"pool_path": runs[i][0], "lp_budget": lp_budget, "seed": i % len(pool_paths), "control": runs[i][1],
+                "time_limit": SECONDS_PER_RUN}
 
     def validate(r) -> tuple[bool, str | None]:
         if static_error:
@@ -57,8 +65,8 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int) -> Non
             return False, "run_postproc must return the dict built by the fixed wrapper"
         if r["error"]:
             return False, f"improve raised {r['error']}"
-        if r["seconds"] > SECONDS_PER_RUN:
-            return False, f"one run took {r['seconds']:.0f}s (limit {SECONDS_PER_RUN:.0f}s)"
+        if r.get("timed_out") or r["seconds"] > SECONDS_PER_RUN + 5:
+            return False, f"a run hit the {SECONDS_PER_RUN:.0f}s wall-time limit (endless loop or too slow?)"
         if r["arcs"] is None or not r["best"] < float("inf"):
             return False, "no valid network was scored"
         return True, None

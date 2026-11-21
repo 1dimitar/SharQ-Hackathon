@@ -1,0 +1,69 @@
+<NAME>
+diverse_stall_kicks
+</NAME>
+
+<DESCRIPTION>
+The search repeatedly explores one-switch neighborhoods of a small set of strong archive members, which can leave it trapped in the same basins. Periodically create a bounded kick from a non-elite archive member using valid degree-preserving 2-switches, then include the resulting topology among proposals. This preserves the elite search while injecting a controlled, diverse starting point; the kick size grows modestly with stagnation. Track improvements in the incumbent score to reset the stagnation counter.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    iteration = 0
+    while tools.lp_calls_left > 0:
+=======
+    iteration = 0
+    stagnant = 0
+    while tools.lp_calls_left > 0:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        generated = proposals(parent)
+
+        # Perturb a random archive member if the one-switch neighborhood is
+=======
+        previous_best = best_score
+        generated = proposals(parent)
+
+        # When progress stalls, kick a non-elite archive member by a few
+        # valid degree-preserving switches, preserving the established elites.
+        if stagnant >= 8 and len(ordered) > 4 and iteration % 3 == 0:
+            base = ordered[int(rng.integers(4, len(ordered)))]
+            arcs = list(base)
+            current = set(base)
+            kick_steps = min(7, 2 + stagnant // 8)
+            for _ in range(kick_steps):
+                moved = False
+                for _ in range(40):
+                    p, q = map(int, rng.choice(len(arcs), size=2, replace=False))
+                    a, b = arcs[p]
+                    c, d = arcs[q]
+                    x, y = (a, d), (c, b)
+                    if a == d or c == b or x in current or y in current:
+                        continue
+                    current.remove((a, b))
+                    current.remove((c, d))
+                    current.add(x)
+                    current.add(y)
+                    arcs[p], arcs[q] = x, y
+                    moved = True
+                    break
+                if not moved:
+                    break
+            kicked = tuple(sorted(current))
+            if kicked != base and tools.is_valid(kicked):
+                generated.append(kicked)
+
+        # Perturb a random archive member if the one-switch neighborhood is
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        iteration += 1
+
+    return list(best_net) if best_net is not None else []
+=======
+        stagnant = stagnant + 1 if best_score >= previous_best else 0
+        iteration += 1
+
+    return list(best_net) if best_net is not None else []
+>>>>>>> REPLACE
+</DIFF>

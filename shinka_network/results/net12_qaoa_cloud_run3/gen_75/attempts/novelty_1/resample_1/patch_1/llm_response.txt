@@ -1,0 +1,53 @@
+<NAME>
+balanced_relay_selection
+</NAME>
+
+<DESCRIPTION>
+Select three relays per demand pair, favoring paths with demand support on both legs while discounting busy relays and edges. A fixed reward budget prevents indirect service from overwhelming direct-link incentives and reduces the interaction count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first_leg = float(traffic[i, j]) / scale
+                second_leg = float(traffic[j, k]) / scale
+                affinity = min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)
+                edge_pressure = first_leg + second_leg
+                quality = (0.25 + affinity) / (
+                    float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure)
+                )
+                candidates.append((quality, j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            chosen = candidates[:3]
+            quality_sum = sum(quality for quality, _ in chosen)
+            if quality_sum <= 0.0:
+                continue
+
+            for quality, j in chosen:
+                weight = -2.0 * path_strength * path_support * quality / quality_sum
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+</DIFF>

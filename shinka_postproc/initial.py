@@ -76,8 +76,10 @@ def improve(demand, candidates, tools, rng):
 # EVOLVE-BLOCK-END
 
 
-def run_postproc(pool_path, lp_budget, seed, control=False):
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
     """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import signal
+
     import oracle
     from hamiltonian import surrogate_terms
 
@@ -95,14 +97,23 @@ def run_postproc(pool_path, lp_budget, seed, control=False):
     if control:  # same number of random valid networks instead of QAOA output
         crng = np.random.default_rng(10_000 + seed)
         candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
     start = time.perf_counter()
-    returned, error = None, None
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
     try:
         returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
     except oracle.BudgetExhausted:
         pass
+    except oracle.RunTimeout:
+        timed_out = True
     except Exception as exc:  # noqa: BLE001
         error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
     best_score, best_arcs = tools.certified_best()
     if returned is not None:
         try:
@@ -116,5 +127,5 @@ def run_postproc(pool_path, lp_budget, seed, control=False):
     return {
         "pool": pool_path, "control": control, "n": n, "error": error,
         "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
-        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
     }

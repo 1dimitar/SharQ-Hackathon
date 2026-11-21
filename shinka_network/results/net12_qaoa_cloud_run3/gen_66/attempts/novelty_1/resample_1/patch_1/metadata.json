@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "aggregated_relay_qubo",
+  "patch_description": "Separates demand preprocessing, direct-link scoring, and relay-term construction. Relay rewards are accumulated rather than overwritten when different OD pairs reuse the same link pair, and are limited to a small deterministic set of plausible relays to keep the interaction graph sparse. This preserves the current direct-link blend while making the path-term data flow easier to inspect and tune.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:12:05.645771",
+  "llm_cost": 0.0012859,
+  "llm_model": "gpt-6-luna"
+}

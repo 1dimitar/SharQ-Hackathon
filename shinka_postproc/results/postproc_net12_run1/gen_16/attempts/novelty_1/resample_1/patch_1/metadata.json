@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_archive_search",
+  "patch_description": "Separates candidate seeding, move generation, LP evaluation, and archive management into small helpers. It maintains a quality-and-diversity archive, then spends calls on energy-ranked batches of bottleneck-guided exchanges and rotations. An adaptive kick size and archive-selected parents broaden exploration after stagnation while returning to smaller moves after improvements.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:38:15.371058",
+  "llm_cost": 0.0022633,
+  "llm_model": "gpt-6-luna"
+}

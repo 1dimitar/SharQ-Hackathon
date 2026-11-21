@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_diverse_search",
+  "patch_description": "Combines the current program\u2019s QAOA-repaired seeds and dual-guided 2-exchange proposals with a compact, structurally diverse archive. It computes LP details once per parent, fuses the dual/demand signal with surrogate energy to rank moves, and adds occasional repaired crossovers and multi-swap mutations for exploration. Small batches preserve LP budget for many search iterations; cached and previously evaluated networks are filtered before scoring.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:47:16.310886",
+  "llm_cost": 0.003142,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 77,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relaybalance",
+  "patch_description": "The current program uses demand-weighted direct-link rewards and keeps only a small, fixed number of relays per OD pair. This version retains that sparse two-hop structure but increases the relay budget to three, uses a gentler pressure discount with exponent 0.75, and scores relays by a balanced-leg affinity. The weaker path coefficient limits the chance that two-hop rewards overwhelm direct-link choices. A higher degree-penalty weight encourages valid degree patterns before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:23:29.371860",
+  "llm_cost": 0.0012035000000000001,
+  "llm_model": "gpt-6-luna"
+}

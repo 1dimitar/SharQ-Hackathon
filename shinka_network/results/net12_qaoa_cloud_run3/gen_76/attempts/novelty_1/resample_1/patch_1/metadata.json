@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "shadow_route",
+  "patch_description": "This uses a sparse, shadow-price approach rather than rewarding every possible two-hop path. It estimates how contested each directed link and relay node is from the demand matrix, then gives each OD pair\u2019s two-hop reward only to its two most promising relays. Candidate paths are preferred when their links and relay appear less loaded, while direct-link rewards retain demand-sensitive value. The sparse couplings reduce interaction clutter and discourage the surrogate from treating every possible detour as equally useful.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:23:50.748748",
+  "llm_cost": 0.0029508,
+  "llm_model": "gpt-6-luna"
+}

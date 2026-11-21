@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_basin_search",
+  "patch_description": "Replace the incumbent-only kick loop with an adaptive search over a small archive of basins. Track how often each parent produces an improving descent and the size of its best gain; favor productive parents, but retain an exploration probability for less-tested basins. This uses LP results to allocate subsequent search effort while preserving diversity from the initially ranked repaired candidates. Archive updates are bounded, and the loop still spends the available LP budget through the existing descent and swap mechanisms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:48:57.932517",
+  "llm_cost": 0.0017246000000000002,
+  "llm_model": "gpt-6-luna"
+}

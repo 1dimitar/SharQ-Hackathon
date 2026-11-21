@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "stagnation_archive_kicks",
+  "patch_description": "Add a bounded kick when the global best has not improved for 12 search iterations. The kick starts from a strong but non-elite archive member, preserving the best solutions while exploring a different basin. Its size increases gradually across repeated stalls and resets after an improvement, so exploration escalates without turning every iteration into a large random perturbation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:47.711312",
+  "llm_cost": 0.0026363000000000003,
+  "llm_model": "gpt-6-luna"
+}

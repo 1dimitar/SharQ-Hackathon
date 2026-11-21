@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_restarts",
+  "patch_description": "The current iterated search always kicks the incumbent best network, which can repeatedly revisit the same basin. Keep the incumbent as the main start, but regularly restart from a repaired network among the best 20 initial candidates. These starts preserve diversity from the QAOA pool while still favoring promising candidates. Apply a slightly larger random kick to restart starts, then use the existing descent to exploit the resulting basin. This uses the existing LP budget and search operators, without spending calls on a separate scoring phase.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:35:06.529726",
+  "llm_cost": 0.0008191000000000001,
+  "llm_model": "gpt-6-luna"
+}

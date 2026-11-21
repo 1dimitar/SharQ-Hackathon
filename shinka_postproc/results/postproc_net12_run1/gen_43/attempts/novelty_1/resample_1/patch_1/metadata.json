@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "exhaustive_hot_switches",
+  "patch_description": "The current move generator samples only a limited number of two-edge exchanges, so it can miss useful switches involving bottleneck links. Enumerating every pair of current links is inexpensive for a 2-in/2-out network (only 276 pairs when there are 24 links) and ensures that all valid switches involving at least one hot link enter the proposal pool. The existing batch ranking and diversity selection still limit the number of costly LP evaluations, while the randomized three-edge rotations preserve broader exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:51:24.074835",
+  "llm_cost": 0.0020112000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,53 @@
+<NAME>
+high_demand_relay_cutoff
+</NAME>
+
+<DESCRIPTION>
+Concentrate a small amount of additional two-hop support on the most demanding OD pairs. Set the cutoff at the 90th percentile of positive off-diagonal demands, and give qualifying pairs one extra candidate relay, capped at the available number of relays. The existing relay ranking and reward formulas remain unchanged; the extra-relay cap is fixed at one. This tests whether focusing support on the strongest traffic improves topology quality without broadly increasing the number of QUBO couplings.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reward two-hop paths according to the OD traffic they could carry.
+    # The concave path support preserves some influence for smaller demands.
+    quadratic = {}
+    path_strength = 0.46
+=======
+    # Give only the strongest OD pairs one extra relay candidate.
+    # Use positive off-diagonal demands so zero entries do not set the cutoff.
+    positive_demands = traffic[traffic > 0.0]
+    high_demand_cutoff = (
+        float(np.percentile(positive_demands, 90.0))
+        if positive_demands.size
+        else float("inf")
+    )
+    extra_relay_cap = 1
+
+    # Reward two-hop paths according to the OD traffic they could carry.
+    # The concave path support preserves some influence for smaller demands.
+    quadratic = {}
+    path_strength = 0.46
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            # Select only a few relays per OD pair. Balanced leg affinity
+            # favors paths that are plausible on both hops, while the pressure
+            # discount avoids overusing already busy transit nodes.
+            relay_count = min(n - 2, max(2, n // 4))
+            candidates = []
+=======
+            # Select a few relays per OD pair; reserve one extra candidate
+            # for demands at or above the 90th-percentile cutoff.
+            base_relay_count = max(2, n // 4)
+            extra_relays = (
+                extra_relay_cap
+                if through_demand >= high_demand_cutoff
+                else 0
+            )
+            relay_count = min(n - 2, base_relay_count + extra_relays)
+
+            # Balanced leg affinity favors plausible two-hop paths, while
+            # the pressure discount avoids overusing busy transit nodes.
+            candidates = []
+>>>>>>> REPLACE
+</DIFF>

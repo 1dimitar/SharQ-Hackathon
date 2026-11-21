@@ -1,0 +1,36 @@
+<NAME>
+selective_path_support
+</NAME>
+
+<DESCRIPTION>
+Keep the existing direct-link rewards and candidate-relay selection, but make two-hop support demand-dependent. OD pairs in the top 20% of positive demands receive a modest 1.1 multiplier, while other positive-demand pairs receive 0.9. This focuses relay couplings on the traffic most likely to dominate link load without increasing the quadratic-term count or changing the interaction structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    for i in range(n):
+=======
+    quadratic = {}
+    positive_demands = traffic[traffic > 0.0]
+    high_demand_cutoff = (
+        float(np.percentile(positive_demands, 80.0))
+        if positive_demands.size else float("inf")
+    )
+    relay_count = min(n - 2, max(2, n // 4))
+    for i in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            value = float(traffic[i, k]) / scale
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            candidates = []
+=======
+            value = float(traffic[i, k]) / scale
+            support = 0.75 * value + 0.25 * np.sqrt(value)
+            support *= 1.1 if traffic[i, k] >= high_demand_cutoff else 0.9
+            candidates = []
+>>>>>>> REPLACE
+
+</DIFF>

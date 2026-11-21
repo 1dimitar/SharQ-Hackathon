@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_archive_search",
+  "patch_description": "The current approach repeatedly descends from one best network, which can spend much of the LP budget exploring the same basin. This version keeps a small, diverse archive and samples parents from it for broader exploration. For each parent it ranks two-switches and targeted three-link rotations using explicit LP-price relief, surrogate energy, and link demand. Each batch reserves LP calls for both price-favored and energy-favored moves, plus a small exploratory slice. The archive size, batch size, neighborhood mix, and diversity policy are configured to balance focused improvement with escape from local optima.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:43:34.746329",
+  "llm_cost": 0.0037933999999999997,
+  "llm_model": "gpt-6-luna"
+}

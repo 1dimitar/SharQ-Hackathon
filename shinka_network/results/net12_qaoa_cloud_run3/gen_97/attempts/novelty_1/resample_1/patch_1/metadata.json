@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "focused_relay90",
+  "patch_description": "This version concentrates two-hop support on the highest-demand OD pairs: it uses the 90th-percentile cutoff and selects at most three promising relay nodes per pair. Relay quality accounts for incident traffic and the demand on the two legs, while direct-link rewards remain available for every link. The sparse couplings should limit unnecessary interactions and encourage a smaller set of useful relay structures. The degree penalty is kept moderate so it can help feasibility without overwhelming the traffic-based terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:50:57.074196",
+  "llm_cost": 0.0012314000000000001,
+  "llm_model": "gpt-6-luna"
+}

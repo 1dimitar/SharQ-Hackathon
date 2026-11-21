@@ -1,0 +1,59 @@
+<NAME>
+priced_swap_order
+</NAME>
+
+<DESCRIPTION>
+Use the LP’s dual prices and link loads to prioritize exchanges that remove heavily loaded, positively priced links. Discount moves whose replacement links connect high-demand node pairs, since those additions are more likely to become bottlenecks. This spends the limited LP budget first on exchanges with a stronger directional signal, while retaining the existing descent and its validity checks.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def swaps(net):
+        arcs = list(net)
+        pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+        rng.shuffle(pairs)
+        cur = set(net)
+        for p, q in pairs:
+            (a, b), (c, d) = arcs[p], arcs[q]
+            if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                continue
+            yield tuple(sorted((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+
+    def descend(net, score):
+        improved = True
+        while improved:
+            improved = False
+            for cand in swaps(net):
+                s = tools.lp(cand)
+=======
+    def swaps(net, detail):
+        arcs = list(net)
+        pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+        rng.shuffle(pairs)
+        cur = set(net)
+        loads, prices = detail["loads"], detail["prices"]
+        ranked_moves = []
+        for p, q in pairs:
+            (a, b), (c, d) = arcs[p], arcs[q]
+            if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                continue
+            cand = tuple(sorted((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+            # Removing links with both high load and positive dual price is promising;
+            # penalize replacement links joining high-demand node pairs.
+            removed = sum(max(0.0, prices.get(x, 0.0)) * loads.get(x, 0.0)
+                          for x in ((a, b), (c, d)))
+            added = float(demand[a, d]) + float(demand[c, b])
+            ranked_moves.append((removed - added, cand))
+        ranked_moves.sort(key=lambda x: x[0], reverse=True)
+        for _, cand in ranked_moves:
+            yield cand
+
+    def descend(net, score):
+        improved = True
+        while improved:
+            improved = False
+            detail = tools.lp_detail(net)
+            for cand in swaps(net, detail):
+                s = tools.lp(cand)
+>>>>>>> REPLACE
+</DIFF>

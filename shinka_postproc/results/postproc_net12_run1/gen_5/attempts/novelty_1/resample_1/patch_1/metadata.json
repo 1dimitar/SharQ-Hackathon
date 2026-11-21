@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_guided_swaps",
+  "patch_description": "Use the LP\u2019s link loads and dual prices to prioritize 2-exchanges involving links most likely to limit the objective. The detail call provides information for a network already scored, so this focuses the existing descent without spending LP calls on a broad, randomly ordered neighborhood first. A small random component in the ordering preserves exploration among similarly promising exchanges.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:34:12.366564",
+  "llm_cost": 0.0006145,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "productive_branch_allocation",
+  "patch_description": "Keep a small archive of distinct promising networks and track how often each branch produces an improvement. Cap each descent\u2019s 2-exchange scan so one branch cannot consume the entire LP budget; then allocate subsequent searches more often to branches with better improvement histories, while still occasionally exploring less-proven branches. This applies the branch-productivity recommendation and replaces the current best-only kick loop, which repeatedly searches around the incumbent and can neglect other useful starting networks.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:40:38.917692",
+  "llm_cost": 0.0014026000000000002,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_tempering",
+  "patch_description": "Rather than repeatedly descending from a few repaired samples, this approach maintains a small, diverse set of networks and runs annealed walks from them. LP detail identifies bottleneck links, which are preferentially included in degree-preserving exchanges; occasional three-link rotations add a different neighborhood. The free surrogate energy ranks proposals before LP evaluation, while temperature-based acceptance lets walks cross local barriers. Cached and duplicate networks are skipped so the LP budget is spent on new topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:33:37.546468",
+  "llm_cost": 0.0012679000000000002,
+  "llm_model": "gpt-6-luna"
+}

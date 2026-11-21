@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_first_swaps",
+  "patch_description": "Use the LP\u2019s dual prices to prioritize two-switches that remove a bottleneck link. Those moves are the most promising way to reduce the maximum link load, while the remaining switches are still tried afterward so the search does not lose access to useful non-bottleneck moves. This keeps the existing first-improvement descent and LP budget behavior, but spends its early evaluations on more targeted neighbors.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:34:49.337096",
+  "llm_cost": 0.0010842999999999998,
+  "llm_model": "gpt-6-luna"
+}

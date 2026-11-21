@@ -1,0 +1,52 @@
+<NAME>
+dual_benefit_screen
+</NAME>
+
+<DESCRIPTION>
+The current shortlist is selected solely by surrogate energy, even though each base network has LP dual prices available. A move is especially promising when it removes high-price links and introduces low-price links. Rank each fresh topology by its directional dual benefit, computed from the links removed and added, and form a shortlist that reserves space for energy-ranked, dual-ranked, and jointly ranked moves. The existing diversity selection and LP batch size remain unchanged, so this adds targeted exploration without increasing LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            fresh.sort(key=lambda m: tools.energy(m))
+            shortlist = fresh[:min(48, len(fresh))]
+            batch = []
+=======
+            # Combine surrogate ranking with directional LP dual relief. Reserve
+            # shortlist places for each signal so neither can suppress the other.
+            prices = {}
+            detail = details.get(base, {})
+            for link, price in detail.get("prices", {}).items():
+                try:
+                    prices[tuple(link)] = float(price)
+                except Exception:
+                    pass
+
+            energy_order = sorted(fresh, key=lambda m: tools.energy(m))
+            energy_rank = {m: i for i, m in enumerate(energy_order)}
+
+            def dual_benefit(m):
+                removed = set(base) - set(m)
+                added = set(m) - set(base)
+                return (sum(prices.get(e, 0.0) for e in removed)
+                        - sum(prices.get(e, 0.0) for e in added))
+
+            dual_order = sorted(fresh, key=dual_benefit, reverse=True)
+            dual_rank = {m: i for i, m in enumerate(dual_order)}
+            combined_order = sorted(
+                fresh, key=lambda m: energy_rank[m] + dual_rank[m]
+            )
+
+            # Keep independent representatives of energy and price guidance,
+            # then include moves favored by both signals.
+            cap = min(48, len(fresh))
+            shortlist = []
+            for order, count in ((energy_order, 20), (dual_order, 20),
+                                 (combined_order, cap)):
+                for m in order[:count]:
+                    if m not in shortlist and len(shortlist) < cap:
+                        shortlist.append(m)
+            shortlist.sort(key=lambda m: energy_rank[m])
+            batch = []
+>>>>>>> REPLACE
+</DIFF>

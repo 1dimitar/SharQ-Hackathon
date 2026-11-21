@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_bottleneck_search",
+  "patch_description": "This version spends LP calls on batches of energy-ranked, topologically diverse proposals rather than following a single descent path. It starts from energy-ranked, diverse repaired candidates, then explores degree-preserving two-switches guided by LP bottleneck prices, supplemented by occasional three-link rotations and multi-switch kicks. An elite-but-diverse parent set and persistent duplicate tracking help balance intensification with exploration; the search stops cleanly when the LP budget is exhausted.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:53:10.967620",
+  "llm_cost": 0.003656,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_guided_search",
+  "patch_description": "This version spends LP calls on a smaller, more promising set of repaired starts, then searches their neighborhoods using bottleneck-guided exchanges. Positive dual prices from `lp_detail` identify links worth changing; surrogate energy ranks proposed moves before they consume LP budget. A small elite of diverse networks and occasional randomized moves help avoid getting trapped in a single local optimum. All LP evaluations go through `tools`, and the search stops cleanly when the budget is exhausted.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:34:13.714336",
+  "llm_cost": 0.0017542,
+  "llm_model": "gpt-6-luna"
+}

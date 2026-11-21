@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_leg_affinity",
+  "patch_description": "Replace the geometric-mean relay affinity with an affinity that gives credit to both legs while retaining more influence from the stronger leg: `min(left, right) + 0.25 * max(left, right)`. This tests the suggested balanced-leg criterion without changing relay pressure discounts, candidate ranking, per-OD relay budgets, or quadratic weights. It may favor relays whose links are jointly useful while still recognizing a strong leg when the other leg is weaker.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:50:22.952668",
+  "llm_cost": 0.0009208,
+  "llm_model": "gpt-6-luna"
+}

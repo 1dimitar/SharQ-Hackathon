@@ -1,0 +1,16 @@
+<NAME>
+restore_affinity_floor
+</NAME>
+
+<DESCRIPTION>
+Restore a small positive floor in the relay affinity. The current score can rank several relays equally when one or both constituent legs have no direct demand, and those relays can still receive the same quadratic reward as useful two-leg paths. A modest floor preserves the balanced-leg ranking while avoiding a zero-affinity tie; this also restores the version of the affinity formula associated with the strongest reported combined score (0.85). Pressure discounts, ranking, and relay budgets remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = min(a, b) + 0.25 * max(a, b)
+=======
+                affinity = min(a, b) + 0.25 * max(a, b) + 0.01
+>>>>>>> REPLACE
+
+</DIFF>

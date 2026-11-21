@@ -19,8 +19,14 @@ import qoblib_tools as qt  # noqa: E402
 from scipy.optimize import linprog  # noqa: E402
 
 
-class BudgetExhausted(Exception):
-    """Raised by tools.lp / tools.lp_detail once the LP budget is spent."""
+class BudgetExhausted(BaseException):
+    """Raised by tools.lp / tools.lp_detail once the LP budget is spent.
+
+    A BaseException, so a generic `except Exception` in evolved code cannot swallow it."""
+
+
+class RunTimeout(BaseException):
+    """Raised by the evaluator's alarm when a run exceeds its wall-time limit."""
 
 
 def _key(arcs) -> tuple:
@@ -77,7 +83,7 @@ class Tools:
         """
         key = _key(arcs)
         if key in self._cache:
-            return self._cache[key]
+            return self._copy(self._cache[key])
         if not qt.is_valid_topology(self.n, key):
             return {"score": math.inf, "loads": {}, "prices": {}}
         if self._used >= self._budget:
@@ -98,7 +104,11 @@ class Tools:
         self._cache[key] = out
         if out["score"] < self._best_score:
             self._best_score, self._best_arcs = out["score"], key
-        return out
+        return self._copy(out)
+
+    @staticmethod
+    def _copy(out: dict) -> dict:
+        return {"score": out["score"], "loads": dict(out["loads"]), "prices": dict(out["prices"])}
 
     def lp(self, arcs) -> float:
         """Score of a valid network (max link load). One LP call unless cached; inf if invalid."""

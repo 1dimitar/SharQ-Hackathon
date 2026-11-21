@@ -1,0 +1,18 @@
+<NAME>
+stronger_degree_feasibility
+</NAME>
+
+<DESCRIPTION>
+The current program has only 0–4% valid samples before repair, so many QAOA samples are spending effort on degree-infeasible networks. Increase the evaluator-supplied degree penalty from 5 to 15 to make the exact two-in/two-out constraints more influential relative to the normalized surrogate costs. This does not add any degree terms to the returned QUBO and stays within the allowed penalty-weight range.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Strongly favor the required degrees so fewer samples need repair.
+    penalty_weight = 5.0
+=======
+    # Make exact degrees more influential, improving the share of feasible samples.
+    penalty_weight = 15.0
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_memetic_search",
+  "patch_description": "This uses a diverse evolutionary archive rather than descending from a single incumbent. It combines promising networks through edge-union repair, generates valid exchange mutations, and evaluates each batch using energy ranking plus edge-set diversity. Preserving structurally distinct good solutions helps avoid repeatedly spending LP calls in one local basin, while bottleneck-guided mutations focus some exploration on links most relevant to the congestion objective.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:41:18.066652",
+  "llm_cost": 0.0021088,
+  "llm_model": "gpt-6-luna"
+}

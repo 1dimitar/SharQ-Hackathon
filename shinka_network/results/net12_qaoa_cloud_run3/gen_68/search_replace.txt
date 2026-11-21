@@ -1,0 +1,20 @@
+<NAME>
+gentler_relay_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Raise normalized node pressure to 1.25 when computing relay pressure. Since pressure lies in [0.65, 1], this reduces the pressure discount for lower-pressure relays relative to the current linear factor, while leaving the highest-pressure nodes unchanged. That broadens the set of usable two-hop relays and may help the typical topology avoid over-relying on a narrow set of preferred paths. This is a focused sweep of pressure-discount strength; relay selection and term count remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                relay_pressure = (
+                    float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure)
+                )
+=======
+                relay_pressure = (
+                    float(node_pressure[j]) ** 1.25
+                    * (1.0 + 0.5 * edge_pressure)
+                )
+>>>>>>> REPLACE
+</DIFF>

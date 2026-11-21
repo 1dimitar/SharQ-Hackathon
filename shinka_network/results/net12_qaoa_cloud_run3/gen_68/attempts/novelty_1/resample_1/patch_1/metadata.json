@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "gentler_relay_pressure_discount",
+  "patch_description": "Raise normalized node pressure to 1.25 when computing relay pressure. Since pressure lies in [0.65, 1], this reduces the pressure discount for lower-pressure relays relative to the current linear factor, while leaving the highest-pressure nodes unchanged. That broadens the set of usable two-hop relays and may help the typical topology avoid over-relying on a narrow set of preferred paths. This is a focused sweep of pressure-discount strength; relay selection and term count remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:13:10.852797",
+  "llm_cost": 0.0009056,
+  "llm_model": "gpt-6-luna"
+}

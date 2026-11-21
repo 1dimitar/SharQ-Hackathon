@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "targeted_rotation_escape",
+  "patch_description": "When two-switch descent reaches a local optimum, try a small, targeted set of three-link rotations before restarting. Rotations preserve every node\u2019s in- and out-degree. The triples are centered on links with the highest dual prices or loads, and `tools.energy` screens the resulting networks so only a bounded number are sent to the LP. This spends LP calls on compound moves at the point they are most useful, rather than widening every two-switch neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:37:24.239974",
+  "llm_cost": 0.0013977,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,71 @@
+<NAME>
+adaptive_parent_productivity
+</NAME>
+
+<DESCRIPTION>
+Track how many LP evaluations each parent generates, how often its neighborhood improves the incumbent, and the size of its best gain. Use these measurements to bias parent selection toward productive search regions, while retaining an exploration floor so untested or less productive archive members can still be selected. Attribute each evaluated batch’s improvement to the parent that generated it; this changes search allocation without changing the candidate-generation or scoring logic.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    scores = {}
+    archive = []
+    best_net = None
+=======
+    scores = {}
+    archive = []
+    # Per-parent search feedback: evaluated candidates, incumbent improvements,
+    # and cumulative improvement magnitude.
+    parent_stats = {}
+    best_net = None
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        weights = np.asarray(
+            [1.0 / ((i + 1) ** 0.72) for i in range(len(ranked))],
+            dtype=float,
+        )
+        return ranked[int(rng.choice(len(ranked), p=weights / weights.sum()))]
+=======
+        weights = []
+        for i, net in enumerate(ranked):
+            trials, wins, gain = parent_stats.get(net, (0, 0, 0.0))
+            # Favor parents whose neighborhoods have paid off, but preserve a
+            # substantial rank-based and uncertainty-driven exploration term.
+            productivity = (1.0 + 2.0 * wins + 4.0 * gain) / (1.0 + trials) ** 0.5
+            exploration = 1.0 + 1.5 / (1.0 + trials) ** 0.5
+            weights.append((1.0 / ((i + 1) ** 0.72)) *
+                           (0.35 + productivity + exploration))
+        weights = np.asarray(weights, dtype=float)
+        return ranked[int(rng.choice(len(ranked), p=weights / weights.sum()))]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            if net in scores or tools.is_cached(net):
+                continue
+            record(net)
+        refresh_archive()
+=======
+        before = best_score
+        evaluated = 0
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            if net in scores or tools.is_cached(net):
+                continue
+            record(net)
+            evaluated += 1
+        if evaluated:
+            trials, wins, gain = parent_stats.get(parent, (0, 0, 0.0))
+            improvement = max(0.0, before - best_score)
+            parent_stats[parent] = (
+                trials + evaluated,
+                wins + int(improvement > 0.0),
+                gain + improvement / max(1.0, before),
+            )
+        refresh_archive()
+>>>>>>> REPLACE
+</DIFF>
