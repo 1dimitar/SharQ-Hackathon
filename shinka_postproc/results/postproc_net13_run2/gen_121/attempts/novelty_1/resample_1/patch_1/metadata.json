@@ -1,0 +1,14 @@
+{
+  "generation": 121,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "activity_weighted_parent_selection",
+  "patch_description": "Replace the current 48%-elite/uniform parent choice with weighted sampling from the archive. The weights retain a preference for high-quality networks while giving extra chances to structurally isolated and infrequently selected parents. A mild penalty for repeatedly stalled parents reduces wasted evaluations, without eliminating them from the search. Track each parent\u2019s neighborhood searches so the exploration weight adapts over the run.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:24:32.563109",
+  "llm_cost": 0.0029719000000000004,
+  "llm_model": "gpt-6-luna"
+}

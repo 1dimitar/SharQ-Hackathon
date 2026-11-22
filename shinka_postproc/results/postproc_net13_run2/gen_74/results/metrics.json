@@ -1,0 +1,35 @@
+{
+    "combined_score": 0.9842800138596868,
+    "public": {
+        "mean_gap_pct": 2.3375856563102952,
+        "best_gap_pct": 0.6253742265983631,
+        "best_per_hamiltonian_score": 0.9842800138596868,
+        "mean_pool_score": 0.9772071658860333,
+        "mean_lp_calls": 2000.0,
+        "mean_seconds": 36.58014563693749
+    },
+    "private": {
+        "network13_r2g181_seed0": 312637.0,
+        "network13_r2g181_seed1": 302500.0,
+        "network13_r2g181_seed2": 308000.0,
+        "network13_r2g181_seed3": 307800.0,
+        "network13_r3g028_seed0": 306715.0,
+        "network13_r3g028_seed1": 308924.0,
+        "network13_r3g028_seed2": 306715.0,
+        "network13_r3g028_seed3": 306223.0,
+        "network13_r3g109_seed0": 307875.0,
+        "network13_r3g109_seed1": 308200.0,
+        "network13_r3g109_seed2": 310200.0,
+        "network13_r3g109_seed3": 309500.0,
+        "network13_r3g128_seed0": 305137.0,
+        "network13_r3g128_seed1": 306715.0,
+        "network13_r3g128_seed2": 306715.0,
+        "network13_r3g128_seed3": 308500.0
+    },
+    "text_feedback": "network13_r2g181_seed0: best 312637 vs best known 300620 (gap +4.00%), 2000 LP calls, 47.8s\nnetwork13_r2g181_seed1: best 302500 vs best known 300620 (gap +0.63%), 2000 LP calls, 42.1s\nnetwork13_r2g181_seed2: best 308000 vs best known 300620 (gap +2.45%), 2000 LP calls, 57.1s\nnetwork13_r2g181_seed3: best 307800 vs best known 300620 (gap +2.39%), 2000 LP calls, 50.1s\nnetwork13_r3g028_seed0: best 306715 vs best known 300620 (gap +2.03%), 2000 LP calls, 34.4s\nnetwork13_r3g028_seed1: best 308924 vs best known 300620 (gap +2.76%), 2000 LP calls, 31.0s\nnetwork13_r3g028_seed2: best 306715 vs best known 300620 (gap +2.03%), 2000 LP calls, 30.2s\nnetwork13_r3g028_seed3: best 306223 vs best known 300620 (gap +1.86%), 2000 LP calls, 30.7s\nnetwork13_r3g109_seed0: best 307875 vs best known 300620 (gap +2.41%), 2000 LP calls, 34.2s\nnetwork13_r3g109_seed1: best 308200 vs best known 300620 (gap +2.52%), 2000 LP calls, 31.2s\nnetwork13_r3g109_seed2: best 310200 vs best known 300620 (gap +3.19%), 2000 LP calls, 32.4s\nnetwork13_r3g109_seed3: best 309500 vs best known 300620 (gap +2.95%), 2000 LP calls, 31.1s\nnetwork13_r3g128_seed0: best 305137 vs best known 300620 (gap +1.50%), 2000 LP calls, 32.2s\nnetwork13_r3g128_seed1: best 306715 vs best known 300620 (gap +2.03%), 2000 LP calls, 33.0s\nnetwork13_r3g128_seed2: best 306715 vs best known 300620 (gap +2.03%), 2000 LP calls, 32.8s\nnetwork13_r3g128_seed3: best 308500 vs best known 300620 (gap +2.62%), 2000 LP calls, 35.0s\nBest per Hamiltonian (over its pools): r2g181 302500 (+0.63%), r3g028 306223 (+1.86%), r3g109 307875 (+2.41%), r3g128 305137 (+1.50%)\nMean over Hamiltonians of best_known/best(best of its pools): 0.9843 (this is the score); mean over all pools: 0.9772.",
+    "execution_time_mean": 36.78771024631257,
+    "execution_time_std": 8.17957682308713,
+    "num_valid_runs": 16,
+    "num_invalid_runs": 0,
+    "all_validation_errors": []
+}

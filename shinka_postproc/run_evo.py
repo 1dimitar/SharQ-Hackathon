@@ -28,7 +28,7 @@ from shinka.launch import LocalJobConfig  # noqa: E402
 TASK_SYS_MSG = """You are an expert in combinatorial optimisation, local search and network design. You are improving one Python function, `improve(demand, candidates, tools, rng)`: the classical post-processing that turns raw quantum (QAOA) samples into the best possible network.
 
 ## The problem (QOBLIB 08, network design)
-Given an n x n traffic demand matrix (demand[i, j] = traffic from node i to node j), choose a directed network on n nodes in which every node has exactly 2 outgoing and 2 incoming links (no self-loops). All traffic is then routed, flows may split over several paths, and the score of the network is the largest total flow on any single link. Lower is better. The exact score of a network comes from a routing linear program (LP). For the instance used here ({instance}, n = {n}) the best known score is {bkv}{bkv_note}.
+Given an n x n traffic demand matrix (demand[i, j] = traffic from node i to node j), choose a directed network on n nodes in which every node has exactly 2 outgoing and 2 incoming links (no self-loops). All traffic is then routed, flows may split over several paths, and the score of the network is the largest total flow on any single link. Lower is better. The exact score of a network comes from a routing linear program (LP). {instances}
 
 ## The pipeline
 {pipeline}
@@ -47,9 +47,9 @@ There is a fixed budget of LP calls per run. When it is spent, tools.lp raises B
 {scoring}
 
 ## Rules
-- Reach the LP only through `tools`: do not import scipy or any solver and do not write your own LP or flow solver. Do not access attributes of `tools` starting with "_" or tamper with the object; no file, network, multiprocessing or threading use. numpy, math, itertools, heapq, collections are fine.
+- Reach the LP only through `tools`: do not import scipy or any solver and do not write your own LP solver. Cheap heuristic estimates of link loads written in numpy (for example routing every demand on its shortest path, or splitting it over a few short paths) ARE allowed and cost no LP calls: use them to rank moves, but only tools.lp certifies a score. Do not access attributes of `tools` starting with "_" or tamper with the object; no file, network, multiprocessing or threading use. numpy, math, itertools, heapq, collections are fine.
 - Use `rng` for all randomness. Keep the function name, arguments and return value.
-- Each run must finish within 150 s of wall time (the LP calls themselves take about 4 ms each).
+- Each run must finish within 150 s of wall time ({lp_time}). Keep your own bookkeeping cheap: it must not dominate the run time.
 
 ## What is known
 {known}
@@ -58,7 +58,7 @@ There is a fixed budget of LP calls per run. When it is spent, tools.lp raises B
 - Use lp_detail: only bottleneck links (price > 0) can lower the score when moved, so focus swaps on them instead of trying all pairs.
 - Rank candidate moves for free with tools.energy, link loads or demand before spending LP calls; avoid re-scoring networks (tools.is_cached).
 - Better acceptance rules (simulated annealing, tabu lists, late acceptance), restarts from diverse candidates, path relinking between good networks, 3-link rotations.
-- Better correction of the raw QAOA candidates than tools.repair (e.g. demand- or load-aware), and smarter choice of which candidates deserve LP calls at all.
+- Better correction of the raw QAOA candidates than tools.repair (e.g. demand- or load-aware), and smarter choice of which candidates deserve LP calls at all.{directions_extra}
 
 The feedback after each evaluation lists, per pool, the best score and gap to the best known, LP calls used and run time, then the best result per Hamiltonian{feedback_extra}."""
 
@@ -69,6 +69,12 @@ PIPELINE_MANY = """1. Several QUBO Hamiltonians predict network quality. They we
 2. Partitioned QAOA sampled each Hamiltonian several times independently (one run = one pool); a pool's {states} best raw solutions are your `candidates`, best QUBO energy first. They are link lists and most break the degree rules. Your function must work for pools from any of the Hamiltonians."""
 SCORING_MEAN = """Each evaluation runs your function on several QAOA candidate pools. Score per pool = {bkv} / best LP score found; the combined score is the mean (1.0 = best known reached). The same function is also run from random networks instead of the QAOA candidates; that is reported as a control, not scored."""
 SCORING_BEST = """Each evaluation runs your function once on every training pool ({pools} pools: {per} independent QAOA runs for each of the {k} Hamiltonians). For each Hamiltonian only its BEST result over its pools counts (in practice the pipeline is run a few times and the best network is kept); the combined score is the mean over Hamiltonians of {bkv} / that best LP score. 1.0 = best known reached; above 1.0 = best known BEATEN, which is the real goal (the best known value is not proven optimal). Consistency still matters: a lucky single run on one pool moves only one Hamiltonian's term."""
+INSTANCES_ONE = "For the instance used here ({instance}, n = {n}) the best known score is {bkv}{bkv_note}."
+INSTANCES_MANY = """The instances used here are {names} (n = {n_lo} to {n_hi}); their best known scores are {bkvs} (none proven optimal). Your function must work unchanged for any n: after this run the best programs are applied to network17 ... network24 with ten times the LP budget, so prefer methods that adapt to n (2n links, n(2n-1) link pairs) over constants tuned to one size."""
+SCORING_MEAN_MANY = """Each evaluation runs your function once on each of {pools} QAOA candidate pools: for each of the {sizes} instances, one independent QAOA run of each of the {k} Hamiltonians, {budget} LP calls per run. Score per pool = best known score of that instance / best LP score found; the combined score is the mean over all pools. 1.0 = best known reached everywhere; a pool above 1.0 means the best known is BEATEN, which is the real goal (none of these values is proven optimal). Every pool counts equally, so a method that only works at one size, or only on one Hamiltonian's samples, scores poorly. The evaluation is deterministic (fixed seeds), so small score differences are real on these pools, but only improvements that are not tuned to these exact pools will survive the later check on other pools and larger instances."""
+DIRECTIONS_MANY = """
+- Predict the effect of a 2-exchange without the LP: the dual prices from lp_detail give a first-order estimate of how the score changes when capacity moves between links, and a shortest-path (or few-short-paths) load estimate in numpy gives an independent one. A good free filter makes every LP call count several times over.
+- Make every size-dependent quantity a function of n (number of starts, batch sizes, kick strength, tabu tenure, when to restart) instead of a constant."""
 KNOWN = {
     12: """- The baseline repairs every candidate, does first-improvement 2-exchange descent ((a->b),(c->d) => (a->d),(c->b)) from the 5 best, then iterated local search with random 2-4 swap kicks. With 2000 LP calls it ends 3-7% above the best known.
 - With about 200 000 LP calls, plain iterated local search does reach 276474, so the challenge is to get there with far fewer LP calls.""",
@@ -77,15 +83,32 @@ KNOWN = {
 - With 20000 LP calls (10x the budget) the starting program reached 304572 (+1.31%), 301834 (+0.40%), 302500 (+0.63%) and 299715 (-0.30%) on seed 0 of r2g181, r3g028, r3g109 and r3g128. 299715 is BELOW the published best known, so beating 300620 is possible; the challenge is to get there within 2000 LP calls.
 - With 2000 LP calls, nothing has gone below 307239 (+2.20%) yet.""",
 }
-BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908}
+BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908, 17: 437000, 18: 473375,
+              19: 492924, 20: 528528, 21: 569273, 22: 618135, 23: 659369, 24: 663688}
 
 
-def task_message(pools: list[str], score: str, controls: int) -> str:
+def task_message_many(pools: list[str], meta: list[dict], ns: list[int], lp_budget: int, known_file: str | None) -> str:
+    """Task message for a run on several instance sizes (score: mean over pools)."""
+    tags = list(dict.fromkeys(m.get("hamiltonian_tag", "hamiltonian.py") for m in meta))
+    states = max(len(m["candidates"]) for m in meta)
+    fmt = {"states": states, "k": len(tags), "tags": ", ".join(tags), "pools": len(pools), "sizes": len(ns),
+           "budget": lp_budget}
+    known = (HERE / known_file).read_text().strip() if known_file else "- Nothing yet for these instances."
+    return TASK_SYS_MSG.format(
+        instances=INSTANCES_MANY.format(names=", ".join(f"network{n:02d}" for n in ns), n_lo=ns[0], n_hi=ns[-1],
+                                        bkvs=", ".join(str(BEST_KNOWN[n]) for n in ns)),
+        pipeline=PIPELINE_MANY.format(**fmt), scoring=SCORING_MEAN_MANY.format(**fmt), known=known,
+        lp_time="one LP call takes about 6 ms at n = 13, 8 ms at n = 16 and 30 ms at n = 24",
+        directions_extra=DIRECTIONS_MANY, feedback_extra=", and the mean gap per instance size",
+    )
+
+
+def task_message(pools: list[str], score: str, controls: int, lp_budget: int = 2000, known_file: str | None = None) -> str:
     meta = [json.loads((HERE / "pools" / p).read_text()) for p in pools]
-    ns = {int(m["instance"][-2:]) for m in meta}
-    if len(ns) != 1:
-        sys.exit(f"pools mix instances {sorted(ns)}")
-    n = ns.pop()
+    ns = sorted({int(m["instance"][-2:]) for m in meta})
+    if len(ns) > 1:
+        return task_message_many(pools, meta, ns, lp_budget, known_file)
+    n = ns[0]
     tags = list(dict.fromkeys(m.get("hamiltonian_tag", "hamiltonian.py") for m in meta))
     states = max(len(m["candidates"]) for m in meta)
     fmt = {"bkv": BEST_KNOWN[n], "states": states, "k": len(tags), "tags": ", ".join(tags), "pools": len(pools),
@@ -95,8 +118,10 @@ def task_message(pools: list[str], score: str, controls: int) -> str:
     if controls == 0:
         scoring = scoring.replace(" The same function is also run from random networks instead of the QAOA candidates; that is reported as a control, not scored.", "")
     return TASK_SYS_MSG.format(
-        instance=f"network{n:02d}", n=n, bkv=BEST_KNOWN[n], pipeline=pipeline, scoring=scoring,
-        bkv_note=" (not proven optimal)" if n > 10 else "", known=KNOWN.get(n, "- Nothing yet for this instance."),
+        instances=INSTANCES_ONE.format(instance=f"network{n:02d}", n=n, bkv=BEST_KNOWN[n],
+                                       bkv_note=" (not proven optimal)" if n > 10 else ""),
+        pipeline=pipeline, scoring=scoring, known=KNOWN.get(n, "- Nothing yet for this instance."),
+        lp_time="the LP calls themselves take about 4 ms each", directions_extra="",
         feedback_extra=", and the same program's result from random starts" if controls != 0 else "",
     )
 
@@ -107,6 +132,13 @@ def main() -> None:
     parser.add_argument("--islands", type=int, default=4)
     parser.add_argument("--budget", type=float, default=5.0, help="max LLM spend in USD")
     parser.add_argument("--models", default="gpt-6-luna")
+    parser.add_argument("--model-probs", default=None,
+                        help="comma-separated fixed sampling probabilities for --models (default: adaptive UCB)")
+    parser.add_argument("--efforts", default="low,medium", help="reasoning efforts sampled per proposal")
+    parser.add_argument("--max-tokens", type=int, default=32768, help="output token limit per proposal (incl. reasoning)")
+    parser.add_argument("--inspirations", default="2,2", help="archive,top-k inspiration programs per prompt")
+    parser.add_argument("--patch-probs", default="0.6,0.3,0.1", help="probabilities of diff,full,cross patches")
+    parser.add_argument("--known", default=None, help="text file with the 'What is known' bullets (multi-size runs)")
     parser.add_argument("--helper-model", default="gpt-6-luna")
     parser.add_argument("--eval-jobs", type=int, default=4)
     parser.add_argument("--proposal-jobs", type=int, default=4)
@@ -124,25 +156,35 @@ def main() -> None:
     missing = [p for p in args.pools.split(",") if not (HERE / "pools" / p).exists()]
     if missing:
         sys.exit(f"missing candidate pools {missing}: run make_pools.py first")
-    task_sys_msg = task_message(args.pools.split(","), args.score, args.controls)
+    task_sys_msg = task_message(args.pools.split(","), args.score, args.controls, args.lp_budget, args.known)
     if args.print_prompt:
         print(task_sys_msg)
         return
     results_dir = args.results_dir or f"results/postproc_{time.strftime('%m%d_%H%M%S')}"
+    models = args.models.split(",")
+    if args.model_probs:
+        probs = [float(x) for x in args.model_probs.split(",")]
+        if len(probs) != len(models) or abs(sum(probs) - 1.0) > 1e-9:
+            sys.exit("--model-probs needs one probability per model, summing to 1")
+        llm_selection, llm_selection_kwargs = "fixed", {"prior_probs": probs}
+    else:
+        llm_selection, llm_selection_kwargs = "ucb1", {"exploration_coef": 1.0, "cost_aware_coef": 0.5}
+    n_archive, n_topk = (int(x) for x in args.inspirations.split(","))
     evo_config = EvolutionConfig(
         task_sys_msg=task_sys_msg,
         patch_types=["diff", "full", "cross"],
-        patch_type_probs=[0.6, 0.3, 0.1],
+        patch_type_probs=[float(x) for x in args.patch_probs.split(",")],
         num_generations=args.generations,
         max_api_costs=args.budget,
         max_patch_resamples=3,
         max_patch_attempts=1,
         job_type="local",
         language="python",
-        llm_models=args.models.split(","),
-        llm_kwargs={"temperatures": [0.0, 0.5, 1.0], "reasoning_efforts": ["low", "medium"], "max_tokens": 32768},
-        llm_dynamic_selection="ucb1",
-        llm_dynamic_selection_kwargs={"exploration_coef": 1.0, "cost_aware_coef": 0.5},
+        llm_models=models,
+        llm_kwargs={"temperatures": [0.0, 0.5, 1.0], "reasoning_efforts": args.efforts.split(","),
+                    "max_tokens": args.max_tokens},
+        llm_dynamic_selection=llm_selection,
+        llm_dynamic_selection_kwargs=llm_selection_kwargs,
         meta_rec_interval=5,
         meta_llm_models=[args.helper_model],
         meta_llm_kwargs={"temperatures": [0.0], "max_tokens": 16384},
@@ -157,7 +199,7 @@ def main() -> None:
     )
     db_config = DatabaseConfig(
         num_islands=args.islands, archive_size=40, elite_selection_ratio=0.3,
-        num_archive_inspirations=2, num_top_k_inspirations=2, migration_interval=10,
+        num_archive_inspirations=n_archive, num_top_k_inspirations=n_topk, migration_interval=10,
         migration_rate=0.1, island_elitism=True, parent_selection_strategy="weighted",
         parent_selection_lambda=10.0,
     )

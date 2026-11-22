@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "recency_aware_parent_selection",
+  "patch_description": "Add a modest recency bonus to the existing quality-, novelty-, productivity-, and usage-based parent selection. The current usage bonus discourages repeatedly selecting a parent, but does not distinguish a recently explored parent from one that has been neglected for many rounds; likewise, `parent_stalls` is tracked but does not affect selection. The added factors gently favor underexplored or persistently stalled archive members without overriding the existing quality bias. Record the selected round so the recency signal updates consistently.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:55:51.584609",
+  "llm_cost": 0.0033552,
+  "llm_model": "gpt-6-luna"
+}

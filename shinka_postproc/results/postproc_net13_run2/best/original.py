@@ -114,8 +114,8 @@ def improve(demand, candidates, tools, rng):
         """Mix elite exploitation with sampling from diverse archived networks."""
         if not pop:
             return best_net
-        if rng.random() < 0.70:
-            return pop[int(rng.integers(min(4, len(pop))))]
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
         return pop[int(rng.integers(len(pop)))]
 
     def switch(net, p, q):
@@ -212,10 +212,43 @@ def improve(demand, candidates, tools, rng):
             if cand != net:
                 moves.add(cand)
 
+        # Relink toward a strong, distant archive member. Each step is a legal
+        # two-switch that increases overlap with the target, so intermediates
+        # provide a directed bridge between otherwise separate search regions.
+        targets = [
+            x for x in archive()
+            if x != net and distance(x, net) >= 8
+        ]
+        if targets:
+            targets.sort(key=lambda x: seen.get(x, float("inf")))
+            target = targets[int(rng.integers(min(6, len(targets))))]
+            target_set = set(target)
+            walk = net
+            for _ in range(5):
+                walk_arcs = list(walk)
+                old_overlap = len(set(walk) & target_set)
+                best_overlap = old_overlap
+                advancing = []
+                for p in range(len(walk_arcs)):
+                    for q in range(p + 1, len(walk_arcs)):
+                        cand = switch(walk, p, q)
+                        if cand is None:
+                            continue
+                        overlap = len(set(cand) & target_set)
+                        if overlap > best_overlap:
+                            best_overlap = overlap
+                            advancing = [cand]
+                        elif overlap == best_overlap and overlap > old_overlap:
+                            advancing.append(cand)
+                if not advancing:
+                    break
+                walk = advancing[int(rng.integers(len(advancing)))]
+                moves.add(walk)
+
         return [m for m in moves if m != net and tools.is_valid(m)]
 
     def screen_batch(moves, parent, batch_size=9):
-        """Use surrogate ranking and topology distance to select an LP batch."""
+        """Favor good surrogate moves but reserve one slot for archive novelty."""
         fresh = [
             m for m in moves
             if m not in seen and not tools.is_cached(m)
@@ -224,31 +257,37 @@ def improve(demand, candidates, tools, rng):
             return []
 
         base_e = energy(parent)
-        ranked = []
-        for net in fresh:
-            ranked.append((energy(net) - base_e, net))
-        ranked.sort(key=lambda item: item[0])
+        ranked = sorted(
+            ((energy(net) - base_e, net) for net in fresh),
+            key=lambda item: item[0],
+        )
 
+        # Preserve most of the batch for promising moves, spreading the
+        # initial picks across distinct topologies.
+        quality_limit = max(0, batch_size - 1)
         selected = []
-        # First take good-energy moves that are not all tiny variants of one another.
         for _, net in ranked:
             if all(distance(net, old) >= 2 for old in selected):
                 selected.append(net)
-            if len(selected) >= min(6, batch_size):
+            if len(selected) >= min(6, quality_limit):
                 break
 
-        # Fill remaining slots with the best surrogate-ranked moves.
         for _, net in ranked:
-            if len(selected) >= batch_size:
+            if len(selected) >= quality_limit:
                 break
             if net not in selected:
                 selected.append(net)
 
-        # Reserve a little batch capacity for tail exploration.
-        tail = [net for _, net in ranked if net not in selected]
-        if tail and len(selected) >= 4 and len(selected) < batch_size:
-            rng.shuffle(tail)
-            selected.extend(tail[:batch_size - len(selected)])
+        # Spend the reserved call on a candidate far from every scored
+        # archive member; use surrogate energy only to break novelty ties.
+        remaining = [net for _, net in ranked if net not in selected]
+        if remaining and len(selected) < batch_size:
+            refs = archive()
+            def novelty(net):
+                return min((distance(net, old) for old in refs), default=len(net))
+            novel = max(remaining, key=lambda net: (novelty(net), -energy(net)))
+            selected.append(novel)
+
         return selected[:batch_size]
 
     # A bounded archive drives a sequence of short, diverse neighborhood searches.
@@ -266,7 +305,7 @@ def improve(demand, candidates, tools, rng):
             detail = None
 
         moves = make_moves(parent, detail)
-        batch = screen_batch(moves, parent, batch_size=3)
+        batch = screen_batch(moves, parent)
 
         # If a neighborhood has already been exhausted, perturb another archive
         # member rather than repeatedly revisiting the same parent.
@@ -278,7 +317,7 @@ def improve(demand, candidates, tools, rng):
                     detail = tools.lp_detail(parent)
                 except Exception:
                     detail = None
-                batch = screen_batch(make_moves(parent, detail), parent, batch_size=3)
+                batch = screen_batch(make_moves(parent, detail), parent)
 
         if not batch:
             # A final random degree-preserving kick guarantees progress when possible.

@@ -11,28 +11,30 @@ import time
 import numpy as np
 
 # EVOLVE-BLOCK-START
+import math
+
+
 def improve(demand, candidates, tools, rng):
+    """Search repaired QAOA networks using a surrogate-screened diverse archive."""
     n = tools.n
     seen = {}
     best_net = None
     best_score = float("inf")
-    stalls = {}
-    # Smoothed success rates for two-switch, rotation, and kick proposals.
-    reward = [1.0, 1.0, 1.0]
-    attempts = [1.0, 1.0, 1.0]
+    parent_stalls = {}
 
     def canon(arcs):
         return tuple(sorted(tuple(map(int, a)) for a in arcs))
 
     def evaluate(net):
+        """Score once locally; budget exhaustion is allowed to reach the caller."""
         nonlocal best_net, best_score
         net = canon(net)
         if net not in seen:
             seen[net] = tools.lp(net)
-        score = seen[net]
-        if score < best_score:
-            best_score, best_net = score, net
-        return score
+        s = seen[net]
+        if s < best_score:
+            best_net, best_score = net, s
+        return s
 
     def energy(net):
         try:
@@ -40,9 +42,27 @@ def improve(demand, candidates, tools, rng):
         except Exception:
             return 0.0
 
-    def dist(a, b):
+    def distance(a, b):
         return len(set(a) ^ set(b))
 
+    def choose_starts(repaired, limit):
+        """Prefer low surrogate energy, while retaining topological variety."""
+        ordered = sorted(repaired, key=energy)
+        chosen = []
+        for net in ordered:
+            if all(distance(net, old) >= 4 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= limit:
+                break
+        for net in ordered:
+            if len(chosen) >= limit:
+                break
+            if net not in chosen:
+                chosen.append(net)
+        return chosen
+
+    # Repair all raw samples for free, then seed the search with a compact,
+    # energy-ranked but diversity-aware subset.
     repaired = set()
     for cand in candidates:
         try:
@@ -50,7 +70,8 @@ def improve(demand, candidates, tools, rng):
             if tools.is_valid(net):
                 repaired.add(net)
         except Exception:
-            pass
+            continue
+
     if not repaired:
         try:
             net = canon(tools.repair([]))
@@ -59,20 +80,8 @@ def improve(demand, candidates, tools, rng):
         except Exception:
             return []
 
-    ordered = sorted(repaired, key=energy)
-    starts = []
-    for net in ordered:
-        if all(dist(net, old) >= 4 for old in starts):
-            starts.append(net)
-        if len(starts) >= 24:
-            break
-    for net in ordered:
-        if len(starts) >= 30:
-            break
-        if net not in starts:
-            starts.append(net)
-
-    for net in starts:
+    initial = choose_starts(repaired, min(30, len(repaired)))
+    for net in initial:
         if tools.lp_calls_left <= 0:
             break
         try:
@@ -80,69 +89,121 @@ def improve(demand, candidates, tools, rng):
         except Exception as exc:
             if type(exc).__name__ == "BudgetExhausted":
                 break
+            continue
+
     if not seen:
-        return list(starts[0])
+        return list(initial[0])
 
     def archive():
+        """Keep excellent networks and the best representatives of distinct regions."""
         ranked = sorted(seen, key=seen.get)
         out = []
         for net in ranked:
-            if all(dist(net, old) >= 4 for old in out):
+            if all(distance(net, old) >= 4 for old in out):
                 out.append(net)
-            if len(out) >= 18:
+            if len(out) >= 24:
                 break
         for net in ranked:
-            if len(out) >= 30:
+            if len(out) >= 32:
                 break
             if net not in out:
                 out.append(net)
         return out
 
     def select_parent(pop):
-        if rng.random() < 0.65:
-            return pop[int(rng.integers(min(5, len(pop))))]
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
         return pop[int(rng.integers(len(pop)))]
 
-    def two_switch(net, rng):
+    def switch(net, p, q):
+        """Swap the destinations of two links, preserving all degrees."""
         arcs = list(net)
-        if len(arcs) < 2:
+        (a, b), (c, d) = arcs[p], arcs[q]
+        if a == d or c == b:
             return None
-        p, q = rng.choice(len(arcs), size=2, replace=False)
-        (a, b), (c, d) = arcs[int(p)], arcs[int(q)]
         cur = set(net)
-        if a == d or c == b or (a, d) in cur or (c, b) in cur:
+        if (a, d) in cur or (c, b) in cur:
             return None
-        cur.remove((a, b)); cur.remove((c, d))
-        cur.add((a, d)); cur.add((c, b))
+        cur.remove((a, b))
+        cur.remove((c, d))
+        cur.add((a, d))
+        cur.add((c, b))
         return tuple(sorted(cur))
 
-    def proposal(net, kind, hot):
+    def make_moves(net, detail):
+        """Build a focused two-switch neighborhood plus sampled rotations and kicks."""
         arcs = list(net)
-        cur = set(net)
-        if kind == 0:
-            # Enumerate a random subset of swaps, favoring links with positive dual prices.
-            pairs = []
-            for i in range(len(arcs)):
-                for j in range(i + 1, len(arcs)):
-                    if hot and arcs[i] not in hot and arcs[j] not in hot:
-                        continue
-                    pairs.append((i, j))
-            if not pairs:
-                return two_switch(net, rng)
-            rng.shuffle(pairs)
-            for i, j in pairs[:12]:
-                (a, b), (c, d) = arcs[i], arcs[j]
-                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+        current = set(net)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, a)) for a, p in prices.items() if p > 0}
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            ranked_loads = sorted(
+                ((float(v), tuple(map(int, a))) for a, v in loads.items()),
+                reverse=True,
+            )
+            hot = {a for _, a in ranked_loads[:6]}
+
+        # Exhaustively explore swaps involving at least one critical link.
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                if hot and arcs[p] not in hot and arcs[q] not in hot:
                     continue
-                nxt = cur.copy()
-                nxt.remove((a, b)); nxt.remove((c, d))
-                nxt.add((a, d)); nxt.add((c, b))
-                return tuple(sorted(nxt))
-            return None
-        if kind == 1:
-            if len(arcs) < 3:
-                return None
-            for _ in range(12):
+                cand = switch(net, p, q)
+                if cand is not None:
+                    moves.add(cand)
+
+        # Use a small number of switches guided by arcs shared across strong,
+        # structurally diverse archive members. Sampling among the leaders
+        # avoids collapsing every neighborhood onto the same consensus topology.
+        refs = archive()[:16]
+        if refs:
+            arc_frequency = {}
+            for ref in refs:
+                for arc in ref:
+                    arc_frequency[arc] = arc_frequency.get(arc, 0) + 1
+            guided = []
+            for p in range(len(arcs)):
+                for q in range(p + 1, len(arcs)):
+                    cand = switch(net, p, q)
+                    if cand is None:
+                        continue
+                    added = set(cand) - current
+                    removed = current - set(cand)
+                    gain = sum(arc_frequency.get(a, 0) for a in added)
+                    gain -= sum(arc_frequency.get(a, 0) for a in removed)
+                    if gain > 0:
+                        guided.append((gain, cand))
+            guided.sort(key=lambda item: item[0], reverse=True)
+            shortlist = guided[:min(16, len(guided))]
+            if shortlist:
+                order = rng.permutation(len(shortlist))
+                for idx in order[:min(8, len(shortlist))]:
+                    moves.add(shortlist[int(idx)][1])
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+            if len(arcs) < 2:
+                break
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            cand = switch(net, p, q)
+            if cand is not None:
+                moves.add(cand)
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+        # Rotations preserve degrees and can cross barriers that two-switches miss.
+        if len(arcs) >= 3:
+            stalls = parent_stalls.get(net, 0)
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+            for _ in range(rotation_trials):
                 ids = rng.choice(len(arcs), size=3, replace=False)
                 (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
                 old = {(a, b), (c, d), (e, f)}
@@ -152,115 +213,183 @@ def improve(demand, candidates, tools, rng):
                     {(a, d), (c, f), (e, b)},
                     {(a, f), (c, b), (e, d)},
                 ):
-                    if any(x == y for x, y in new) or new & (cur - old):
+                    if len(new) != 3 or any(x == y for x, y in new):
                         continue
-                    return tuple(sorted((cur - old) | new))
-            return None
-        # Multi-switch kick: preserve all degrees and make several valid exchanges.
-        for _ in range(2 + int(rng.integers(5))):
-            nxt = two_switch(tuple(sorted(cur)), rng)
-            if nxt is not None:
-                cur = set(nxt)
-        return tuple(sorted(cur)) if cur != set(net) else None
+                    if new & (current - old):
+                        continue
+                    cand = tuple(sorted((current - old) | new))
+                    moves.add(cand)
 
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        for _ in range(24):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(4))):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        # Relink toward a strong, distant archive member. Each step is a legal
+        # two-switch that increases overlap with the target, so intermediates
+        # provide a directed bridge between otherwise separate search regions.
+        targets = [
+            x for x in archive()
+            if x != net and distance(x, net) >= 8
+        ]
+        if targets:
+            targets.sort(key=lambda x: seen.get(x, float("inf")))
+            target = targets[int(rng.integers(min(6, len(targets))))]
+            target_set = set(target)
+            walk = net
+            for _ in range(5):
+                walk_arcs = list(walk)
+                old_overlap = len(set(walk) & target_set)
+                best_overlap = old_overlap
+                advancing = []
+                for p in range(len(walk_arcs)):
+                    for q in range(p + 1, len(walk_arcs)):
+                        cand = switch(walk, p, q)
+                        if cand is None:
+                            continue
+                        overlap = len(set(cand) & target_set)
+                        if overlap > best_overlap:
+                            best_overlap = overlap
+                            advancing = [cand]
+                        elif overlap == best_overlap and overlap > old_overlap:
+                            advancing.append(cand)
+                if not advancing:
+                    break
+                walk = advancing[int(rng.integers(len(advancing)))]
+                moves.add(walk)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+
+    def screen_batch(moves, parent, batch_size=9):
+        """Favor good surrogate moves but reserve one slot for archive novelty."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = sorted(
+            ((energy(net) - base_e, net) for net in fresh),
+            key=lambda item: item[0],
+        )
+
+        # Preserve most of the batch for promising moves, spreading the
+        # initial picks across distinct topologies.
+        quality_limit = max(0, batch_size - 1)
+        selected = []
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, quality_limit):
+                break
+
+        for _, net in ranked:
+            if len(selected) >= quality_limit:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Spend the reserved call on a candidate far from every scored
+        # archive member; use surrogate energy only to break novelty ties.
+        remaining = [net for _, net in ranked if net not in selected]
+        if remaining and len(selected) < batch_size:
+            refs = archive()
+            def novelty(net):
+                return min((distance(net, old) for old in refs), default=len(net))
+            novel = max(remaining, key=lambda net: (novelty(net), -energy(net)))
+            selected.append(novel)
+
+        return selected[:batch_size]
+
+    # A bounded archive drives a sequence of short, diverse neighborhood searches.
     rounds = 0
     while tools.lp_calls_left > 0:
         rounds += 1
         pop = archive()
         parent = select_parent(pop)
+        if parent is None:
+            break
+
         try:
             detail = tools.lp_detail(parent)
-            prices = detail.get("prices", {})
-            hot = {tuple(map(int, a)) for a, p in prices.items() if float(p) > 0}
-            if not hot:
-                loads = detail.get("loads", {})
-                hot = {tuple(map(int, a)) for a, _ in
-                       sorted(loads.items(), key=lambda x: float(x[1]), reverse=True)[:7]}
         except Exception:
-            hot = set()
+            detail = None
 
-        # Adaptive operator probabilities, with a floor for exploration.
-        rates = [reward[i] / attempts[i] for i in range(3)]
-        probs = np.asarray(rates, dtype=float) + 0.25
-        probs /= probs.sum()
-        moves = {}
-        kinds = {}
-        # Generate a compact batch from a mixture; LP feedback updates its mix.
-        for _ in range(36):
-            kind = int(rng.choice(3, p=probs))
-            net = proposal(parent, kind, hot)
-            if net is None or net == parent or net in seen:
-                continue
-            try:
-                if not tools.is_valid(net) or tools.is_cached(net):
-                    continue
-            except Exception:
-                continue
-            moves[net] = kind
-            kinds[net] = kind
+        moves = make_moves(parent, detail)
+        batch = screen_batch(moves, parent)
 
-        if not moves:
-            # Sample a few more unrestricted perturbations if focused moves stall.
-            for _ in range(30):
-                net = proposal(parent, int(rng.integers(3)), set())
-                if net is not None and net != parent and net not in seen:
-                    try:
-                        if tools.is_valid(net) and not tools.is_cached(net):
-                            moves[net] = 2
-                    except Exception:
-                        pass
+        # If a neighborhood has already been exhausted, perturb another archive
+        # member rather than repeatedly revisiting the same parent.
+        if not batch:
+            alternatives = [x for x in pop if x != parent]
+            if alternatives:
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+                    detail = tools.lp_detail(parent)
+                except Exception:
+                    detail = None
+                batch = screen_batch(make_moves(parent, detail), parent)
 
-        if not moves:
-            if rounds > 5000:
+        if not batch:
+            # A final random degree-preserving kick guarantees progress when possible.
+            for _ in range(40):
+                cur = set(parent)
+                arcs = list(cur)
+                for _ in range(3 + int(rng.integers(4))):
+                    p, q = rng.choice(len(arcs), size=2, replace=False)
+                    a, b = arcs[int(p)]
+                    c, d = arcs[int(q)]
+                    if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                        continue
+                    cur.remove((a, b))
+                    cur.remove((c, d))
+                    cur.add((a, d))
+                    cur.add((c, b))
+                    arcs = list(cur)
+                kicked = tuple(sorted(cur))
+                if kicked != parent and kicked not in seen and not tools.is_cached(kicked):
+                    batch = [kicked]
+                    break
+
+        if not batch:
+            # All available moves may be cached; avoid an unbounded spin.
+            if rounds > 10000:
                 break
             continue
 
-        base_e = energy(parent)
-        pmap = {}
-        try:
-            pmap = {tuple(map(int, a)): float(v)
-                    for a, v in detail.get("prices", {}).items()}
-        except Exception:
-            pass
-        parent_edges = set(parent)
-        ranked = []
-        for net, kind in moves.items():
-            added, removed = set(net) - parent_edges, parent_edges - set(net)
-            dual_gain = sum(pmap.get(a, 0.0) for a in removed) - sum(
-                pmap.get(a, 0.0) for a in added)
-            ranked.append((energy(net) - base_e - 0.02 * dual_gain, net, kind))
-        ranked.sort(key=lambda x: x[0])
-
-        batch = []
-        # Diverse high-ranked choices plus one deliberately exploratory choice.
-        for _, net, _ in ranked:
-            if all(dist(net, old) >= 2 for old in batch):
-                batch.append(net)
-            if len(batch) >= 3:
-                break
-        if len(ranked) > 3 and rng.random() < 0.35:
-            tail = [x for x in ranked[3:] if x[1] not in batch]
-            if tail:
-                batch.append(tail[int(rng.integers(len(tail)))][1])
-
-        before = best_score
         parent_score = seen.get(parent, float("inf"))
         for net in batch:
             if tools.lp_calls_left <= 0:
                 break
-            kind = moves.get(net, 2)
             try:
-                score = evaluate(net)
-                attempts[kind] += 1.0
-                if score < parent_score:
-                    reward[kind] += 1.0
+                evaluate(net)
             except Exception as exc:
                 if type(exc).__name__ == "BudgetExhausted":
                     return list(best_net) if best_net is not None else []
-        if best_score < before:
-            stalls[parent] = 0
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
         else:
-            stalls[parent] = stalls.get(parent, 0) + 1
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
 
     return list(best_net) if best_net is not None else []
 # EVOLVE-BLOCK-END

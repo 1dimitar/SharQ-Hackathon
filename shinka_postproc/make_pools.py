@@ -122,7 +122,8 @@ def main() -> None:
         source = Path(args.hamiltonian).resolve()
         if hamiltonian_file.exists() and hamiltonian_file.read_text() != source.read_text():
             sys.exit(f"{hamiltonian_file} exists with different content: pick another --tag")
-        shutil.copyfile(source, hamiltonian_file)
+        if not hamiltonian_file.exists():  # never rewrite a file that running evaluations may be reading
+            shutil.copyfile(source, hamiltonian_file)
         hamiltonian_label = f"{args.tag} = {source.relative_to(HERE.parent)}"
 
     demand = qt.load_network_demand(args.n)

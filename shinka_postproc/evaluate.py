@@ -22,7 +22,8 @@ from shinka.core import run_shinka_eval
 from shinka.core.wrap_eval import save_json_results
 
 HERE = Path(__file__).resolve().parent
-BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908}
+BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908, 17: 437000, 18: 473375,
+              19: 492924, 20: 528528, 21: 569273, 22: 618135, 23: 659369, 24: 663688}
 SECONDS_PER_RUN = 150.0
 
 # The program must reach the LP only through `tools`, and must not tamper with the oracle.
@@ -102,6 +103,10 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int, contro
         best_of = {t: min(rs, key=lambda r: r["best"]) for t, rs in groups.items()}
         group_score, pool_score = mean([ratio(b) for b in best_of.values()]), mean([ratio(r) for r in qaoa])
         combined = group_score if score == "best_per_hamiltonian" else pool_score
+        sizes = sorted({q["n"] for q in qaoa})
+        if len(sizes) > 1:  # multi-size runs: where the gap is
+            lines.append("Mean gap per instance size: " + ", ".join(
+                f"n={n} {mean([gap(q) for q in qaoa if q['n'] == n]):+.2f}%" for n in sizes))
         lines.append("Best per Hamiltonian (over its pools): "
                      + ", ".join(f"{t} {b['best']:.0f} ({gap(b):+.2f}%)" for t, b in best_of.items()))
         lines.append(f"Mean over Hamiltonians of best_known/best(best of its pools): {group_score:.4f}"
@@ -115,6 +120,7 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int, contro
             "mean_lp_calls": mean([r["lp_calls"] for r in qaoa]),
             "mean_seconds": mean([r["seconds"] for r in qaoa]),
         }
+        public.update({f"mean_gap_pct_n{n}": mean([gap(q) for q in qaoa if q["n"] == n]) for n in sizes})
         if ctrl:
             c_score = mean([ratio(c) for c in ctrl.values()])
             matched = mean([ratio(q) for q in qaoa if q["pool"] in ctrl])

@@ -1,0 +1,14 @@
+{
+  "generation": 94,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_operator_archive",
+  "patch_description": "Reorganizes the search around a small scored archive and independently tracked move operators. Each iteration selects an archive parent, allocates proposal effort using operator-specific outcomes and stall signals, then screens a small batch by surrogate energy and LP-scores it. This keeps the neighborhood generators separate and avoids spending most of the budget on large, repeatedly unproductive batches, while retaining bottleneck-focused swaps, rotations, and multi-switch kicks for diversification.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:51:39.055233",
+  "llm_cost": 0.003764,
+  "llm_model": "gpt-6-luna"
+}

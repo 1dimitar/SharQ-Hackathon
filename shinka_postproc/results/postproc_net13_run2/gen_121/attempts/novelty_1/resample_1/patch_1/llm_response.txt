@@ -1,0 +1,70 @@
+<NAME>
+activity_weighted_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Replace the current 48%-elite/uniform parent choice with weighted sampling from the archive. The weights retain a preference for high-quality networks while giving extra chances to structurally isolated and infrequently selected parents. A mild penalty for repeatedly stalled parents reduces wasted evaluations, without eliminating them from the search. Track each parent’s neighborhood searches so the exploration weight adapts over the run.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_score = float("inf")
+    parent_stalls = {}
+    guided_moves = set()
+=======
+    best_score = float("inf")
+    parent_stalls = {}
+    parent_uses = {}
+    guided_moves = set()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Balance archive quality with novelty and under-explored parents."""
+        if not pop:
+            return best_net
+
+        total_uses = sum(parent_uses.values())
+        weights = []
+        for rank, net in enumerate(pop):
+            uses = parent_uses.get(net, 0)
+            nearest = min(
+                (distance(net, other) for other in pop if other != net),
+                default=26,
+            )
+            novelty = min(1.0, nearest / 26.0)
+            quality = 1.0 / (1.0 + 0.05 * rank)
+            exploration = math.sqrt(
+                math.log(total_uses + 2.0) / (uses + 1.0)
+            )
+            stall_factor = 1.0 / (1.0 + 0.06 * parent_stalls.get(net, 0))
+            weights.append(
+                quality * (0.65 + novelty) * (1.0 + 0.45 * exploration)
+                * stall_factor
+            )
+
+        pick = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+=======
+        parent_score = seen.get(parent, float("inf"))
+        parent_uses[parent] = parent_uses.get(parent, 0) + 1
+        for net in batch:
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 109,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "multi_region_seed_diversity",
+  "patch_description": "The current seed selector greedily accepts only candidates at least four arc changes from every previously selected seed. This can preserve one broad region while still underrepresenting other strong regions. Replace that pass with a quality-constrained novelty pass: retain a small energy-ranked elite, then choose additional seeds that are far on average from several elite anchors, using surrogate energy to break ties. This should spread initial LP calls across structurally distinct promising regions without allowing novelty alone to promote arbitrarily poor seeds.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:12:16.916273",
+  "llm_cost": 0.0027552,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,301 @@
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    """Search repaired topologies with LP-feedback replica tempering."""
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    # Repair samples for free. Use energy only to select a varied set of starts;
+    # LP scores, not surrogate values, determine all later search decisions.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    for net in ordered:
+        if all(distance(net, old) >= 4 for old in starts):
+            starts.append(net)
+        if len(starts) >= min(24, len(repaired)):
+            break
+    for net in ordered:
+        if len(starts) >= min(48, len(repaired)):
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+    if not seen:
+        return list(starts[0]) if starts else []
+
+    # Retain a compact, structurally diverse set for chain restarts.
+    def archive(limit=24):
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= limit:
+                break
+        for net in ranked:
+            if len(out) >= limit:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    def get_hot(net):
+        """Return links implicated by dual prices, with a load fallback."""
+        try:
+            detail = tools.lp_detail(net)
+        except Exception:
+            return set()
+        hot = set()
+        try:
+            prices = detail.get("prices", {})
+            hot = {
+                tuple(map(int, arc))
+                for arc, price in prices.items()
+                if float(price) > 0.0
+            }
+        except Exception:
+            hot = set()
+        if not hot:
+            try:
+                loads = detail.get("loads", {})
+                ranked = sorted(
+                    loads.items(),
+                    key=lambda item: float(item[1]),
+                    reverse=True,
+                )
+                hot = {tuple(map(int, arc)) for arc, _ in ranked[:7]}
+            except Exception:
+                hot = set()
+        return hot
+
+    def switch(cur, p, q):
+        arcs = list(cur)
+        if p == q or len(arcs) < 2:
+            return None
+        (a, b), (c, d) = arcs[p], arcs[q]
+        if a == d or c == b:
+            return None
+        nxt = set(cur)
+        nxt.remove((a, b))
+        nxt.remove((c, d))
+        if (a, d) in nxt or (c, b) in nxt:
+            return None
+        nxt.add((a, d))
+        nxt.add((c, b))
+        return tuple(sorted(nxt))
+
+    def propose(net, hot):
+        """Make one valid degree-preserving transition."""
+        arcs = list(net)
+        if len(arcs) < 3:
+            return None
+
+        r = float(rng.random())
+        cur = set(net)
+
+        # Most proposals are two-switches, biased toward bottleneck links.
+        if r < 0.82:
+            if hot and rng.random() < 0.78:
+                hot_ids = [i for i, arc in enumerate(arcs) if arc in hot]
+                if hot_ids:
+                    p = int(hot_ids[int(rng.integers(len(hot_ids)))])
+                else:
+                    p = int(rng.integers(len(arcs)))
+            else:
+                p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            return switch(net, p, q)
+
+        # Three-link destination rotations cross some two-switch barriers.
+        if r < 0.94:
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            if hot and rng.random() < 0.7 and not (old & hot):
+                return None
+            rotations = (
+                {(a, d), (c, f), (e, b)},
+                {(a, f), (c, b), (e, d)},
+            )
+            new = rotations[int(rng.integers(2))]
+            if any(x == y for x, y in new) or new & (cur - old):
+                return None
+            return tuple(sorted((cur - old) | new))
+
+        # Short compound perturbation: return the result after several valid
+        # switches, rather than spending LP calls on each intermediate network.
+        work = net
+        steps = 2 + int(rng.integers(3))
+        for _ in range(steps):
+            cur_arcs = list(work)
+            p = int(rng.integers(len(cur_arcs)))
+            q = int(rng.integers(len(cur_arcs) - 1))
+            if q >= p:
+                q += 1
+            nxt = switch(work, p, q)
+            if nxt is not None:
+                work = nxt
+        return work if work != net else None
+
+    # Seed four chains from LP-ranked starts, preferring distinct regions.
+    ranked_starts = sorted(seen, key=seen.get)
+    seeds = []
+    for net in ranked_starts:
+        if all(distance(net, old) >= 4 for old in seeds):
+            seeds.append(net)
+        if len(seeds) == 4:
+            break
+    for net in ranked_starts:
+        if len(seeds) == 4:
+            break
+        if net not in seeds:
+            seeds.append(net)
+    while len(seeds) < 4:
+        seeds.append(best_net)
+
+    states = list(seeds)
+    state_scores = [seen[net] for net in states]
+    state_hot = [get_hot(net) for net in states]
+
+    # Temperatures are relative to the current score scale. The ladder gives
+    # the chains distinct acceptance behavior without relying on energy units.
+    score_scale = max(1.0, abs(best_score))
+    temperatures = [
+        0.0007 * score_scale,
+        0.0015 * score_scale,
+        0.0030 * score_scale,
+        0.0060 * score_scale,
+    ]
+
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        chain = (iteration - 1) % len(states)
+        parent = states[chain]
+        parent_score = state_scores[chain]
+
+        # Periodic restarts refresh a stagnant chain from a strong archived
+        # topology, while preserving the cooler chains' local trajectories.
+        if chain == 3 and iteration % 96 == 0:
+            pop = archive()
+            if pop:
+                restart = pop[int(rng.integers(min(len(pop), 12)))]
+                states[chain] = restart
+                state_scores[chain] = seen[restart]
+                state_hot[chain] = get_hot(restart)
+                parent = restart
+                parent_score = state_scores[chain]
+
+        # Try a few cheap proposals to avoid spending an LP call on a duplicate.
+        trial = None
+        for _ in range(12):
+            trial = propose(parent, state_hot[chain])
+            if trial is None or trial == parent or trial in seen:
+                continue
+            try:
+                if tools.is_valid(trial) and not tools.is_cached(trial):
+                    break
+            except Exception:
+                continue
+            trial = None
+        if trial is None or trial == parent or trial in seen:
+            # The cache may contain many local transitions; an unrestricted
+            # compound move provides a fallback without an expensive scan.
+            for _ in range(20):
+                trial = propose(parent, set())
+                if trial is not None and trial != parent and trial not in seen:
+                    try:
+                        if tools.is_valid(trial) and not tools.is_cached(trial):
+                            break
+                    except Exception:
+                        pass
+                trial = None
+            if trial is None:
+                continue
+
+        try:
+            score = evaluate(trial)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            continue
+
+        delta = score - parent_score
+        temp = temperatures[chain]
+
+        # Metropolis acceptance allows uphill movement; the hottest replica
+        # supplies broad exploration, while the cool replica is selective.
+        accept = delta <= 0
+        if not accept:
+            exponent = -float(delta) / max(1.0, temp)
+            accept = rng.random() < math.exp(max(-60.0, exponent))
+        if accept:
+            states[chain] = trial
+            state_scores[chain] = score
+            state_hot[chain] = get_hot(trial)
+
+        # Occasionally exchange adjacent replicas. A good state discovered by
+        # a hot chain can then seed refinement in a cooler chain.
+        if chain == 3 and iteration % 12 == 0:
+            for k in (2, 1, 0):
+                if rng.random() < 0.35:
+                    states[k], states[k + 1] = states[k + 1], states[k]
+                    state_scores[k], state_scores[k + 1] = (
+                        state_scores[k + 1], state_scores[k]
+                    )
+                    state_hot[k], state_hot[k + 1] = state_hot[k + 1], state_hot[k]
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END

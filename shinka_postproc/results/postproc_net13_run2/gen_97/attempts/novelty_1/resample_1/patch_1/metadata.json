@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "adaptive_operator_credit",
+  "patch_description": "Track which move operators produced each candidate and update a smoothed success weight from LP-confirmed improvements over the current parent. Use those weights to reserve part of each small batch for operators with better recent results, while retaining the existing energy-ranked selection to fill the rest. This adapts the search effort to the pool\u2019s observed behavior without permanently eliminating less-tested operators.",
+  "error_msg": "SEARCH text not found in editable regions\n\nLooking for 4-line block starting with: 'cand = tuple(sorted((current - old) | new)'\n\nFull search pattern:\n```\ncand = tuple(sorted((current - old) | new)\n                    moves.add(cand)\n\n        # Occasional multi-switch kicks broaden the neighborhood beyond one step.\n```\n\nFound similar code block at line 212 (\u2713 editable):\n\nDifferences between search pattern and actual code:\n```diff\n-  cand = tuple(sorted((current - old) | new)\n+                      cand = tuple(sorted((current - old) | new))\n```\n\nEditable regions where you can make changes:\n  Region 1 (lines 13-399):\n    import math\n    \n    \n    ... (379 more lines)\n                parent_stalls[parent] = parent_stalls.get(parent, 0) + 1\n    \n        return list(best_net) if best_net is not None else []\n\nQuick fixes:\n\u2022 Check indentation - search text must match exactly including spaces/tabs\n\u2022 Look for typos in the search text\n\u2022 Try searching for just the first line instead of the full block",
+  "timestamp": "2026-11-22T00:53:50.553789",
+  "llm_cost": 0.0032209000000000005,
+  "llm_model": "gpt-6-luna"
+}

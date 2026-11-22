@@ -1,0 +1,14 @@
+{
+  "generation": 108,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_frontier_search",
+  "patch_description": "Reorganizes the search into a staged pipeline: repair and diversify seed networks, maintain a bounded score-ranked frontier, then spend LP calls in small batches on one selected parent at a time. Neighborhood generation is split into focused switches, sampled rotations, and multi-switch perturbations, with per-parent stall counts and operator success rates guiding the effort. Surrogate energy screens proposals before LP evaluation, while bottleneck-touching moves and frontier diversity keep the search from relying on the surrogate alone.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:12:00.475436",
+  "llm_cost": 0.0038355000000000004,
+  "llm_model": "gpt-6-luna"
+}

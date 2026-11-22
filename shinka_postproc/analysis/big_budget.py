@@ -15,7 +15,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
-BEST_KNOWN = {12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908}
+BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908, 17: 437000, 18: 473375,
+              19: 492924, 20: 528528, 21: 569273, 22: 618135, 23: 659369, 24: 663688}
 
 
 def one(job):

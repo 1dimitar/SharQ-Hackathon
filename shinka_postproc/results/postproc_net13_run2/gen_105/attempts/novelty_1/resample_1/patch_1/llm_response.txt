@@ -1,0 +1,69 @@
+<NAME>
+underexplored_archive
+</NAME>
+
+<DESCRIPTION>
+Change archive-parent selection from a mostly uniform draw to a weighted draw that still favors high-quality networks, while giving additional probability to members visited less often. A modest stall bonus also directs some search toward parents whose neighborhoods have not recently improved, without letting stale parents dominate. Track visits both for the initially selected parent and when switching to an alternative. This applies the underexploration recommendation while retaining quality-biased exploitation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    parent_visits = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Favor strong parents while allocating search to underexplored members."""
+        if not pop:
+            return best_net
+        weights = []
+        for rank, net in enumerate(pop):
+            quality = 1.0 / ((1.0 + rank) ** 0.65)
+            underexplored = 1.0 / ((1.0 + parent_visits.get(net, 0)) ** 0.7)
+            stale = 1.0 + 0.12 * min(5, parent_stalls.get(net, 0))
+            weights.append(quality * underexplored * stale)
+
+        pick = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[0]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        parent = select_parent(pop)
+        if parent is None:
+            break
+
+        try:
+=======
+        parent = select_parent(pop)
+        if parent is None:
+            break
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+
+        try:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+=======
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                parent_visits[parent] = parent_visits.get(parent, 0) + 1
+                try:
+>>>>>>> REPLACE
+</DIFF>

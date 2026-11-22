@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_operator_budget",
+  "patch_description": "Use the observed LP success rate of each move type to guide which proposals receive scarce LP evaluations, while smoothing the estimates and retaining an exploration floor. The current code adapts the *proposal-generation* mixture, but then selects the LP batch almost entirely by surrogate rank; as a result, a move type can generate proposals without receiving a fair share of evaluations. This change first reserves batch slots for the strongest surrogate-ranked proposal from each operator, in proportion to its smoothed success rate, then fills remaining slots by overall rank. The existing exploratory tail remains intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:54:47.269326",
+  "llm_cost": 0.0029100000000000003,
+  "llm_model": "gpt-6-luna"
+}

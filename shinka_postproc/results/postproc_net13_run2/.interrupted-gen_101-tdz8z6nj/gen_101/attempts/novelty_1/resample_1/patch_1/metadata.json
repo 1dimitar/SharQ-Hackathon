@@ -1,0 +1,14 @@
+{
+  "generation": 101,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elite-novelty-search",
+  "patch_description": "The current search scores 30 starting networks and uses mostly small, energy-ranked move batches. This version scores up to 40 diverse starts, uses batches of 6\u20139, and limits rotation and kick generation to reduce time spent constructing neighborhoods. It also changes archive and move selection: alongside score-ranked elites, it retains networks with high average distance from several strong elites, and reserves a move slot for novelty measured against those elites. Parent selection combines score rank, novelty, past improvement, and a penalty for repeated use. Bottleneck-focused swaps remain the main local-search operator, while rotations and multi-switch kicks provide broader exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:56:43.697922",
+  "llm_cost": 0.0046562,
+  "llm_model": "gpt-6-luna"
+}

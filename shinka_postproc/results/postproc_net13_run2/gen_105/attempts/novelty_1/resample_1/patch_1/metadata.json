@@ -1,0 +1,14 @@
+{
+  "generation": 105,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "underexplored_archive",
+  "patch_description": "Change archive-parent selection from a mostly uniform draw to a weighted draw that still favors high-quality networks, while giving additional probability to members visited less often. A modest stall bonus also directs some search toward parents whose neighborhoods have not recently improved, without letting stale parents dominate. Track visits both for the initially selected parent and when switching to an alternative. This applies the underexploration recommendation while retaining quality-biased exploitation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:10:03.258732",
+  "llm_cost": 0.0029815,
+  "llm_model": "gpt-6-luna"
+}

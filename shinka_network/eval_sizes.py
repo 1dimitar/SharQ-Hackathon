@@ -121,6 +121,15 @@ def evaluate_program(code: str, label: str, source: str, opts) -> dict:
 
         return QoroService(job_config=JobConfig(shots=shots, simulator_cluster=opts.cluster, force_sampling=False))
 
+    upload_limit = None
+    if opts.sampler != "sa" and opts.backend == "cloud":
+        # Divi uploads up to 3000 circuits per request with a 100 s timeout, and one stalled request
+        # fails the whole ensemble; smaller requests get through a busy uplink (read at call time).
+        from divi.backends.runners import _qoro
+
+        upload_limit = _qoro._MAX_CIRCUITS_PER_REQUEST
+        _qoro._MAX_CIRCUITS_PER_REQUEST = opts.upload_chunk
+
     t0 = time.perf_counter()
     evaluate_qoro.sample_instance = sample_and_submit  # evaluate() looks these names up at call time
     evaluate_qoro.make_backend = make_backend_on_cluster
@@ -132,6 +141,8 @@ def evaluate_program(code: str, label: str, source: str, opts) -> dict:
     finally:
         evaluate_qoro.sample_instance = sample_instance
         evaluate_qoro.make_backend = make_backend
+        if upload_limit is not None:
+            _qoro._MAX_CIRCUITS_PER_REQUEST = upload_limit
         del problem.SUITES[suite]
     evaluate_qoro.write_results(str(run_dir), metrics, ok, error)
 
@@ -350,6 +361,8 @@ def main() -> None:
     common.add_argument("--parallel", type=int, default=4,
                         help="instance runs sampled at once (keep low on the cloud: evolution runs share it)")
     common.add_argument("--reads", type=int, default=64, help="simulated annealing reads (sa only)")
+    common.add_argument("--upload-chunk", type=int, default=200,
+                        help="circuits per upload request to Qoro (Divi's default is 3000)")
     for key, value in QUANTUM_DEFAULTS.items():
         common.add_argument(f"--{key.replace('_', '-')}", type=int, default=value, help="quantum samplers only")
 

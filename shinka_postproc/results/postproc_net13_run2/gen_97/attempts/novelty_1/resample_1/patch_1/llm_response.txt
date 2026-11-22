@@ -1,0 +1,168 @@
+<NAME>
+adaptive_operator_credit
+</NAME>
+
+<DESCRIPTION>
+Track which move operators produced each candidate and update a smoothed success weight from LP-confirmed improvements over the current parent. Use those weights to reserve part of each small batch for operators with better recent results, while retaining the existing energy-ranked selection to fill the rest. This adapts the search effort to the pool’s observed behavior without permanently eliminating less-tested operators.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+    parent_visits = {}
+    parent_improvements = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    parent_visits = {}
+    parent_improvements = {}
+    operator_weights = {
+        "focused": 1.0, "random": 1.0, "rotation": 1.0,
+        "kick": 1.0, "relink": 1.0,
+    }
+
+    def canon(arcs):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+=======
+        arcs = list(net)
+        current = set(net)
+        moves = {}
+
+        def record(move, operator):
+            moves.setdefault(move, set()).add(operator)
+
+        prices = detail.get("prices", {}) if detail else {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                cand = switch(net, p, q)
+                if cand is not None:
+                    moves.add(cand)
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+=======
+                cand = switch(net, p, q)
+                if cand is not None:
+                    record(cand, "focused")
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            cand = switch(net, p, q)
+            if cand is not None:
+                moves.add(cand)
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+=======
+            cand = switch(net, p, q)
+            if cand is not None:
+                record(cand, "random")
+
+        # Escalate rotation sampling for parents whose neighborhoods have stalled.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                    cand = tuple(sorted((current - old) | new)
+                    moves.add(cand)
+
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+=======
+                    cand = tuple(sorted((current - old) | new))
+                    record(cand, "rotation")
+
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        # Add intermediate networks on a short path toward a strong, distinct
+=======
+            cand = tuple(sorted(cur))
+            if cand != net:
+                record(cand, "kick")
+
+        # Add intermediate networks on a short path toward a strong, distinct
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                path_net = choices[int(rng.integers(len(choices)))]
+                moves.add(path_net)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+                path_net = choices[int(rng.integers(len(choices)))]
+                record(path_net, "relink")
+
+        return {
+            m: operators for m, operators in moves.items()
+            if m != net and tools.is_valid(m)
+        }
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+=======
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        selected = []
+        stalls = parent_stalls.get(parent, 0)
+        if stalls >= 2 and batch_size >= 3:
+=======
+        selected = []
+
+        # Allocate two early trials by recent LP-confirmed operator success.
+        # The remaining batch slots retain the usual energy-based screening.
+        for _ in range(min(2, batch_size)):
+            available = {
+                operator
+                for net in fresh if net not in selected
+                for operator in moves.get(net, ())
+            }
+            if not available:
+                break
+            operators = sorted(available)
+            weights = np.asarray(
+                [max(0.05, operator_weights.get(op, 1.0)) for op in operators],
+                dtype=float,
+            )
+            weights /= weights.sum()
+            operator = operators[int(rng.choice(len(operators), p=weights))]
+            choices = [
+                net for _, net in ranked
+                if net not in selected and operator in moves.get(net, ())
+            ]
+            if not choices:
+                continue
+            selected.append(choices[0])
+
+        stalls = parent_stalls.get(parent, 0)
+        if stalls >= 2 and batch_size >= 3:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            try:
+                evaluate(net)
+            except Exception as exc:
+=======
+            try:
+                value = evaluate(net)
+                operators = moves.get(net, ())
+                if operators:
+                    reward = 1.0 if value < parent_score else 0.25
+                    for operator in operators:
+                        old_weight = operator_weights.get(operator, 1.0)
+                        operator_weights[operator] = 0.85 * old_weight + 0.15 * reward
+            except Exception as exc:
+>>>>>>> REPLACE
+</DIFF>

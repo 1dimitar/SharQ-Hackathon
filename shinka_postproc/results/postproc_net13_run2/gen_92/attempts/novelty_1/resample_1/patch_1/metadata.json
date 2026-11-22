@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_wide_novelty",
+  "patch_description": "Replace nearest-archive-member novelty with aggregate distance from the leading archive members. A candidate that is far from one member but similar to the rest will no longer look artificially novel. Keep the surrogate-ranked proposals for exploitation, and reserve one slot for the candidate with greatest aggregate archive distance; break ties in favor of lower surrogate energy.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:50:32.988059",
+  "llm_cost": 0.0012212,
+  "llm_model": "gpt-6-luna"
+}

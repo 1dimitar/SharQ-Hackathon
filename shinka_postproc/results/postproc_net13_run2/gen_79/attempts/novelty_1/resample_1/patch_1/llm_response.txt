@@ -1,0 +1,80 @@
+<NAME>
+adaptive_parent_selection
+</NAME>
+
+<DESCRIPTION>
+The current parent selector spends 62% of its selections uniformly among the top seven networks; the remainder favors parents with fewer stalls, but does not account for how often they have already been explored, how distinct they are from the rest of the frontier, or whether their searches have produced improvements. Track visits and successful rounds, then keep a strong elite-selection component while using the rest of the selection probability to favor underexplored, structurally distinct, productive parents. This should make the existing diverse frontier more useful without letting novelty alone dominate search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stalls = {}
+=======
+    stalls = {}
+    parent_visits = {}
+    parent_successes = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        # Most iterations exploit strong solutions; some explore less-used regions.
+        if rng.random() < 0.62:
+            return pop[int(rng.integers(min(7, len(pop))))]
+        weights = [1.0 / (1.0 + stalls.get(net, 0)) for net in pop]
+        total = sum(weights)
+        pick = float(rng.random()) * total
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+=======
+    def select_parent(pop):
+        # Preserve a strong elite bias, while using the rest of the draws to
+        # explore distinct, under-sampled regions with evidence of progress.
+        if not pop:
+            return best_net
+        elite_n = min(7, len(pop))
+        if rng.random() < 0.65:
+            parent = pop[int(rng.integers(elite_n))]
+        else:
+            weights = []
+            for net in pop:
+                novelty = min(
+                    (distance(net, other) for other in pop if other != net),
+                    default=2 * n,
+                )
+                visits = parent_visits.get(net, 0)
+                successes = parent_successes.get(net, 0)
+                stalled = stalls.get(net, 0)
+                weights.append(
+                    (1.0 + min(3.0, 0.5 * successes))
+                    * (1.0 + min(8, novelty) / 8.0)
+                    / ((1.0 + visits) ** 0.5 * (1.0 + 0.12 * stalled))
+                )
+            total = sum(weights)
+            pick = float(rng.random()) * total
+            parent = pop[-1]
+            for net, weight in zip(pop, weights):
+                pick -= weight
+                if pick <= 0:
+                    parent = net
+                    break
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        return parent
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if min((scored.get(net, float("inf")) for net in batch), default=float("inf")) < old_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+=======
+        if min((scored.get(net, float("inf")) for net in batch), default=float("inf")) < old_score:
+            stalls[parent] = 0
+            parent_successes[parent] = parent_successes.get(parent, 0) + 1
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,37 @@
+<NAME>
+underexplored_parent_selection
+</NAME>
+
+<DESCRIPTION>
+The current parent weighting adjusts for productivity, but repeatedly selected parents can still retain substantial probability through the elite/uniform baseline. Strengthen explicit underexploration by multiplying that baseline by a visit-count bonus that decays with use, while retaining the existing productivity adjustment. This preserves preference for good and productive archive members but directs more searches toward archive members that have received little attention, which can help escape repeatedly explored local regions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Discount repeatedly visited parents with no improvement; reward
+        # parents whose evaluations have improved their own incumbent.
+        weights = []
+        for net, base in zip(pop, baseline):
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            productivity = (1.0 + 0.7 * successes) / (1.0 + 0.35 * visits + 0.65 * stalls)
+            weights.append(base * productivity)
+
+        total = sum(weights)
+=======
+        # Reward productive parents, but explicitly favor archive members
+        # that have not yet received much search effort.
+        weights = []
+        for net, base in zip(pop, baseline):
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            productivity = (1.0 + 0.7 * successes) / (1.0 + 0.35 * visits + 0.65 * stalls)
+            underexplored = 1.0 / (1.0 + 0.25 * visits) ** 0.5
+            weights.append(base * productivity * underexplored)
+
+        total = sum(weights)
+>>>>>>> REPLACE
+
+</DIFF>

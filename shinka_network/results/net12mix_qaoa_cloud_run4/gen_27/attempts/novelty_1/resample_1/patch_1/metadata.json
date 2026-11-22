@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_load_balance",
+  "patch_description": "This keeps the current direct-link rewards and modest two-hop relay rewards, while adding positive couplings between links that compete at the same sender or receiver. Each conflict is weighted by the product of the links\u2019 normalized demand exposures, then scaled by a bounded row- or column-demand pressure factor. This gives higher-traffic endpoints stronger load-balancing influence without letting the conflict terms overwhelm the direct-demand signal. The construction stays within the quadratic-term limit for n up to 24.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:06:29.565263",
+  "llm_cost": 0.0023087999999999997,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 132,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_density",
+  "patch_description": "Select parents using both LP quality and how underexplored their archive region is. The current uniform draw across most of the archive can spend many LP calls around clusters of similar networks. This replacement gives better-ranked networks more weight while favoring representatives that are structurally distant from other archive members and have fewer nearby evaluated networks. The exploration term is bounded, so it supplements rather than overwhelms quality-based search.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:35:55.367871",
+  "llm_cost": 0.0027664,
+  "llm_model": "gpt-6-luna"
+}

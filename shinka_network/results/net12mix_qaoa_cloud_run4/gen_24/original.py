@@ -1,0 +1,114 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build demand-weighted direct-link and balanced two-hop path terms."""
+    d = np.asarray(demand, dtype=float)
+    n = len(d)
+    if n == 0:
+        return {}, {}, 3.0
+
+    d = np.maximum(d, 0.0).copy()
+    np.fill_diagonal(d, 0.0)
+    scale = float(np.max(d))
+    if scale <= 0.0:
+        scale = 1.0
+    d /= scale
+
+    total = float(d.sum())
+    row = d.sum(axis=1)
+    col = d.sum(axis=0)
+
+    # Estimate how heavily each node is likely to be used as a transit point.
+    # A hub with both substantial incoming and outgoing demand gets a smaller
+    # share of the two-hop path credit.
+    if total > 0.0:
+        transit_ratio = n * row * col / (total * total)
+    else:
+        transit_ratio = np.zeros(n, dtype=float)
+    hub_factor = 1.0 / np.sqrt(1.0 + transit_ratio)
+
+    linear = {(i, j): 0.0 for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+
+    # Direct service remains the strongest individual signal.
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                linear[(i, j)] -= float(d[i, j])
+
+    # For each OD pair, split a limited amount of path credit across possible
+    # intermediate nodes. The direct option in the denominator prevents the
+    # collection of two-hop alternatives from dominating the direct signal.
+    for s in range(n):
+        for t in range(n):
+            flow = float(d[s, t])
+            if s == t or flow <= 0.0:
+                continue
+
+            candidates = []
+            weight_sum = 1.0  # direct-route reference weight
+            for h in range(n):
+                if h == s or h == t:
+                    continue
+                # Favor intermediates whose incident links have some observed
+                # demand, but temper this by their estimated transit pressure.
+                affinity = 1.0 + 0.20 * np.sqrt(
+                    max(0.0, float(d[s, h] * d[h, t]))
+                )
+                w = float(hub_factor[h]) * affinity
+                candidates.append((h, w))
+                weight_sum += w
+
+            for h, w in candidates:
+                share = flow * w / weight_sum
+                a = (s, h)
+                b = (h, t)
+
+                # Small marginal credits help useful path components survive
+                # even when the companion link is not selected.
+                linear[a] -= 0.12 * share
+                linear[b] -= 0.12 * share
+
+                # The larger joint credit is earned only when both directed
+                # links form the complete two-hop route.
+                key = (a, b) if a <= b else (b, a)
+                quadratic[key] = quadratic.get(key, 0.0) - 0.70 * share
+
+    # Keep the returned coefficients numerically well-scaled. The evaluator
+    # also rescales, but doing it here prevents unusual matrices dominating.
+    largest = max(
+        [abs(v) for v in linear.values()] +
+        [abs(v) for v in quadratic.values()] +
+        [1e-12]
+    )
+    inv = 1.0 / largest
+    linear = {k: float(v * inv) for k, v in linear.items()}
+    quadratic = {k: float(v * inv) for k, v in quadratic.items()}
+
+    # Degree penalties are added externally; make invalid degree assignments
+    # costly relative to the normalized traffic surrogate.
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

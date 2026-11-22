@@ -1,0 +1,14 @@
+{
+  "generation": 118,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_parent_sampling",
+  "patch_description": "Parent selection already rewards infrequent and stalled members, but its non-elite sampling does not account for structural distance from the strongest networks. Add a bounded novelty bonus based on distance from the top six, while retaining rank, visit, and stall factors. Slightly reduce the probability of choosing directly from the elite set so that distant archive members receive more opportunities to explore distinct network regions.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:22:12.204089",
+  "llm_cost": 0.0030855,
+  "llm_model": "gpt-6-luna"
+}

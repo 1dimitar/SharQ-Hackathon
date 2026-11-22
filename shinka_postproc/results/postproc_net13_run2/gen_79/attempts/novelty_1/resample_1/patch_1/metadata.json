@@ -1,0 +1,14 @@
+{
+  "generation": 79,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_selection",
+  "patch_description": "The current parent selector spends 62% of its selections uniformly among the top seven networks; the remainder favors parents with fewer stalls, but does not account for how often they have already been explored, how distinct they are from the rest of the frontier, or whether their searches have produced improvements. Track visits and successful rounds, then keep a strong elite-selection component while using the rest of the selection probability to favor underexplored, structurally distinct, productive parents. This should make the existing diverse frontier more useful without letting novelty alone dominate search.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:40:59.921163",
+  "llm_cost": 0.0028607,
+  "llm_model": "gpt-6-luna"
+}

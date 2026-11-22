@@ -1,0 +1,15 @@
+<NAME>
+endpoint_pressure_020
+</NAME>
+
+<DESCRIPTION>
+Increase the endpoint-pressure multiplier from 0.10 to 0.20 while leaving the direct-link rewards and pair construction unchanged. This tests whether a stronger estimate of transit burden helps the pair penalties discourage links that concentrate load at high-traffic sending or receiving nodes. The change is deliberately focused so its effect can be compared with the current design.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            pressure = 0.10 * (float(row[i]) + float(col[j])) / max(1, n - 1)
+=======
+            pressure = 0.20 * (float(row[i]) + float(col[j])) / max(1, n - 1)
+>>>>>>> REPLACE
+</DIFF>

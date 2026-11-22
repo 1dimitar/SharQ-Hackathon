@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sqrt_direct_conflicts",
+  "patch_description": "Applies the suggested concave square-root transform to direct-demand rewards, giving moderate-demand links more influence than under a linear reward. It retains the existing outgoing- and incoming-link conflict structure and penalty scale, so the main change is isolated to how direct demand is valued.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:09:02.646745",
+  "llm_cost": 0.0014449,
+  "llm_model": "gpt-6-luna"
+}

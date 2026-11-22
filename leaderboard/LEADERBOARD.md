@@ -1,6 +1,6 @@
 # Leaderboard: QOBLIB 08 network design (whole repository)
 
-Updated 2026-11-22 01:38 from `submissions.jsonl` (67 records logged). Built by `leaderboard.py` (`show`, `scan`, `submit`); do not edit by hand.
+Updated 2026-11-22 02:35 from `submissions.jsonl` (68 records logged). Built by `leaderboard.py` (`show`, `scan`, `submit`); do not edit by hand.
 
 Score: the largest link load of the topology under optimal routing (the routing LP, lower is better), recomputed for every submission. Gap: score / BKV - 1, where BKV is QOBLIB's best known value (network05-10 proven optimal). `=` marks a tie with the BKV, ★ a score below it.
 
@@ -36,7 +36,7 @@ Topologies that came out of a quantum sampler (QAOA, PCE), possibly repaired or 
 | network14 | 343091 | 399063 | +16.31% | qaoa_partitioned | run 2 best (gen 181) | 2026-11-22 00:28 | [network14_399063_3bb38f.sol](solutions/network14_399063_3bb38f.sol) |
 | network15 | 370870 | 429334 | +15.76% | qaoa_partitioned | run 2 best (gen 181) | 2026-11-22 00:43 | [network15_429334_b563ce.sol](solutions/network15_429334_b563ce.sol) |
 | network16 | 397908 | 468834 | +17.82% | qaoa_partitioned | net12mix_qaoa_cloud_run4 gen 1 | 2026-11-22 00:59 | [network16_468834_297362.sol](solutions/network16_468834_297362.sol) |
-| network17 | 437000 | 544445 | +24.59% | qaoa_partitioned | run 3 recommended (gen 128) | 2026-11-22 00:54 | [network17_544445_bc236f.sol](solutions/network17_544445_bc236f.sol) |
+| network17 | 437000 | 512834 | +17.35% | qaoa_partitioned | run 3 recommended (gen 128) [cluster_size=20] | 2026-11-22 02:10 | [network17_512834_a3c3f0.sol](solutions/network17_512834_a3c3f0.sol) |
 
 ## Best gap per method
 
@@ -46,7 +46,7 @@ Topologies that came out of a quantum sampler (QAOA, PCE), possibly repaired or 
 | lp_local_search | +0.00% = | +0.00% = | – | – | – | – | – | – | – | – | – | – | – | – |
 | postproc (QAOA pool + baseline LP search) | – | – | +2.20% | – | – | – | – | – | – | – | – | – | – | – |
 | sa | +4.01% | +12.04% | +13.97% | +15.28% | +12.55% | +14.18% | +10.30% | +10.79% | +9.83% | +7.57% | +10.77% | +7.52% | +7.42% | +13.98% |
-| qaoa_partitioned | – | +4.94% | +13.27% | +16.31% | +15.76% | +17.82% | +24.59% | – | – | – | – | – | – | – |
+| qaoa_partitioned | – | +4.94% | +13.27% | +16.31% | +15.76% | +17.82% | +17.35% | – | – | – | – | – | – | – |
 
 ## See also
 

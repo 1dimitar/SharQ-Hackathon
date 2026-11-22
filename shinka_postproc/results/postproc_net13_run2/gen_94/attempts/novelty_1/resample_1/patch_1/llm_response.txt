@@ -1,0 +1,318 @@
+<NAME>
+adaptive_operator_archive
+</NAME>
+
+<DESCRIPTION>
+Reorganizes the search around a small scored archive and independently tracked move operators. Each iteration selects an archive parent, allocates proposal effort using operator-specific outcomes and stall signals, then screens a small batch by surrogate energy and LP-scores it. This keeps the neighborhood generators separate and avoids spending most of the budget on large, repeatedly unproductive batches, while retaining bottleneck-focused swaps, rotations, and multi-switch kicks for diversification.
+</DESCRIPTION>
+
+<CODE>
+```python
+import numpy as np
+
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    """Search a diverse archive with operator-specific adaptive neighborhoods."""
+    n = tools.n
+    scored = {}
+    best_net = None
+    best_score = float("inf")
+    stalls = {}
+    visits = {}
+    op_trials = {"swap": 0, "rotation": 0, "kick": 0}
+    op_wins = {"swap": 0, "rotation": 0, "kick": 0}
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, edge)) for edge in arcs))
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in scored:
+            scored[net] = tools.lp(net)
+        value = scored[net]
+        if value < best_score:
+            best_net, best_score = net, value
+        return value
+
+    def add_repaired(cand, dest):
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                dest.add(net)
+        except Exception:
+            pass
+
+    repaired = set()
+    for candidate in candidates:
+        add_repaired(candidate, repaired)
+    if not repaired:
+        add_repaired([], repaired)
+    if not repaired:
+        return []
+
+    # Score a concise, diverse seed set, reserving most calls for search.
+    ordered = sorted(repaired, key=energy)
+    seeds = []
+    for net in ordered:
+        if all(distance(net, old) >= 4 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= min(22, len(ordered)):
+            break
+    for net in ordered:
+        if len(seeds) >= min(22, len(ordered)):
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if not scored:
+        return list(seeds[0])
+
+    def archive():
+        ranked = sorted(scored, key=scored.get)
+        out = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= 16:
+                break
+        for net in ranked:
+            if len(out) >= 28:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    def choose_parent(pop):
+        # Give good regions preference, but actively revisit underexplored ones.
+        weights = []
+        for rank, net in enumerate(pop):
+            quality = 1.0 / (1.0 + 0.12 * rank)
+            novelty = min(
+                (distance(net, other) for other in pop if other != net),
+                default=2 * n,
+            ) / max(1, 2 * n)
+            explore = 1.0 / ((1.0 + visits.get(net, 0)) ** 0.45)
+            weights.append(quality * (0.8 + novelty) * explore)
+        draw = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            draw -= weight
+            if draw <= 0:
+                visits[net] = visits.get(net, 0) + 1
+                return net
+        net = pop[-1]
+        visits[net] = visits.get(net, 0) + 1
+        return net
+
+    def switch(arcs, current, p, q):
+        a, b = arcs[p]
+        c, d = arcs[q]
+        if a == d or c == b or (a, d) in current or (c, b) in current:
+            return None
+        nxt = (current - {(a, b), (c, d)}) | {(a, d), (c, b)}
+        return tuple(sorted(nxt))
+
+    def make_swaps(parent, hot, count):
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+        for i in range(len(arcs)):
+            for j in range(i + 1, len(arcs)):
+                if hot and arcs[i] not in hot and arcs[j] not in hot:
+                    continue
+                cand = switch(arcs, current, i, j)
+                if cand is not None:
+                    moves.add(cand)
+        for _ in range(count):
+            i = int(rng.integers(len(arcs)))
+            j = int(rng.integers(len(arcs) - 1))
+            if j >= i:
+                j += 1
+            cand = switch(arcs, current, i, j)
+            if cand is not None:
+                moves.add(cand)
+        return moves
+
+    def make_rotations(parent, hot, count):
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+        for _ in range(count):
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            if hot and not (old & hot):
+                continue
+            for new in (
+                {(a, d), (c, f), (e, b)},
+                {(a, f), (c, b), (e, d)},
+            ):
+                if len(new) != 3 or any(x == y for x, y in new):
+                    continue
+                if new & (current - old):
+                    continue
+                moves.add(tuple(sorted((current - old) | new)))
+        return moves
+
+    def make_kicks(parent, count):
+        moves = set()
+        for _ in range(count):
+            current = set(parent)
+            for _ in range(2 + int(rng.integers(5))):
+                arcs = list(current)
+                if len(arcs) < 2:
+                    break
+                ids = rng.choice(len(arcs), size=2, replace=False)
+                cand = switch(arcs, current, int(ids[0]), int(ids[1]))
+                if cand is not None:
+                    current = set(cand)
+            cand = tuple(sorted(current))
+            if cand != parent:
+                moves.add(cand)
+        return moves
+
+    def fresh_valid(moves):
+        return [
+            net for net in moves
+            if net not in scored and not tools.is_cached(net) and tools.is_valid(net)
+        ]
+
+    def screen(moves, parent, limit=6):
+        fresh = fresh_valid(moves)
+        if not fresh:
+            return []
+        base = energy(parent)
+        ranked = sorted(fresh, key=lambda net: energy(net) - base)
+        selected = []
+        # Preserve some topological variety in each small LP batch.
+        for net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(3, limit):
+                break
+        for net in ranked:
+            if len(selected) >= limit:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected
+
+    def operator_effort(name, stall):
+        # Each operator receives a baseline; local lack of progress increases
+        # its own effort, while observed successes can earn additional samples.
+        trials = op_trials[name]
+        wins = op_wins[name]
+        rate = (wins + 1.0) / (trials + 5.0)
+        effort = 1.0 + min(1.5, 4.0 * rate)
+        effort *= 1.0 + min(2.0, 0.22 * stall)
+        return effort
+
+    while tools.lp_calls_left > 0:
+        pop = archive()
+        if not pop:
+            break
+        parent = choose_parent(pop)
+
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, link)) for link, price in prices.items() if price > 0}
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            hot = {
+                edge for _, edge in sorted(
+                    ((float(value), tuple(map(int, link)))
+                     for link, value in loads.items()),
+                    reverse=True,
+                )[:6]
+            }
+
+        stall = stalls.get(parent, 0)
+        efforts = {
+            "swap": operator_effort("swap", stall),
+            "rotation": operator_effort("rotation", stall),
+            "kick": operator_effort("kick", stall),
+        }
+        proposals = {
+            "swap": make_swaps(parent, hot, int(45 * efforts["swap"])),
+            "rotation": make_rotations(parent, hot, int(45 * efforts["rotation"])),
+            "kick": make_kicks(parent, int(8 * efforts["kick"])),
+        }
+
+        # Evaluate a small portion from each operator, rather than allowing
+        # one large neighborhood to consume the iteration's whole LP budget.
+        batch = []
+        per_operator = max(1, min(3, 7 // 3))
+        for name in ("swap", "rotation", "kick"):
+            chosen = screen(proposals[name], parent, per_operator)
+            batch.extend((name, net) for net in chosen)
+
+        if not batch:
+            # Explore another archive member before generating a random kick.
+            alternatives = [net for net in pop if net != parent]
+            if alternatives:
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+                    detail = tools.lp_detail(parent)
+                except Exception:
+                    detail = None
+                prices = detail.get("prices", {}) if detail else {}
+                hot = {tuple(map(int, link)) for link, price in prices.items() if price > 0}
+                swaps = screen(make_swaps(parent, hot, 100), parent, 3)
+                rotations = screen(make_rotations(parent, hot, 100), parent, 3)
+                batch = [("swap", x) for x in swaps] + [("rotation", x) for x in rotations]
+
+        if not batch:
+            batch = [("kick", net) for net in screen(make_kicks(parent, 60), parent, 1)]
+        if not batch:
+            # No novel proposals remain in reachable local neighborhoods.
+            break
+
+        old_score = scored.get(parent, float("inf"))
+        improved = False
+        best_batch = float("inf")
+        for name, net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                value = evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+            op_trials[name] += 1
+            best_batch = min(best_batch, value)
+            if value < old_score:
+                op_wins[name] += 1
+                improved = True
+
+        if improved:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

@@ -1,0 +1,14 @@
+{
+  "generation": 102,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_operator_batches",
+  "patch_description": "The current operator adaptation only chooses at most one move from each operator per batch; any remaining LP slots go to the globally best energy-ranked moves. With the default batch size of three, this gives the operator success statistics little influence over LP-call allocation. Increase the default batch modestly and use the smoothed operator rates to choose each batch slot, while retaining surrogate-ranked candidate ordering within each operator. This lets operators that have recently produced improvements receive more evaluations, but the additive floor and Beta smoothing preserve exploration. The existing fallback still ensures a full batch when operator-specific candidates run out.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:07:27.029125",
+  "llm_cost": 0.0028858000000000004,
+  "llm_model": "gpt-6-luna"
+}

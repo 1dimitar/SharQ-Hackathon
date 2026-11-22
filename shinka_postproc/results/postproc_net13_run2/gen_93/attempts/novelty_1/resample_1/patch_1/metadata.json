@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "operator_adaptive_trials",
+  "patch_description": "Track stall signals separately for bottleneck switches, random switches, rotations, and archive recombination. Attribute each proposed move to its generating operator, then update an operator\u2019s stall count only when a move from that operator was actually LP-scored. Increase proposal effort for operators whose scored moves have stopped beating their parent, with caps to keep generation bounded. This gives underexplored or stalled move types more chances without letting a parent\u2019s overall stall signal incorrectly drive every neighborhood operator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:51:25.897057",
+  "llm_cost": 0.0034352000000000002,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 117,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_focused_screening",
+  "patch_description": "The move generator already creates proposals that alter bottleneck links, but the current batch screen ranks every proposal only by QUBO energy. That can discard the very proposals most likely to reduce the LP objective, especially when the surrogate misranks congestion changes. Reserve part of each LP batch for energy-ranked moves that change links with positive dual prices, using high-load links as a fallback when no positive prices are available. Fill the remaining batch as before, preserving energy guidance and diversity.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:21:10.347001",
+  "llm_cost": 0.0030692000000000002,
+  "llm_model": "gpt-6-luna"
+}

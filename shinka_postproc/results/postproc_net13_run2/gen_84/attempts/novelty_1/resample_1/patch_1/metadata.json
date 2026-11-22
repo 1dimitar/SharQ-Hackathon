@@ -1,0 +1,14 @@
+{
+  "generation": 84,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "layered_archive_search",
+  "patch_description": "Reorganizes the search into distinct seeding, archive selection, neighborhood generation, and batch-evaluation stages. It seeds from repaired candidates with both surrogate quality and structural diversity, then spends LP calls on focused switches, rotations, and short paths relinking strong but distant archive members. A bounded, usage-aware archive balances exploitation with exploration, while cached surrogate scores and diverse batches reduce duplicate work.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:46:13.415161",
+  "llm_cost": 0.004850500000000001,
+  "llm_model": "gpt-6-luna"
+}

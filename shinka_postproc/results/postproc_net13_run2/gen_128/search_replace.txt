@@ -1,0 +1,128 @@
+<NAME>
+protected_archive_relinking
+</NAME>
+
+<DESCRIPTION>
+Protect one archive-relinking intermediate from being crowded out by surrogate-ranked moves. The current code generates short paths toward archive members, but `select_batch` may never evaluate those intermediates if their energy ranking is poor. This change records the current parent's relinking steps and reserves one batch slot for a randomly chosen step, while still allowing the remaining slots to favor low-energy and diverse proposals. Targets are sampled from the full set of sufficiently distant archive members rather than only a small quality-ranked subset, giving bridges between different regions a chance to be tested.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    archive = []
+
+    def canon(arcs):
+=======
+    archive = []
+    protected_relays = set()
+
+    def canon(arcs):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def propose(parent, detail):
+        """Construct a mixed neighborhood centered on loaded or priced links."""
+        arcs = list(parent)
+        current = edge_set(parent)
+        moves = set()
+=======
+    def propose(parent, detail):
+        """Construct a mixed neighborhood centered on loaded or priced links."""
+        arcs = list(parent)
+        current = edge_set(parent)
+        moves = set()
+        protected_relays.clear()
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # Occasionally add a short path toward another elite network.
+        targets = [
+            net for net in archive
+            if net != parent and distance(net, parent) >= 6
+        ]
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+            target_edges = edge_set(target)
+            path = parent
+            for _ in range(4):
+                path_arcs = list(path)
+                overlap = len(edge_set(path) & target_edges)
+                improving = []
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        move = two_switch(path, p, q)
+                        if move is not None:
+                            gain = len(edge_set(move) & target_edges) - overlap
+                            if gain > 0:
+                                improving.append((gain, move))
+                if not improving:
+                    break
+                best_gain = max(gain for gain, _ in improving)
+                choices = [move for gain, move in improving if gain == best_gain]
+                path = choices[int(rng.integers(len(choices)))]
+                moves.add(path)
+=======
+        # Relink toward varied, distant archive members. Record the bridge
+        # steps separately so batch selection can protect one for LP evaluation.
+        targets = [
+            net for net in archive
+            if net != parent and distance(net, parent) >= 6
+        ]
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+            target_edges = edge_set(target)
+            path = parent
+            for _ in range(4):
+                path_arcs = list(path)
+                overlap = len(edge_set(path) & target_edges)
+                advancing = []
+                best_overlap = overlap
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        move = two_switch(path, p, q)
+                        if move is None:
+                            continue
+                        new_overlap = len(edge_set(move) & target_edges)
+                        if new_overlap > best_overlap:
+                            best_overlap = new_overlap
+                            advancing = [move]
+                        elif new_overlap == best_overlap and new_overlap > overlap:
+                            advancing.append(move)
+                if not advancing:
+                    break
+                path = advancing[int(rng.integers(len(advancing)))]
+                moves.add(path)
+                protected_relays.add(path)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        ranked = sorted(moves, key=lambda net: energy(net) - base_energy)
+        selected = []
+
+        # First take surrogate-favored moves with meaningful topology differences.
+=======
+        ranked = sorted(moves, key=lambda net: energy(net) - base_energy)
+        selected = []
+
+        # Protect a relinking bridge step from surrogate screening, which may
+        # undervalue useful intermediates between distant archive regions.
+        relays = [
+            net for net in protected_relays
+            if net in moves and net not in scores
+            and not tools.is_cached(net) and tools.is_valid(net)
+        ]
+        if relays and limit > 0:
+            selected.append(relays[int(rng.integers(len(relays)))])
+
+        # First take surrogate-favored moves with meaningful topology differences.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        for net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(2, limit):
+                break
+=======
+        for net in ranked:
+            if net not in selected and all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(2, limit):
+                break
+>>>>>>> REPLACE
+</DIFF>
