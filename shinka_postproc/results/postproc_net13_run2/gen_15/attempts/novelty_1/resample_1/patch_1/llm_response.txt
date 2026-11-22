@@ -1,0 +1,51 @@
+<NAME>
+stall_adaptive_exploration
+</NAME>
+
+<DESCRIPTION>
+When a parent’s neighborhood repeatedly fails to improve, the current screening still spends all three LP evaluations on the best surrogate-ranked moves. That can over-trust a loosely correlated surrogate and repeatedly explore similar choices. Keep the two highest-ranked moves, but reserve the third slot for a randomly selected, topologically distinct fresh move once the parent has stalled at least twice. This uses the existing per-parent stall signal to adapt the exploration mix while preserving the normal screening behavior for productive parents.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+=======
+        selected = []
+        stalls = parent_stalls.get(parent, 0)
+        if stalls >= 2 and batch_size >= 3:
+            # Retain two high-ranked trials, then spend one LP call exploring
+            # beyond the surrogate's preferred neighborhood.
+            for _, net in ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                if len(selected) >= 2:
+                    break
+            exploratory = [
+                net for _, net in ranked
+                if net not in selected
+                and all(distance(net, old) >= 2 for old in selected)
+            ]
+            if not exploratory:
+                exploratory = [net for _, net in ranked if net not in selected]
+            if exploratory:
+                rng.shuffle(exploratory)
+                selected.append(exploratory[0])
+        else:
+            # First take good-energy moves that are not all tiny variants of one another.
+            for _, net in ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                if len(selected) >= min(6, batch_size):
+                    break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+>>>>>>> REPLACE
+</DIFF>

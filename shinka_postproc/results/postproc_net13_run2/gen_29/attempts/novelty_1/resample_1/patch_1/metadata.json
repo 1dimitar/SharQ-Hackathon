@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_matching_hybrid",
+  "patch_description": "Keeps the current program\u2019s strongest components: a diverse archive, bottleneck-focused degree-preserving exchanges, rotations, kicks, and path relinking. It adds the crossover program\u2019s learned edge-frequency model and randomized matching sampler as an occasional source of valid, structurally diverse proposals, rather than letting that sampler replace local search. Candidate generation is screened by surrogate energy and novelty before spending LP calls; cached and previously scored networks are skipped.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:04:11.707980",
+  "llm_cost": 0.0044461,
+  "llm_model": "gpt-6-luna"
+}

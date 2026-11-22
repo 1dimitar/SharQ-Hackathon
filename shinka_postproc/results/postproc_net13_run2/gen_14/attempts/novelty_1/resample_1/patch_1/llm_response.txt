@@ -1,0 +1,104 @@
+<NAME>
+adaptive_lp_batches
+</NAME>
+
+<DESCRIPTION>
+Adapt the number of LP evaluations per neighborhood to both search stagnation and surrogate ambiguity. The current fixed batch of nine can undersample a neighborhood when the parent has repeatedly failed to improve, or when many candidate moves have nearly tied surrogate scores and their ranking is unreliable. Keep small batches for clearly ranked moves, but expand them progressively for stalled parents and close-ranked neighborhoods, up to 24. This spends the existing LP budget on more informative comparisons where the surrogate is least decisive, without changing move generation or exceeding the budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=9):
+        """Adapt LP batch size to neighborhood ambiguity and parent stagnation."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = sorted(
+            ((energy(net) - base_e, net) for net in fresh),
+            key=lambda item: item[0],
+        )
+
+        # A close cluster of leading surrogate scores is weak evidence for
+        # preferring one move, so use more LP calls to compare that cluster.
+        if len(ranked) >= 8:
+            top_values = [value for value, _ in ranked[:8]]
+            spread = max(top_values) - min(top_values)
+            scale = max(1.0, abs(base_e), abs(top_values[0]))
+            if spread <= 0.02 * scale:
+                batch_size = 18
+
+        # Repeatedly unsuccessful parents warrant broader neighborhood sampling.
+        stalls = parent_stalls.get(parent, 0)
+        if stalls >= 4:
+            batch_size = max(batch_size, 14)
+        if stalls >= 9:
+            batch_size = max(batch_size, 22)
+        batch_size = min(batch_size, 24)
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # If the neighborhood is smaller than the desired batch, use random
+        # tail moves rather than spending every call on near-duplicate variants.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

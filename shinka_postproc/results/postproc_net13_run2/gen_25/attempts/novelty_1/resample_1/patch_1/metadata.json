@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "calibrated_screening",
+  "patch_description": "Use exact LP results from already-scored networks to calibrate move screening against surrogate energy. For each fresh move, estimate its score from the LP-scored networks with the nearest energies, then blend that estimate with the energy ranking. Keep some batch slots for the best raw-energy moves and for random moves from the lower-energy-ranked tail. This lets the search exploit observed energy\u2013LP relationships without relying on them exclusively, and preserves exploration when the surrogate is poorly correlated with true scores.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:00:33.798271",
+  "llm_cost": 0.0036008999999999998,
+  "llm_model": "gpt-6-luna"
+}

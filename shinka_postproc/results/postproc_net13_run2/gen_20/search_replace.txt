@@ -1,0 +1,87 @@
+<NAME>
+archive_novelty_screen
+</NAME>
+
+<DESCRIPTION>
+Make LP-batch selection account for the evaluated archive, not just diversity within the current batch. First form a shortlist of surrogate-promising moves, then greedily choose moves that are far from both the archive’s best networks and already selected moves. This preserves surrogate guidance while steering some of the limited LP budget toward structurally distinct regions that may contain better basins.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        # Limit novelty comparisons to the strongest archived networks.
+        # A candidate's novelty is its distance from its nearest archive member.
+        reference = sorted(seen, key=seen.get)[:48]
+        shortlist = ranked[:min(len(ranked), max(24, 4 * batch_size))]
+        novelty = {
+            net: min((distance(net, old) for old in reference), default=0)
+            for _, net in shortlist
+        }
+
+        selected = []
+        remaining = list(shortlist)
+        # Greedily balance surrogate rank with distance from the archive and
+        # the already selected batch; energy rank remains the primary signal.
+        while remaining and len(selected) < min(6, batch_size):
+            best_rank = remaining[0][0]
+            energy_window = max(1e-12, remaining[-1][0] - best_rank)
+            def choice_key(item):
+                delta, net = item
+                near_archive = novelty[net]
+                near_batch = min(
+                    (distance(net, old) for old in selected),
+                    default=near_archive,
+                )
+                # Normalize novelty so its influence is bounded relative to
+                # the surrogate spread in this shortlist.
+                return delta - 0.18 * energy_window * min(near_archive, near_batch) / (2 * n)
+            pick = min(remaining, key=choice_key)
+            selected.append(pick[1])
+            remaining.remove(pick)
+
+        # Fill with the best surrogate-ranked moves, preferring those still
+        # distant from both the archive and this batch when energy ranks tie.
+        rest = [item for item in ranked if item[1] not in selected]
+        rest.sort(key=lambda item: (
+            item[0],
+            -min(
+                novelty.get(item[1], min((distance(item[1], old) for old in reference), default=0)),
+                min((distance(item[1], old) for old in selected), default=2 * n),
+            ),
+        ))
+        selected.extend(net for _, net in rest[:batch_size - len(selected)])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

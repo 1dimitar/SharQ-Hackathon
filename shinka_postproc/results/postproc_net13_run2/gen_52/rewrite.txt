@@ -1,0 +1,213 @@
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    seen = {}
+    best_net, best_score = None, float("inf")
+    current = None
+    current_score = float("inf")
+    temperature = 0.012
+    steps = 0
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, e)) for e in arcs))
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def dist(a, b):
+        return len(set(a) ^ set(b))
+
+    # Seed from repaired samples, balancing predicted quality and structural variety.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ranked = sorted(repaired, key=energy)
+    starts = []
+    for net in ranked:
+        if all(dist(net, old) >= 4 for old in starts):
+            starts.append(net)
+        if len(starts) >= min(28, len(ranked)):
+            break
+    for net in ranked:
+        if len(starts) >= 36:
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+    if best_net is None:
+        return list(starts[0])
+
+    current, current_score = best_net, best_score
+
+    def switch(cur, edge1, edge2):
+        a, b = edge1
+        c, d = edge2
+        if a == d or c == b:
+            return None
+        old = set(cur)
+        if (a, d) in old or (c, b) in old:
+            return None
+        old.remove(edge1)
+        old.remove(edge2)
+        old.add((a, d))
+        old.add((c, b))
+        return tuple(sorted(old))
+
+    def random_kick(net, hot):
+        cur = set(net)
+        count = 1 + int(rng.integers(4))
+        for _ in range(count):
+            arcs = list(cur)
+            if len(arcs) < 2:
+                break
+            # Bias toward a bottleneck edge sometimes, but retain unrestricted moves.
+            if hot and rng.random() < 0.65:
+                e1 = hot[int(rng.integers(len(hot)))]
+                if e1 not in cur:
+                    e1 = arcs[int(rng.integers(len(arcs)))]
+            else:
+                e1 = arcs[int(rng.integers(len(arcs)))]
+            e2 = arcs[int(rng.integers(len(arcs)))]
+            if e1 == e2:
+                continue
+            nxt = switch(tuple(sorted(cur)), e1, e2)
+            if nxt is not None:
+                cur = set(nxt)
+        ans = tuple(sorted(cur))
+        return ans if ans != net else None
+
+    def relink_step(net, target):
+        cur, goal = set(net), set(target)
+        arcs = list(cur)
+        overlap = len(cur & goal)
+        options = []
+        # Replace two current arcs so at least one missing target arc is inserted.
+        for a, b in goal - cur:
+            outgoing = [e for e in arcs if e[0] == a]
+            incoming = [e for e in arcs if e[1] == b]
+            for e1 in outgoing:
+                for e2 in incoming:
+                    if e1 == e2:
+                        continue
+                    nxt = switch(tuple(sorted(cur)), e1, e2)
+                    if nxt is not None:
+                        gain = len(set(nxt) & goal) - overlap
+                        if gain > 0:
+                            options.append((gain, nxt))
+        if not options:
+            return None
+        maxgain = max(x[0] for x in options)
+        choices = [x[1] for x in options if x[0] == maxgain]
+        return choices[int(rng.integers(len(choices)))]
+
+    while tools.lp_calls_left > 0:
+        steps += 1
+        # Draw a target from the best scored networks, often distinct from current.
+        archive = sorted(seen, key=seen.get)[:min(24, len(seen))]
+        targets = [x for x in archive if x != current and dist(x, current) >= 4]
+        target = targets[int(rng.integers(len(targets)))] if targets else None
+
+        try:
+            detail = tools.lp_detail(current)
+            prices = detail.get("prices", {})
+            hot = [tuple(map(int, e)) for e, p in prices.items() if float(p) > 0]
+            if not hot:
+                loads = detail.get("loads", {})
+                hot = [tuple(map(int, e)) for e, _ in
+                       sorted(loads.items(), key=lambda z: float(z[1]), reverse=True)[:6]]
+        except Exception:
+            hot = []
+
+        proposals = set()
+        # A short directed segment toward a target, or a perturbative walk otherwise.
+        path = current
+        if target is not None and rng.random() < 0.55:
+            for _ in range(1 + int(rng.integers(4))):
+                path = relink_step(path, target)
+                if path is None:
+                    break
+                proposals.add(path)
+
+        for _ in range(24):
+            base = current
+            if proposals and rng.random() < 0.35:
+                base = list(proposals)[int(rng.integers(len(proposals)))]
+            cand = random_kick(base, hot)
+            if cand is not None:
+                proposals.add(cand)
+
+        fresh = [x for x in proposals
+                 if x not in seen and not tools.is_cached(x) and tools.is_valid(x)]
+        if not fresh:
+            # Escape exhausted neighborhoods by restarting from a different scored basin.
+            if archive:
+                current = archive[int(rng.integers(len(archive)))]
+                current_score = seen[current]
+            continue
+
+        base_e = energy(current)
+        # Use surrogate for ordering, but reserve a few trials for exploration.
+        fresh.sort(key=lambda x: energy(x) - base_e)
+        chosen = fresh[:2]
+        tail = fresh[2:]
+        if tail and len(chosen) < 3:
+            chosen.append(tail[int(rng.integers(len(tail)))])
+        for cand in chosen:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score = evaluate(cand)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+            # Annealed acceptance for the walk; best-so-far is never discarded.
+            if score < current_score:
+                current, current_score = cand, score
+            else:
+                scale = max(1.0, current_score)
+                if rng.random() < math.exp(-max(0.0, score - current_score) /
+                                           max(1.0, temperature * scale)):
+                    current, current_score = cand, score
+
+        # Cool slowly, with periodic reheating to allow a new basin transition.
+        temperature *= 0.9992
+        if steps % 180 == 0:
+            temperature = max(temperature, 0.009)
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END

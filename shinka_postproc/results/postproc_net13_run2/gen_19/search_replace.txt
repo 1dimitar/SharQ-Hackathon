@@ -1,0 +1,86 @@
+<NAME>
+adaptive_neighborhood
+</NAME>
+
+<DESCRIPTION>
+Track whether two-switches, three-link rotations, or multi-switch kicks produce improvements, then allocate more generation effort to move classes with better observed improvement rates. A small exploration floor keeps every neighborhood active, while a modest cap prevents early noisy results from starving other move types. The classification uses the number of changed arcs, so it requires no changes to move-generation interfaces.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+=======
+    parent_stalls = {}
+    operator_trials = {"swap": 1, "rotation": 1, "kick": 1}
+    operator_wins = {"swap": 0, "rotation": 0, "kick": 0}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+        # Allocate extra neighborhood samples according to observed improvement
+        # rates, with a uniform baseline to retain exploration.
+        rates = {
+            name: (operator_wins[name] + 1.0) / (operator_trials[name] + 4.0)
+            for name in operator_trials
+        }
+        scale = sum(rates.values()) / 3.0
+        swap_factor = min(1.8, max(0.55, rates["swap"] / max(scale, 1e-12)))
+        rotation_factor = min(1.8, max(0.55, rates["rotation"] / max(scale, 1e-12)))
+        kick_factor = min(1.8, max(0.55, rates["kick"] / max(scale, 1e-12)))
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(int(70 * swap_factor)):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+=======
+            rotation_trials = min(350, int(70 * (1 + stalls // 3) * rotation_factor))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(24):
+=======
+        for _ in range(int(24 * kick_factor)):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+=======
+        parent_score = seen.get(parent, float("inf"))
+        batch_improved = False
+        for net in batch:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                evaluate(net)
+            except Exception as exc:
+=======
+                score = evaluate(net)
+                if score < parent_score:
+                    batch_improved = True
+                    changed = len(set(net) ^ set(parent))
+                    if changed <= 4:
+                        operator_wins["swap"] += 1
+                    elif changed <= 6:
+                        operator_wins["rotation"] += 1
+                    else:
+                        operator_wins["kick"] += 1
+            except Exception as exc:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+=======
+        for net in batch:
+            changed = len(set(net) ^ set(parent))
+            kind = "swap" if changed <= 4 else ("rotation" if changed <= 6 else "kick")
+            operator_trials[kind] += 1
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+>>>>>>> REPLACE
+</DIFF>

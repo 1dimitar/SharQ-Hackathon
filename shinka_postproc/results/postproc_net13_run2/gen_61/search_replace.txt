@@ -1,0 +1,70 @@
+<NAME>
+adaptive_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Track how often each archive member is selected and how much its search produces improvements. Parent selection then balances low-score elites with underexplored members and parents whose neighborhoods have recently yielded gains, instead of relying only on fixed rank-based sampling. This preserves exploitation while giving productive or neglected regions more opportunities to contribute. The counters are updated only from LP-scored results; move generation and selection remain free.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    parent_visits = {}
+    parent_gain = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Balance strong parents with underexplored and historically productive ones."""
+        if not pop:
+            return best_net
+        weights = []
+        for rank, net in enumerate(pop):
+            visits = parent_visits.get(net, 0)
+            # Rank retains a preference for good solutions; novelty and proven
+            # descendant gains counterbalance repeated selection of the same elites.
+            quality = 1.0 / (1.0 + rank / 5.0)
+            exploration = 1.0 / math.sqrt(1.0 + visits)
+            productivity = 1.0 + min(2.0, parent_gain.get(net, 0.0))
+            weights.append(quality * (0.35 + 1.4 * exploration) * productivity)
+        total = sum(weights)
+        pick = float(rng.random()) * total
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                parent_visits[net] = parent_visits.get(net, 0) + 1
+                return net
+        net = pop[-1]
+        parent_visits[net] = parent_visits.get(net, 0) + 1
+        return net
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+=======
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+            # Reward improvements relative to the parent, with diminishing
+            # credit so a single lucky descendant does not dominate selection.
+            gain = (parent_score - batch_best) / max(1.0, parent_score)
+            parent_gain[parent] = min(3.0, parent_gain.get(parent, 0.0) * 0.8 + 20.0 * gain)
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+            parent_gain[parent] = parent_gain.get(parent, 0.0) * 0.95
+>>>>>>> REPLACE
+</DIFF>

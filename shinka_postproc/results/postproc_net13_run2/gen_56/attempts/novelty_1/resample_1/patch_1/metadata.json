@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "archive_edge_recombination",
+  "patch_description": "Add a bounded archive-guided proposal operator. It examines degree-preserving two-switches and favors switches whose new links occur in strong, structurally diverse archived networks\u2014especially when both links co-occur in the same archive member. Reserve at most one slot in each LP batch for the best fresh guided proposal, so these proposals receive a fair test without displacing the existing search or overwhelming it with recombination.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:21:02.793450",
+  "llm_cost": 0.0022297999999999997,
+  "llm_model": "gpt-6-luna"
+}

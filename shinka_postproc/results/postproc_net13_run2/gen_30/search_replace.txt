@@ -1,0 +1,89 @@
+<NAME>
+adaptive_parent_productivity
+</NAME>
+
+<DESCRIPTION>
+Track LP evaluations and score improvement magnitude for each parent, rather than relying only on whether a batch improved. Select parents using a smoothed improvement rate, with an exposure penalty so that repeatedly searched parents lose priority while underexplored archive members still receive trials. This makes the available LP budget respond to measured search productivity and preserves exploration across distinct regions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+    parent_visits = {}
+    parent_improvements = {}
+=======
+    parent_stalls = {}
+    parent_visits = {}
+    parent_improvements = {}
+    parent_evaluations = {}
+    parent_gain = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            visits = parent_visits.get(net, 0)
+            improvements = parent_improvements.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            weight = (1.0 + 1.5 * improvements) / ((1.0 + visits) ** 0.55)
+            weight /= 1.0 + 0.12 * stalls
+            weights.append(weight)
+=======
+            visits = parent_visits.get(net, 0)
+            evaluations = parent_evaluations.get(net, 0)
+            gains = parent_gain.get(net, 0.0)
+            stalls = parent_stalls.get(net, 0)
+            # Smooth the observed gain per LP trial, while keeping a strong
+            # exploration bonus for archive members with little exposure.
+            productivity = (1.0 + gains) / (2.0 + evaluations)
+            exposure = 1.0 + evaluations + 0.5 * visits
+            weight = (0.25 + productivity) / (exposure ** 0.45)
+            weight /= 1.0 + 0.08 * stalls
+            weights.append(weight)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+=======
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score = evaluate(net)
+                parent_evaluations[parent] = parent_evaluations.get(parent, 0) + 1
+                if score < parent_score:
+                    # Relative improvement is comparable across score scales.
+                    gain = (parent_score - score) / max(1.0, parent_score)
+                    parent_gain[parent] = parent_gain.get(parent, 0.0) + gain
+                    parent_improvements[parent] = parent_improvements.get(parent, 0) + 1
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+            parent_improvements[parent] = parent_improvements.get(parent, 0) + 1
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+=======
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+</DIFF>

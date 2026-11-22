@@ -1,0 +1,108 @@
+<NAME>
+adaptive_relink_escapes
+</NAME>
+
+<DESCRIPTION>
+Strengthen stalled-search escapes in two complementary ways. Instead of proposing only isolated switches toward elite networks, perform short, degree-preserving path-relinking walks toward several distant elites and retain intermediate networks. Also increase both the number and length of random multi-switch kicks as a parent accumulates stalls. This gives the search a better chance to cross barriers while keeping the extra proposals screened before they consume LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        for _ in range(24):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(4))):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        # Path-relink toward a few strong, distinct networks already found.
+        # Insert one target arc at a time with a degree-preserving two-switch.
+        elites = sorted(seen, key=seen.get)[:8]
+        for target in elites:
+            if target == net:
+                continue
+            target_arcs = set(target)
+            for a, b in target_arcs - current:
+                outgoing = [edge for edge in arcs if edge[0] == a]
+                incoming = [edge for edge in arcs if edge[1] == b]
+                for _, x in outgoing:
+                    for y, _ in incoming:
+                        if y == a or x == b:
+                            continue
+                        # Avoid creating a duplicate when replacing the two arcs.
+                        if (y, x) in current - {(a, x), (y, b)}:
+                            continue
+                        cand = tuple(sorted(
+                            (current - {(a, x), (y, b)}) | {(a, b), (y, x)}
+                        ))
+                        moves.add(cand)
+=======
+        # Increase kick count and strength when this parent repeatedly stalls.
+        stalls = parent_stalls.get(net, 0)
+        kick_count = min(48, 16 + 4 * stalls)
+        max_switches = min(12, 3 + stalls // 2)
+        for _ in range(kick_count):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(max_switches))):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        # Walk several steps toward distant elite networks, keeping intermediate
+        # degree-preserving topologies so screening can choose useful waypoints.
+        elites = sorted(seen, key=seen.get)[:12]
+        targets = [t for t in elites if t != net and distance(t, net) >= 8][:6]
+        for target in targets:
+            target_arcs = set(target)
+            walk = set(net)
+            for _ in range(5):
+                options = set()
+                for a, b in target_arcs - walk:
+                    outgoing = [edge for edge in walk if edge[0] == a]
+                    incoming = [edge for edge in walk if edge[1] == b]
+                    for _, x in outgoing:
+                        for y, _ in incoming:
+                            if y == a or x == b:
+                                continue
+                            removed = {(a, x), (y, b)}
+                            if (y, x) in walk - removed:
+                                continue
+                            cand = (walk - removed) | {(a, b), (y, x)}
+                            if len(cand) == len(walk):
+                                options.add(tuple(sorted(cand)))
+                if not options:
+                    break
+                best_overlap = max(len(set(cand) & target_arcs) for cand in options)
+                improving = [
+                    cand for cand in options
+                    if len(set(cand) & target_arcs) == best_overlap
+                ]
+                walk = set(improving[int(rng.integers(len(improving)))])
+                moves.add(tuple(sorted(walk)))
+>>>>>>> REPLACE
+</DIFF>

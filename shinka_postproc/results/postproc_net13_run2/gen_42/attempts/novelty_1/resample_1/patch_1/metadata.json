@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_archive_search",
+  "patch_description": "Reorganizes the search as a bounded archive of scored networks with adaptive parent selection. Each iteration builds bottleneck-focused exchanges, rotations, and occasional relinking proposals, then spends LP calls on a small, diverse batch selected using the pool\u2019s energy surrogate. Archive novelty and parent progress balance exploitation with exploration, while bounded archive updates avoid repeatedly sorting the full history.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:13:53.943757",
+  "llm_cost": 0.0041752000000000004,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,134 @@
+<NAME>
+calibrated_screening
+</NAME>
+
+<DESCRIPTION>
+Use exact LP results from already-scored networks to calibrate move screening against surrogate energy. For each fresh move, estimate its score from the LP-scored networks with the nearest energies, then blend that estimate with the energy ranking. Keep some batch slots for the best raw-energy moves and for random moves from the lower-energy-ranked tail. This lets the search exploit observed energy–LP relationships without relying on them exclusively, and preserves exploration when the surrogate is poorly correlated with true scores.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+import math
+
+
+def improve(demand, candidates, tools, rng):
+=======
+import math
+import bisect
+
+
+def improve(demand, candidates, tools, rng):
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=9):
+        """Blend calibrated LP predictions with energy ranking and tail exploration."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        # Nearby energies among evaluated networks provide a local, empirical
+        # estimate of how well energy predicts the LP objective in this pool.
+        observed = sorted((energy(net), score) for net, score in seen.items())
+        observed_energy = [item[0] for item in observed]
+        scale = max(
+            1e-12,
+            (observed_energy[-1] - observed_energy[0]) / max(1, len(observed_energy)),
+        ) if observed_energy else 1.0
+
+        energy_ranked = sorted(fresh, key=energy)
+        energy_position = {net: rank for rank, net in enumerate(energy_ranked)}
+        predictions = {}
+        for net in fresh:
+            e = energy(net)
+            pos = bisect.bisect_left(observed_energy, e)
+            nearby = observed[max(0, pos - 8):min(len(observed), pos + 8)]
+            if nearby:
+                weights = [1.0 / (1.0 + abs(e - old_e) / scale) for old_e, _ in nearby]
+                predictions[net] = sum(w * score for w, (_, score) in zip(weights, nearby)) / sum(weights)
+            else:
+                predictions[net] = float(energy_position[net])
+
+        calibrated = sorted(fresh, key=lambda net: predictions[net])
+        calibrated_position = {net: rank for rank, net in enumerate(calibrated)}
+        combined = sorted(
+            fresh,
+            key=lambda net: (
+                0.7 * calibrated_position[net] + 0.3 * energy_position[net],
+                energy_position[net],
+            ),
+        )
+
+        selected = []
+        # Exploit calibrated predictions, while keeping the chosen topologies distinct.
+        for net in combined:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(5, batch_size):
+                break
+
+        # Retain direct surrogate exploitation even when recent calibration disagrees.
+        for net in energy_ranked:
+            if len(selected) >= min(7, batch_size):
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Explicitly reserve slots for energy-tail candidates, whose LP quality may
+        # be underestimated by the current surrogate/calibration model.
+        tail = [net for net in energy_ranked if net not in selected]
+        tail = tail[len(tail) // 2:]
+        rng.shuffle(tail)
+        for net in tail[:max(0, batch_size - len(selected))]:
+            selected.append(net)
+
+        for net in combined:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

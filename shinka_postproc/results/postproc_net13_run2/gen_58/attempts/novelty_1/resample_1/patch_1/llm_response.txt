@@ -1,0 +1,38 @@
+<NAME>
+archive_novelty_reserve
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP evaluation in each selected batch for a valid, uncached move that is structurally far from the scored archive. The current batch selection is guided by surrogate rank and diversity within its shortlist, so it can still repeatedly explore the same regions of the overall search space. Replacing the batch’s last move with the candidate having the greatest minimum symmetric-difference distance from a compact archive encourages broader exploration; ties favor better surrogate rank. The reserved slot remains part of the existing batch budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+
+        # Reserve one evaluation for a move far from the scored archive.
+        # Use surrogate rank to break ties in structural novelty.
+        if selected:
+            references = archive()
+            novelty_pool = [net for _, net in ranked if net not in selected]
+            if references and novelty_pool:
+                ref_sets = [set(net) for net in references]
+                rank_index = {net: i for i, (_, net) in enumerate(ranked)}
+                novel = max(
+                    novelty_pool,
+                    key=lambda net: (
+                        min(len(set(net) ^ ref) for ref in ref_sets),
+                        -rank_index[net],
+                    ),
+                )
+                selected[-1] = novel
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

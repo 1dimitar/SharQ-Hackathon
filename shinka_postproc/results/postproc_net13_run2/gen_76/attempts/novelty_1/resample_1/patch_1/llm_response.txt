@@ -1,0 +1,249 @@
+<NAME>
+relink_destroy_rebuild
+</NAME>
+
+<DESCRIPTION>
+This approach replaces the broad archive-neighborhood search with a two-part exploration strategy. It first scores a diverse set of repaired QAOA samples, then repeatedly chooses two scored networks and path-relinks between them by adding edges from one guide network while preserving degree constraints with valid two-switches. When relinking stalls, it uses bottleneck information from `lp_detail` to propose targeted switches, with occasional more disruptive switches to escape local structure. Candidate moves are screened using the pool’s energy surrogate and topology diversity before spending LP calls. A small annealed acceptance rule lets the search move between regions rather than relying only on improving parents.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, e)) for e in arcs))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def dist(a, b):
+        return len(set(a) ^ set(b))
+
+    def score(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        if seen[net] < best_score:
+            best_net, best_score = net, seen[net]
+        return seen[net]
+
+    # Repair and select starts by a combination of surrogate rank and diversity.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    starts = []
+    for net in ordered:
+        if all(dist(net, x) >= 4 for x in starts):
+            starts.append(net)
+        if len(starts) >= 24:
+            break
+    for net in ordered:
+        if len(starts) >= 30:
+            break
+        if net not in starts:
+            starts.append(net)
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            score(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if best_net is None:
+        return list(starts[0])
+
+    def switch(cur, e1, e2):
+        a, b = e1
+        c, d = e2
+        if a == d or c == b or (a, d) in cur or (c, b) in cur:
+            return None
+        out = set(cur)
+        out.remove(e1)
+        out.remove(e2)
+        out.add((a, d))
+        out.add((c, b))
+        ans = tuple(sorted(out))
+        return ans if tools.is_valid(ans) else None
+
+    def archive():
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        for net in ranked:
+            if all(dist(net, x) >= 4 for x in out):
+                out.append(net)
+            if len(out) >= 18:
+                break
+        for net in ranked:
+            if len(out) >= 30:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    def propose(parent, guide, detail):
+        cur = set(parent)
+        guide_edges = set(guide)
+        hot = set()
+        if detail:
+            try:
+                hot = {tuple(map(int, e)) for e, p in detail.get("prices", {}).items()
+                       if float(p) > 0}
+            except Exception:
+                hot = set()
+
+        # Prefer replacing a parent edge absent from the guide with a guide edge.
+        proposals = set()
+        missing = list(guide_edges - cur)
+        rng.shuffle(missing)
+        for add in missing[:16]:
+            a, b = add
+            # Outgoing and incoming degrees are preserved by a directed 2-switch.
+            for old in list(cur):
+                c, d = old
+                if old in guide_edges:
+                    continue
+                if (a, d) in cur or (c, b) in cur or a == d or c == b:
+                    continue
+                new = set(cur)
+                new.remove(old)
+                new.remove((a, b)) if (a, b) in new else None
+                # Pair add-edge's source/destination with an existing edge.
+                # Reconnect (a,b),(c,d) -> (a,d),(c,b).
+                if (a, b) not in cur:
+                    continue
+                new = set(cur)
+                new.remove((a, b))
+                new.remove(old)
+                new.add((a, d))
+                new.add((c, b))
+                cand = tuple(sorted(new))
+                if cand != parent and tools.is_valid(cand):
+                    proposals.add(cand)
+
+        # Bottleneck-oriented switches plus a random tail for diversification.
+        arcs = list(cur)
+        indices = [i for i, e in enumerate(arcs) if not hot or e in hot]
+        if not indices:
+            indices = list(range(len(arcs)))
+        for _ in range(90):
+            p = int(rng.choice(indices))
+            q = int(rng.integers(len(arcs)))
+            if p == q:
+                continue
+            cand = switch(cur, arcs[p], arcs[q])
+            if cand is not None and cand != parent:
+                proposals.add(cand)
+
+        # A few longer jumps avoid restricting exploration to local exchanges.
+        for _ in range(18):
+            tmp = set(cur)
+            for _ in range(2 + int(rng.integers(4))):
+                aa = list(tmp)
+                i, j = rng.choice(len(aa), size=2, replace=False)
+                x, y = aa[int(i)]
+                z, w = aa[int(j)]
+                if x == w or z == y or (x, w) in tmp or (z, y) in tmp:
+                    continue
+                tmp.remove((x, y))
+                tmp.remove((z, w))
+                tmp.add((x, w))
+                tmp.add((z, y))
+            cand = tuple(sorted(tmp))
+            if cand != parent and tools.is_valid(cand):
+                proposals.add(cand)
+        return proposals
+
+    iteration = 0
+    temperature = 0.025
+    while tools.lp_calls_left > 0:
+        pop = archive()
+        if not pop:
+            break
+        # Alternate elite and exploratory parent selection.
+        if rng.random() < 0.55:
+            parent = pop[int(rng.integers(min(6, len(pop))))]
+        else:
+            parent = pop[int(rng.integers(len(pop)))]
+        guides = [x for x in pop if x != parent]
+        guide = guides[int(rng.integers(len(guides)))] if guides else parent
+
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+
+        moves = [m for m in propose(parent, guide, detail)
+                 if m not in seen and not tools.is_cached(m)]
+        if not moves:
+            continue
+
+        base_e = energy(parent)
+        moves.sort(key=lambda m: energy(m) - base_e)
+        # Mostly take promising surrogate moves, but retain diversity and a novel slot.
+        shortlist = moves[:min(len(moves), 45)]
+        selected = []
+        if shortlist:
+            selected.append(shortlist[0])
+        while len(selected) < min(4, len(shortlist)):
+            eligible = [m for m in shortlist if m not in selected]
+            if not eligible:
+                break
+            pick = max(eligible, key=lambda m: (
+                min(dist(m, s) for s in selected),
+                -0.00001 * (energy(m) - base_e)))
+            selected.append(pick)
+        tail = [m for m in moves if m not in selected]
+        if tail and len(selected) < 5:
+            selected.append(tail[int(rng.integers(len(tail)))])
+
+        old_best = best_score
+        for net in selected:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        # Annealing controls whether the next relinking walk remains near its parent.
+        if best_score < old_best:
+            temperature = max(0.004, temperature * 0.97)
+        else:
+            temperature = min(0.08, temperature * 1.003)
+        iteration += 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

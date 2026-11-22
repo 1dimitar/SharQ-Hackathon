@@ -1,0 +1,15 @@
+<NAME>
+concave_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Replace the linear direct-demand reward with a square-root transform. The current linear reward can let a few exceptionally large demands dominate link selection, even when choosing links for smaller demands would improve overall load balance. A concave reward gives those smaller demands more influence while still favoring direct links for high-demand OD pairs. This leaves the existing relay and endpoint-conflict couplings unchanged, preserving their useful structure. The transform is bounded in [0, 1], so it remains compatible with the existing term scaling.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {e: -float(t[e[0], e[1]]) / dmax for e in links}
+=======
+    linear = {e: -float(np.sqrt(t[e[0], e[1]] / dmax)) for e in links}
+>>>>>>> REPLACE
+</DIFF>

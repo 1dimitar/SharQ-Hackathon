@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_frontier_search",
+  "patch_description": "Reorganizes the search around a compact quality-and-diversity archive, with parent selection informed by visit history and past improvement. Each neighborhood mixes bottleneck-guided switches, rotations, and occasional path relinking; LP calls are spent on a small batch selected using surrogate energy and topology diversity. Cached energy and edge sets reduce repeated work, while periodic archive refreshes keep the search focused without repeatedly sorting the full history.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:28:42.224316",
+  "llm_cost": 0.0041028,
+  "llm_model": "gpt-6-luna"
+}

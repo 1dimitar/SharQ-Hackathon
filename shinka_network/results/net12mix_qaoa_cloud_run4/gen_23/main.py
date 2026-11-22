@@ -1,0 +1,98 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear and quadratic QUBO cost terms for directed links."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n < 2:
+        return {}, {}, 2.5
+
+    # Keep the surrogate well-defined for unusual inputs.
+    t = np.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0)
+    t = np.maximum(t, 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+
+    maximum = float(t.max())
+    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+    if maximum <= 0.0:
+        return {e: 0.0 for e in links}, {}, 2.5
+
+    d = t / maximum
+
+    # Direct traffic remains the dominant signal. The small square-root
+    # component gives moderate demands some influence without replacing it.
+    linear = {}
+    for i, j in links:
+        direct = 0.90 * d[i, j] + 0.10 * np.sqrt(d[i, j])
+        linear[(i, j)] = -float(direct)
+
+    quadratic = {}
+
+    # Give each OD pair a small, normalized amount of two-hop credit. Traffic
+    # activity is used only as a mild relay preference: a less busy relay is
+    # somewhat more attractive, but no relay is excluded.
+    activity = (t.sum(axis=0) + t.sum(axis=1)) / maximum
+    mean_activity = float(activity.mean())
+    activity_ratio = activity / (mean_activity + 1e-12)
+    relay_weight = 1.0 / np.sqrt(0.5 + activity_ratio)
+    relay_weight = np.clip(relay_weight, 0.55, 1.45)
+
+    twohop_scale = 0.18
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+
+            relays = [j for j in range(n) if j != i and j != k]
+            if not relays:
+                continue
+            total_weight = sum(float(relay_weight[j]) for j in relays)
+            if total_weight <= 0.0:
+                continue
+
+            for j in relays:
+                share = float(d[i, k]) * float(relay_weight[j]) / total_weight
+                a, b = (i, j), (j, k)
+                key = (a, b) if a < b else (b, a)
+                quadratic[key] = quadratic.get(key, 0.0) - twohop_scale * share
+
+    # A restrained reciprocal bonus encourages a pair of links when demand
+    # exists in both directions, while keeping the interaction graph compact.
+    reciprocal_scale = 0.035
+    for i in range(n):
+        for j in range(i + 1, n):
+            strength = min(float(d[i, j]), float(d[j, i]))
+            if strength > 0.0:
+                a, b = (i, j), (j, i)
+                key = (a, b) if a < b else (b, a)
+                quadratic[key] = quadratic.get(key, 0.0) - reciprocal_scale * strength
+
+    # Remove only numerical noise; retain small but meaningful couplings.
+    quadratic = {key: float(value) for key, value in quadratic.items()
+                 if abs(value) > 1e-12}
+
+    penalty_weight = 2.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

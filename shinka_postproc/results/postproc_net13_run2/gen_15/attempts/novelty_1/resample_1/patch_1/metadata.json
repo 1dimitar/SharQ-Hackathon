@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stall_adaptive_exploration",
+  "patch_description": "When a parent\u2019s neighborhood repeatedly fails to improve, the current screening still spends all three LP evaluations on the best surrogate-ranked moves. That can over-trust a loosely correlated surrogate and repeatedly explore similar choices. Keep the two highest-ranked moves, but reserve the third slot for a randomly selected, topologically distinct fresh move once the parent has stalled at least twice. This uses the existing per-parent stall signal to adapt the exploration mix while preserving the normal screening behavior for productive parents.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:51:38.324645",
+  "llm_cost": 0.0026160000000000003,
+  "llm_model": "gpt-6-luna"
+}

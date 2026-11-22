@@ -1,0 +1,25 @@
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s5: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 36s
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+network12_s0: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 32s
+sub12_s2: done in 762s, score 0.752
+sub12_s1: done in 797s, score 0.837
+sub12_s3: done in 852s, score 0.813
+sub12_s4: done in 873s, score 0.900
+sub12_s5: done in 1177s, score 0.850
+network12_s0: done in 1318s, score 0.731
+correct: True | error: None | 1320s
+combined_score: 0.8139476895366456
+network12_s0: score 0.731, best 336000 vs reference 276474 (gap +21.5%), median gap +56.3%, 12% of 100 qaoa_partitioned solutions valid before repair, 85 distinct topologies, 1320 quadratic terms, 6012 circuits
+sub12_s1: score 0.837, best 286778 vs reference 251250 (gap +14.1%), median gap +25.4%, 24% of 100 qaoa_partitioned solutions valid before repair, 71 distinct topologies, 1320 quadratic terms, 6012 circuits
+sub12_s2: score 0.752, best 303500 vs reference 248929 (gap +21.9%), median gap +46.1%, 8% of 100 qaoa_partitioned solutions valid before repair, 70 distinct topologies, 1320 quadratic terms, 6012 circuits
+sub12_s3: score 0.813, best 268750 vs reference 231819 (gap +15.9%), median gap +31.1%, 1% of 100 qaoa_partitioned solutions valid before repair, 76 distinct topologies, 1320 quadratic terms, 6012 circuits
+sub12_s4: score 0.900, best 236200 vs reference 219715 (gap +7.5%), median gap +15.0%, 10% of 100 qaoa_partitioned solutions valid before repair, 38 distinct topologies, 1320 quadratic terms, 6012 circuits
+sub12_s5: score 0.850, best 266778 vs reference 246858 (gap +8.1%), median gap +29.0%, 25% of 100 qaoa_partitioned solutions valid before repair, 81 distinct topologies, 1320 quadratic terms, 6012 circuits
+Largest gap: sub12_s2 (+21.9%).

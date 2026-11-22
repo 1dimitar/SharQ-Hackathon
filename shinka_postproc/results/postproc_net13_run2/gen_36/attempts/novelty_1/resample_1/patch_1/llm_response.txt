@@ -1,0 +1,94 @@
+<NAME>
+ucb_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Allocate parent searches using both historical progress and underexploration. Keep the existing preference for strong archive members, but boost parents that have been selected fewer times and those whose neighborhoods have recently produced improvements; gently discount repeatedly stalled parents. Update visit counts only after any fallback parent is chosen, so the statistics reflect the parent actually searched.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_score = float("inf")
+    parent_stalls = {}
+=======
+    best_score = float("inf")
+    parent_stalls = {}
+    parent_visits = {}
+    parent_reward = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Balance archive quality, observed progress, and underexploration."""
+        if not pop:
+            return best_net
+
+        elite_n = min(6, len(pop))
+        weights = []
+        for i, net in enumerate(pop):
+            # Preserve the original elite/uniform quality bias.
+            base = (0.48 / elite_n if i < elite_n else 0.0) + 0.52 / len(pop)
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            reward = min(1.5, parent_reward.get(net, 0.0))
+            explore = 1.0 + 1.25 / math.sqrt(1.0 + visits)
+            progress = 1.0 + reward
+            stagnation = 1.0 / (1.0 + 0.12 * stalls)
+            weights.append(base * explore * progress * stagnation)
+
+        total = sum(weights)
+        if total <= 0:
+            return pop[int(rng.integers(len(pop)))]
+        probabilities = [w / total for w in weights]
+        return pop[int(rng.choice(len(pop), p=probabilities))]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+=======
+        parent_score = seen.get(parent, float("inf"))
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+            relative_gain = (parent_score - batch_best) / max(abs(parent_score), 1.0)
+            parent_reward[parent] = min(
+                1.5, parent_reward.get(parent, 0.0) + relative_gain
+            )
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+</DIFF>

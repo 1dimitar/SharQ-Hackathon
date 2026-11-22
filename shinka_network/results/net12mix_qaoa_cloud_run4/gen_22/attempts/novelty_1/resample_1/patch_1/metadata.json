@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "staged_path_pressure",
+  "patch_description": "Separates demand preprocessing, link scoring, and sparse path-coupling construction into small helpers. Direct demand remains the main signal, while a modest endpoint-pressure adjustment and discounted two-hop rewards add routing context without making path combinations dominate. The two-hop construction is bounded by \\(O(n^3)\\), within the term limit, and uses no randomness.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:35:14.706066",
+  "llm_cost": 0.0009716,
+  "llm_model": "gpt-6-luna"
+}

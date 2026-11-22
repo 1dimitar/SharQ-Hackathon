@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_screening",
+  "patch_description": "The current batch screen ranks proposals almost entirely by QUBO energy, even though the LP detail identifies links that can directly limit the objective. Reserve part of each LP batch for low-energy proposals that modify positive-price bottleneck links, then fill the rest using the existing energy ranking. This adds targeted congestion-oriented exploration without letting the LP\u2019s dual information crowd out surrogate-favored moves. The detail lookup is cached for an already-scored parent, so it does not spend an LP call.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:02:08.215457",
+  "llm_cost": 0.0027366,
+  "llm_model": "gpt-6-luna"
+}

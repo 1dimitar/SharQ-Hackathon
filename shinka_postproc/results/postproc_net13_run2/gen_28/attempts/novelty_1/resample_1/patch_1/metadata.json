@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_path_relink",
+  "patch_description": "Add a short, guided path-relinking phase before screening each parent\u2019s neighborhood. It chooses a strong, topologically distant archive member as a guide, then greedily applies degree-preserving two-switches that reduce the symmetric difference from that guide. Intermediate networks are added to the existing move set, so the established surrogate screening still decides which ones merit LP calls. This explores directed routes between good regions rather than relying only on random kicks, while keeping the added work bounded and requiring no extra LP calls by itself.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:03:11.142987",
+  "llm_cost": 0.0017851000000000002,
+  "llm_model": "gpt-6-luna"
+}

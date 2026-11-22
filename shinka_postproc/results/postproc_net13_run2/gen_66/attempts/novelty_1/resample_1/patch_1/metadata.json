@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive-bottleneck-search",
+  "patch_description": "The current approach can stop early when a selected neighborhood has no fresh moves, and its small, mostly fixed batches limit exploration of the 2,000-call budget. This version uses explicit fallback parents and kicks, keeps a bounded quality-and-diversity archive, and adapts parent selection and move exploration to stagnation. It evaluates up to three surrogate-ranked moves per round while reserving a slot for a less energy-favored move. Bottleneck links guide both two-switches and rotations; simulated-annealing acceptance lets the search move between basins rather than only following immediate improvements.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:29:16.372036",
+  "llm_cost": 0.0036492,
+  "llm_model": "gpt-6-luna"
+}

@@ -114,8 +114,8 @@ def improve(demand, candidates, tools, rng):
         """Mix elite exploitation with sampling from diverse archived networks."""
         if not pop:
             return best_net
-        if rng.random() < 0.48:
-            return pop[int(rng.integers(min(6, len(pop))))]
+        if rng.random() < 0.70:
+            return pop[int(rng.integers(min(4, len(pop))))]
         return pop[int(rng.integers(len(pop)))]
 
     def switch(net, p, q):
@@ -266,7 +266,7 @@ def improve(demand, candidates, tools, rng):
             detail = None
 
         moves = make_moves(parent, detail)
-        batch = screen_batch(moves, parent)
+        batch = screen_batch(moves, parent, batch_size=3)
 
         # If a neighborhood has already been exhausted, perturb another archive
         # member rather than repeatedly revisiting the same parent.
@@ -278,7 +278,7 @@ def improve(demand, candidates, tools, rng):
                     detail = tools.lp_detail(parent)
                 except Exception:
                     detail = None
-                batch = screen_batch(make_moves(parent, detail), parent)
+                batch = screen_batch(make_moves(parent, detail), parent, batch_size=3)
 
         if not batch:
             # A final random degree-preserving kick guarantees progress when possible.

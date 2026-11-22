@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_weighted_endpoint_pairs",
+  "patch_description": "Add bounded, pressure-sensitive couplings between links sharing a sender or receiver. A pair of links aimed at high-inbound-pressure destinations, or originating from high-outbound-pressure nodes, receives a stronger congestion penalty. The pressure is normalized from the demand matrix, so the adjustment remains bounded and adapts across instances. This adds at most \\(2n\\binom{n-1}{2}\\) quadratic terms, within the limit, while preserving the direct-demand linear reward. Increase the degree penalty modestly to encourage valid topologies before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:16:05.846668",
+  "llm_cost": 0.0015113,
+  "llm_model": "gpt-6-luna"
+}

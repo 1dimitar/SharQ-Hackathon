@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "guided_archive_relinking",
+  "patch_description": "Add a short path-relinking phase from each selected parent toward a distant, high-quality archived network. The path is built from valid degree-preserving two-switches that strictly reduce the symmetric difference from the target. A few of these intermediate networks are reserved for LP evaluation, so the surrogate ranking cannot screen out every guided move. This complements local neighborhood search with directed exploration between promising regions while keeping the added work bounded.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:06:27.945874",
+  "llm_cost": 0.0028443,
+  "llm_model": "gpt-6-luna"
+}

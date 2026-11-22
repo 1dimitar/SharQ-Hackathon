@@ -1,0 +1,94 @@
+<NAME>
+archive_novelty_screen
+</NAME>
+
+<DESCRIPTION>
+The current batch selector promotes diversity only among proposals in the same batch. This change also measures each proposal’s distance from the high-quality scored archive, so the search can spend some LP calls exploring regions that are not already represented. It reserves part of each batch for the best surrogate-ranked moves and part for archive-novel moves, while keeping a limited shortlist for novelty selection so that extremely poor-surrogate proposals are not favored solely for being different.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def select_batch(moves, parent, limit=5):
+        """Use surrogate quality for part of the batch, diversity for the rest."""
+        if not moves:
+            return []
+
+        base_energy = energy(parent)
+        ranked = sorted(
+            moves,
+            key=lambda net: energy(net) - base_energy,
+        )
+
+        selected = []
+        # Take distinct candidates among the surrogate-favored proposals.
+        for net in ranked:
+            if all(distance(net, old) >= 3 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(3, limit):
+                break
+
+        # Fill with a mixture of ranked and shuffled tail proposals.
+        remaining = [net for net in ranked if net not in selected]
+        head = remaining[:max(limit * 2, 1)]
+        tail = remaining[len(head):]
+        rng.shuffle(tail)
+        for net in head + tail:
+            if len(selected) >= limit:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected
+=======
+    def select_batch(moves, parent, limit=5):
+        """Blend surrogate quality with novelty relative to the scored archive."""
+        if not moves:
+            return []
+
+        base_energy = energy(parent)
+        ranked = sorted(
+            moves,
+            key=lambda net: energy(net) - base_energy,
+        )
+
+        # Use a compact set of strong, mutually distinct archive members as
+        # reference points. Distance from these rewards unexplored topology
+        # regions without making novelty the only selection criterion.
+        archive = sorted(scores, key=scores.get)[:24]
+        if not archive:
+            archive = [parent]
+        novelty = {
+            net: min(distance(net, ref) for ref in archive)
+            for net in moves
+        }
+
+        selected = []
+        # Preserve exploitation: take the strongest surrogate proposals first.
+        for net in ranked:
+            if all(distance(net, old) >= 3 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(2, limit):
+                break
+
+        # Search for underrepresented regions, but only within a surrogate
+        # shortlist so wildly poor-energy proposals do not dominate.
+        shortlist = ranked[:max(12, limit * 5)]
+        while len(selected) < min(4, limit):
+            available = [net for net in shortlist if net not in selected]
+            if not available:
+                break
+            pick = max(
+                available,
+                key=lambda net: (novelty[net], -ranked.index(net)),
+            )
+            selected.append(pick)
+
+        # Spend any remaining batch capacity on the best-ranked proposals.
+        for net in ranked:
+            if len(selected) >= limit:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected
+>>>>>>> REPLACE
+
+</DIFF>

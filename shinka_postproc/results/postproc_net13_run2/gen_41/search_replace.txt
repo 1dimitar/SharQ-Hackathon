@@ -1,0 +1,87 @@
+<NAME>
+dual_relief_screening
+</NAME>
+
+<DESCRIPTION>
+Use the LP’s dual prices when choosing which generated moves receive LP calls. The move generator already focuses on bottleneck links, but the current screen then ranks candidates only by QUBO energy and can discard those moves. This change reserves part of each batch for diverse moves that remove positively priced links, ranking those candidates by bottleneck relief and then surrogate energy. The rest of the batch still favors surrogate energy, preserving exploration when dual guidance is misleading.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen(moves, parent, size=9):
+        fresh = [m for m in moves if m not in seen and not tools.is_cached(m)]
+        if not fresh:
+            return []
+        base = energy(parent)
+        fresh.sort(key=lambda m: energy(m) - base)
+        chosen = []
+        for net in fresh:
+            if all(distance(net, old) >= 2 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= min(6, size):
+                break
+        for net in fresh:
+            if len(chosen) >= size:
+                break
+            if net not in chosen:
+                chosen.append(net)
+        return chosen
+=======
+    def screen(moves, parent, size=9):
+        fresh = [m for m in moves if m not in seen and not tools.is_cached(m)]
+        if not fresh:
+            return []
+        base = energy(parent)
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {
+            tuple(map(int, arc)): max(0.0, float(price))
+            for arc, price in prices.items()
+            if float(price) > 0
+        }
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            ranked_loads = sorted(
+                ((float(value), tuple(map(int, arc))) for arc, value in loads.items()),
+                reverse=True,
+            )
+            hot = {arc: value for value, arc in ranked_loads[:6]}
+
+        ranked = [(energy(net) - base, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        # Prioritize proposals that remove costly current links, without letting
+        # dual guidance consume the entire batch.
+        relief = []
+        parent_arcs = set(parent)
+        for delta, net in ranked:
+            benefit = sum(hot.get(arc, 0.0) for arc in parent_arcs - set(net))
+            if benefit > 0:
+                relief.append((-benefit, delta, net))
+        relief.sort()
+
+        chosen = []
+        focused_limit = min(size // 2, len(relief))
+        for _, _, net in relief:
+            if all(distance(net, old) >= 2 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= focused_limit:
+                break
+
+        for _, net in ranked:
+            if len(chosen) >= min(6, size):
+                break
+            if net not in chosen and all(distance(net, old) >= 2 for old in chosen):
+                chosen.append(net)
+        for _, net in ranked:
+            if len(chosen) >= size:
+                break
+            if net not in chosen:
+                chosen.append(net)
+        return chosen
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,82 @@
+<NAME>
+archive_underexploration
+</NAME>
+
+<DESCRIPTION>
+Keep a 65% preference for elite parents, while using the remaining selections to explore non-elite archive members according to LP rank, topological isolation, and visit frequency. Track improvements produced by each parent so that underexplored regions receive extra attention only when they have demonstrated promise.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    parent_visits = {}
+    parent_gains = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Favor elites while directing exploration toward promising, underused regions."""
+        if not pop:
+            return best_net
+
+        elite_n = min(6, len(pop))
+        if rng.random() < 0.65 or elite_n == len(pop):
+            parent = pop[int(rng.integers(elite_n))]
+        else:
+            # The exploration portion samples non-elites using quality, isolation,
+            # visit rarity, and evidence that the region has yielded improvements.
+            candidates_for_exploration = pop[elite_n:]
+            weights = []
+            for rank, net in enumerate(pop[elite_n:], start=elite_n):
+                nearest = min(
+                    (distance(net, other) for other in pop if other != net),
+                    default=0,
+                )
+                isolation = 0.75 + 0.5 * min(1.0, nearest / max(1, 4 * n))
+                rarity = 1.0 / ((1.0 + parent_visits.get(net, 0)) ** 0.5)
+                promise = 1.0 + 0.5 * parent_gains.get(net, 0)
+                quality = 1.0 / (1.0 + 0.08 * rank)
+                weights.append(isolation * rarity * promise * quality)
+
+            total = sum(weights)
+            if total <= 0:
+                parent = candidates_for_exploration[int(rng.integers(len(candidates_for_exploration)))]
+            else:
+                parent = candidates_for_exploration[
+                    int(rng.choice(len(candidates_for_exploration), p=[w / total for w in weights]))
+                ]
+
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        return parent
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+=======
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+            parent_gains[parent] = parent_gains.get(parent, 0) + 1
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+
+</DIFF>

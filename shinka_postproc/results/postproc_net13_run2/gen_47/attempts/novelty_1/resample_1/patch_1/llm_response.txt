@@ -1,0 +1,68 @@
+<NAME>
+archive_matching_proposals
+</NAME>
+
+<DESCRIPTION>
+Add a small, bounded matching-based proposal operator alongside the existing switches and rotations. It chooses distinct source nodes and reassigns the destinations of one outgoing link from each source by permutation. This preserves every selected source’s out-degree and the destination multiset, hence preserves all in-degrees; self-loops and duplicate links are rejected. A short batch of permutations is biased toward edges common in the best scored archive networks, while retaining some random variation. The existing validity and screening pipeline then decides which proposals merit LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+=======
+        # Bounded matching proposals: permuting destinations across distinct
+        # sources preserves the destination multiset and all degree counts.
+        # Archive edge frequencies bias proposals toward recurring good structure.
+        edge_frequency = {}
+        elite = sorted(scores, key=scores.get)[:24]
+        for rank, net in enumerate(elite):
+            weight = 1.0 / (1.0 + 0.05 * rank)
+            for edge in net:
+                edge_frequency[edge] = edge_frequency.get(edge, 0.0) + weight
+
+        for _ in range(12):
+            k = 3 + int(rng.integers(4))
+            sources = rng.choice(n, size=k, replace=False)
+            selected = []
+            for source in sources:
+                outgoing = [edge for edge in arcs if edge[0] == int(source)]
+                selected.append(outgoing[int(rng.integers(len(outgoing)))])
+            old = set(selected)
+            destinations = [b for _, b in selected]
+            remainder = current - old
+
+            # Sample a few assignments and keep the valid one most supported
+            # by the elite archive, with random tie-breaking.
+            best_assignment = None
+            best_weight = -1.0
+            for _ in range(8):
+                permuted = list(destinations)
+                rng.shuffle(permuted)
+                new = {(selected[i][0], permuted[i]) for i in range(k)}
+                if (len(new) != k
+                        or any(a == b for a, b in new)
+                        or new & remainder):
+                    continue
+                weight = sum(edge_frequency.get(edge, 0.0) for edge in new)
+                weight += float(rng.random()) * 1e-6
+                if weight > best_weight:
+                    best_weight = weight
+                    best_assignment = new
+
+            if best_assignment is not None:
+                moves.add(tuple(sorted(remainder | best_assignment)))
+
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+>>>>>>> REPLACE
+
+</DIFF>

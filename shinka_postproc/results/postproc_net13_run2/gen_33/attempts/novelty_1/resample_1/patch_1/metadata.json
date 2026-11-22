@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_bottleneck_search",
+  "patch_description": "Combines the current program\u2019s adaptive batch sizing and bottleneck-focused neighborhood generation with the inspiration program\u2019s under-visited frontier selection and broad energy-band sampling. The search tracks visits and stagnation to balance exploitation with exploration, screens moves by surrogate energy before LP calls, and keeps all degree-preserving moves validated and cached-aware.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:07:49.454117",
+  "llm_cost": 0.0036906,
+  "llm_model": "gpt-6-luna"
+}

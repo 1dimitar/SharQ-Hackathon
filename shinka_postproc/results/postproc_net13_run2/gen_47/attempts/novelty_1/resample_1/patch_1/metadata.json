@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_matching_proposals",
+  "patch_description": "Add a small, bounded matching-based proposal operator alongside the existing switches and rotations. It chooses distinct source nodes and reassigns the destinations of one outgoing link from each source by permutation. This preserves every selected source\u2019s out-degree and the destination multiset, hence preserves all in-degrees; self-loops and duplicate links are rejected. A short batch of permutations is biased toward edges common in the best scored archive networks, while retaining some random variation. The existing validity and screening pipeline then decides which proposals merit LP calls.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:16:12.658534",
+  "llm_cost": 0.0021841,
+  "llm_model": "gpt-6-luna"
+}

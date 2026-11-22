@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_reserve",
+  "patch_description": "Reserve one LP evaluation in each selected batch for a valid, uncached move that is structurally far from the scored archive. The current batch selection is guided by surrogate rank and diversity within its shortlist, so it can still repeatedly explore the same regions of the overall search space. Replacing the batch\u2019s last move with the candidate having the greatest minimum symmetric-difference distance from a compact archive encourages broader exploration; ties favor better surrogate rank. The reserved slot remains part of the existing batch budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:22:26.935478",
+  "llm_cost": 0.0018192000000000002,
+  "llm_model": "gpt-6-luna"
+}

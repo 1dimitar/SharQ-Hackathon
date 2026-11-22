@@ -1,0 +1,39 @@
+╭─ Program Failure (Programs ('P0', 10), ('P1', 10), ('P2', 10) and 10 more) ──╮
+│ ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s4: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/13 programs completed before failure.); retrying in 45s
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s3: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 18s
+╭─ Program Failure (Programs ('P0', 10), ('P1', 10), ('P2', 10) and 10 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s5: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/13 programs completed before failure.); retrying in 31s
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ReadTimeout: HTTPSConnectionPool(host='app.qoroquantum.net', port=443): Read │
+│ timed out. (read timeout=100)                                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s2: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 27s
+╭─ Program Failure (Programs ('P0', 10), ('P1', 10), ('P2', 10) and 10 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s5: sampling attempt 2 failed (RuntimeError: Ensemble execution failed: 0/13 programs completed before failure.); retrying in 39s
+╭── Program Failure (Programs ('P0', 9), ('P1', 10), ('P2', 11) and 11 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+sub12_s1: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/14 programs completed before failure.); retrying in 19s
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+network12_s0: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 36s
+sub12_s4: done in 1179s, score 0.727
+sub12_s3: done in 1243s, score 0.859
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) │
+╰──────────────────────────────────────────────────────────────────────────────╯
+network12_s0: sampling attempt 2 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 58s
