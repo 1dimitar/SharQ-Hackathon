@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_portfolio_search",
+  "patch_description": "Reorganizes the search into a feedback-driven portfolio: each round generates degree-preserving moves, ranks them with independent signals, and allocates LP evaluations across those signals according to their recent improvement rates. Energy, cheap routing features, an online LP predictor, bottleneck guidance, and structural novelty all retain protected opportunities. Diverse repaired starts and an archive provide coverage, while adaptive source weights help direct later LP calls toward signals that are actually finding improvements.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:05:27.193555",
+  "llm_cost": 0.0050741,
+  "llm_model": "gpt-6-luna"
+}

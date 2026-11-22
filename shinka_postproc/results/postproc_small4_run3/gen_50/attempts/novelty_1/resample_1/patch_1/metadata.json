@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "routing_delta_screen",
+  "patch_description": "Replace the pressure heuristic with batched, demand-aware routing estimates and an online model of LP score changes. Removing highly loaded links is not intrinsically beneficial: their replacements may create longer routes or concentrate traffic elsewhere. Two inexpensive routing patterns measure these effects directly, while regression learns which proxy changes actually predict LP improvements within this run.\n\nKeep protected energy, routing, learned, novelty, and random slots so prediction errors cannot monopolize the budget. Cache features only for scored or selected networks, and add a wall-time guard. This targets the screening weakness suggested by the stronger routing-based prior program without replacing the archive or move generators.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:07:55.385416",
+  "llm_cost": 0.07655,
+  "llm_model": "gpt-6.1-sol"
+}

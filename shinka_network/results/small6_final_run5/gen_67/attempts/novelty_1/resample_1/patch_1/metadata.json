@@ -1,0 +1,14 @@
+{
+  "generation": 67,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_factor_pipeline",
+  "patch_description": "Separates demand preprocessing, route selection, structural factors, and QUBO assembly. It restores fixed-budget two-hop coverage and retains the successful reciprocal-link penalty.\n\nA new neighbor-pair model uses demand-balanced diffusion to estimate service through up to three hops. It scores both coverage and predicted traffic imbalance between a node\u2019s two neighbors. Each factor is decomposed into linear main effects and sparse quadratic residuals, preserving broad ranking information without densely coupling every neighbor pair. No degree penalties or additional variables are introduced.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:50:41.205975",
+  "llm_cost": 0.150224,
+  "llm_model": "gpt-6.1-sol"
+}

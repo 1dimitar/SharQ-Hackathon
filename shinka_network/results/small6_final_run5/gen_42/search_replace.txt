@@ -1,0 +1,30 @@
+<NAME>
+balanced_route_ranking
+</NAME>
+
+<DESCRIPTION>
+Rank two-hop candidates using both their total leg demand and how evenly that support is split across the two legs. With the current sum-based ranking, a large value on just one leg can make a route look attractive even when the other leg has little demand support. The balance factor leaves well-supported, balanced routes essentially unchanged while lowering the rank of one-sided candidates. This changes candidate selection without adding couplings, and preserves the existing adaptive rule for adding a route when candidate ranks are close.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                edge_pressure = float(
+                    normalized[i, j] + normalized[j, k]
+                )
+                pressure = float(node_pressure[j])
+                rank = (0.25 + edge_pressure) / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+=======
+                leg_a = float(normalized[i, j])
+                leg_b = float(normalized[j, k])
+                edge_pressure = leg_a + leg_b
+                balance = (
+                    2.0 * np.sqrt(leg_a * leg_b)
+                    / (edge_pressure + 1e-12)
+                )
+                pressure = float(node_pressure[j])
+                affinity = (0.25 + edge_pressure) * (0.70 + 0.30 * balance)
+                rank = affinity / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+>>>>>>> REPLACE
+</DIFF>

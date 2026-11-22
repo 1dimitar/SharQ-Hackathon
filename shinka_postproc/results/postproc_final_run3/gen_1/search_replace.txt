@@ -1,0 +1,82 @@
+<NAME>
+archive_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Add degree-preserving path relinking between a selected parent and a structurally different archive member. Each step tries to install a link from the target network by swapping the current outgoing link at its source with the current incoming link at its destination. This creates valid intermediate networks that move toward another promising region, complementing the existing local swaps, rotations, and kicks. The intermediates join the usual screened move batch, so they still need an LP call to be certified. The target is chosen from the farthest members of the leading archive, with all limits scaling with n.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+=======
+    def path_relink(parent, target):
+        """Generate valid intermediate networks while installing target links."""
+        cur = set(parent)
+        goal = set(target)
+        path = []
+
+        # Each successful step adds at least one target link; stop if blocked.
+        for _ in range(2 * n):
+            missing = list(goal - cur)
+            if not missing:
+                break
+            rng.shuffle(missing)
+            chosen = None
+            for a, d in missing:
+                outs = [edge for edge in cur if edge[0] == a]
+                ins = [edge for edge in cur if edge[1] == d]
+                options = []
+                for old1 in outs:
+                    for old2 in ins:
+                        b, c = old1[1], old2[0]
+                        new1, new2 = (a, d), (c, b)
+                        if old1 == old2 or a == d or c == b:
+                            continue
+                        if new1 in cur or new2 in cur:
+                            continue
+                        # Prefer switches that preserve already installed target links.
+                        lost = int(old1 in goal) + int(old2 in goal)
+                        options.append((lost, old1, old2, new1, new2))
+                if options:
+                    min_lost = min(item[0] for item in options)
+                    best_options = [item for item in options if item[0] == min_lost]
+                    chosen = best_options[int(rng.integers(len(best_options)))]
+                    break
+
+            if chosen is None:
+                break
+            _, old1, old2, new1, new2 = chosen
+            cur.remove(old1)
+            cur.remove(old2)
+            cur.add(new1)
+            cur.add(new2)
+            net = tuple(sorted(cur))
+            if tools.is_valid(net):
+                path.append(net)
+            else:
+                break
+
+        return path
+
+    def screen_batch(moves, parent, batch_size=9):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        moves = make_moves(parent, detail)
+        batch = screen_batch(moves, parent)
+=======
+        moves = make_moves(parent, detail)
+
+        # Relink toward a distant elite to explore paths between archive regions.
+        relink_pool = [x for x in pop[:min(12, len(pop))] if x != parent]
+        if relink_pool:
+            farthest = max(distance(parent, x) for x in relink_pool)
+            targets = [x for x in relink_pool if distance(parent, x) == farthest]
+            target = targets[int(rng.integers(len(targets)))]
+            if farthest >= 4:
+                moves.extend(path_relink(parent, target))
+
+        batch = screen_batch(moves, parent)
+>>>>>>> REPLACE
+</DIFF>

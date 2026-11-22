@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_threehop",
+  "patch_description": "Add one carefully gated three-hop alternative for high-demand OD pairs whose best two-hop choices are weak or nearly tied. Rank paths through two distinct intermediates using the geometric mean of their three positive, normalized demand legs, discounted by pressure at both transit nodes. Encode the selected path with three modest pairwise QUBO couplings. This gives the surrogate a sparse signal for traffic that may need a longer route, while avoiding broad three-hop coverage and preserving the existing two-hop terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:28:39.458545",
+  "llm_cost": 0.0028348,
+  "llm_model": "gpt-6-luna"
+}

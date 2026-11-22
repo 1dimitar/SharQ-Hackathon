@@ -1,0 +1,50 @@
+<NAME>
+dual_relief_slot
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP batch slot for a move that deletes the greatest total dual price among the parent’s arcs. The move generator already creates switches and rotations involving bottleneck arcs, but the existing batch screening can still discard them in favor of energy- or routing-ranked moves. This gives bottleneck relief an explicit, bounded role in move selection while leaving the rest of the batch available to the existing mixed portfolio. If no positive dual prices are available, link loads provide a fallback pressure signal.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Fill by surrogate rank, reserving one slot for exploration if possible.
+        tail = [net for _, net in ranked if net not in selected]
+=======
+        # Reserve one slot for moves that remove LP-identified bottleneck arcs.
+        # Dual prices are the primary signal; loads are a fallback when no
+        # positive prices are reported.
+        pressure = {}
+        if detail:
+            prices = detail.get("prices", {})
+            pressure = {
+                tuple(map(int, arc)): max(0.0, float(value))
+                for arc, value in prices.items()
+            }
+            if not any(value > 0.0 for value in pressure.values()):
+                loads = detail.get("loads", {})
+                pressure = {
+                    tuple(map(int, arc)): max(0.0, float(value))
+                    for arc, value in loads.items()
+                }
+
+        parent_arcs = set(parent)
+        targeted = []
+        for net in fresh:
+            if net in selected:
+                continue
+            relief = sum(
+                pressure.get(arc, 0.0)
+                for arc in parent_arcs.difference(net)
+            )
+            if relief > 0.0:
+                targeted.append((-relief, energy(net) - base_e, net))
+        if targeted and len(selected) < batch_size:
+            targeted.sort()
+            selected.append(targeted[0][2])
+
+        # Fill by surrogate rank, reserving one slot for exploration if possible.
+        tail = [net for _, net in ranked if net not in selected]
+>>>>>>> REPLACE
+
+</DIFF>

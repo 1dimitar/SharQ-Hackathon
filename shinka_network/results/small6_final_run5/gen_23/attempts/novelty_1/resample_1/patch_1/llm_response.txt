@@ -1,0 +1,46 @@
+<NAME>
+shortcut_aware_route_rewards
+</NAME>
+
+<DESCRIPTION>
+The current surrogate rewards a two-hop route even when its demand already has a direct link. This double counting can favor redundant local connectivity instead of useful reachability.
+
+Model each route benefit as −reward × (1 − x_ik) × x_ij × x_jk. Approximate its cubic correction by a second-order expansion around link density p = 2/(n−1), retaining both quadratic and linear corrections. This introduces competition between a direct shortcut and its alternative route without auxiliary variables. The correction naturally weakens with network size, and the total coupling count remains below 4n³ even before duplicate keys are merged. This is a targeted experiment to improve topology and exchange ranking; its performance requires evaluation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    positive = t[t > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+
+    # For each OD pair, rank possible two-hop intermediates by balanced
+=======
+    positive = t[t > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+
+    # Expansion point: the exact mean link occupancy of a valid topology.
+    route_density = 2.0 / (n - 1)
+
+    # For each OD pair, rank possible two-hop intermediates by balanced
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                reward = 0.34 * float(support) * route_factor / pressure_discount
+                add_q((i, j), (j, k), -reward)
+=======
+                reward = 0.34 * float(support) * route_factor / pressure_discount
+
+                # Reward service not already supplied by the direct shortcut:
+                # -reward * (1 - direct) * first * second.
+                # Expand the cubic about occupancy p and discard only the
+                # third-order residual. Constants can also be discarded.
+                first, second, direct = (i, j), (j, k), (i, k)
+                p = route_density
+                add_q(first, second, -reward * (1.0 - p))
+                add_q(direct, first, reward * p)
+                add_q(direct, second, reward * p)
+                correction = reward * p * p
+                linear[first] -= correction
+                linear[second] -= correction
+                linear[direct] -= correction
+>>>>>>> REPLACE
+</DIFF>

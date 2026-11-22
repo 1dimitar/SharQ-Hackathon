@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fractional_load_hessian",
+  "patch_description": "This uses a fractional-routing and congestion approach rather than selecting paths from demand affinity alone. It first softly distributes each OD pair between a direct route and plausible two-hop routes, using constituent-link support and estimated transit-node pressure. It then creates a sparse QUBO approximation to the resulting load-balancing objective: two-hop route rewards are offset by a transit congestion tax on link pairs through busy nodes. The tax also discourages the surrogate from concentrating too many promising routes through the same hubs.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:32:13.091963",
+  "llm_cost": 0.0043975,
+  "llm_model": "gpt-6-luna"
+}

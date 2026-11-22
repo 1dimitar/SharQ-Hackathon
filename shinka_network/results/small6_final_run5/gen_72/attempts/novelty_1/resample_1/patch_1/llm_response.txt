@@ -1,0 +1,17 @@
+<NAME>
+pressure_degree_penalty
+</NAME>
+
+<DESCRIPTION>
+Make the external degree penalty respond mildly to how unevenly incident demand is distributed. A high coefficient of variation signals that demand incentives are more uneven and can pull the sampler toward degree-imbalanced choices, so the penalty rises modestly; balanced or zero-demand instances use a lower value. The adjustment is bounded to [1.15, 1.35], retaining a narrow range around the current setting to avoid disrupting the strong feasible-sample rate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, 1.25
+=======
+    pressure_cv = float(np.std(incident) / max(float(np.mean(incident)), 1e-12))
+    penalty_weight = 1.15 + 0.20 * pressure_cv / (1.0 + pressure_cv)
+    return linear, quadratic, float(min(1.35, max(1.15, penalty_weight)))
+>>>>>>> REPLACE
+</DIFF>

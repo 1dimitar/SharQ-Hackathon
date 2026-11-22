@@ -1,0 +1,14 @@
+{
+  "generation": 111,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "two_route_selective_third",
+  "patch_description": "Use two affinity-selected routes per demand, admitting a third only when it is nearly tied with the second. Apply a stricter admission ratio of 0.96 to ordinary demands while retaining 0.92 for the highest-demand quartile.\n\nThis limits redundant path rewards that can favor poor topologies and distort exchange rankings. Heavy demands retain more routing flexibility, and the existing low-pressure fallback remains unchanged. Compare traffic against the traffic-derived cutoff so the high-demand classification is scale invariant. Structural terms, reward strengths, and degree penalties remain unchanged to isolate the route-selection change.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:27:45.868814",
+  "llm_cost": 0.050306,
+  "llm_model": "gpt-6.1-sol"
+}

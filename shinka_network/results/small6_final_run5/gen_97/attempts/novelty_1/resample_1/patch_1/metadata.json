@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vulnerable_cut_balance",
+  "patch_description": "Add a compact two-node cut correction to the cost. When both reciprocal links between two nodes are selected, the pair has fewer links crossing the cut, so heavy external traffic is more likely to overload the remaining capacity. The quadratic and linear terms use the exact binary expansion of the inverse-square boundary-capacity estimate, scaled by a clipped endpoint-vulnerability factor. A topology-preserving offset keeps this correction from introducing a spurious node-degree preference on valid networks.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:16:03.348172",
+  "llm_cost": 0.0032211,
+  "llm_model": "gpt-6-luna"
+}

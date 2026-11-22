@@ -1,0 +1,240 @@
+<NAME>
+dual_metric_bundle
+</NAME>
+
+<DESCRIPTION>
+Learn a reusable routing surrogate from the LP duals, rather than relying exclusively on QUBO energy.
+
+For each scored network, compute shortest-path distances using its nonnegative dual prices as link lengths. These distances define a valid lower bound for any candidate network: demand-weighted distance divided by the sum of distances across its links. Maintain a bounded collection of complementary metrics and rank candidates by their strongest bound. This transfers information from previous LP calls to new topologies without solving another optimisation problem.
+
+Split screening between this dual-metric model, the original energy, and genuinely novel networks. The current tail-exploration branch is unreachable because the preceding loop already fills the batch; explicitly reserve slots instead. Measure novelty using compact topology bitmasks against all previously scored networks, and require meaningful separation within the main batch.
+
+The metric bank is capped at 4n, retaining useful metrics and protecting those obtained from excellent networks. Move generation, archive search, and acceptance remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    metric_bank = []
+    seen_masks = {}
+    traffic = np.asarray(demand, dtype=float)
+    traffic_total = float(np.sum(traffic))
+
+    def canon(arcs):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        s = seen[net]
+=======
+        if net not in seen:
+            detail = tools.lp_detail(net)
+            seen[net] = float(detail["score"])
+            seen_masks[net] = topology_mask(net)
+            learn_metric(net, detail)
+        s = seen[net]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def choose_starts(repaired, limit):
+=======
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def topology_mask(net):
+        mask = 0
+        for a, b in net:
+            mask |= 1 << (a * n + b)
+        return mask
+
+    def learn_metric(net, detail):
+        """Turn an LP dual into a globally valid congestion lower bound."""
+        if not math.isfinite(float(detail["score"])):
+            return
+        prices = detail.get("prices", {})
+        if not prices:
+            return
+        dist = np.full((n, n), np.inf)
+        np.fill_diagonal(dist, 0.0)
+        for arc in net:
+            dist[arc] = max(0.0, float(prices.get(arc, 0.0)))
+        for k in range(n):
+            np.minimum(
+                dist, dist[:, k:k + 1] + dist[k:k + 1, :], out=dist
+            )
+        if not np.all(np.isfinite(dist)):
+            return
+        volume = float(np.sum(traffic * dist))
+        if volume <= 0.0 or traffic_total <= 0.0:
+            return
+
+        # Normalize all metrics to the same demand-weighted volume.
+        metric = (dist * (traffic_total / volume)).ravel()
+        score = float(detail["score"])
+        for entry in metric_bank:
+            if np.max(np.abs(entry[0] - metric)) < 1e-6:
+                entry[2] = min(entry[2], score)
+                return
+
+        if len(metric_bank) >= 4 * n:
+            protected = set(sorted(
+                range(len(metric_bank)), key=lambda i: metric_bank[i][2]
+            )[:max(2, n // 3)])
+            victim = min(
+                (i for i in range(len(metric_bank)) if i not in protected),
+                key=lambda i: (metric_bank[i][1], -metric_bank[i][2]),
+            )
+            metric_bank.pop(victim)
+        # Entries hold the metric, its recent activity, and its source score.
+        metric_bank.append([metric, 0.1, score])
+
+    def metric_bounds(nets):
+        """Evaluate the strongest stored metric inequality for every topology."""
+        if not metric_bank:
+            return None
+        indices = np.asarray(
+            [[a * n + b for a, b in net] for net in nets], dtype=np.intp
+        )
+        matrix = np.stack([entry[0] for entry in metric_bank])
+        lengths = matrix[:, indices].sum(axis=2)
+        active = np.argmin(lengths, axis=0)
+        counts = np.bincount(active, minlength=len(metric_bank))
+        for i, entry in enumerate(metric_bank):
+            entry[1] = 0.9 * entry[1] + float(counts[i]) / len(nets)
+        denominator = lengths[active, np.arange(len(nets))]
+        return traffic_total / np.maximum(denominator, 1e-12)
+
+    def choose_starts(repaired, limit):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=9):
+        """Mix dual-bundle optimism, QUBO energy, and explicit novelty slots."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        count = len(fresh)
+        order_energy = np.argsort(
+            np.asarray([energy(net) for net in fresh]), kind="stable"
+        )
+        bounds = metric_bounds(fresh)
+        order_model = (
+            np.argsort(bounds, kind="stable")
+            if bounds is not None else order_energy
+        )
+        rank_energy = np.empty(count, dtype=float)
+        rank_model = np.empty(count, dtype=float)
+        rank_energy[order_energy] = np.arange(count)
+        rank_model[order_model] = np.arange(count)
+        combined = rank_energy + rank_model
+        order_combined = np.argsort(combined, kind="stable")
+        masks = [topology_mask(net) for net in fresh]
+        selected = []
+        selected_set = set()
+
+        def take(order, target, separation=6):
+            for raw in order:
+                if len(selected) >= target:
+                    break
+                i = int(raw)
+                if i in selected_set:
+                    continue
+                if all(
+                    (masks[i] ^ masks[j]).bit_count() >= separation
+                    for j in selected
+                ):
+                    selected.append(i)
+                    selected_set.add(i)
+
+        novelty_slots = max(1, batch_size // 4)
+        core_size = max(0, batch_size - novelty_slots)
+        quota = max(1, batch_size // 3)
+        take(order_model, min(quota, core_size))
+        take(order_energy, min(2 * quota, core_size))
+        take(order_combined, core_size)
+
+        # Keep novelty calculations cheap by examining a promising shortlist
+        # plus a random sample. Unlike the old tail branch, these slots remain
+        # available even when there are many good-energy moves.
+        shortlist = set(
+            int(i) for i in order_combined[:max(3 * batch_size, 2 * n)]
+        )
+        shortlist.update(
+            int(i) for i in rng.choice(
+                count, size=min(n, count), replace=False
+            )
+        )
+        shortlist.difference_update(selected_set)
+        history = tuple(seen_masks.values())
+        novelty = {
+            i: min(
+                ((masks[i] ^ old).bit_count() for old in history),
+                default=2 * n,
+            )
+            for i in shortlist
+        }
+        while shortlist and len(selected) < batch_size:
+            def novelty_key(i):
+                separation = min(
+                    [novelty[i]] + [
+                        (masks[i] ^ masks[j]).bit_count() for j in selected
+                    ]
+                )
+                return separation, -combined[i], -i
+
+            i = max(shortlist, key=novelty_key)
+            selected.append(i)
+            selected_set.add(i)
+            shortlist.remove(i)
+
+        # Small neighborhoods may not support the requested separation.
+        take(order_combined, batch_size, separation=0)
+        return [fresh[i] for i in selected]
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "margin_congestion",
+  "patch_description": "This design combines two signals rather than relying only on direct-link rewards and selected two-hop paths. It uses demand-aware two-hop candidates, but adapts how many intermediates it retains: close-ranked alternatives are kept, while clearly weaker ones are omitted. Separately, it adds sparse positive couplings between links entering or leaving the same heavily loaded node. These couplings act as a quadratic proxy for transit congestion, complementing the negative path couplings that reward useful two-hop service. All weights are demand-normalized and the number of couplings stays within the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:55:41.907263",
+  "llm_cost": 0.0031056,
+  "llm_model": "gpt-6-luna"
+}

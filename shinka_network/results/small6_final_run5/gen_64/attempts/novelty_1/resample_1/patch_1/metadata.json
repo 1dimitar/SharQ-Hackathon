@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_leg_support",
+  "patch_description": "Retains the sparse route model and two-node cut penalties that improved median sample quality. Two-hop rewards now include a bounded harmonic-mean factor: both links must have demand support to earn the full reward, while a nonzero floor preserves useful transit alternatives. A mild size correction prevents sparse route interactions from losing influence relative to direct-link rewards as networks grow. No extra couplings or degree penalties are introduced.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:44:47.533981",
+  "llm_cost": 0.05917,
+  "llm_model": "gpt-6.1-sol"
+}

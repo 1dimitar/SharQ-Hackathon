@@ -1,0 +1,14 @@
+{
+  "generation": 135,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "service_portfolio",
+  "patch_description": "This design treats each node\u2019s two links as a small service portfolio: a pair is valuable when its neighbors jointly cover that node\u2019s demand destinations, and less valuable when they offer redundant or imbalanced service. It builds demand-weighted one- to three-hop service profiles, then adds only the strongest pairwise portfolio preferences. Separately, a soft bottleneck score selects a small number of plausible two-hop routes for each demand, with modest rewards to avoid overvaluing indirect routing. This combines coverage and route support without reusing the earlier per-node residual expansion or broad two-hop reward scheme.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:55:22.295923",
+  "llm_cost": 0.0071070000000000005,
+  "llm_model": "gpt-6-luna"
+}

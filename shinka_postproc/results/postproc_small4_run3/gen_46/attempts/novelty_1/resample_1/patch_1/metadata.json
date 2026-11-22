@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "dual_routing_rank",
+  "patch_description": "The current move screen uses deterministic shortest-path tie-breakings as its only routing proxy. Add an equal-split shortest-path peak as an independent signal, computing it alongside the tie-break loads while reusing each destination\u2019s reverse-BFS distances. Rank the shortlisted moves separately by energy, tie-robust peak, and equal-split peak, then combine those ranks for part of the batch. This makes routing estimates less dependent on one path-selection convention without turning either proxy into a hard filter, preserving energy guidance and exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:55:39.359307",
+  "llm_cost": 0.00406,
+  "llm_model": "gpt-6-luna"
+}

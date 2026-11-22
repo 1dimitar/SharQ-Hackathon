@@ -1,0 +1,66 @@
+<NAME>
+endpoint_balanced_route_support
+</NAME>
+
+<DESCRIPTION>
+Rank two-hop routes using both absolute demand and endpoint-relative demand shares. A leg can be useful because it serves a substantial share of its source’s outgoing traffic or its destination’s incoming traffic, even when its absolute demand is modest.
+
+Retain a bilateral bottleneck: the harmonic mean limits support when either leg is weak. Use this evidence consistently in transit-pressure estimation and route selection, with a bounded reward gate to avoid large changes in coefficient scale. Multiplying shares by n−1 before clipping keeps their interpretation stable across network sizes. This adds no couplings and preserves the existing sparse route budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Estimate transit demand on plausible two-hop routes, using incident
+=======
+    # Blend absolute evidence with endpoint-relative demand shares.
+    # A uniform row or column has scaled share one, independent of n.
+    outgoing = normalized.sum(axis=1)
+    incoming = normalized.sum(axis=0)
+    source_share = np.minimum(
+        1.0,
+        (n - 1.0) * normalized / np.maximum(outgoing[:, None], 1e-12),
+    )
+    destination_share = np.minimum(
+        1.0,
+        (n - 1.0) * normalized / np.maximum(incoming[None, :], 1e-12),
+    )
+    departure_support = 0.80 * normalized + 0.20 * source_share
+    arrival_support = 0.80 * normalized + 0.20 * destination_share
+
+    def route_support(i, j, k):
+        first = float(departure_support[i, j])
+        second = float(arrival_support[j, k])
+        total = first + second
+        harmonic = 2.0 * first * second / max(total, 1e-12)
+        balance = 2.0 * harmonic / max(total, 1e-12)
+        evidence = float(normalized[i, j] + normalized[j, k])
+        affinity = (0.25 + evidence) * (0.75 + 0.25 * balance)
+        gate = 0.85 + 0.30 * harmonic
+        return affinity, gate
+
+    # Estimate transit demand on plausible two-hop routes, using incident
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                rank = (0.25 + evidence) / (float(initial_pressure[j]) ** 0.75)
+                routes.append((rank, j, evidence))
+=======
+                affinity, _ = route_support(i, j, k)
+                rank = affinity / (float(initial_pressure[j]) ** 0.75)
+                routes.append((rank, j, evidence))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                edge_pressure = normalized[i, j] + normalized[j, k]
+                pressure = float(node_pressure[j])
+                affinity = 0.25 + edge_pressure
+                rank = affinity / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+                candidates.append((float(rank), j, float(discount)))
+=======
+                edge_pressure = normalized[i, j] + normalized[j, k]
+                pressure = float(node_pressure[j])
+                affinity, gate = route_support(i, j, k)
+                rank = affinity / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure) / gate
+                candidates.append((float(rank), j, float(discount)))
+>>>>>>> REPLACE
+</DIFF>

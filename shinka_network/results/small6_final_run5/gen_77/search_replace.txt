@@ -1,0 +1,66 @@
+<NAME>
+bilateral_balanced_path_support
+</NAME>
+
+<DESCRIPTION>
+Make path selection distinguish two usable legs from one strong leg paired with a weak one. Replace part of the additive affinity with a harmonic-mean term, mildly modulated by each leg’s importance to both its source’s outgoing traffic and its destination’s incoming traffic.
+
+Apply a small, bounded version of the same endpoint-share signal to direct-link rewards. Normalizing shares by n−1 keeps their interpretation stable across sizes; uniform demands retain the existing scores. This targets misleading route rewards without increasing the coupling budget or changing reward strength, sparsity rules, or degree penalties. The intended benefit is better topology and exchange ranking, rather than simply stronger attraction toward two-hop paths.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Preserve broad support for moderate demands while emphasizing large ones.
+    direct_score = 0.68 * z + 0.32 * root
+=======
+    # Harmonic mean of the edge's row and column shares, relative to
+    # uniform traffic. The bounded transform equals one at the uniform case.
+    outgoing = z.sum(axis=1)
+    incoming = z.sum(axis=0)
+    relative_share = (
+        2.0 * max(1, n - 1) * z
+        / np.maximum(outgoing[:, None] + incoming[None, :], 1e-12)
+    )
+    bilateral_share = 2.0 * relative_share / (1.0 + relative_share)
+
+    # Preserve broad support while mildly emphasizing links important
+    # to both endpoints. The multiplier is bounded between 0.90 and 1.10.
+    direct_score = (
+        (0.68 * z + 0.32 * root)
+        * (0.90 + 0.10 * bilateral_share)
+    )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                edge_affinity = z[i, j] + z[j, k]
+                affinity = 0.22 + edge_affinity + 0.12 * np.sqrt(
+                    max(0.0, z[i, j] * z[j, k])
+                )
+=======
+                left = float(z[i, j])
+                right = float(z[j, k])
+                edge_affinity = left + right
+                harmonic = (
+                    2.0 * left * right / max(edge_affinity, 1e-12)
+                )
+
+                left_share = float(bilateral_share[i, j])
+                right_share = float(bilateral_share[j, k])
+                share_support = (
+                    2.0 * left_share * right_share
+                    / max(left_share + right_share, 1e-12)
+                )
+
+                # Preserve the original scale for equally strong legs.
+                # Endpoint shares modulate, but cannot replace, the
+                # bottleneck-sensitive harmonic support.
+                balanced_support = harmonic * (
+                    0.85 + 0.15 * share_support
+                )
+                affinity = (
+                    0.22
+                    + 0.70 * edge_affinity
+                    + 0.60 * balanced_support
+                    + 0.12 * np.sqrt(max(0.0, left * right))
+                )
+>>>>>>> REPLACE
+</DIFF>

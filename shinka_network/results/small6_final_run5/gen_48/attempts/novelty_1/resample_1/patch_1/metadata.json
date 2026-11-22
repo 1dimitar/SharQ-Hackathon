@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ambiguity_route",
+  "patch_description": "Add at most one two-hop route for an OD pair when the next candidate is nearly tied with the last currently selected route, remains competitive with the best route, and has nontrivial traffic on its legs. This gives genuinely ambiguous demands another routing option without broadly increasing route coverage; the leg-evidence gate also avoids adding routes based only on the ranking\u2019s constant baseline affinity.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:27:22.576093",
+  "llm_cost": 0.0023136000000000003,
+  "llm_model": "gpt-6-luna"
+}

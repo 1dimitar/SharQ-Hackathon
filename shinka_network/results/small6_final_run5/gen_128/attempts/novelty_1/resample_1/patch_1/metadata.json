@@ -1,0 +1,14 @@
+{
+  "generation": 128,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_transit_load_pairs",
+  "patch_description": "Add a sparse, positive congestion coupling between pairs of links that both enter the same node or both leave it. Their service scores combine estimated two-hop route exposure with direct demand, so pairs carrying substantial traffic are penalized more when they share a node. This approximates load balancing without adding degree penalties: the evaluator still handles degrees, while these terms distinguish which links are chosen. Keeping only the top `max(2, n // 3)` candidate links on each side of a node bounds the added interactions and varies sparsity independently of the fixed 0.24 strength.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:43:01.619598",
+  "llm_cost": 0.0047606,
+  "llm_model": "gpt-6-luna"
+}

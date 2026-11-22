@@ -1,0 +1,14 @@
+{
+  "generation": 130,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_neighbor_service",
+  "patch_description": "Add sparse outgoing and incoming neighbor-service factors. For each node, estimate how well each possible neighbor can serve destinations (or origins) using a balanced demand-affinity profile. Score each neighbor pair for coverage and load balance, then decompose that score into link-level linear preferences and a sparse residual interaction. This targets the competition between the two links available at each node, rather than simply rewarding more two-hop paths. The pair budget is set independently of factor strength, at about n/3 per node and direction, keeping the added coupling count modest while also providing energy differences useful for ranking valid topologies and exchanges.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:45:27.369848",
+  "llm_cost": 0.0035933,
+  "llm_model": "gpt-6-luna"
+}

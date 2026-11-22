@@ -1,0 +1,123 @@
+<NAME>
+dual_guided_hot_arc_moves
+</NAME>
+
+<DESCRIPTION>
+The current generator already proposes switches involving bottleneck links, but its LP-batch shortlist can favor energy-ranked or random moves and fail to spend calls on those proposals. Use the magnitude of positive LP prices to score how strongly a move removes priced arcs, with a normalized high-load fallback when prices are unavailable. Preserve that score when proposals are duplicated or combined into walks and rotations. Then reserve shortlist and LP-batch capacity for moves with the greatest bottleneck-arc removal. This makes dual guidance affect which networks are actually certified, while retaining the existing energy, routing, and exploratory selections.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        hot = {
+            tuple(a) for a, price in detail.get("prices", {}).items()
+            if float(price) > 1e-10
+        }
+        if not hot:
+            loads = detail.get("loads", {})
+            hot = set(sorted(loads, key=loads.get, reverse=True)[:max(2, n // 4)])
+=======
+        prices = {
+            tuple(map(int, arc)): max(0.0, float(price))
+            for arc, price in detail.get("prices", {}).items()
+        }
+        max_price = max(prices.values(), default=0.0)
+        hot_weight = {
+            arc: price / max_price
+            for arc, price in prices.items()
+            if max_price > 1e-10 and price > 1e-10
+        }
+        if not hot_weight:
+            loads = {
+                tuple(map(int, arc)): float(load)
+                for arc, load in detail.get("loads", {}).items()
+            }
+            max_load = max(loads.values(), default=0.0)
+            ranked_loads = sorted(loads, key=loads.get, reverse=True)
+            hot_weight = {
+                arc: loads[arc] / max_load
+                for arc in ranked_loads[:max(2, n // 4)]
+                if max_load > 0.0
+            }
+        hot = set(hot_weight)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                if candidate is not None:
+                    moves[candidate] = int(parent[p] in hot or parent[q] in hot)
+=======
+                if candidate is not None:
+                    exposure = (
+                        hot_weight.get(parent[p], 0.0)
+                        + hot_weight.get(parent[q], 0.0)
+                    )
+                    moves[candidate] = max(
+                        moves.get(candidate, 0.0), exposure
+                    )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            moves[candidate] = int(bool(set(old) & hot))
+=======
+            exposure = sum(hot_weight.get(edge, 0.0) for edge in old)
+            moves[candidate] = max(moves.get(candidate, 0.0), exposure)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            if state != parent:
+                moves[state] = 0
+=======
+            if state != parent:
+                removed = set(parent).difference(state)
+                exposure = sum(hot_weight.get(edge, 0.0) for edge in removed)
+                moves[state] = max(moves.get(state, 0.0), exposure)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        shortlist = ordered[:min(3 * n, len(ordered))]
+        selected_set = set(shortlist)
+        rest = [x for x in ordered if x not in selected_set]
+        if rest:
+            take = min(4 * n, len(rest))
+            weights = np.asarray([2.0 if moves[x] else 1.0 for x in rest])
+            weights /= weights.sum()
+            ids = rng.choice(len(rest), size=take, replace=False, p=weights)
+            shortlist.extend(rest[int(i)] for i in ids)
+=======
+        shortlist = ordered[:min(3 * n, len(ordered))]
+        selected_set = set(shortlist)
+
+        # Explicitly retain promising moves that remove the most highly priced arcs.
+        hot_order = sorted(
+            (x for x in moves if moves[x] > 0.0 and x not in selected_set),
+            key=lambda x: (-moves[x], energy(x)),
+        )
+        shortlist.extend(hot_order[:min(2 * n, len(hot_order))])
+        selected_set.update(shortlist)
+
+        # Keep a separate random sample for exploration without allowing it to
+        # crowd out the explicitly bottleneck-focused proposals.
+        rest = [x for x in ordered if x not in selected_set]
+        if rest:
+            take = min(2 * n, len(rest))
+            weights = np.asarray([2.0 if moves[x] > 0.0 else 1.0 for x in rest])
+            weights /= weights.sum()
+            ids = rng.choice(len(rest), size=take, replace=False, p=weights)
+            shortlist.extend(rest[int(i)] for i in ids)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        take_from(lorder, quality_quota)
+        take_from(eorder, quality_quota)
+        take_from(porder, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+=======
+        take_from(lorder, quality_quota)
+        take_from(eorder, quality_quota)
+        take_from(porder, 1)
+
+        # Reserve an LP trial for a proposal that directly removes a priced arc.
+        hot_indices = sorted(
+            (i for i, net in enumerate(shortlist) if moves.get(net, 0.0) > 0.0),
+            key=lambda i: (-moves[shortlist[i]], X[i, 0]),
+        )
+        take_from(hot_indices, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+>>>>>>> REPLACE
+</DIFF>

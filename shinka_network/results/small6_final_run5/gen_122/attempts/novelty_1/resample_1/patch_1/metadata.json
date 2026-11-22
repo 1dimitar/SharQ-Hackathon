@@ -1,0 +1,14 @@
+{
+  "generation": 122,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_service_pair_factors",
+  "patch_description": "Add a compact service-coverage and load-balance estimate for pairs of outgoing and incoming links at each node. Because every valid topology selects exactly two links in each direction, the pair cost can distinguish link pairs that jointly serve traffic broadly and evenly from pairs that leave similar traffic competing for the same service. Decompose each pair cost into linear endpoint effects and a zero-row-mean residual, then retain only the most informative residual couplings. The capped pair budget keeps the added model sparse, while a moderate strength limits interference with the existing direct-link and route terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:36:28.700518",
+  "llm_cost": 0.0037200999999999996,
+  "llm_model": "gpt-6-luna"
+}

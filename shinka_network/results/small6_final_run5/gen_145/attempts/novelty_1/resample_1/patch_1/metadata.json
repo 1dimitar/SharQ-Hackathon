@@ -1,0 +1,14 @@
+{
+  "generation": 145,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_route_evidence",
+  "patch_description": "Prefer two-hop routes supported by both legs rather than one exceptionally strong leg. Currently, candidate ranking depends only on the sum of the legs\u2019 demands, so a strong first leg can hide a poorly supported second leg.\n\nReplace half of that sum with its geometric-mean counterpart. Balanced routes retain exactly their previous ranking score, while asymmetric routes receive less credit. Also apply a modest, bounded asymmetry discount to their rewards, including fallback routes. This preserves low-demand transit alternatives without treating every high-sum route as equally useful.\n\nThis targets misleading route rewards that can impair topology and exchange ranking as n grows. It adds no couplings and leaves degree penalties, cut corrections, and neighbor-service factors unchanged. Performance improvement remains to be tested.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:03:19.471129",
+  "llm_cost": 0.053188,
+  "llm_model": "gpt-6.1-sol"
+}

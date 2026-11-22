@@ -1,0 +1,54 @@
+<NAME>
+transit_load_discount
+</NAME>
+
+<DESCRIPTION>
+Add a conservative second-pass congestion correction to the retained two-hop route rewards. Accumulate normalized demand on the selected intermediate nodes, then slightly discount route couplings that use the most-loaded intermediates. This complements the existing static and soft transit-pressure estimates with the usage implied by the sparse routes actually represented in the QUBO, without adding couplings or changing degree feasibility.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
+    quadratic = {}
+
+    # Sparse two-hop rewards: typically two intermediates per OD, three for
+=======
+    cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
+    quadratic = {}
+    route_load = np.zeros(n, dtype=float)
+    route_transit = {}
+
+    # Sparse two-hop rewards: typically two intermediates per OD, three for
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            key = (first, second) if first < second else (second, first)
+            quadratic[key] = float(weight)
+
+    # Reciprocal links can be useful for mutual traffic, but otherwise consume
+=======
+            key = (first, second) if first < second else (second, first)
+            quadratic[key] = float(weight)
+            route_load[j] += float(z[i, k]) * (0.5 + 0.25 * edge_affinity)
+            route_transit[key] = j
+
+    # Reciprocal links can be useful for mutual traffic, but otherwise consume
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Reciprocal links can be useful for mutual traffic, but otherwise consume
+    # scarce degree and routing capacity. Keep this structural penalty modest.
+=======
+    # Discount retained routes that collectively concentrate demand on a
+    # heavily used transit node. The cap keeps this correction deliberately mild.
+    max_route_load = float(np.max(route_load)) if route_load.size else 0.0
+    if max_route_load > 0.0:
+        for key, j in route_transit.items():
+            if quadratic.get(key, 0.0) < 0.0:
+                congestion = np.sqrt(route_load[j] / max_route_load)
+                quadratic[key] *= 1.0 - 0.12 * float(congestion)
+
+    # Reciprocal links can be useful for mutual traffic, but otherwise consume
+    # scarce degree and routing capacity. Keep this structural penalty modest.
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,321 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Validate the input and construct scale-free demand features."""
+    raw = np.asarray(demand, dtype=float)
+    if raw.ndim != 2 or raw.shape[0] != raw.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    traffic = np.nan_to_num(
+        raw, copy=True, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    np.maximum(traffic, 0.0, out=traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    n = traffic.shape[0]
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    t = traffic / maximum if maximum > 0.0 else traffic.copy()
+    roots = np.sqrt(t)
+
+    outgoing = t.sum(axis=1)
+    incoming = t.sum(axis=0)
+    incident = np.maximum(outgoing, incoming)
+    peak = float(incident.max()) if incident.size else 0.0
+    pressure = np.maximum(0.65, incident / max(peak, 1e-15))
+
+    positive = t[t > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+
+    return {
+        "n": n,
+        "t": t,
+        "roots": roots,
+        "pressure": pressure,
+        "cutoff": cutoff,
+        "mean_direct": float(
+            (0.75 * t + 0.25 * roots).sum()
+        ) / max(1, n * (n - 1)),
+    }
+
+
+class _Terms:
+    """Additive accumulator for canonical link and link-pair terms."""
+
+    def __init__(self, n, t, roots):
+        self.n = n
+        self.linear = {
+            (i, j): -float(0.75 * t[i, j] + 0.25 * roots[i, j])
+            for i in range(n)
+            for j in range(n)
+            if i != j
+        }
+        self.quadratic = {}
+
+    def add_linear(self, link, value):
+        self.linear[link] = self.linear.get(link, 0.0) + float(value)
+
+    def add_pair(self, first, second, value):
+        value = float(value)
+        if abs(value) < 1e-13:
+            return
+        if first == second:
+            self.add_linear(first, value)
+            return
+        key = (first, second) if first < second else (second, first)
+        self.quadratic[key] = self.quadratic.get(key, 0.0) + value
+
+
+def _add_path_factors(model, terms):
+    """Reward a few credible two-hop routes for each positive OD pair."""
+    n = model["n"]
+    t = model["t"]
+    roots = model["roots"]
+    pressure = model["pressure"]
+
+    for source in range(n):
+        for target in range(n):
+            od = float(t[source, target])
+            if source == target or od <= 0.0:
+                continue
+
+            support = 0.70 * od + 0.30 * float(roots[source, target])
+            candidates = []
+
+            for middle in range(n):
+                if middle == source or middle == target:
+                    continue
+
+                first_leg = float(t[source, middle])
+                second_leg = float(t[middle, target])
+                total = first_leg + second_leg
+                balance = (
+                    2.0 * np.sqrt(first_leg * second_leg)
+                    / (total + 1e-12)
+                )
+                transit_pressure = float(pressure[middle])
+
+                # Favor routes with credible legs and avoid overusing
+                # high-traffic transit nodes.
+                affinity = (0.25 + total) * (0.72 + 0.28 * balance)
+                rank = affinity / (transit_pressure ** 0.75)
+                discount = transit_pressure * (1.0 + 0.45 * total)
+                candidates.append((float(rank), middle, float(discount)))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            if not candidates:
+                continue
+
+            base_keep = min(
+                len(candidates),
+                4 if od >= model["cutoff"] else 2,
+            )
+            keep = base_keep
+            best_rank = candidates[0][0]
+
+            # Prune weak candidates, then retain at most one additional
+            # route when the boundary is genuinely ambiguous.
+            while keep > 1 and candidates[keep - 1][0] < 0.70 * best_rank:
+                keep -= 1
+            if keep == base_keep and keep < len(candidates):
+                if (
+                    candidates[keep][0] >= 0.92 * candidates[keep - 1][0]
+                    and candidates[keep][0] >= 0.78 * best_rank
+                ):
+                    keep += 1
+
+            reward_scale = min(
+                1.0, (float(base_keep) / keep) ** 0.30
+            )
+            selected = set()
+
+            for rank_index, (_, middle, discount) in enumerate(
+                candidates[:keep]
+            ):
+                selected.add(middle)
+                rank_factor = 1.0 + 0.07 * max(
+                    1, base_keep - rank_index
+                )
+                terms.add_pair(
+                    (source, middle),
+                    (middle, target),
+                    -0.44 * support * rank_factor * reward_scale
+                    / max(discount, 1e-12),
+                )
+
+            # One low-pressure fallback can provide useful route diversity.
+            alternatives = [
+                item for item in candidates if item[1] not in selected
+            ]
+            if alternatives:
+                _, middle, discount = min(
+                    alternatives, key=lambda item: (item[2], item[1])
+                )
+                terms.add_pair(
+                    (source, middle),
+                    (middle, target),
+                    -0.27 * support / max(discount, 1e-12),
+                )
+
+
+def _service_profiles(t):
+    """Estimate one- and two-step service profiles from demand affinity."""
+    n = t.shape[0]
+    affinity = 0.15 + 0.85 * t
+    np.fill_diagonal(affinity, 0.0)
+
+    # A few balancing passes prevent high-volume rows or columns from
+    # becoming implausibly dominant in the background service estimate.
+    transition = affinity.copy()
+    for _ in range(12):
+        transition /= np.maximum(
+            transition.sum(axis=1, keepdims=True), 1e-15
+        )
+        transition /= np.maximum(
+            transition.sum(axis=0, keepdims=True), 1e-15
+        )
+
+    profile = transition + 0.45 * (transition @ transition)
+    profile /= np.maximum(profile.sum(axis=1, keepdims=True), 1e-15)
+    return profile
+
+
+def _add_neighbor_profile_factors(model, terms):
+    """Score complementary pairs of possible neighbors at each node."""
+    n = model["n"]
+    if n < 5:
+        return
+
+    t = model["t"]
+    profile = _service_profiles(t)
+    depth = max(0.75, np.log2(max(n, 2)) / np.log2(10.0))
+    mean_direct = model["mean_direct"]
+    if mean_direct <= 1e-15:
+        return
+
+    # Keep only a compact set of informative pair factors per node and
+    # orientation. This caps the local-factor count at O(n^2).
+    pair_budget = max(3, n // 2)
+
+    for reverse in (False, True):
+        demand_view = t.T if reverse else t
+        service_view = profile.T if reverse else profile
+        totals = demand_view.sum(axis=1)
+        average_total = float(totals.mean())
+
+        for node in range(n):
+            total = float(totals[node])
+            if total <= 1e-15:
+                continue
+
+            neighbors = [a for a in range(n) if a != node]
+            destinations = np.arange(n)
+            weights = demand_view[node] / total
+            service = service_view[neighbors, :]
+
+            pair_values = []
+            for left in range(len(neighbors)):
+                for right in range(left + 1, len(neighbors)):
+                    a = neighbors[left]
+                    b = neighbors[right]
+                    pa = service[left]
+                    pb = service[right]
+
+                    combined = np.maximum(pa + pb, 1e-12)
+                    coverage = float(np.dot(weights, np.log(combined)))
+                    overlap = float(
+                        np.dot(weights, np.minimum(pa, pb))
+                    )
+                    imbalance = float(
+                        np.dot(weights, np.abs(pa - pb) / combined)
+                    )
+
+                    # Higher coverage is helpful; excessive overlap or
+                    # an unbalanced split makes the pair less attractive.
+                    quality = coverage - 0.32 * overlap - 0.10 * imbalance
+                    pair_values.append((quality, a, b))
+
+            if not pair_values:
+                continue
+
+            values = np.asarray([x[0] for x in pair_values], dtype=float)
+            center = float(np.median(values))
+            spread = float(np.sqrt(np.mean((values - center) ** 2)))
+            if spread <= 1e-12:
+                continue
+
+            importance = float(np.clip(
+                total / max(average_total, 1e-15), 0.65, 1.5
+            ))
+            strength = (
+                0.12 * mean_direct * depth * importance / max(spread, 0.05)
+            )
+
+            # Rank by departure from the typical pair, so retained terms
+            # express useful complementarities or clear redundancies.
+            pair_values.sort(
+                key=lambda item: (-abs(item[0] - center), item[1], item[2])
+            )
+
+            for quality, a, b in pair_values[:pair_budget]:
+                centered = (quality - center) / max(spread, 1e-12)
+                centered = float(np.clip(centered, -2.5, 2.5))
+                first = (a, node) if reverse else (node, a)
+                second = (b, node) if reverse else (node, b)
+                # Good pairs lower energy; poor pairs raise it.
+                terms.add_pair(first, second, -strength * centered)
+
+
+def _add_backtracking_factors(model, terms):
+    """Discourage reciprocal links unless both directions carry demand."""
+    n = model["n"]
+    t = model["t"]
+    depth = max(0.75, np.log2(max(n, 2)) / np.log2(10.0))
+    weight = 0.58 * model["mean_direct"] * depth
+
+    if weight <= 0.0:
+        return
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual = min(float(t[i, j]), float(t[j, i]))
+            terms.add_pair(
+                (i, j), (j, i), weight * (1.0 - 0.45 * mutual)
+            )
+
+
+def surrogate_terms(demand):
+    """Return linear terms, sparse quadratic terms, and degree penalty."""
+    model = _prepare_demand(demand)
+    terms = _Terms(model["n"], model["t"], model["roots"])
+
+    _add_path_factors(model, terms)
+    _add_neighbor_profile_factors(model, terms)
+    _add_backtracking_factors(model, terms)
+
+    penalty_weight = min(
+        1.45, 1.30 + 0.008 * max(0, model["n"] - 10)
+    )
+    return terms.linear, terms.quadratic, float(penalty_weight)
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

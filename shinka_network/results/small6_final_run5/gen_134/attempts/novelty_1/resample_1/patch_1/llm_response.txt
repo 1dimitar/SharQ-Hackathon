@@ -1,0 +1,30 @@
+<NAME>
+route_edge_congestion
+</NAME>
+
+<DESCRIPTION>
+Discount two-hop routes whose legs already have substantial direct demand. A selected link carrying its own heavy traffic has less spare capacity for transit, so letting edge demand modestly reduce both candidate rank and route reward should make the surrogate less likely to concentrate additional flow on those links. The coupling budget and the existing transit-pressure and cut terms stay unchanged; the discount is deliberately moderate so plausible high-demand routes are not excluded outright.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = (0.18 + balance + edge_evidence) / (pressure[j] ** 0.88)
+=======
+                edge_load = float(z[i, j] + z[j, k])
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / (pressure[j] ** 0.88 * (1.0 + 0.45 * edge_load))
+                )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                route_scale = support * rank_factor / (pressure[j] ** 0.35)
+=======
+                route_scale = (
+                    support
+                    * rank_factor
+                    / (pressure[j] ** 0.35)
+                    / (1.0 + 0.55 * edge_load)
+                )
+>>>>>>> REPLACE
+</DIFF>

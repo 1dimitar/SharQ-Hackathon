@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "routing_teacher_star_qubo",
+  "patch_description": "This approach learns the QUBO from deterministic routing experiments instead of assigning two-hop rewards.\n\nIt explores valid networks using degree-preserving exchanges, evaluating them with shortest-path flow splitting followed by congestion-priced routing. A regularized regression then distills these approximate congestion scores into link costs and outgoing/incoming neighbor-pair costs. A modest elite-network prior steers samples toward promising regions without fixing one topology.\n\nThe model captures multihop congestion indirectly through its training labels. It uses fewer than n\u00b3 quadratic terms, predominantly within the same neighbor groups already coupled by the degree constraints. No LP solver or external optimization library is used.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:54:09.751112",
+  "llm_cost": 0.19904800000000003,
+  "llm_model": "gpt-6.1-sol"
+}

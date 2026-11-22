@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "nonbacktracking_regularizer",
+  "patch_description": "Add a soft penalty for reciprocal link pairs. With only two outgoing links per node, a reciprocal pair wastes two potential two-hop walks by returning to their origins. Discouraging this redundancy should improve neighborhood expansion and reduce routing bottlenecks, complementing the existing demand-specific path rewards.\n\nScale the penalty by average direct-link value and logarithmic network size, and discount it when both directions have strong direct demand. This adds only n(n\u22121)/2 couplings while giving the post-processor a connectivity-sensitive ranking signal. A modest size-dependent increase in the evaluator\u2019s constraint weight also targets the observed infeasible samples without adding degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:51:40.657860",
+  "llm_cost": 0.077852,
+  "llm_model": "gpt-6.1-sol"
+}

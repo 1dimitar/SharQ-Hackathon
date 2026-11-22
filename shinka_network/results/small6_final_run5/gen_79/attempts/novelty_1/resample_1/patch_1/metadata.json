@@ -1,0 +1,14 @@
+{
+  "generation": 79,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cut_path_blend",
+  "patch_description": "Combines the demand-aware direct and two-hop route rewards, sparse reciprocal-link and neighbor-diversity factors, and interaction-count adjustment with the current program\u2019s two-node cut congestion correction. The cut correction is retained because it adds a load-balancing signal while adjusting linear terms to avoid adding a separate degree penalty. Input sanitization and canonical coupling keys make the returned terms robust and deterministic.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:02:05.601313",
+  "llm_cost": 0.0039975,
+  "llm_model": "gpt-6-luna"
+}

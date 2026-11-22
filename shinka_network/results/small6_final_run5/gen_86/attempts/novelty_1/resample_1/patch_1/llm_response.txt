@@ -1,0 +1,54 @@
+<NAME>
+bilateral_route_evidence
+</NAME>
+
+<DESCRIPTION>
+Rank two-hop routes using the harmonic mean of their two leg demands, so a strong leg cannot hide a weak one. Modulate that evidence by a bounded endpoint-share factor: whether the first leg is important in the source’s outgoing demand and the second is important in the target’s incoming demand. This refines which routes receive the existing sparse rewards without adding couplings or changing the degree penalty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                leg_traffic = float(
+                    t[source, middle] + t[middle, target]
+                )
+                rank = (
+                    (0.25 + leg_traffic) / pressure_rank[middle]
+                )
+                discount = float(
+                    pressure[middle] * (1.0 + 0.5 * leg_traffic)
+                )
+=======
+                first_leg = float(t[source, middle])
+                second_leg = float(t[middle, target])
+                leg_traffic = first_leg + second_leg
+
+                # The harmonic mean makes the weaker leg a bottleneck.
+                # Endpoint shares are relative to the average possible
+                # share at that endpoint and are bounded in [0, 1].
+                harmonic = (
+                    2.0 * first_leg * second_leg
+                    / (leg_traffic + 1e-12)
+                )
+                row_share = min(
+                    1.0,
+                    (n - 1.0) * first_leg
+                    / max(float(model.outgoing[source]), 1e-12),
+                )
+                column_share = min(
+                    1.0,
+                    (n - 1.0) * second_leg
+                    / max(float(model.incoming[target]), 1e-12),
+                )
+                endpoint_share = float(np.sqrt(row_share * column_share))
+                route_evidence = harmonic * (
+                    0.65 + 0.35 * endpoint_share
+                )
+                rank = (
+                    (0.10 + 2.0 * route_evidence)
+                    / pressure_rank[middle]
+                )
+                discount = float(
+                    pressure[middle] * (1.0 + 0.5 * leg_traffic)
+                )
+>>>>>>> REPLACE
+</DIFF>

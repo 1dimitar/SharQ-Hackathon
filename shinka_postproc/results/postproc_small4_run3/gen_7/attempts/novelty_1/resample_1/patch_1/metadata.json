@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "dual_pressure_screen",
+  "patch_description": "The current batch screen ranks nearly all LP trials by QUBO energy, even though that energy is only loosely correlated with the certified objective. This edit reserves part of each batch for a different signal: whether a move removes links that carried high flow or had positive dual prices, while avoiding newly added links with high direct demand. The rest of the batch remains energy-ranked, preserving the existing useful signal and diversity filter. The inexpensive proxy is used only to choose which networks receive LP calls; it does not replace LP scoring. All quantities are normalized, so the heuristic adapts across instance sizes and demand scales.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:07:41.029331",
+  "llm_cost": 0.0022881999999999998,
+  "llm_model": "gpt-6-luna"
+}

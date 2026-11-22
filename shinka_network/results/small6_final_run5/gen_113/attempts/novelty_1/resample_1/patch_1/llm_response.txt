@@ -1,0 +1,91 @@
+<NAME>
+vulnerable_cut_balance
+</NAME>
+
+<DESCRIPTION>
+Add a sparse pairwise correction for two-node cuts. When reciprocal links are selected, they reduce the links crossing that pair’s boundary; the correction therefore penalizes reciprocated links in proportion to the pair’s estimated external load. Higher-pressure endpoint pairs receive a bounded vulnerability multiplier in the recommended 0.8–1.2 range. Normalize that multiplier by the external-load-weighted mean so it redistributes the cut correction without changing its overall scale. Remove node and global offsets from the linear cut terms to avoid adding unnecessary bias to valid degree-two topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+def _add_reciprocal_factors(model, builder):
+=======
+def _add_cut_factors(model, builder):
+    """Penalize exposed two-node cuts, emphasizing high-pressure endpoints."""
+    n = model.n
+    incident_scale = max(
+        float(np.max(np.maximum(model.outgoing, model.incoming))),
+        1e-12,
+    )
+    pairs = []
+    weighted_factor_sum = 0.0
+    load_sum = 0.0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal = float(model.t[i, j] + model.t[j, i])
+            external = max(
+                0.0,
+                max(
+                    float(model.outgoing[i] + model.outgoing[j]),
+                    float(model.incoming[i] + model.incoming[j]),
+                ) - internal,
+            )
+            load = (external / incident_scale) ** 2
+            if load <= 0.0:
+                continue
+
+            # Map endpoint pressure to a bounded 0.8--1.2 multiplier.
+            endpoint_pressure = 0.5 * (
+                float(model.pressure[i]) + float(model.pressure[j])
+            )
+            relative_pressure = float(np.clip(
+                (endpoint_pressure - 0.65) / 0.35, 0.0, 1.0
+            ))
+            factor = 0.8 + 0.4 * relative_pressure
+            pairs.append((i, j, load, factor))
+            load_sum += load
+            weighted_factor_sum += load * factor
+
+    if load_sum <= 1e-15:
+        return
+
+    # Keep the total cut correction on a stable scale while reallocating
+    # it toward pairs whose endpoints have higher estimated pressure.
+    mean_factor = weighted_factor_sum / load_sum
+    cut_linear = np.zeros((n, n), dtype=float)
+    cut_strength = 0.90 / 144.0
+
+    for i, j, load, factor in pairs:
+        coefficient = cut_strength * load * factor / max(mean_factor, 1e-12)
+        cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+        builder.add_pair((i, j), (j, i), 13.0 * coefficient)
+
+    # Remove offsets that are constant on valid degree-two topologies.
+    node_offset = cut_linear.sum(axis=1) / max(n - 1, 1)
+    edge_offset = float(cut_linear.sum()) / max(n * (n - 1), 1)
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                builder.add_linear(
+                    (i, j),
+                    cut_linear[i, j]
+                    - node_offset[i]
+                    - node_offset[j]
+                    + edge_offset,
+                )
+
+
+def _add_reciprocal_factors(model, builder):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    _add_route_factors(model, builder)
+    _add_neighbor_factors(model, builder)
+    _add_reciprocal_factors(model, builder)
+=======
+    _add_route_factors(model, builder)
+    _add_neighbor_factors(model, builder)
+    _add_cut_factors(model, builder)
+    _add_reciprocal_factors(model, builder)
+>>>>>>> REPLACE
+</DIFF>

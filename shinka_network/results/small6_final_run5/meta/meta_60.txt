@@ -1,0 +1,409 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative, non-self demand and assigns negative linear weights using a demand/square-root blend. For each positive-demand pair, it selects a small set of two-hop routes by pressure-adjusted affinity, adds a low-pressure alternative, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score is 0.89 (raw 0.83, post-processed 0.96); mean best and median gaps are 11.66% and 32.42%, with 91% feasibility and 383 quadratic terms on average.
+- **Feedback**: The surrogate builds quickly and produces consistently strong post-processed results, reducing the mean gap to 4.38%. Before repair, median gaps remain around 29–37%, and the largest best-sample gap is 16.8% for network14_s0, so its strongest contribution is as a head start for the fixed post-processor.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link linear rewards using a blend of normalized demand and its square root. For each positive-demand pair, it selects a few two-hop routes by affinity and node pressure, adds pressure-discounted route bonuses, and partially offsets overlap with direct links; the penalty weight is fixed at 1.25.
+- **Performance**: Combined score was 0.89 (raw score 0.83; post-processor score 0.96), with 99% mean feasibility, 11.96% best-sample gap, 31.09% median gap, and 4.47% post-processed gap.
+- **Feedback**: The surrogate builds quickly and reliably, yielding 64 distinct topologies per case, but unprocessed best gaps vary from 6.5% to 16.4% and median gaps remain around 27–35%. The fixed post-processor substantially improves solutions, reducing reported gaps to 2.16–7.38%.
+**Program Identifier:** Generation 1 - Patch Name direct_route_correction - Correct Program: True
+
+**Program Name: Pressure-Discounted Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns negative linear weights using a blend of normalized traffic and its square root. It builds sparse two-hop quadratic terms by ranking candidate intermediates using edge affinity and node pressure, adds a pressure-discounted alternative and reciprocal-link terms, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.89 (raw 0.82, post-processed 0.96), with 91% mean feasibility, 11.41% mean best gap, and 33.22% mean median gap; construction was typically near-instant.
+- **Feedback**: Across networks 10–16, the best pre-repair gaps ranged from 6.8% to 14.7%, while the fixed post-processor reduced mean gap to 4.20%; the largest gap was network13_s0. Validity was generally high (80–97%), but median gaps around 31–39% indicate sampled solutions were substantially weaker than the best ones.
+**Program Identifier:** Generation 2 - Patch Name mutual_link_bonus - Correct Program: True
+
+**Program Name: Sparse Congestion-Aware Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards from normalized direct traffic plus a modest transit estimate, then adds sparse negative quadratic couplings for the top two or three congestion-aware two-hop routes per positive-demand pair. Uses demand-dependent support, rank and congestion discounts, and a separate degree-penalty weight of 1.15.
+- **Performance**: Combined score was 0.86 (raw 0.79, post-processed 0.94), with 100% feasible samples, 252.5 mean quadratic terms, and mean post-processing gap of 6.32%.
+- **Feedback**: All instances produced 64 distinct topologies, and the fixed post-processor substantially reduced gaps—from a 17.16% mean best-sample gap to 6.32%. Sample quality weakened modestly with larger networks; the largest best-sample gap was 22.9% on network13_s1, while post-processing reached the reference on network10_s2.
+**Program Identifier:** Generation 3 - Patch Name congestion_aware_paths - Correct Program: True
+
+**Program Name: Demand-Aware Sparse Two-Hop QUBO**
+- **Implementation**: Builds negative linear rewards for demand-weighted direct links and sparse negative quadratic couplings for promising two-hop routes, selected using endpoint affinity and transit-pressure scores. Adds weak positive direct-link redundancy interactions, sanitizes and normalizes demand, and uses a fixed penalty weight of 1.15.
+- **Performance**: Combined score was 0.90 (raw 0.83, post-processing 0.96), with 94% mean feasibility, 660 mean quadratic terms, and mean post-processor gap of 4.04%.
+- **Feedback**: Before repair, best gaps ranged from 7.1% to 15.5%, with median gaps around 23–35%; the fixed post-processor reduced gaps to 1.83–5.69%. Results were consistent across network sizes, though sample-quality scores weakened slightly for larger instances.
+**Program Identifier:** Generation 4 - Patch Name balanced-path-qubo - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand after clearing self-links, assigns negative linear rewards using a blend of demand and its square root, and builds quadratic rewards for reciprocal links and selected two-hop paths. Two-hop candidates are ranked by demand affinity relative to intermediate-node pressure; the routine favors up to four candidates for high-demand paths and adds a pressure-discounted alternative, with penalty weight 1.25.
+- **Performance**: Combined score was 0.88 (raw score 0.81; post-processor score 0.95), with 90% mean feasibility, 12.90% best-sample mean gap, 35.81% median gap, and about 420 quadratic terms on average.
+- **Feedback**: Construction was fast (typically under 0.01 seconds), and the fixed post-processor reduced the mean gap to 4.86%; post-processed gaps ranged from 1.82% to 7.79%. Before repair, median gaps were consistently high and the largest best-sample gap was 16.4% for network16_s0, indicating the surrogate provides a useful head start but weaker standalone topology quality.
+**Program Identifier:** Generation 5 - Patch Name reciprocal_synergy - Correct Program: True
+
+**Program Name: Selective Pressure-Discounted QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link linear rewards using a blend of demand and its square root. It adds sparse two-hop rewards for high-ranked routes, discounts them by intermediate-node pressure, partially cancels overlap with direct links, and rewards reciprocal links capped by weaker-direction demand.
+- **Performance**: Combined score was 0.89, with 99% mean feasibility and 1,061 mean quadratic terms; the post-processor reduced mean gap to 4.41% from 13.13% for best samples.
+- **Feedback**: Construction was very fast (generally under 0.13 seconds), and all instances improved substantially after the fixed post-processor, reaching roughly 0.47–7.72% gaps. Pre-repair best gaps were larger on bigger networks, peaking at 17.3% for network14_s0, while median gaps around 29–38% indicate room to improve sample quality.
+**Program Identifier:** Generation 7 - Patch Name reciprocal_synergy - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes positive off-diagonal demand, then assigns negative linear rewards to direct links and sparse two-hop rewards to promising paths, with candidate selection based on demand affinity and node pressure. Adds reciprocal-link penalties, scaled by network size and mutual demand, and a modest size-adjusted constraint penalty.
+- **Performance**: Combined score was **0.90** (sample-quality **0.840**, head-start **0.961**); mean feasibility was **0.96**, with mean best and median gaps of **10.83%** and **28.72%**, improving to a **4.12%** post-processing gap.
+- **Feedback**: The model built quickly and used 257–654 quadratic terms across network sizes 10–16; valid-sample rates were generally 91–98%. Post-processing substantially improved results, while unprocessed best gaps remained roughly 7–15%, with the largest at **14.5%** for network15_s0.
+**Program Identifier:** Generation 8 - Patch Name nonbacktracking_regularizer - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Route QUBO**
+- **Implementation**: Normalizes nonnegative, zero-diagonal demand and blends linear and square-root rewards for direct links. For each positive demand, it creates sparse two-hop couplings by ranking transit nodes using edge affinity and node pressure, keeping more alternatives for stronger demands; duplicate route terms are accumulated under canonical keys.
+- **Performance**: Combined score is **0.89** (raw score 0.82, post score 0.95), with a 12.29% mean best gap, 32.14% mean median gap, 92% feasibility, and 383 quadratic terms on average.
+- **Feedback**: Pre-repair solutions have substantial median gaps despite consistently producing 64 distinct topologies per case; the fixed post-processor sharply improves results to a 4.86% mean gap. Post-processing gaps range from 1.48% to 7.22%, while the largest pre-repair best gap is 16.8% on network14_s0.
+**Program Identifier:** Generation 9 - Patch Name staged_path_surrogate - Correct Program: True
+
+**Program Name: Sparse Demand-Aware Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link rewards blending linear and square-root demand, and sparsely selects strong and backup two-hop routes using leg balance, node load, and demand quantiles. It expands damped path-redundancy terms into linear and quadratic coefficients and uses a fixed degree-penalty weight of 1.45.
+- **Performance**: Combined score was 0.89, with 100% mean feasibility, 1,011.83 mean quadratic terms, 13.02% mean best-sample gap, and 4.65% post-processed gap.
+- **Feedback**: Construction is fast (typically under 0.01 seconds) and the fixed post-processor substantially improves solutions, reducing gaps to roughly 1–8% across instances. Raw median gaps remain high (33.47% on average), and the largest best-sample gap was 16.2% on network14_s0.
+**Program Identifier:** Generation 10 - Patch Name affinity_coverage - Correct Program: True
+
+**Program Name: Demand-Trained Quadratic Network Surrogate**
+- **Implementation**: Builds a demand-specific training set by evaluating feasible two-cycle networks with shortest-path and congestion-priced routing, local link exchanges, and a deterministic schedule. It fits a regularized sparse quadratic predictor using preconditioned conjugate gradients, then adds elite-derived biases and removes constant or redundant components before returning the QUBO terms.
+- **Performance**: Combined score was **0.86** (sample quality 0.804, head-start 0.923), with 100% feasibility, 4.05-second mean post-processing time, and an 8.43% mean post-processed gap.
+- **Feedback**: The fixed post-processor substantially improved results: mean median gap was 31.27% before post-processing, while best solutions reached an 8.43% mean gap afterward. Performance weakened with network size; the largest reported best-solution gap was 21.2% for network16_s0, despite consistent feasibility and strong head-start scores.
+**Program Identifier:** Generation 6 - Patch Name routing_teacher_star_qubo - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Routing**
+- **Implementation**: Builds negative linear rewards for every directed link using normalized demand, endpoint traffic shares, and softened demand scaling. Adds sparse two-hop route rewards for the top two or three transit candidates per positive-demand pair, adjusted for endpoint affinity and transit pressure, plus direct-versus-indirect redundancy penalties; returns a fixed penalty weight of 1.15.
+- **Performance**: Combined score was 0.90 (raw score 0.83), with 94% mean feasibility, 12.10% mean best gap, and 3.98% mean post-processed gap.
+- **Feedback**: The post-processor substantially improved results, reducing gaps to 1.52–6.55% across instances, while unprocessed best gaps ranged from 8.1% to 16.2% and median gaps were higher. Feasibility was generally strong, but sample quality weakened somewhat on larger networks, with network13_s0 the largest observed gap.
+**Program Identifier:** Generation 11 - Patch Name affinity_weighted_routes - Correct Program: True
+
+**Program Name: Pressure-Discounted Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, then assigns negative linear rewards using a blend of normalized demand and its square root. For two-hop paths it ranks intermediates by demand affinity and node pressure, keeps a demand-dependent shortlist plus a pressure-favored alternative, adds reciprocal-link rewards, and scales the penalty with network size.
+- **Performance**: Combined score was 0.88 (raw score 0.81); feasibility averaged 94%, with a 12.90% best-sample gap and 35.81% median gap, improving to a 4.46% gap after post-processing.
+- **Feedback**: Construction was effectively instantaneous, producing 231–586 quadratic terms across tested networks. Post-processing brought gaps close to reference, but unprocessed best-sample gaps worsened with network size, peaking at 17.8% for network16_s1.
+**Program Identifier:** Generation 12 - Patch Name size_scaled_degree_penalty - Correct Program: True
+
+**Program Name: Demand-Aware Sparse Network QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for direct links from normalized demand and square-root demand, then adds sparse quadratic terms for shared-node congestion and promising two-hop routes. Route selection uses leg balance, transit pressure, and adaptive candidate limits; nonpositive demand is clipped, and all-zero demand returns zero linear terms with no couplings.
+- **Performance**: Combined score was **0.89** (sample-quality **0.823**, head-start **0.960**), with 99% mean feasibility, 12.64% best-sample gap, and 4.20% post-processed gap.
+- **Feedback**: The surrogate generated 906–3,881 quadratic terms and ran very quickly; post-processing substantially improved results across all instances. Pre-repair best gaps ranged from 7.9% to 19.8%, with network13_s1 the largest gap, while median gaps were generally around 28–37%.
+**Program Identifier:** Generation 13 - Patch Name margin_congestion - Correct Program: True
+
+**Program Name: Transit-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand to produce direct-link rewards, then estimates transit loads through three damped soft-routing updates. It assigns sparse two-hop rewards to the top two or three intermediates per OD pair, adds modest reciprocal-link penalties, and returns a size-adjusted degree-penalty weight.
+- **Performance**: Combined score was 0.90 (sample-quality 0.833, head-start 0.957), with 95% mean feasibility, 11.36% best-gap, 30.22% median-gap, and 4.49% post-processed gap.
+- **Feedback**: Construction was fast (typically 0.00–0.11s) and produced 184–467 quadratic terms; post-processing improved results substantially, reducing gaps to roughly 0–8% across cases. Best-sample gaps were generally 7–15%, with the largest at 15.3% for network16_s1, while median gaps near 27–35% indicate room to improve raw sample quality.
+**Program Identifier:** Generation 14 - Patch Name route-pressure-qubo - Correct Program: True
+
+**Program Name: Soft-Routed Network Design QUBO**
+- **Implementation**: Normalizes nonnegative demand, ranks up to two low-pressure intermediates per origin-destination pair, and builds linear link rewards from direct demand and projected transit exposure. Quadratic terms reward promising two-hop routes while mildly penalizing shared-endpoint load and reciprocal links; a size-adjusted penalty weight is returned.
+- **Performance**: Combined score was **0.87** (raw score 0.79; post-processed score 0.95), with 100% feasibility, a 17.47% mean best gap, and a 5.67% mean post-processed gap.
+- **Feedback**: The heuristic built quickly and consistently produced 64 distinct valid topologies per case, but pre-repair best gaps were typically 12–21% and median gaps were larger. The fixed post-processor substantially improved results across all cases, though the largest remaining gap was 9.57% for network15_s2.
+**Program Identifier:** Generation 15 - Patch Name route_exposure - Correct Program: True
+
+**Program Name: Pressure-Discounted QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, scores direct links with a linear term, and adds selectively ranked two-hop couplings discounted by transit-node pressure. For difficult or high-demand pairs, it also models a best three-hop route with second-order terms; the fixed penalty weight is 1.25.
+- **Performance**: Combined score was 0.89, with 95% mean pre-repair feasibility, 494 mean quadratic terms, and a 4.53% mean post-processor gap.
+- **Feedback**: Post-processing substantially improved solutions: the mean gap fell from 13.27% for the best raw samples to 4.53%, and the head-start score was strong at 0.957. Raw median gaps remained high at 32.45%, with quality weakening somewhat as network size increased; the largest best-sample gap was 17.4% for network16_s1.
+**Program Identifier:** Generation 16 - Patch Name capped_three_hop_routes - Correct Program: True
+
+**Program Name: Pressure-Weighted Sparse Route QUBO**
+- **Implementation**: Normalizes nonnegative demand, then builds negative direct-demand linear rewards and sparse quadratic couplings for selected two-hop routes. Route selection uses demand support and node pressure; heavy demands receive more routes and selective overlap corrections, while the evaluator supplies degree constraints.
+- **Performance**: Combined score was 0.90, with 98% mean feasibility, 11.89% mean best gap, and 4.04% mean post-processed gap; construction was fast and produced an average of 626 quadratic terms.
+- **Feedback**: Before repair, best gaps ranged from 7.4% to 15.1%, and median gaps were roughly 26–35%; after 500 LP calls, gaps fell to 1.93–5.43%. Results were consistently feasible and fast, but sample quality weakened somewhat as network size increased.
+**Program Identifier:** Generation 17 - Patch Name sparse_overlap_crossover - Correct Program: True
+
+**Program Name: Load-Aware Surrogate QUBO for Network Design**
+- **Implementation**: Normalizes nonnegative demand, estimates soft two-hop traffic across intermediates using demand evidence and node-pressure weighting, then assigns directed links a direct-demand reward and predicted-load charge. Adds positive pairwise couplings for unusually concentrated incoming or outgoing link loads, with fixed penalty weight 1.30.
+- **Performance**: Combined score was 0.86 (sample-quality 0.783, head-start 0.941), with 97% mean feasibility, 17.67% mean best gap and 39.78% median gap before post-processing; post-processing reduced the mean gap to 6.31%.
+- **Feedback**: The model built quickly and generated 720–3,360 quadratic terms across tested sizes; 64 distinct topologies were sampled per case. Pre-repair best gaps ranged from 10.9% to 22.3%, while the fixed post-processor brought gaps to 2.03%–10.97%, indicating strong post-processing gains despite weaker raw sample quality.
+**Program Identifier:** Generation 18 - Patch Name load_balance_proxy - Correct Program: True
+
+**Program Name: Demand-Aware Surrogate QUBO for Network Design**
+- **Implementation**: Sanitizes demand values and normalizes traffic, then assigns negative linear rewards to direct links using demand and endpoint traffic. Adds positive pairwise penalties for links sharing busy nodes and negative rewards for up to three demand-supported two-hop routes; uses a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.88 (raw 0.81, post-processed 0.96), with 100% mean feasibility, 14.38% best-sample gap, 34.48% median gap, and 4.71% post-processed gap.
+- **Feedback**: The surrogate builds quickly and produces 838–3,672 quadratic terms across network sizes 10–16; most samples were valid, though several cases reached only 98% validity. The fixed post-processor substantially improved results, reducing gaps to 0.40–7.78%, while the largest unprocessed best-sample gap was 20.8% on network15_s0.
+**Program Identifier:** Generation 19 - Patch Name route_evidence_qubo - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and creates negative linear terms blending demand with its square root. For each positive-demand pair, it selects two to four two-hop routes by affinity, node pressure, and rank-gap heuristics, adds a pressure-discounted alternative, and uses a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.90 (raw score 0.83; post-processed score 0.96), with 86% mean feasibility, 11.42% mean best gap, and 3.82% mean post-processed gap.
+- **Feedback**: The surrogate builds quickly and generates 267–705 quadratic terms across tested network sizes; the fixed post-processor substantially improves results, reducing gaps to 1.15–6.11%. Sample quality is weaker than head-start quality, with the largest best-solution gap at 15.9% on network15_s1.
+**Program Identifier:** Generation 20 - Patch Name adaptive_route_margin - Correct Program: True
+
+**Program Name: Selective Pressure-Discounted QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link linear rewards, and estimates node congestion from incident and inferred transit load. It builds sparse two-hop quadratic rewards by selecting high-affinity routes plus one pressure-favored alternative, with up to four candidates for higher-demand pairs; three-hop terms are omitted.
+- **Performance**: Combined score was 0.89 (sample-quality 0.824, head-start 0.960), with 95% mean feasibility and a 4.17% mean post-processed gap.
+- **Feedback**: Before repair, best gaps ranged from 6.0% to 15.5% and median gaps were roughly 28–36%; the fixed post-processor reduced gaps to 1.52–6.64%. The largest gap was network13_s1, while the strong post-processing results indicate the surrogate provides a useful starting point despite imperfect raw topology quality.
+**Program Identifier:** Generation 21 - Patch Name transit_pressure - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for direct links using normalized demand and square-root weighting, then adds sparse positive congestion couplings and two-hop route rewards. It selects promising intermediates by demand, leg balance, and transit pressure, approximating cubic route terms with a quadratic expansion at the topology’s mean link occupancy.
+- **Performance**: Combined score was 0.89, with a 13.19% mean best-sample gap, 33.46% median gap, 100% mean feasibility, and a 3.83% mean gap after post-processing.
+- **Feedback**: All tested instances produced 64 distinct topologies, with 906–3,881 quadratic terms and generally negligible build time. Raw best gaps ranged from 8.2% to 18.0%, while the fixed post-processor reduced gaps to 0.69%–6.87%, indicating strong post-processing head-start performance despite weaker raw sample quality.
+**Program Identifier:** Generation 23 - Patch Name shortcut_aware_route_rewards - Correct Program: True
+
+**Program Name: Demand-Aware Sparse Network QUBO**
+- **Implementation**: Normalizes nonnegative demand and builds negative linear rewards for direct links using demand magnitude and endpoint shares. It adds sparse two-hop route rewards, redundancy penalties, and limited three-hop rewards for difficult high-demand pairs, while discounting transit nodes with high traffic pressure.
+- **Performance**: Combined score was **0.90** (raw score 0.83; post-processed score 0.96), with 94% mean feasibility, 660 mean quadratic terms, and a 4.04% mean post-processing gap.
+- **Feedback**: Before repair, best gaps ranged from 7.1% to 15.5%, with median gaps around 23–35%; after the fixed post-processor, gaps fell to 1.83–5.69%. Larger networks had weaker sample-quality scores, while head-start scores remained consistently high across sizes.
+**Program Identifier:** Generation 24 - Patch Name targeted_three_hop - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Builds negative linear scores for direct links from normalized demand and endpoint shares, then adds sparse two-hop couplings for the top two or three transit candidates per positive demand. Transit pressure, direct-route redundancy, and route-use attenuation shape the interactions; the penalty weight is fixed at 1.15.
+- **Performance**: Combined score was 0.89, with 0.96 mean feasibility, 660 mean quadratic terms, and a 5.04% mean post-processed gap (11.97% best-sample gap).
+- **Feedback**: Before repair, best gaps ranged from 6.6% to 16.1%, with the largest on network15_s2; post-processing improved gaps substantially, to 1.52%–7.73%. Sample quality was comparatively steady across sizes, while head-start scores were higher, indicating the surrogate provides useful candidates that the fixed post-processor can improve.
+**Program Identifier:** Generation 25 - Patch Name route_interaction_balance - Correct Program: True
+
+**Program Name: Multi-Hop Coverage and Sparse Route QUBO**
+- **Implementation**: Builds normalized direct-demand linear rewards, then adds bidirectional diminishing-returns coverage terms using a Sinkhorn-balanced routing prior, discounted walk propagation, and centered Hessian curvature. It adds sparse two-edge route-completion rewards for selected intermediates, with pressure/load discounts; degree penalties are left to the evaluator.
+- **Performance**: Combined score was **0.88** (sample-quality **0.813**, head-start **0.955**), with 100% mean feasibility, 2,469 mean quadratic terms, and a 4.78% mean post-processor gap.
+- **Feedback**: Raw best-sample gaps ranged from 8.4% to 17.7%, with median gaps around 31–38%; after 500 LP post-processing calls, gaps fell to 1.52–9.15%. Quality declined modestly with network size, and the largest gap was network16_s0.
+**Program Identifier:** Generation 22 - Patch Name coverage_curvature - Correct Program: True
+
+**Program Name: Pressure-Aware Surrogate QUBO Routing**
+- **Implementation**: Normalizes nonnegative demand and builds negative linear rewards for direct links, then creates sparse two-hop rewards using incident/transit-based node pressure, route affinity, and demand quantiles. High-demand pairs may also receive a targeted three-hop alternative; the fixed penalty weight is 1.25.
+- **Performance**: Combined score was 0.89 (raw 0.82, post-processed 0.96), with 95% mean feasibility, 13.33% best-sample gap, 33.75% median gap, and 393 mean quadratic terms.
+- **Feedback**: The fixed post-processor substantially improved outcomes, reducing mean gap to 4.67%; post-processed gaps were 2.32–8.16% across instances. Before repair, median gaps remained high and the largest best-sample gap was 18.7% on network13_s2, indicating weaker sample quality despite strong head-start performance.
+**Program Identifier:** Generation 26 - Patch Name targeted_three_hop - Correct Program: True
+
+**Program Name: Pressure-Aware Surrogate QUBO**
+- **Implementation**: Sanitizes and normalizes demand, then assigns negative linear rewards to direct links using traffic and endpoint demand. It estimates two-hop routes through pressure-aware transit rankings, adds pairwise route and node-capacity terms, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.88 (raw 0.81, post-processed 0.95), with 100% mean feasibility, 13.65% mean best-sample gap, and 5.02% post-processing gap.
+- **Feedback**: Results were consistent across network sizes, with post-processed gaps around 3–8%; construction was fast and produced 846–3702 quadratic terms. The largest raw gap was 19.3% on network15_s2, while the fixed post-processor substantially improved solutions.
+**Program Identifier:** Generation 27 - Patch Name pressure_aware_routes - Correct Program: True
+
+**Program Name: Adaptive Sparse Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand and builds negative direct-flow rewards from a weighted linear/square-root blend. It selects intermediate-route couplings by demand, affinity, and node pressure, adds a low-pressure fallback and sparse backtrack penalties, and scales the degree penalty with network size.
+- **Performance**: Combined score was 0.90 (raw 0.84, post-processed 0.96), with 96% mean feasibility, 11.99% mean best gap, 28.44% median gap, and 447 mean quadratic terms.
+- **Feedback**: Construction is effectively instantaneous, while the fixed post-processor reduces the mean gap to 4.55%. Pre-repair best gaps range from 7.0% to 15.6% and median gaps remain around 26–32%, indicating that the surrogate provides a useful head start but leaves room to improve sample quality.
+**Program Identifier:** Generation 28 - Patch Name ambiguity_adaptive_routes - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative direct-link linear weights, and builds sparse two-hop quadratic terms from up to four affinity-ranked routes plus one pressure-discounted alternative. It estimates node congestion using incident and projected transit loads, then adds positive penalties for highly overlapping outbound and inbound branch pairs; the returned penalty weight is 1.25.
+- **Performance**: Combined score was 0.89, with 98% mean feasibility, 12.19% mean best gap and 30.56% median gap before post-processing, improving to a 4.51% mean gap afterward.
+- **Feedback**: The surrogate generated 272–630 quadratic terms and was generally very fast to build; pre-repair quality was weaker on larger networks, with the largest best gap at 15.6% for network16_s1. The fixed post-processor substantially improved results across all cases, reducing gaps to 1.31–6.93%.
+**Program Identifier:** Generation 29 - Patch Name demand_weighted_branch_diversity - Correct Program: True
+
+**Program Name: Pressure-Aware Surrogate QUBO**
+- **Implementation**: Builds normalized direct-link rewards and sparse negative quadratic rewards for selected two-hop routes, ranking alternatives using demand evidence and estimated transit-node pressure. It also models reciprocal links, handles invalid or nonpositive demand safely, and uses a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.89, with 0.95 mean feasibility, 12.73% mean best gap, 33.84% median gap, and 4.45% post-processed gap; construction was fast and produced an average of 420 quadratic terms.
+- **Feedback**: The post-processor substantially improved solutions, reducing average gaps to near-reference levels, while unprocessed sample quality was weaker, especially in median gaps. Results were consistently valid and generated 64 distinct topologies per case, but the largest best-solution gap was 17.3% on network15_s0.
+**Program Identifier:** Generation 30 - Patch Name transit_compact - Correct Program: True
+
+**Program Name: Adaptive Sparse Network QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand and builds negative direct-edge rewards from a linear/square-root blend. It selects demand-adaptive two-hop route couplings using pressure-adjusted rankings, pruning and capped boundary expansion, then adds sparse backtracking penalties and demand-weighted overlap penalties.
+- **Performance**: Combined score was **0.90** (raw score 0.84, post-processor score 0.96); feasibility averaged 97%, with 621.5 quadratic terms and a mean post-processor gap of 3.85%.
+- **Feedback**: Across network sizes 10–16, best-sample gaps ranged from 8.3% to 14.2%, while median gaps were roughly 25–34%; the largest gap was network13_s1. The fixed post-processor substantially improved results, reducing gaps to 0.40–6.31%, and the surrogate generated 329–897 quadratic terms per instance.
+**Program Identifier:** Generation 31 - Patch Name sparse_neighbor_coverage_diversity - Correct Program: True
+
+**Program Name: Demand-Aware Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand and uses demand-weighted direct-link rewards, endpoint load adjustments, and sparse overlap penalties for redundant branches. It adds two-hop routing rewards by ranking candidate intermediates on leg evidence, balance, and transit pressure, then approximates the resulting cubic terms with a quadratic expansion at route density \(2/(n-1)\).
+- **Performance**: Combined score was 0.89, with 100% mean feasible rate, 13.34% mean best gap and 33.85% median gap before post-processing; post-processing reduced the mean gap to 4.51%.
+- **Feedback**: The surrogate generated 484–1,352 quadratic terms and usually built in under 0.01 seconds; sample quality was weaker than post-processed quality, with the largest best gap at network13_s2 (+17.5%). The fixed post-processor improved every reported case, often bringing results within roughly 3–6% of reference.
+**Program Identifier:** Generation 32 - Patch Name targeted_branch_diversity - Correct Program: True
+
+**Program Name: Congestion-Aware Sparse Two-Hop QUBO**
+- **Implementation**: Normalizes and sanitizes demand, then scores every directed link using demand strength and traffic-share affinity. It adds sparse two-hop route rewards for the top two or three candidate transit nodes, adjusted for endpoint affinity and estimated transit congestion, plus small direct/indirect redundancy penalties.
+- **Performance**: Combined score was **0.89** (raw score 0.82; post-processor score 0.96), with 95% mean feasibility, 12.63% mean best gap, and 4.40% post-processed gap.
+- **Feedback**: Before repair, best gaps ranged from 8.2% to 17.3%, with the largest on network15_s0; the post-processor reduced gaps substantially, to 1.15%–7.27%. The approach generated 353–936 quadratic terms and usually built in under 0.02 seconds, though median gaps around 30% indicate that typical sampled topologies were weaker than the best candidates.
+**Program Identifier:** Generation 33 - Patch Name congestion_refined_routes - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Builds negative linear scores for direct links from normalized demand and endpoint traffic shares, then adds sparse two-hop route rewards for the top two or three transit candidates per positive demand. Transit pressure discounts busy nodes, while positive quadratic terms penalize direct/indirect redundancy; the routine sanitizes inputs and aggregates symmetric pair keys.
+- **Performance**: Combined score was 0.89 (sample-quality 0.817, head-start 0.957), with 97% mean feasibility, 660 mean quadratic terms, and a 4.51% mean post-processed gap.
+- **Feedback**: Best pre-repair gaps were typically 9–16%, with median gaps around 29–40%; the fixed post-processor substantially improved results to gaps of 2.63–6.30%. Quality varied by instance, with network14_s0 having the largest best gap (+16.3%), while construction was fast (generally under 0.02 seconds).
+**Program Identifier:** Generation 35 - Patch Name weak_leg_discount - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Builds negative demand-weighted direct-link rewards, sparse positive couplings for links sharing a high-load node, and two-hop route rewards expanded into linear and quadratic terms around occupancy \(2/(n-1)\). Route candidates are ranked using demand, leg balance, node pressure, and a predicted transit-congestion adjustment; the fixed penalty weight is 1.30.
+- **Performance**: Combined score was 0.88, with 100% feasibility, mean best/median gaps of 14.44%/34.44%, and a post-processed mean gap of 4.33%.
+- **Feedback**: The surrogate consistently produced 64 distinct valid topologies, with quadratic-term counts increasing from 910 at \(n=10\) to 3,894 at \(n=16\). The post-processor substantially reduced gaps across cases, though pre-repair best gaps reached 18.6% on network15_s2.
+**Program Identifier:** Generation 34 - Patch Name second_pass_congestion - Correct Program: True
+
+**Program Name: Pressure-Aware Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand, builds negative direct-link rewards, and assigns two-hop rewards to a small set of routes using demand support and estimated node congestion. It also balances link exposure and adds positive penalties for a few demand-profile-redundant branch pairs; the penalty weight is fixed at 1.25.
+- **Performance**: Combined score was 0.89 (raw score 0.83; post-processed score 0.96), with 12.23% mean best gap, 31.40% median gap, 97% feasibility, and about 463 quadratic terms on average.
+- **Feedback**: Samples were usually valid, but unprocessed best solutions remained 9.0–16.8% above reference and median gaps were substantially larger. The fixed post-processor reduced the mean gap to 3.80%, indicating strong head-start quality despite weaker raw sample quality; construction was generally fast, though runtime increased on some larger instances.
+**Program Identifier:** Generation 36 - Patch Name route_exposure_centering - Correct Program: True
+
+**Program Name: Adaptive Sparse Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand and builds negative direct-link rewards plus adaptive two-hop couplings, selecting routes by affinity and node pressure. It adds sparse backtrack and demand-weighted diversity penalties, adjusts links with unusually many interactions, and returns a size-dependent degree penalty.
+- **Performance**: Combined score was 0.90 (sample-quality 0.837; head-start 0.957), with 98% mean feasibility, 11.51% best-gap and 28.92% median-gap before repair, and 4.48% mean post-repair gap.
+- **Feedback**: The 500-call post-processor substantially improved results, reducing the mean gap to 4.48%; per-instance post-repair gaps ranged from 2.14% to 9.69%. Results were strongest on smaller networks, while network15_s0 had the largest initial gap (+15.6%); construction remained fast and quadratic terms grew from 329 at n=10 to 897 at n=16.
+**Program Identifier:** Generation 37 - Patch Name selective_route_load_regularizer - Correct Program: True
+
+**Program Name: Adaptive Sparse Routing Surrogate QUBO**
+- **Implementation**: Builds normalized direct-link rewards from demand and endpoint shares, then adds sparse two-hop route rewards and redundancy penalties for selected candidates. It also adds mild congestion interactions among each node’s strongest incident links, while sanitizing invalid demands and scaling link pressure.
+- **Performance**: Combined score was 0.89, with 95% mean feasibility, 13.14% best-sample gap, 31.94% median gap, and a 4.54% post-processed gap.
+- **Feedback**: Construction is fast (typically under 0.02s) and yields 491–1,367 quadratic terms across tested network sizes. Raw solutions remain noticeably suboptimal, but the fixed post-processor reduces gaps to 2.42–6.82%; the largest raw best-sample gap was 16.6% on network15_s2.
+**Program Identifier:** Generation 38 - Patch Name route_diversity_congestion - Correct Program: True
+
+**Program Name: Sparse Demand-Aware Network QUBO**
+- **Implementation**: Sanitizes and normalizes demand, then builds negative linear rewards for direct links and sparse two-hop route couplings selected by demand support, transit-node pressure, and weak-leg discounts. It adds reciprocal-link and neighbor-overlap adjustments, plus a size-scaled degree penalty.
+- **Performance**: Combined score was 0.89, with 99% mean feasibility, 534 mean quadratic terms, and a 13.17% best-solution gap reduced to 5.19% after post-processing.
+- **Feedback**: Construction was fast (typically under 0.03 seconds, with one 0.20-second case), and post-processing consistently improved solutions substantially. Raw best gaps ranged from 9.4% to 16.3%, while median gaps were higher (27.3%–34.7%), indicating room to improve sample quality despite strong post-processor head starts.
+**Program Identifier:** Generation 39 - Patch Name route_support_qubo - Correct Program: True
+
+**Program Name: Diffusion-Based Capacity-Aware Gateway QUBO**
+- **Implementation**: Builds directed-link linear costs from normalized demand, then estimates inbound and outbound gateway-pair service costs using discounted random-walk hitting distances and balanced two-gateway transport. It decomposes pair costs into linear and quadratic terms, sparsifies interactions by retaining the strongest gateway couplings, and projects omitted couplings into linear terms; degree penalties are left to the evaluator.
+- **Performance**: Combined score was 0.87 (raw score 0.80, post-processed score 0.94), with 97% mean feasibility, 15.38% best-sample gap, 36.71% median gap, and 882.5 quadratic terms on average.
+- **Feedback**: Before repair, best gaps were typically 11–20% and median gaps 34–41%; the fixed post-processor reduced the mean gap to 6.14%, with per-instance post-processed gaps of roughly 1–9%. Construction was fast (about 0.01–0.13 seconds per instance), while the largest reported best gap was 19.5% on network12_s0.
+**Program Identifier:** Generation 40 - Patch Name balanced_portal_transport - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes and sanitizes demand, then builds negative linear scores for direct links using demand magnitude and endpoint shares. For each positive demand, it ranks transit nodes by affinity and traffic pressure, adds sparse two-hop route rewards plus direct-link redundancy penalties, and conditionally includes one supported three-hop alternative.
+- **Performance**: Combined score was **0.89** (raw score 0.83), with 91% mean feasibility, 691.5 mean quadratic terms, and a 4.56% mean post-processed gap; construction was typically very fast.
+- **Feedback**: Best pre-repair gaps ranged from 3.4% to 18.3%, while median gaps were roughly 29–37%; the fixed post-processor reduced gaps to 2.47–6.08%. Quality was fairly consistent across sizes, though network14_s0 had the largest initial gap.
+**Program Identifier:** Generation 41 - Patch Name selective_three_hop - Correct Program: True
+
+**Program Name: Adaptive Sparse Network QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand and builds direct link rewards plus adaptive two-hop route couplings, selecting routes by affinity, pruning weak candidates, and limiting extra-route rewards. Adds penalties for backtracking and overlapping neighbor coverage, and adjusts the degree penalty with network size.
+- **Performance**: Combined score was 0.90 (raw 0.84, post-processed 0.96), with 97% mean feasibility, 602 mean quadratic terms, and a 4.46% mean post-processing gap.
+- **Feedback**: The post-processor reduced the mean gap substantially, to 4.46%, while unprocessed best-sample gaps ranged from 6.5% to 15.2%; network12_s0 was the largest gap. Sample-quality scores were consistently lower than head-start scores, suggesting the surrogate gives useful initialization but leaves room to improve candidate quality.
+**Program Identifier:** Generation 42 - Patch Name balanced_route_ranking - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, then assigns direct-link linear weights using a blend of normalized traffic and its square root. For each positive-demand pair, it selects a small set of two-hop routes by affinity-to-node-pressure ranking, adds a pressure-discounted alternative, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.89, with 90% mean feasibility, 11.32% mean best gap, 31.75% mean median gap, and a 4.48% mean post-processing gap.
+- **Feedback**: Construction is fast (reported as 0.00s per instance) and produces sparse models averaging 452 quadratic terms; post-processing consistently improves solutions substantially, bringing gaps to 2.82–6.20%. Before repair, best gaps range from 5.8% to 15.7%, with network16_s1 the weakest case.
+**Program Identifier:** Generation 43 - Patch Name single_ambiguous_route - Correct Program: True
+
+**Program Name: Transit-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand and assigns directed-link rewards blending linear and square-root demand scores. It estimates transit pressure with three damped soft-choice iterations, selects two or three intermediates per OD pair for sparse path rewards, adds modest reciprocal-link penalties, and debiases links appearing unusually often in route couplings.
+- **Performance**: Combined score was 0.90 (raw score 0.84, post-processed score 0.96), with 10.87% mean best gap, 29.25% mean median gap, 95% feasibility, and about 334 quadratic terms.
+- **Feedback**: Validity was consistently high (89–100%), and the fixed post-processor reduced the mean gap to 4.32%; construction took at most 0.14 seconds. Sample quality weakened somewhat on larger networks, with the largest best gap at network15_s0 (+14.5%), while post-processed gaps were generally much smaller.
+**Program Identifier:** Generation 44 - Patch Name route_frequency_debias - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Sanitizes and globally normalizes demand, then assigns concave demand-based rewards to direct links. Sparse two-hop rewards prioritize routes using constituent-leg support and transit-node pressure; reciprocal links receive a structural penalty, with a size-adjusted degree penalty returned separately.
+- **Performance**: Combined score was **0.89** (sample-quality 0.831; head-start 0.950), with 98% mean feasibility, 12.56% best-solution gap, 29.43% median gap, and about 467 quadratic terms on average.
+- **Feedback**: Construction was very fast, and the fixed post-processor reduced mean gap to 5.24%; post-processed gaps ranged from 2.70% to 9.38%. The largest pre-processing best gap was 18.0% on network12_s1, while performance varied by instance size, with n=12 and n=15 scoring lowest on sample quality.
+**Program Identifier:** Generation 45 - Patch Name leg_supported_sparse_qubo - Correct Program: True
+
+**Program Name: Pressure-Aware Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, estimates node pressure from incident and iteratively assigned transit load, and uses these signals to score direct-link rewards and sparse two-hop couplings. It retains the top two or three candidate transit routes per OD pair and returns a fixed degree-penalty weight of 1.25.
+- **Performance**: Combined score was 0.883 (raw score 0.81; post-processed score 0.95), with 99% mean feasibility and a 13.61% mean best-sample gap before post-processing versus 4.75% afterward.
+- **Feedback**: Evaluation produced 64 distinct topologies per case and 136–343 quadratic terms, with surrogate construction typically taking only milliseconds. Best-sample gaps ranged from 9.2% to 19.7% before repair, while the fixed post-processor reduced gaps substantially; the largest remaining post-processed gap was 7.37%.
+**Program Identifier:** Generation 46 - Patch Name sparse_route_pressure - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand and assigns direct-edge rewards using a blend of linear and square-root traffic. It selects a few two-hop routes per positive-demand pair using edge affinity and node-pressure discounts, adjusts rewards for estimated transit congestion, penalizes reciprocal backtracking, and scales constraint penalties with network size.
+- **Performance**: Combined score was **0.90** (raw score 0.83; post-processor score 0.96), with 97% mean feasibility, 12.50% best-solution gap, 28.64% median gap, and 467 mean quadratic terms.
+- **Feedback**: Construction was fast, and the fixed post-processor reduced the mean gap to 4.29% from substantially larger pre-repair gaps. Sample quality was fairly consistent across sizes but weaker than head-start quality; the largest best-solution gap was 15.7% on network16_s0.
+**Program Identifier:** Generation 47 - Patch Name transit_load_discount - Correct Program: True
+
+**Program Name: Pressure-Aware Surrogate QUBO Construction**
+- **Implementation**: Builds normalized direct-link rewards and sparse two-hop quadratic terms, selecting intermediates by demand evidence and estimated node pressure. It further corrects overlapping route rewards using degree-balanced link propensities and adds small penalties for redundant outbound or inbound branches.
+- **Performance**: Combined score was 0.90 (sample-quality 0.829, head-start 0.964), with 97% mean feasibility, 12.16% mean best gap, and 3.72% mean gap after post-processing.
+- **Feedback**: The model generated 289–702 quadratic terms and consistently improved substantially with the fixed post-processor, which brought instance gaps mostly to 0.47–5.90%. Pre-repair median gaps remained high (mean 30.54%), with the largest best-sample gap at 19.3% on network15_s1, indicating strong head-start performance but weaker raw topology ranking.
+**Program Identifier:** Generation 48 - Patch Name ambiguity_route - Correct Program: True
+
+**Program Name: Pressure-Discounted Surrogate QUBO**
+- **Implementation**: Builds normalized negative linear terms from direct demand, then adds selectively chosen two-hop quadratic terms using demand support, node pressure, and candidate-route ranking; ambiguous, high-demand pairs may also receive pairwise approximations of a three-hop route. Uses a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.89 (raw 0.82, post-processed 0.96), with 83% mean feasibility, 519.5 mean quadratic terms, and a 4.39% mean post-processed gap.
+- **Feedback**: The surrogate builds quickly and produces 64 distinct topologies per case, but unprocessed best gaps were typically 8–16% and median gaps about 30–37%. The fixed post-processor substantially improved results to roughly 1–6% gaps, indicating strong head-start value despite weaker initial sample quality.
+**Program Identifier:** Generation 49 - Patch Name sparse_threehop - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Network QUBO**
+- **Implementation**: Normalizes nonnegative demand, then builds direct-link rewards and sparse two-hop route rewards using cached OD route evidence, transit-pressure estimates, and support-based route selection. It also adjusts link costs for route exposure, adds penalties for redundant branches, and returns a fixed degree-penalty weight of 1.25.
+- **Performance**: Combined score was 0.90 (sample-quality 0.8269, head-start 0.9650), with 98% mean feasibility, 463 mean quadratic terms, and a 3.65% mean post-processed gap.
+- **Feedback**: Before repair, best gaps ranged from 7.5% to 16.6% and median gaps were roughly 26–39%, despite fast coefficient construction. The fixed post-processor reduced gaps substantially, to 0.25–6.02%; quality weakened somewhat on larger networks, with the largest gap on network16_s2.
+**Program Identifier:** Generation 50 - Patch Name gated_route_pipeline - Correct Program: True
+
+**Program Name: Demand-Aware Sparse Routing QUBO**
+- **Implementation**: Sanitizes and normalizes demand, then scores direct links using demand magnitude and endpoint shares. It builds sparse two-hop couplings by ranking transit nodes with affinity and traffic-pressure discounts, adding limited three-hop alternatives for weak or ambiguous routes, and returns penalty weight 1.15.
+- **Performance**: Combined score was 0.90 (raw 0.83, post-processor 0.96), with 89% mean feasibility, 823 mean quadratic terms, and 4.14% mean post-processed gap.
+- **Feedback**: Before repair, best-sample gaps ranged from 5.5% to 15.6%, while median gaps were roughly 26–40%; the fixed post-processor reduced mean gap to 4.14%. Results were strongest at n=10 and weaker at larger sizes, with network16_s1 the largest gap, suggesting good repair head-starts but room to improve raw sample quality.
+**Program Identifier:** Generation 51 - Patch Name ambiguous_route - Correct Program: True
+
+**Program Name: Demand-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes and sanitizes demand, assigns concave demand-based linear rewards, and estimates two-hop routing with a soft distribution to derive node congestion pressure. It builds quadratic terms for transit combinations, adjusts selected terms with route-support rewards, and returns a size-adjusted degree penalty.
+- **Performance**: Combined score was 0.87 (raw score 0.80; post-processor score 0.95), with 100% mean feasibility, 14.02% mean best gap, and 5.45% mean post-processed gap.
+- **Feedback**: All cases produced 64 distinct topologies; construction was generally near-instant, with quadratic-term counts rising from 720 at n=10 to 3,360 at n=16. Post-processing substantially reduced gaps, though the unprocessed median gaps remained high (38.59% on average), with the largest best gap at 19.2% for network13_s1.
+**Program Identifier:** Generation 52 - Patch Name fractional_load_hessian - Correct Program: True
+
+**Program Name: Adaptive Sparse Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns negative direct-link rewards, and selects two-hop route couplings using affinity, node pressure, demand thresholds, and bounded adaptive route expansion. It adds sparse interaction-count adjustments, reverse-link penalties, and demand-weighted neighbor-diversity penalties, with a size-scaled degree penalty.
+- **Performance**: Combined score was 0.895 (sample quality 0.833; head-start 0.957), with 99% mean feasibility, 602 mean quadratic terms, and a 4.49% post-processor gap.
+- **Feedback**: All instances had 64 distinct topologies; raw best gaps ranged from 8.4% to 15.3%, while the fixed post-processor reduced gaps to 2.26%–8.72%. The strong post-processing results indicate useful starting solutions, though median raw gaps near 30% and occasional feasibility below 100% leave room to improve sample quality.
+**Program Identifier:** Generation 53 - Patch Name leg_support_gate - Correct Program: True
+
+**Program Name: Transit-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand to create direct-link rewards, then estimates transit pressure with three damped softmax-routing updates that include a direct-route option. It sparsifies two-hop rewards to the best two or three intermediates per OD pair, adds modest reciprocal-link penalties, debiases unusually frequent route links, and returns a size-adjusted degree-penalty weight.
+- **Performance**: Combined score was 0.90 (sample-quality 0.835, head-start 0.960), with 95% mean feasibility, 403.83 mean quadratic terms, and a 4.22% mean post-processed gap.
+- **Feedback**: Post-processing consistently improved results: mean best gap was 11.10% before repair versus 4.22% after, and every evaluated case finished within 6.60% of reference. Sample quality was weaker at larger sizes—especially network13_s0, the largest gap at 18.1%—despite strong post-processed results.
+**Program Identifier:** Generation 54 - Patch Name ambiguity_route - Correct Program: True
+
+**Program Name: Entropy-Calibrated Surrogate QUBO**
+- **Implementation**: Builds fractional link occupancies by iteratively calibrating logistic probabilities to approximately two incoming and outgoing links per node. It estimates routing costs using a discounted-walk resolvent, computes sparse pairwise interactions with rank-two Woodbury updates, retains influential couplings, and projects away degree-constant terms; the degree penalty is fixed at 1.45.
+- **Performance**: Combined score was 0.81 (raw 0.73, post-processed 0.88), with 100% feasible samples, 760 mean quadratic terms, and a 13.87% post-processing mean gap; construction averaged about 5.10 seconds.
+- **Feedback**: Post-processing substantially improved results, reducing mean gap from 23.08% best-sample to 13.87%, while smaller networks performed better than larger ones. The largest best-sample gap was 36.3% on network16_s1, and median gaps remained high (55.60%), indicating room to improve candidate quality despite consistently valid topologies.
+**Program Identifier:** Generation 55 - Patch Name resolvent_response - Correct Program: True
+
+**Program Name: Adaptive Sparse Network-Design QUBO Surrogate**
+- **Implementation**: Builds normalized demand-weighted linear rewards and adaptive two-hop couplings, selecting routes by affinity, pressure, and score gaps; adds backtracking and neighbor-diversity penalties plus selective three-hop approximations for larger networks. Uses sparse dictionaries and scales the degree penalty with network size.
+- **Performance**: Combined score was **0.8961** (sample quality **0.8330**, head-start **0.9591**), with **96%** mean pre-repair feasibility, **631.67** mean quadratic terms, and **4.29%** mean post-processed gap.
+- **Feedback**: Runs were fast (typically under 0.02 seconds) and produced consistently strong post-processor results, reducing gaps to roughly 1–8% across cases. Pre-repair best gaps were less competitive (mean **11.84%**, worst **17.2%** on network15_s0), while median gaps averaged **29.67%**; larger instances also had lower sample-quality scores.
+**Program Identifier:** Generation 56 - Patch Name sparse_three_hop_closure - Correct Program: True
+
+**Program Name: Demand-Aware Sparse Network QUBO Surrogate**
+- **Implementation**: Normalizes sanitized demand values, scores direct links using demand and endpoint shares, and rewards selected two-hop routes while discounting high-traffic transit nodes. It adds weak direct-link redundancy penalties and a rare three-hop option for difficult high-demand pairs, returning a fixed penalty weight of 1.15.
+- **Performance**: Combined score was 0.89, with 98% mean feasibility, 660 mean quadratic terms, and a 13.17% mean best-sample gap; post-processing reduced the mean gap to 4.33%.
+- **Feedback**: The surrogate built quickly (typically 0.00–0.02 seconds), and post-processing substantially improved solutions across all tested sizes. Before repair, median gaps were much larger (mean 33.16%), with the largest best-sample gap at 18.2% for network14_s1.
+**Program Identifier:** Generation 57 - Patch Name leg_support_gate - Correct Program: True
+
+**Program Name: Sparse Demand-Supported QUBO Routing Surrogate**
+- **Implementation**: Sanitizes and normalizes demand, then assigns concave direct-link rewards using normalized flow and row/column shares. For each positive OD pair, it ranks candidate two-hop routes by leg support, affinity, and intermediate-node pressure; it keeps one or two routes and adds negative route couplings plus weak positive redundancy couplings.
+- **Performance**: Combined score was 0.88, with 0.99 mean feasible rate, 269.5 mean quadratic terms, and a 5.34% mean post-processing gap.
+- **Feedback**: The sparse surrogate builds quickly and reliably, with 64 distinct topologies per case; post-processing substantially improves results, reducing average gaps from roughly 15% best-sample and 35% median to about 5%. The largest best-sample gap was 20.8% for network16_s0, indicating room to improve initial sample quality, especially on larger instances.
+**Program Identifier:** Generation 58 - Patch Name supported_sparse_routes - Correct Program: True
+
+**Program Name: Adaptive Sparse QUBO Network Surrogate**
+- **Implementation**: Builds demand-normalized directed link rewards and selects two-hop route couplings using affinity, node pressure, and adaptive pruning, with limited boundary expansion and a low-pressure fallback. It also applies transit-load discounts, reverse-flow penalties, and demand-weighted neighbor-diversity penalties; the degree penalty scales mildly with network size.
+- **Performance**: Combined score was 0.89 (sample-quality 0.832, head-start 0.954), with 98% mean feasibility, 602 mean quadratic terms, and 4.83% mean post-processed gap.
+- **Feedback**: Raw best-solution gaps were typically about 8–15%, with the largest at 15.4% for network16_s1; median gaps averaged 29.79%. The fixed post-processor reduced the mean gap substantially, to 4.83%, while construction remained fast (0.00–0.19s in reported cases).
+**Program Identifier:** Generation 59 - Patch Name transit_pressure_second_pass - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+We need craft sections 2-4 bullets each, accurately integrate gens 55-59 and best gen8. Note current best gen8. Comparisons score gen56 .8961 etc. Gen55 .81. Gen57 .89, gen58 .88, gen59 .89. Note gen56 fastest yet model terms. Successful patterns sparse demand-supported two-hop and pressure, postprocessor. Best detail direct blend, route selection, reciprocal penalty. Differences gen56 head-start .9591 and post gap4.29, gen59 .89 gap4.83. Gen58 sparse 269 terms, gap5.34. Ineffective resolvent dense/slow and degree constant etc. Avoid causal claims. Also gen57 fixed penalty 1.15 and rare threehop. Compare sample quality. Current best has score 0.9003 vs all. Compose.## Successful Algorithmic Patterns
+
+- **Generation 8 remains the strongest overall balance:** it scores **0.9003** (raw **0.8398**, post-processor **0.9607**) with **96% feasibility**, **467 quadratic terms**, and a **4.12% repaired gap**. Its demand-supported sparse two-hop routes, pressure-adjusted intermediate selection, and reciprocal-link penalty are a strong combination.
+- **Sparse, pressure-aware two-hop routing continues to perform well.** Generation 56’s adaptive two-hop and selective three-hop surrogate scores **0.8961**, with **631.67 terms** and a **4.29% post-processed gap**. Generation 59’s pressure-aware sparse routes score **0.89**, with **602 terms** and a **4.83% repaired gap**. Both are close to Generation 8, but neither exceeds its combined score.
+- **Repair-ready samples are a recurring strength across the newer programs.** Generation 57 (Demand-Aware Sparse Network QUBO) scores **0.89** and improves from a **13.17% mean best-sample gap** to **4.33%** after repair. Generation 58 (Sparse Demand-Supported QUBO Routing Surrogate) scores **0.88** and reaches a **5.34%** repaired gap. Generation 8 also benefits substantially from repair, reducing its mean gap from **10.83%** to **4.12%**.
+- **Generation 8’s moderate route coverage remains competitive with broader variants.** It uses **467 terms**, compared with **631.67** for Generation 56 and **602** for Generation 59, while retaining the highest reported combined score. Its selection of two or four affinity-ranked intermediates plus one pressure-discounted alternative provides coverage without the larger interaction counts of these newer models.
+
+## Ineffective Approaches
+
+- **The resolvent-based approach did not translate its more elaborate cost model into competitive results.** Generation 55 (Entropy-Calibrated Surrogate QUBO) scores **0.81**, with a **13.87% post-processed gap**, despite **100% feasibility**. Its discounted-walk resolvent, Woodbury interaction updates, and roughly **5.10-second** construction were substantially less effective than the fast sparse routing surrogates.
+- **More route coverage and interaction terms have not demonstrated an overall gain over Generation 8.** Generation 56 adds selective three-hop approximations and averages **631.67 terms**, but scores **0.8961** rather than Generation 8’s **0.9003**. Generation 59 uses adaptive pruning and additional diversity and reverse-flow penalties, with **602 terms** and a **0.89** score. These results do not show that the extra model complexity improves combined performance.
+- **High feasibility and strong repaired gaps alone do not establish a better combined score.** Generation 55 has **100% feasibility** but scores **0.81**; Generation 57 has **98% feasibility** and a **4.33%** repaired gap but scores **0.89**. Generation 8’s combined score remains higher, so the results favor balanced raw and repaired performance over optimizing a single metric.
+- **Raw sample quality and median gaps remain weaknesses even among the competitive sparse variants.** Generation 8 has a **28.72% mean median gap** and a worst best-sample gap of **14.5%** on network15_s0. Generation 56 and Generation 59 report mean median gaps of **29.67%** and **29.79%**, respectively. Their good repaired outcomes therefore coexist with weaker typical sampled topologies.
+
+## Implementation Insights
+
+- **Generation 8’s demand preparation directly shapes a compact reward model:** it clips negative demand, zeros the diagonal, scales by maximum positive traffic, and blends normalized demand with its square root (**0.75/0.25**) for direct-link rewards. This moderates large-flow dominance while excluding self-links and negative entries.
+- **Its route construction is sparse and demand-supported.** For each positive-demand OD pair, Generation 8 ranks intermediates using edge affinity discounted by node pressure to the **0.75** power, keeps two or four candidates according to a demand quantile, and adds one pressure-selected alternative. The resulting **467 terms** accompany a **4.12%** repaired gap and the best combined score.
+- **The reciprocal-link penalty is a targeted structural feature of the current best.** Generation 8 penalizes paired \(i\to j\) and \(j\to i\) links, scales the penalty with network depth, and reduces it when both directions have substantial demand. This addresses backtracking that consumes link capacity without serving an OD path; the evaluation supports the complete program’s performance, though it does not isolate this penalty’s causal effect.
+- **Newer programs illustrate useful sparse implementation choices, but with tradeoffs.** Generation 58 ranks a small set of supported two-hop routes and averages only **269.5 terms**, while Generation 56 uses sparse dictionaries and selective three-hop approximations. Their scores (**0.88** and **0.8961**) and repaired gaps (**5.34%** and **4.29%**) remain below Generation 8’s overall result, so fewer terms or extra route approximations alone do not imply a better combined outcome.
+
+## Performance Analysis
+
+- **Generation 8 remains the current best:** its **0.9003** combined score is above Generation 56’s **0.8961**, Generation 57’s **0.89**, Generation 59’s **0.89**, Generation 58’s **0.88**, and Generation 55’s **0.81**. Generation 56 is the closest reported competitor, but its larger model and **4.29%** repaired gap do not displace Generation 8’s **4.12%** gap or higher score.
+- **The results reinforce the value of balancing sample quality and repair performance.** Generation 8 combines raw score **0.8398** with post-processor score **0.9607**. Generation 56 also has strong head-start performance (**0.9591**) and a **4.29%** repaired gap, but its sample-quality score (**0.8330**) and combined score remain lower.
+- **Sparse demand-aware surrogates substantially outperform the evaluated resolvent model in these results.** Generations 56–59 build in roughly **0.00–0.19 seconds** (Generation 56 typically under **0.02 seconds**) and score **0.88–0.8961**, while Generation 55 takes about **5.10 seconds** and scores **0.81**. Generation 55’s perfect feasibility does not offset its weaker sample and repaired-gap metrics.
+- **Generation 8’s remaining weakness is the gap between its best and typical sampled topology, with several instance-specific repair outliers.** Its best-sample gaps range up to **14.5%** on network15_s0, while its largest repaired gap is **7.35%** on network13_s1; median gaps are **28.72%** on average. The pattern is consistent with newer programs: post-processing can produce strong results even when raw ranking and median samples are materially weaker.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Add an ambiguity-triggered route candidate.** Keep the current two-or-four affinity-ranked intermediates and pressure-selected alternative, but add at most one more candidate when the next-best affinity score is close to the last selected score. This tests whether limited extra flexibility can improve weak or ambiguous OD routes without broadly increasing the quadratic-term count.
+
+2. **Require support on both legs of a two-hop route.** Adjust each selected route’s reward using a bounded factor based on normalized demand on \(i\to j\) and \(j\to k\), while retaining the existing OD-demand support and pressure discount. This keeps the model sparse and demand-aware, and favors routes whose component links have traffic support.
+
+3. **Add a mild second-pass discount for overloaded intermediates.** Accumulate demand-weighted route usage per intermediate after candidate selection, then slightly reduce rewards for routes through the most-used nodes. Keep the adjustment local and conservative: pressure-aware routing is competitive, but broader interaction models have not shown a consistent score improvement.
+
+4. **Test one supported three-hop route only for difficult OD pairs.** Add a route with two distinct intermediates only when the best two-hop candidates are weak or closely ranked; require positive demand on all three legs and discount for pressure at both intermediates. Cap this at one additional route per OD pair to test selective coverage without the term growth of broader three-hop models.
+
+5. **Refine the reciprocal-link penalty using selected-route frequency.** Preserve the current depth-scaled baseline and its reduction for substantial mutual demand, but modestly increase the penalty for reciprocal links that are rarely useful in selected route rewards. This extends a targeted feature of the best-scoring program while avoiding an untested global penalty increase.

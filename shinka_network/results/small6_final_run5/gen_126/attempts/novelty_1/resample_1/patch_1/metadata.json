@@ -1,0 +1,14 @@
+{
+  "generation": 126,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "neighbor_diversity",
+  "patch_description": "This design replaces explicit two-hop path rewards with a compact neighbor-diversity model. Linear terms reward direct demand and give a smaller bonus to links whose endpoints have compatible demand profiles, discounted by a blended incoming/outgoing transit-pressure estimate. Sparse quadratic terms then penalize pairs of outgoing links whose downstream profiles overlap, and pairs of incoming links that appear likely to funnel similar traffic through the same node. A modest reciprocal-link cost and a small two-node-cut adjustment retain structural guidance without making path couplings dominate. The pair terms are limited to promising links, keeping the model compact while encouraging complementary alternatives at each node.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:42:16.479817",
+  "llm_cost": 0.0075628,
+  "llm_model": "gpt-6-luna"
+}

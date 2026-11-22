@@ -1,0 +1,39 @@
+{
+    "combined_score": 0.9852963725397489,
+    "public": {
+        "mean_gap_pct": 1.4963065390914723,
+        "best_gap_pct": 0.28738731123811867,
+        "best_per_hamiltonian_score": 0.9866035628195737,
+        "mean_pool_score": 0.9852963725397489,
+        "mean_lp_calls": 2000.0,
+        "mean_seconds": 34.643019031593724,
+        "mean_gap_pct_n13": 1.840612733683722,
+        "mean_gap_pct_n14": 1.3863304487730628,
+        "mean_gap_pct_n15": 1.3524617790600435,
+        "mean_gap_pct_n16": 1.4058211948490607
+    },
+    "private": {
+        "network13_r2g181_seed0": 305910.0,
+        "network13_r2g181_seed1": 304858.0,
+        "network13_r3g128_seed0": 304546.0,
+        "network13_r3g128_seed1": 305286.0,
+        "network14_r2g181_seed0": 344858.0,
+        "network14_r2g181_seed1": 349143.0,
+        "network14_r3g128_seed0": 344077.0,
+        "network14_r3g128_seed1": 345412.0,
+        "network15_r2g181_seed0": 375462.0,
+        "network15_r2g181_seed1": 377171.0,
+        "network15_r3g128_seed0": 372519.0,
+        "network15_r3g128_seed1": 372572.0,
+        "network16_r2g181_seed0": 402471.0,
+        "network16_r2g181_seed1": 402134.0,
+        "network16_r3g128_seed0": 402924.0,
+        "network16_r3g128_seed1": 400800.0
+    },
+    "text_feedback": "network13_r2g181_seed0: gaps to best known 300620 with 2 random seeds +1.76%, +2.71% (mean +2.23%), 2000 LP calls, 24.3s per run\nnetwork13_r2g181_seed1: gaps to best known 300620 with 2 random seeds +1.41%, +2.45% (mean +1.93%), 2000 LP calls, 26.4s per run\nnetwork13_r3g128_seed0: gaps to best known 300620 with 2 random seeds +1.66%, +1.31% (mean +1.48%), 2000 LP calls, 26.6s per run\nnetwork13_r3g128_seed1: gaps to best known 300620 with 2 random seeds +1.88%, +1.55% (mean +1.71%), 2000 LP calls, 27.6s per run\nnetwork14_r2g181_seed0: gaps to best known 343091 with 2 random seeds +0.52%, +2.40% (mean +1.46%), 2000 LP calls, 34.3s per run\nnetwork14_r2g181_seed1: gaps to best known 343091 with 2 random seeds +1.76%, +1.89% (mean +1.83%), 2000 LP calls, 35.0s per run\nnetwork14_r3g128_seed0: gaps to best known 343091 with 2 random seeds +2.17%, +0.29% (mean +1.23%), 2000 LP calls, 31.1s per run\nnetwork14_r3g128_seed1: gaps to best known 343091 with 2 random seeds +0.68%, +1.38% (mean +1.03%), 2000 LP calls, 30.7s per run\nnetwork15_r2g181_seed0: gaps to best known 370870 with 2 random seeds +2.56%, +1.24% (mean +1.90%), 2000 LP calls, 41.9s per run\nnetwork15_r2g181_seed1: gaps to best known 370870 with 2 random seeds +1.70%, +1.76% (mean +1.73%), 2000 LP calls, 40.5s per run\nnetwork15_r3g128_seed0: gaps to best known 370870 with 2 random seeds +1.01%, +0.44% (mean +0.73%), 2000 LP calls, 34.2s per run\nnetwork15_r3g128_seed1: gaps to best known 370870 with 2 random seeds +0.46%, +1.65% (mean +1.06%), 2000 LP calls, 34.3s per run\nnetwork16_r2g181_seed0: gaps to best known 397908 with 2 random seeds +1.15%, +2.27% (mean +1.71%), 2000 LP calls, 46.8s per run\nnetwork16_r2g181_seed1: gaps to best known 397908 with 2 random seeds +1.17%, +1.06% (mean +1.12%), 2000 LP calls, 45.4s per run\nnetwork16_r3g128_seed0: gaps to best known 397908 with 2 random seeds +1.26%, +2.03% (mean +1.65%), 2000 LP calls, 37.5s per run\nnetwork16_r3g128_seed1: gaps to best known 397908 with 2 random seeds +0.73%, +1.57% (mean +1.15%), 2000 LP calls, 37.7s per run\nMean gap per instance size: n=13 +1.84%, n=14 +1.39%, n=15 +1.35%, n=16 +1.41%\nBest per Hamiltonian (over its pools): r2g181 304858 (+1.41%), r3g128 304546 (+1.31%)\nMean over Hamiltonians of best_known/best(best of its pools): 0.9866; mean over all runs: 0.9853 (this is the score).",
+    "execution_time_mean": 34.793850552468484,
+    "execution_time_std": 7.586164612977344,
+    "num_valid_runs": 32,
+    "num_invalid_runs": 0,
+    "all_validation_errors": []
+}

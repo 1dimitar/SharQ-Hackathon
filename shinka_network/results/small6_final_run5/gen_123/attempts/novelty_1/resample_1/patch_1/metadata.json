@@ -1,0 +1,14 @@
+{
+  "generation": 123,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_routes_expansion",
+  "patch_description": "Preserves the successful sparse, pressure-discounted route model and its conservative exposure correction. Two targeted changes address larger networks: a gently bounded size adjustment to route rewards, and a small demand-aware reciprocal-link penalty that discourages wasting scarce links on immediate backtracking while retaining reciprocal links supported by strong two-way traffic. Degree penalties remain entirely with the evaluator, and coupling growth stays quadratic for dense demands.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:38:53.667051",
+  "llm_cost": 0.051684,
+  "llm_model": "gpt-6.1-sol"
+}

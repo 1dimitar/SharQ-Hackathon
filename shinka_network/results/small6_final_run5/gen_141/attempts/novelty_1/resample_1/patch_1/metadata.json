@@ -1,0 +1,14 @@
+{
+  "generation": 141,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_pressure_routes",
+  "patch_description": "Boundedly upweight two-hop route rewards for demands whose source and destination have high aggregate traffic pressure. Those endpoints are likely to need more effective routing capacity, while the existing transit-pressure discount still discourages overloading busy intermediate nodes. The factor is clipped to avoid letting a few high-pressure endpoints dominate, and it adds no couplings or changes to the route-candidate count.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:58:58.837446",
+  "llm_cost": 0.0029506000000000003,
+  "llm_model": "gpt-6-luna"
+}

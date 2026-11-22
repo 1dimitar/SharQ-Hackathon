@@ -1,0 +1,14 @@
+{
+  "generation": 144,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "large_n_route_taper",
+  "patch_description": "Reduce the influence of sparse two-hop rewards as network size grows. At larger n, each OD pair has more possible intermediates, so rewarding only its top few routes is a less reliable guide and can overstate the value of particular transit links. A slightly steeper taper leaves direct-demand and cut-congestion signals relatively more influential, which may improve energy rankings for the larger instances where the current post-processor has the largest gaps. This changes only route scaling; it leaves the small-instance behavior unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:02:23.812300",
+  "llm_cost": 0.0031595,
+  "llm_model": "gpt-6-luna"
+}

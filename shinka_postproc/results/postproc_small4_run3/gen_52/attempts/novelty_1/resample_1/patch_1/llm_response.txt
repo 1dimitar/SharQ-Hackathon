@@ -1,0 +1,94 @@
+<NAME>
+vectorized_stall_kicks
+</NAME>
+
+<DESCRIPTION>
+Vectorize the batched all-pairs shortest-path proxy calculation. It computes the same demand-weighted distances but avoids running a separate Python-level Floyd–Warshall loop for every shortlisted network, reducing screening overhead and helping the search stay within the wall-time limit.
+
+Also scale multi-switch kicks with the selected parent’s stall count and network size. Recently improving parents retain the existing modest kick depth; repeatedly unproductive parents receive more kick attempts and longer perturbations, giving the search a better chance to leave local basins without imposing that cost throughout the run.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        D = np.asarray(demand, dtype=float)
+        proxy = np.empty(len(shortlist), dtype=float)
+        for i, net in enumerate(shortlist):
+            dist = np.full((n, n), float(n + 1))
+            np.fill_diagonal(dist, 0.0)
+            for a, b in net:
+                dist[a, b] = 1.0
+            for k in range(n):
+                np.minimum(
+                    dist,
+                    dist[:, k:k + 1] + dist[k:k + 1, :],
+                    out=dist,
+                )
+            proxy[i] = float(np.sum(D * dist))
+=======
+        D = np.asarray(demand, dtype=float)
+        batch_arcs = np.asarray(shortlist, dtype=np.intp)
+        batch = len(shortlist)
+        rows = np.arange(n)
+        batch_ids = np.arange(batch)[:, None]
+        dist = np.full((batch, n, n), float(n + 1))
+        dist[:, rows, rows] = 0.0
+        dist[
+            batch_ids, batch_arcs[:, :, 0], batch_arcs[:, :, 1]
+        ] = 1.0
+        for k in range(n):
+            np.minimum(
+                dist,
+                dist[:, :, k, None] + dist[:, None, k, :],
+                out=dist,
+            )
+        proxy = np.sum(dist * D[None, :, :], axis=(1, 2))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        for _ in range(24):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(4))):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+=======
+        # Increase kick effort only when this parent has repeatedly stalled.
+        stalls = parent_stalls.get(net, 0)
+        kick_trials = min(
+            2 * len(arcs),
+            max(24, len(arcs)) + min(stalls, 8) * max(1, len(arcs) // 8),
+        )
+        kick_span = min(max(6, n // 2), 4 + stalls // 3)
+        for _ in range(kick_trials):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(kick_span))):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+>>>>>>> REPLACE
+</DIFF>

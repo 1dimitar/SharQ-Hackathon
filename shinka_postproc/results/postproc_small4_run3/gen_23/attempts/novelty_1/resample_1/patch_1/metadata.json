@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ruin_recreate",
+  "patch_description": "This replaces switch-neighborhood search with randomized ruin-and-recreate. It removes a variable-size set of links\u2014often including LP-identified bottlenecks\u2014then reconstructs a degree-feasible network while favoring edges supported by demand and good archived networks. A bounded elite archive, adaptive destruction size, and simulated-annealing acceptance help explore beyond small local changes. Each novel valid network is certified directly by the LP, so the call budget goes to evaluating complete alternatives rather than screening large move batches.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:47:06.102068",
+  "llm_cost": 0.0044613,
+  "llm_model": "gpt-6-luna"
+}

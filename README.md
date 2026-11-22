@@ -26,3 +26,6 @@ leaderboard.submit("network12", arcs, method="qaoa_partitioned", label="my idea"
 (`shinka_postproc`), the LP local search reports and `.sol` files. Add a line to `SOURCES` in
 `leaderboard.py` when a new tool writes topologies elsewhere. `shinka_network/eval_sizes.py`
 evaluates surrogate programs on network12-16 and submits their topologies as they are found.
+`shinka_postproc/pipeline.py` chains a Hamiltonian, partitioned QAOA (any block size / depth / Qoro
+cluster, one cloud job at a time) and an evolved post-processor, largest gap to the best known value
+first, and submits both the raw QAOA and the post-processed networks.

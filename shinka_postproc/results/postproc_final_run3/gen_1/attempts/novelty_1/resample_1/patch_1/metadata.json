@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "archive_path_relinking",
+  "patch_description": "Add degree-preserving path relinking between a selected parent and a structurally different archive member. Each step tries to install a link from the target network by swapping the current outgoing link at its source with the current incoming link at its destination. This creates valid intermediate networks that move toward another promising region, complementing the existing local swaps, rotations, and kicks. The intermediates join the usual screened move batch, so they still need an LP call to be certified. The target is chosen from the farthest members of the leading archive, with all limits scaling with n.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:45:40.512008",
+  "llm_cost": 0.0019177,
+  "llm_model": "gpt-6-luna"
+}

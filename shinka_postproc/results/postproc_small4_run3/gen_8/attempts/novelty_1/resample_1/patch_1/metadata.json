@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "portfolio_search",
+  "patch_description": "Reorganizes the search into a seed-and-archive pipeline with a mixed move portfolio. Each LP batch combines surrogate-ranked exchanges, moves touching dual-priced links, and exploratory rotations or kicks; a diversity filter prevents the batch from spending all its calls on near-duplicates. Parent selection alternates between strong and structurally diverse archive members, with perturbation effort increasing when search stalls. Batch and search quantities scale with the network size, while the existing wrapper and function interface remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:08:32.952292",
+  "llm_cost": 0.0028653,
+  "llm_model": "gpt-6-luna"
+}

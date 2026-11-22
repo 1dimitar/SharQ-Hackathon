@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_pressure_second_pass",
+  "patch_description": "Replace the interaction-count adjustment with a demand-weighted transit-pressure correction. Count each OD demand once, distributing its estimated transit usage across selected intermediates in proportion to their path rewards. Then mildly discount rewards through above-average-use intermediates, with a capped reduction of about 21%.\n\nThis targets concentrated transit incentives rather than merely counting couplings. It preserves the sparse coupling graph, direct-link rewards, and structural penalties. The correction is dimensionless and adds no quadratic terms, so it scales naturally across network sizes. Its intended benefit is better load-balancing guidance for both samples and local-search move ranking; evaluation is needed to confirm that benefit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:39:30.580499",
+  "llm_cost": 0.048007999999999995,
+  "llm_model": "gpt-6.1-sol"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 131,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cut_load_reciprocity",
+  "patch_description": "Replace the uniform reciprocal-link charge with a demand-weighted two-node cut estimate. Traffic leaving or entering a node pair must cross that pair\u2019s boundary; reciprocal links reduce the available boundary links. A second-order expansion of inverse squared boundary capacity therefore gives a pairwise penalty that emphasizes cuts carrying more traffic. Centering the associated linear terms by endpoint effects preserves their ranking contribution across valid degree-two topologies, while reusing the existing reciprocal couplings keeps the QUBO compact.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:51:17.396969",
+  "llm_cost": 0.0042436999999999996,
+  "llm_model": "gpt-6-luna"
+}

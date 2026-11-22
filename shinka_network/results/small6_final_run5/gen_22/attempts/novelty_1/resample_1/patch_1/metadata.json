@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "routing_response_qubo",
+  "patch_description": "This replaces hand-selected two-hop rewards with a deterministic routing-response model. An absorbing, length-discounted random walk estimates multihop traffic and link loads using a matrix inverse. Its objective combines squared link loads with routing efficiency.\n\nEach possible link is switched on and off in a fractional reference network. The resulting objective changes and gradient changes provide binary marginal costs and pair interactions. Degree-dependent components are removed, and only a compact set of strong interactions is retained. Curvature damping and a modest direct-demand anchor limit extrapolation error.\n\nThe approach targets congestion and multihop routing directly, while keeping approximately four couplings per link overall. It uses no solvers, randomness, or external data.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-11-22T02:10:35.514769",
+  "llm_cost": 0.231278,
+  "llm_model": "gpt-6.1-sol"
+}

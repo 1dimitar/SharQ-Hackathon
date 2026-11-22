@@ -1,0 +1,14 @@
+{
+  "generation": 101,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "bounded_transit_congestion",
+  "patch_description": "Estimate each intermediary\u2019s potential transit burden from demand-weighted two-hop routes, using the harmonic mean of the two leg demands so a route with a weak leg contributes little. Convert the normalized burden into a bounded discount, then use it both when ranking intermediary candidates and when setting their route incentives. This discourages concentrating routes through already-busy transit nodes without letting congestion overwhelm the existing direct-demand and path terms. The extra work is O(n\u00b3), matching the existing route-candidate loop.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:18:57.222777",
+  "llm_cost": 0.0028215000000000002,
+  "llm_model": "gpt-6-luna"
+}

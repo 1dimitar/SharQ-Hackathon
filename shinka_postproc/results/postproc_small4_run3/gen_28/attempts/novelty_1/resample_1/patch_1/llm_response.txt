@@ -1,0 +1,192 @@
+<NAME>
+adaptive_screening_quotas
+</NAME>
+
+<DESCRIPTION>
+Adapt the LP batch allocation using each screening signal’s observed success rate: whether a selected move beats its parent. Smoothed rates prevent a small number of early outcomes from dominating, while a minimum slot for every available signal preserves the existing mix of learned prediction, energy, routing proxy, novelty, and uncertainty. The remaining slots are allocated in proportion to those smoothed rates. Attribute each evaluated move to the signal that selected it and update the statistics, so later batches can favor signals that have been productive in this run.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    training_x = []
+    training_y = []
+    best_net = None
+=======
+    training_x = []
+    training_y = []
+    signal_trials = {
+        name: 0 for name in ("model", "energy", "proxy", "novelty", "uncertainty")
+    }
+    signal_successes = {name: 0 for name in signal_trials}
+    best_net = None
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        batch_size = max(8, n // 2)
+        batch_ids = []
+        batch_sets = []
+
+        def take_from(order, number, diverse=True, limit=None):
+            taken = 0
+            if limit is None:
+                limit = batch_size - 1
+            for raw in order:
+                if len(batch_ids) >= limit:
+                    break
+                i = int(raw)
+                if i in batch_ids:
+                    continue
+                ns = set(shortlist[i])
+                if diverse and any(m - len(ns & old) < 3 for old in batch_sets):
+                    continue
+                batch_ids.append(i)
+                batch_sets.append(ns)
+                taken += 1
+                if taken >= number:
+                    break
+
+        take_from(lorder, max(2, batch_size // 3))
+        take_from(eorder, max(2, batch_size // 3))
+        take_from(porder, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+        # reserved positions cannot disappear into energy-ranked selections.
+        reference_sets = [set(x) for x in pop[:2 * n]]
+        promising = list(dict.fromkeys(
+            [int(i) for i in lorder[:max(n, len(shortlist) // 2)]]
+            + [int(i) for i in porder[:n]]
+        ))
+        novelty = sorted(
+            promising,
+            key=lambda i: min(
+                m - len(set(shortlist[i]) & ref) for ref in reference_sets
+            ),
+            reverse=True,
+        )
+        if len(batch_ids) < batch_size - 1:
+            take_from(novelty, 1)
+        if len(batch_ids) < batch_size and uncertainty is not None:
+            best_prediction = float(np.min(learned))
+            competitive = np.flatnonzero(
+                learned <= best_prediction + np.maximum(0.025, 1.25 * uncertainty)
+            )
+            acquisition = learned - 0.65 * uncertainty
+            for raw in competitive[np.argsort(acquisition[competitive], kind="stable")]:
+                i = int(raw)
+                if i in batch_ids:
+                    continue
+                ns = set(shortlist[i])
+                if any(m - len(ns & old) < 3 for old in batch_sets):
+                    continue
+                batch_ids.append(i)
+                batch_sets.append(ns)
+                break
+        if len(batch_ids) < batch_size:
+            take_from(lorder, batch_size - len(batch_ids), diverse=False, limit=batch_size)
+=======
+        batch_size = max(8, n // 2)
+        batch_ids = []
+        batch_sets = []
+        batch_source = {}
+
+        def take_from(order, number, signal, diverse=True):
+            taken = 0
+            for raw in order:
+                if len(batch_ids) >= batch_size:
+                    break
+                i = int(raw)
+                if i in batch_ids:
+                    continue
+                ns = set(shortlist[i])
+                if diverse and any(m - len(ns & old) < 3 for old in batch_sets):
+                    continue
+                batch_ids.append(i)
+                batch_sets.append(ns)
+                batch_source[i] = signal
+                taken += 1
+                if taken >= number:
+                    break
+
+        # Build all screening orders before allocating this batch's LP slots.
+        reference_sets = [set(x) for x in pop[:2 * n]]
+        promising = list(dict.fromkeys(
+            [int(i) for i in lorder[:max(n, len(shortlist) // 2)]]
+            + [int(i) for i in porder[:n]]
+        ))
+        novelty = sorted(
+            promising,
+            key=lambda i: min(
+                m - len(set(shortlist[i]) & ref) for ref in reference_sets
+            ),
+            reverse=True,
+        )
+        orders = {
+            "model": lorder,
+            "energy": eorder,
+            "proxy": porder,
+            "novelty": novelty,
+        }
+        if uncertainty is not None:
+            best_prediction = float(np.min(learned))
+            competitive = np.flatnonzero(
+                learned <= best_prediction + np.maximum(0.025, 1.25 * uncertainty)
+            )
+            acquisition = learned - 0.65 * uncertainty
+            orders["uncertainty"] = competitive[
+                np.argsort(acquisition[competitive], kind="stable")
+            ]
+
+        # Give each available signal a guaranteed trial, then adapt the
+        # remaining slots using a smoothed per-candidate improvement rate.
+        active = [name for name, order in orders.items() if len(order)]
+        targets = {name: 1 for name in active}
+        remaining = max(0, batch_size - len(active))
+        if active and remaining:
+            weights = {
+                name: 0.75 + (
+                    signal_successes[name] + 1.0
+                ) / (signal_trials[name] + 4.0)
+                for name in active
+            }
+            total_weight = sum(weights.values())
+            extras = {
+                name: remaining * weights[name] / total_weight
+                for name in active
+            }
+            for name in active:
+                whole = int(extras[name])
+                targets[name] += whole
+                remaining -= whole
+            for name in sorted(
+                active,
+                key=lambda x: extras[x] - int(extras[x]),
+                reverse=True,
+            )[:remaining]:
+                targets[name] += 1
+
+        for name in ("model", "energy", "proxy", "novelty", "uncertainty"):
+            if name in targets:
+                take_from(orders[name], targets[name], name)
+
+        # If overlap or diversity constraints leave slots open, use the
+        # strongest model-ranked candidates without the separation constraint.
+        if len(batch_ids) < batch_size:
+            take_from(
+                lorder, batch_size - len(batch_ids), "model", diverse=False
+            )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            score = evaluate(net, X[i])
+            if score < local_score:
+                local_best, local_score = net, score
+=======
+            score = evaluate(net, X[i])
+            source = batch_source.get(i, "model")
+            signal_trials[source] += 1
+            if score < parent_score:
+                signal_successes[source] += 1
+            if score < local_score:
+                local_best, local_score = net, score
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,19 @@
+<NAME>
+leg_support_gate
+</NAME>
+
+<DESCRIPTION>
+Gate each selected two-hop route reward by the normalized demand on both constituent links. Their geometric mean makes a route with weak support on either leg less attractive, while the bounded factor (0.55 to 1.0) preserves the existing route reward and avoids eliminating plausible alternatives. This changes no couplings or sparsity and keeps the existing demand support and transit-pressure discount intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                route_scale = support * rank_factor / (pressure[j] ** 0.35)
+=======
+                leg_gate = 0.55 + 0.45 * np.sqrt(z[i, j] * z[j, k])
+                route_scale = (
+                    support * rank_factor * leg_gate
+                    / (pressure[j] ** 0.35)
+                )
+>>>>>>> REPLACE
+</DIFF>

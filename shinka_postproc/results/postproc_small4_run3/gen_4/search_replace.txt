@@ -1,0 +1,182 @@
+<NAME>
+genuine_novelty_portfolio
+</NAME>
+
+<DESCRIPTION>
+Make structural diversity effective rather than nominal. Distinct valid networks already have symmetric-difference distance at least four, so the current archive threshold of four and batch threshold of two exclude nothing. The exploration tail is also unreachable because the preceding loop fills the batch.
+
+Keep elite exploitation, but maintain additional archive members separated by a size-dependent distance. Screen each batch using mostly low-energy moves, plus separate slots for within-batch diversity, novelty relative to previously scored networks, and unbiased exploration. Novelty is computed exactly for a small random shortlist using inexpensive integer edge masks; only evaluated networks are persistently cached. This provides exploration without making bottleneck guidance or either Hamiltonian’s surrogate dominate the search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+=======
+    topology_masks = {}
+
+    def topology_mask(net):
+        """Cache fingerprints only for scored networks, not every proposed move."""
+        mask = topology_masks.get(net)
+        if mask is None:
+            mask = 0
+            for a, b in net:
+                mask |= 1 << (a * n + b)
+            if net in seen:
+                topology_masks[net] = mask
+        return mask
+
+    def distance(a, b):
+        return (topology_mask(a) ^ topology_mask(b)).bit_count()
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        for net in ordered:
+            if all(distance(net, old) >= 4 for old in chosen):
+                chosen.append(net)
+=======
+        separation = 2 * max(3, (n + 3) // 4)
+        for net in ordered:
+            if all(distance(net, old) >= separation for old in chosen):
+                chosen.append(net)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    initial = choose_starts(repaired, min(30, len(repaired)))
+=======
+    initial = choose_starts(repaired, min(2 * n, len(repaired)))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def archive():
+        """Keep excellent networks and the best representatives of distinct regions."""
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= 24:
+                break
+        for net in ranked:
+            if len(out) >= 32:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+=======
+    def archive():
+        """Protect elites, then retain genuinely distinct competitive regions."""
+        ranked = sorted(seen, key=seen.get)
+        elite_count = max(6, n // 2)
+        out = ranked[:elite_count]
+        separation = 2 * max(3, (n + 3) // 4)
+        out_masks = [topology_mask(net) for net in out]
+        quality_limit = seen[ranked[0]] * 1.08
+
+        for net in ranked[elite_count:]:
+            if seen[net] > quality_limit:
+                break
+            mask = topology_mask(net)
+            if all((mask ^ old).bit_count() >= separation for old in out_masks):
+                out.append(net)
+                out_masks.append(mask)
+                if len(out) >= 2 * n:
+                    break
+        return out
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=None):
+        """Mix energy exploitation, structural novelty and unbiased exploration."""
+        if batch_size is None:
+            batch_size = max(9, (n + 1) // 2)
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        ranked = sorted(fresh, key=energy)
+        selected = ranked[:max(1, batch_size - 3)]
+        local_masks = {}
+
+        def mask_of(net):
+            if net not in local_masks:
+                local_masks[net] = topology_mask(net)
+            return local_masks[net]
+
+        def batch_distance(net):
+            mask = mask_of(net)
+            return min(
+                ((mask ^ mask_of(old)).bit_count() for old in selected),
+                default=4 * n,
+            )
+
+        # One good-energy candidate that adds the most new structure to this batch.
+        local_pool = [
+            net for net in ranked[:max(4 * batch_size, 2 * n)]
+            if net not in selected
+        ]
+        if local_pool and len(selected) < batch_size:
+            selected.append(max(local_pool, key=batch_distance))
+
+        # Reserve a real novelty slot before filling the batch. Compare a small
+        # random shortlist against ALL scored networks, not just the parent.
+        tail = [net for net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            ids = rng.choice(len(tail), size=min(2 * n, len(tail)), replace=False)
+            probes = [tail[int(i)] for i in ids]
+            history = [topology_mask(net) for net in seen]
+
+            def novelty(net):
+                mask = mask_of(net)
+                nearest = min(
+                    ((mask ^ old).bit_count() for old in history),
+                    default=4 * n,
+                )
+                return nearest, batch_distance(net)
+
+            selected.append(max(probes, key=novelty))
+
+        # Keep a final unbiased slot: neither energy nor distance is a reliable
+        # enough predictor to exclude the rest of the neighborhood completely.
+        tail = [net for net in ranked if net not in selected]
+        while tail and len(selected) < batch_size:
+            selected.append(tail.pop(int(rng.integers(len(tail)))))
+        return selected
+>>>>>>> REPLACE
+</DIFF>

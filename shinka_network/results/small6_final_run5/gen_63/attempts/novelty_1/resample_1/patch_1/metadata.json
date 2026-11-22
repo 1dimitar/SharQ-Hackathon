@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "transit_load_discount",
+  "patch_description": "Add a conservative second-pass congestion correction to the retained two-hop route rewards. Accumulate normalized demand on the selected intermediate nodes, then slightly discount route couplings that use the most-loaded intermediates. This complements the existing static and soft transit-pressure estimates with the usage implied by the sparse routes actually represented in the QUBO, without adding couplings or changing degree feasibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:44:44.920410",
+  "llm_cost": 0.0032372,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,137 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import itertools
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and cut-capacity congestion costs."""
+    traffic = np.asarray(demand, dtype=float)
+    if traffic.ndim != 2 or traffic.shape[0] != traffic.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    n = int(traffic.shape[0])
+    traffic = np.nan_to_num(
+        traffic, copy=True, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    np.maximum(traffic, 0.0, out=traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    z = traffic / (maximum if maximum > 0.0 else 1.0)
+    root = np.sqrt(z)
+
+    row_sum = z.sum(axis=1)
+    col_sum = z.sum(axis=0)
+    row_share = z / np.maximum(row_sum[:, None], 1e-12)
+    col_share = z / np.maximum(col_sum[None, :], 1e-12)
+
+    # A direct arc is valuable both for carrying its own OD traffic and when
+    # that traffic is significant relative to the endpoints' other demands.
+    share = np.sqrt(np.maximum(row_share * col_share, 0.0))
+    direct = 0.64 * z + 0.24 * root + 0.12 * share
+    linear = {
+        (i, j): -float(direct[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    def add_pair(a, b, value):
+        key = (a, b) if a < b else (b, a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    # For a set S of size s, q internal selected arcs leave 2s-q outgoing
+    # boundary arcs in a valid topology (and likewise for incoming arcs).
+    # The proxy 1 + a*q + b*q*(q-1) is a convex, quadratic approximation to
+    # the increase in squared load as boundary capacity is consumed.
+    #
+    # Since q*(q-1) = 2*sum_{e<f} x_e*x_f, this directly gives QUBO terms.
+    proxy = {
+        2: (0.20, 0.95),
+        3: (0.12, 0.55),
+    }
+
+    for size in (2, 3):
+        if size > n:
+            continue
+
+        subsets = list(itertools.combinations(range(n), size))
+        subset_count = max(1, len(subsets))
+        # Mild normalization keeps the total influence of each cut family
+        # from growing too rapidly with network size.
+        family_scale = (0.45 if size == 2 else 0.80) / np.sqrt(subset_count)
+        linear_factor, pair_factor = proxy[size]
+
+        cut_values_out = []
+        cut_values_in = []
+        records = []
+
+        for nodes in subsets:
+            idx = np.asarray(nodes, dtype=int)
+            internal_demand = float(z[np.ix_(idx, idx)].sum())
+            outgoing = float(z[idx, :].sum()) - internal_demand
+            incoming = float(z[:, idx].sum()) - internal_demand
+            outgoing = max(0.0, outgoing)
+            incoming = max(0.0, incoming)
+
+            internal_links = [
+                (i, j)
+                for i in nodes
+                for j in nodes
+                if i != j
+            ]
+            records.append((internal_links, outgoing, incoming))
+            cut_values_out.append(outgoing)
+            cut_values_in.append(incoming)
+
+        max_out = max(cut_values_out, default=0.0)
+        max_in = max(cut_values_in, default=0.0)
+
+        for internal_links, outgoing, incoming in records:
+            out_weight = (
+                (outgoing / max_out) ** 2 if max_out > 0.0 else 0.0
+            )
+            in_weight = (
+                (incoming / max_in) ** 2 if max_in > 0.0 else 0.0
+            )
+
+            # Add outgoing and incoming cut contributions. Their QUBO keys
+            # coincide where appropriate and are aggregated automatically.
+            for weight in (out_weight, in_weight):
+                if weight <= 0.0:
+                    continue
+
+                scale = family_scale * weight
+                for edge in internal_links:
+                    linear[edge] += scale * linear_factor
+
+                pair_cost = scale * (2.0 * pair_factor)
+                for a_pos, a in enumerate(internal_links):
+                    for b in internal_links[a_pos + 1:]:
+                        add_pair(a, b, pair_cost)
+
+    # The evaluator supplies degree penalties separately.
+    penalty_weight = min(1.50, 1.25 + 0.010 * max(0, n - 10))
+    return linear, quadratic, float(penalty_weight)
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,152 @@
+<NAME>
+transit_load_debias
+</NAME>
+
+<DESCRIPTION>
+Estimate how much demand-weighted traffic the selected two-hop routes would send through each intermediate node. Then mildly discount route rewards through nodes with above-average estimated load, with a bounded discount so a busy node is not ruled out entirely. This adds an O(n³) prepass but leaves the selected routes and coupling count unchanged; it targets congestion in the route surrogate rather than relying only on each node’s aggregate incident demand.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    route_size_factor = float(np.clip(np.sqrt(n / 12.0), 0.85, 1.42))
+
+    def add_pair(a, b, value):
+=======
+    route_size_factor = float(np.clip(np.sqrt(n / 12.0), 0.85, 1.42))
+
+    # Estimate the demand-weighted load assigned to intermediate nodes by
+    # the same sparse two-hop alternatives used below. Sharing each OD pair's
+    # supported demand among its selected candidates avoids counting every
+    # alternative as if it carried the full flow.
+    estimated_route_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            demand_score = (
+                0.68 * z[i, k] ** 0.74 + 0.32 * root_z[i, k]
+            )
+            support = float(
+                demand_score * (1.0 - 0.32 * root_z[i, k])
+            )
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                balance = float(np.sqrt(
+                    first_affinity[i, j] * second_affinity[j, k]
+                ))
+                edge_evidence = 0.20 * (
+                    root_z[i, j] + root_z[j, k]
+                )
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / rank_pressure[j]
+                )
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = min(
+                len(candidates),
+                3 if z[i, k] >= cutoff else 2,
+            )
+            selected = candidates[:keep]
+            rank_total = sum(item[0] for item in selected)
+            if rank_total > 0.0:
+                for rank, j in selected:
+                    estimated_route_load[j] += support * rank / rank_total
+
+    average_route_load = float(np.mean(estimated_route_load))
+    if average_route_load > 1e-12:
+        transit_discount = np.clip(
+            1.0 - 0.12 * np.maximum(
+                estimated_route_load / average_route_load - 1.0, 0.0
+            ),
+            0.78,
+            1.0,
+        )
+    else:
+        transit_discount = np.ones(n, dtype=float)
+
+    def add_pair(a, b, value):
+=======
+    route_size_factor = float(np.clip(np.sqrt(n / 12.0), 0.85, 1.42))
+
+    # Estimate the demand-weighted load assigned to intermediate nodes by
+    # the same sparse two-hop alternatives used below. Sharing each OD pair's
+    # supported demand among its selected candidates avoids counting every
+    # alternative as if it carried the full flow.
+    estimated_route_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            demand_score = (
+                0.68 * z[i, k] ** 0.74 + 0.32 * root_z[i, k]
+            )
+            support = float(
+                demand_score * (1.0 - 0.32 * root_z[i, k])
+            )
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                balance = float(np.sqrt(
+                    first_affinity[i, j] * second_affinity[j, k]
+                ))
+                edge_evidence = 0.20 * (
+                    root_z[i, j] + root_z[j, k]
+                )
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / rank_pressure[j]
+                )
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = min(
+                len(candidates),
+                3 if z[i, k] >= cutoff else 2,
+            )
+            selected = candidates[:keep]
+            rank_total = sum(item[0] for item in selected)
+            if rank_total > 0.0:
+                for rank, j in selected:
+                    estimated_route_load[j] += support * rank / rank_total
+
+    average_route_load = float(np.mean(estimated_route_load))
+    if average_route_load > 1e-12:
+        transit_discount = np.clip(
+            1.0 - 0.12 * np.maximum(
+                estimated_route_load / average_route_load - 1.0, 0.0
+            ),
+            0.78,
+            1.0,
+        )
+    else:
+        transit_discount = np.ones(n, dtype=float)
+
+    def add_pair(a, b, value):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                route_scale = (
+                    route_size_factor
+                    * support
+                    * rank_factor
+                    * affinity_factor
+                    / reward_pressure[j]
+                )
+=======
+                route_scale = (
+                    route_size_factor
+                    * support
+                    * rank_factor
+                    * affinity_factor
+                    / reward_pressure[j]
+                    * transit_discount[j]
+                )
+>>>>>>> REPLACE
+</DIFF>

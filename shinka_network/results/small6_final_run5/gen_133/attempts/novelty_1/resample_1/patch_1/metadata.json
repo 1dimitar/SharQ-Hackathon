@@ -1,0 +1,14 @@
+{
+  "generation": 133,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cut_aware_reciprocity",
+  "patch_description": "Make the existing reciprocal-link penalty sensitive to the traffic that must cross the pair\u2019s two-node cut. A reciprocal pair uses two links internally, reducing the links available for external traffic; penalizing it more when external demand is high should improve valid-topology rankings and two-link-exchange guidance. The penalty is moderated by the existing mutual-demand discount, and this changes no coupling keys or term count.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:51:00.971273",
+  "llm_cost": 0.0033661999999999997,
+  "llm_model": "gpt-6-luna"
+}

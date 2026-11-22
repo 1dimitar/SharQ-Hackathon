@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reciprocal_synergy",
+  "patch_description": "Add a compact reciprocal-link coupling for each unordered node pair. The existing linear terms value each direction separately, but do not express the joint benefit when both directions of a substantial bidirectional demand can be served directly. A small negative coupling, capped by the weaker direction\u2019s normalized demand, rewards that combination without letting a one-way-heavy pair dominate. This adds at most n(n\u22121)/2 terms and leaves the degree penalty and existing route terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:48:51.463600",
+  "llm_cost": 0.0015899,
+  "llm_model": "gpt-6-luna"
+}

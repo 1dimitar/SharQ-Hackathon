@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "targeted_three_hop",
+  "patch_description": "Add one tightly capped three-hop alternative only for high-demand endpoint pairs whose best two-hop candidate has weak leg balance. Rank the alternatives using support on all three legs and transit-node pressure, then add small rewards to the two consecutive link pairs. This tests useful longer routes without broadly increasing coupling density or letting the three-hop surrogate overwhelm the existing two-hop model.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:04:40.331120",
+  "llm_cost": 0.0031714,
+  "llm_model": "gpt-6-luna"
+}

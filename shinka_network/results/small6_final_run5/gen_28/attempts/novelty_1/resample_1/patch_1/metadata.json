@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ambiguity_adaptive_routes",
+  "patch_description": "The current model\u2019s main parameters are its 75/25 direct-demand blend, fixed 2/4 affinity-ranked routes, pressure discount, additional low-pressure route, and reciprocal-link penalty.\n\nThis version retains those successful components but makes route selection adaptive: it removes clearly inferior candidates and adds one alternative only when its score is close to the selection boundary and the leading route. A bounded reward adjustment prevents extra candidates from increasing aggregate route incentives too much. The reciprocal penalty and constraint weight remain unchanged, isolating the route-selection improvement while preserving a compact coupling graph. Performance gains require evaluation rather than being assumed.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:09:34.029165",
+  "llm_cost": 0.04554,
+  "llm_model": "gpt-6.1-sol"
+}

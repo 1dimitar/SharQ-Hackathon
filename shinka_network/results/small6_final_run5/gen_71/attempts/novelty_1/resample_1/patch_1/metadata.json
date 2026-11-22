@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "localized_cut_pressure",
+  "patch_description": "Adjust the existing reciprocal-link penalty using each node pair\u2019s external traffic relative to its own incident load. Selecting both reciprocal links keeps both arcs inside the pair and can reduce capacity available across its two-node cut, so discourage that more when the pair carries substantial external demand. Normalize the bounded local factors to have mean one, preserving the overall reciprocal-penalty scale while making it demand-local. This adds no couplings and leaves the degree penalty to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:52:45.359299",
+  "llm_cost": 0.0033413,
+  "llm_model": "gpt-6-luna"
+}

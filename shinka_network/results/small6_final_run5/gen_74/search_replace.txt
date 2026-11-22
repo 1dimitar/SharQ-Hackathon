@@ -1,0 +1,64 @@
+<NAME>
+bilateral_route_support
+</NAME>
+
+<DESCRIPTION>
+Make two-hop route selection and reward sensitive to whether both legs are strong, rather than letting a single strong leg dominate their additive score. For each candidate transit node, blend the harmonic mean of the normalized leg demands with the harmonic mean of their source-row and destination-column shares. The harmonic means preserve the weak-leg bottleneck, while the bounded shares reflect how important each leg is to its endpoint. Use this blended signal in both candidate ranking and the existing discount, while retaining part of the additive signal for continuity with the current model.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    quadratic = {}
+
+    # Selection parameters:
+=======
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    quadratic = {}
+    row_totals = traffic.sum(axis=1)
+    column_totals = traffic.sum(axis=0)
+
+    # Selection parameters:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                edge_pressure = float(
+                    normalized[i, j] + normalized[j, k]
+                )
+                pressure = float(node_pressure[j])
+                rank = (0.25 + edge_pressure) / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+                candidates.append((float(rank), j, float(discount)))
+=======
+                first_strength = float(normalized[i, j])
+                second_strength = float(normalized[j, k])
+                edge_pressure = first_strength + second_strength
+                strength_hmean = (
+                    2.0 * first_strength * second_strength
+                    / (first_strength + second_strength + 1e-15)
+                )
+
+                first_share = float(
+                    traffic[i, j] / max(float(row_totals[i]), 1e-15)
+                )
+                second_share = float(
+                    traffic[j, k] / max(float(column_totals[k]), 1e-15)
+                )
+                share_hmean = (
+                    2.0 * first_share * second_share
+                    / (first_share + second_share + 1e-15)
+                )
+                bilateral = 0.65 * strength_hmean + 0.35 * share_hmean
+
+                pressure = float(node_pressure[j])
+                affinity = (
+                    0.35 * (0.25 + edge_pressure)
+                    + 0.65 * (0.25 + 2.0 * bilateral)
+                )
+                rank = affinity / (pressure ** 0.75)
+                discount = (
+                    pressure * (1.0 + 0.5 * edge_pressure)
+                    / (0.8 + 0.4 * bilateral)
+                )
+                candidates.append((float(rank), j, float(discount)))
+>>>>>>> REPLACE
+</DIFF>

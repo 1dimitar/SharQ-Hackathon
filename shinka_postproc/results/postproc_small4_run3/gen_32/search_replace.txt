@@ -1,0 +1,170 @@
+<NAME>
+robust_route_screen
+</NAME>
+
+<DESCRIPTION>
+Add a cheap shortest-path routing signal to move screening. It routes demand under four deterministic tie-breakings and ranks moves by a high-percentile peak-load estimate, making the signal less sensitive to a single arbitrary choice among tied shortest paths. The signal is only one part of selection: energy-ranked moves retain a quota, routing-ranked moves get a smaller quota, and a random fresh move preserves exploration. Thus the routing estimate guides LP-call allocation without acting as a hard filter.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def routing_peak(net):
+        """High-percentile peak load across deterministic shortest-path tie-breakings."""
+        demand_array = np.asarray(demand, dtype=float)
+        adjacency = [[] for _ in range(n)]
+        reverse = [[] for _ in range(n)]
+        for u, v in net:
+            adjacency[u].append(v)
+            reverse[v].append(u)
+
+        peaks = []
+        for mode in range(4):
+            loads = np.zeros((n, n), dtype=float)
+            unserved = 0.0
+
+            # Reverse BFS gives distances to each destination.
+            for target in range(n):
+                dist = [n + 1] * n
+                dist[target] = 0
+                queue = [target]
+                head = 0
+                while head < len(queue):
+                    v = queue[head]
+                    head += 1
+                    for u in reverse[v]:
+                        if dist[u] == n + 1:
+                            dist[u] = dist[v] + 1
+                            queue.append(u)
+
+                for source in range(n):
+                    if source == target:
+                        continue
+                    amount = float(demand_array[source, target])
+                    if dist[source] > n:
+                        unserved += amount
+                        continue
+                    u = source
+                    failed = False
+                    while u != target:
+                        choices = [
+                            v for v in adjacency[u]
+                            if dist[v] == dist[u] - 1
+                        ]
+                        if not choices:
+                            failed = True
+                            break
+                        offset = (
+                            mode * (source + 1) + (mode + 1) * target
+                        ) % n
+                        v = min(choices, key=lambda x: (x - offset) % n)
+                        loads[u, v] += amount
+                        u = v
+                    if failed:
+                        unserved += amount
+
+            peak = max((loads[u, v] for u, v in net), default=0.0)
+            peaks.append(peak + unserved)
+
+        return float(np.percentile(peaks, 75.0))
+
+    def screen_batch(moves, parent, batch_size=9):
+        """Mix energy and tie-robust routing ranks, with a reserved exploration slot."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        ranked = sorted(fresh, key=energy)
+        energy_rank = {net: i for i, net in enumerate(ranked)}
+
+        # Evaluate routing features only on an energy shortlist plus a random sample.
+        shortlist_size = min(3 * batch_size, len(ranked))
+        proxy_pool = list(ranked[:shortlist_size])
+        rest = ranked[shortlist_size:]
+        if rest:
+            sample_size = min(n, len(rest))
+            ids = rng.choice(len(rest), size=sample_size, replace=False)
+            proxy_pool.extend(rest[int(i)] for i in ids)
+
+        proxy_order = sorted(proxy_pool, key=routing_peak)
+        proxy_rank = {net: i for i, net in enumerate(proxy_order)}
+        combined_order = sorted(
+            proxy_pool,
+            key=lambda net: (
+                energy_rank[net] / max(1, len(ranked))
+                + proxy_rank[net] / max(1, len(proxy_order))
+            ),
+        )
+
+        selected = []
+
+        def take(order, number):
+            added = 0
+            for net in order:
+                if added >= number:
+                    break
+                if net in selected:
+                    continue
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added += 1
+
+        # Keep energy as the main guide, while reserving several choices for routing.
+        take(ranked, max(2, batch_size // 3))
+        take(proxy_order, max(1, batch_size // 4))
+        take(combined_order, max(0, batch_size - 1 - len(selected)))
+
+        # Preserve genuine exploration rather than filling every slot by rank.
+        remaining = [net for net in fresh if net not in selected]
+        if remaining and len(selected) < batch_size:
+            selected.append(remaining[int(rng.integers(len(remaining)))])
+
+        # Relax diversity only if the ranked and exploratory choices did not fill the batch.
+        for net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

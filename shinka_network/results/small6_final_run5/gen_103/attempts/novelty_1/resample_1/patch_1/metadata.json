@@ -1,0 +1,14 @@
+{
+  "generation": 103,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "endpoint_balanced_route_support",
+  "patch_description": "Rank two-hop routes using both absolute demand and endpoint-relative demand shares. A leg can be useful because it serves a substantial share of its source\u2019s outgoing traffic or its destination\u2019s incoming traffic, even when its absolute demand is modest.\n\nRetain a bilateral bottleneck: the harmonic mean limits support when either leg is weak. Use this evidence consistently in transit-pressure estimation and route selection, with a bounded reward gate to avoid large changes in coefficient scale. Multiplying shares by n\u22121 before clipping keeps their interpretation stable across network sizes. This adds no couplings and preserves the existing sparse route budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:20:44.502962",
+  "llm_cost": 0.05241,
+  "llm_model": "gpt-6.1-sol"
+}

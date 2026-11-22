@@ -1,0 +1,157 @@
+<NAME>
+antithetic_routing_portfolio
+</NAME>
+
+<DESCRIPTION>
+Add a tie-robust routing signal without replacing the existing equal-split proxy. Reuse each shortlisted network’s shortest-path distances to route three scenarios: equal splitting and two complementary, demand-oriented 75/25 splits at shortest-path ties. These scenarios are deterministic and do not depend on node numbering.
+
+Append the upper-quartile peak load and worst scenario’s top-link average to the online predictor. Reserve one batch position for this robust ranking, preserving the existing energy, learned-quality, original-routing, novelty, and random selections. All three routings share a batched propagation pass and require no additional LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def routing_features(nets):
+        """Batched APSP and destination-based equal shortest-path splitting.
+
+        This constructs a cheap feasible routing, not an LP approximation solver.
+        Work, load concentration, and source/destination distance imbalance provide
+        complementary signals to the QUBO energy.
+        """
+        b = len(nets)
+        if not b:
+            return np.empty((0, 9))
+=======
+    def routing_features(nets):
+        """Shared APSP with equal and antithetic shortest-path splitting.
+
+        Retain the original equal-split features. Two complementary, demand-based
+        tie splits additionally measure whether apparent routing quality survives
+        a different allocation among equally short paths.
+        """
+        b = len(nets)
+        if not b:
+            return np.empty((0, 11))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # Each vertex has exactly two incoming arcs. Sorting destinations gives
+        # an inexpensive gather operation for accumulating incoming traffic.
+        incoming = np.argsort(heads.reshape(b, m), axis=1, kind="stable")
+        flow = np.broadcast_to(D, (b, n, n)).copy()
+        loads = np.zeros((b, n, 2), dtype=float)
+        diameter = min(n - 1, int(np.max(np.minimum(dist, n - 1))))
+        for level in range(diameter, 0, -1):
+            active = flow * (dist == level)
+            f0 = active * fraction0
+            f1 = active * fraction1
+            loads[:, :, 0] += f0.sum(axis=2)
+            loads[:, :, 1] += f1.sum(axis=2)
+            edgeflow = np.stack((f0, f1), axis=2).reshape(b, m, n)
+            incoming_flow = np.take_along_axis(
+                edgeflow, incoming[:, :, None], axis=1
+            ).reshape(b, n, 2, n).sum(axis=2)
+            flow += incoming_flow
+
+        linkloads = loads.reshape(b, m) / scale
+        sorted_loads = np.sort(linkloads, axis=1)
+=======
+        # At a tie, one scenario favors the successor with less native traffic
+        # to this destination; the other reverses that preference. Equal native
+        # demands retain equal splitting, avoiding arbitrary label tie-breaks.
+        tied = ok0 & ok1
+        native0 = D[heads[:, :, 0], :]
+        native1 = D[heads[:, :, 1], :]
+        preference0 = np.where(
+            native0 < native1, 0.75,
+            np.where(native0 > native1, 0.25, 0.5),
+        )
+        split0 = np.stack((
+            fraction0,
+            np.where(tied, preference0, fraction0),
+            np.where(tied, 1.0 - preference0, fraction0),
+        ), axis=1)
+        split1 = np.stack((
+            fraction1,
+            np.where(tied, 1.0 - preference0, fraction1),
+            np.where(tied, preference0, fraction1),
+        ), axis=1)
+
+        # Share distances and incoming-edge indexing across all three routings.
+        # Scenario zero is exactly the original equal-next-hop routing.
+        incoming = np.argsort(heads.reshape(b, m), axis=1, kind="stable")
+        flow = np.broadcast_to(D, (b, 3, n, n)).copy()
+        loads = np.zeros((b, 3, n, 2), dtype=float)
+        diameter = min(n - 1, int(np.max(np.minimum(dist, n - 1))))
+        for level in range(diameter, 0, -1):
+            active = flow * (dist[:, None, :, :] == level)
+            f0 = active * split0
+            f1 = active * split1
+            loads[:, :, :, 0] += f0.sum(axis=3)
+            loads[:, :, :, 1] += f1.sum(axis=3)
+            edgeflow = np.stack((f0, f1), axis=3).reshape(b, 3, m, n)
+            incoming_flow = np.take_along_axis(
+                edgeflow, incoming[:, None, :, None], axis=2
+            ).reshape(b, 3, n, 2, n).sum(axis=3)
+            flow += incoming_flow
+
+        scenario_loads = loads.reshape(b, 3, m) / scale
+        scenario_sorted = np.sort(scenario_loads, axis=2)
+        linkloads = scenario_loads[:, 0, :]
+        sorted_loads = scenario_sorted[:, 0, :]
+        tail_width = min(m, max(2, n // 4))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            direct,
+            unreachable,
+        ))
+
+    def predictions(X):
+=======
+            direct,
+            unreachable,
+            np.quantile(scenario_sorted[:, :, -1], 0.75, axis=1),
+            scenario_sorted[:, :, -tail_width:].mean(axis=2).max(axis=1),
+        ))
+
+    def predictions(X):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        eorder = np.argsort(X[:, 0], kind="stable")
+        porder = np.argsort(proxy, kind="stable")
+        if learned is None:
+=======
+        eorder = np.argsort(X[:, 0], kind="stable")
+        porder = np.argsort(proxy, kind="stable")
+        # An independent portfolio member, not a filter on other selections.
+        robust_order = np.argsort(
+            X[:, 9] + X[:, 10] + X[:, 8], kind="stable"
+        )
+        if learned is None:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        batch_size = max(8, n // 2)
+        batch_ids = []
+        batch_sets = []
+=======
+        batch_size = max(8, n // 2)
+        quality_quota = max(2, batch_size // 3)
+        # Preserve both quality quotas and all four complementary selections:
+        # original routing, robust routing, novelty, and random exploration.
+        batch_size = max(batch_size, 2 * quality_quota + 4)
+        batch_ids = []
+        batch_sets = []
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        take_from(lorder, max(2, batch_size // 3))
+        take_from(eorder, max(2, batch_size // 3))
+        take_from(porder, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+=======
+        take_from(lorder, quality_quota)
+        take_from(eorder, quality_quota)
+        take_from(porder, 1)
+        take_from(robust_order, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+>>>>>>> REPLACE
+</DIFF>

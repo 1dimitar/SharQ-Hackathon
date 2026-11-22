@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mutual_link_bonus",
+  "patch_description": "Add a sparse coupling bonus for reciprocal links, scaled by the smaller of the two directional demands. When traffic is substantial in both directions, selecting both direct links can avoid routing those flows through shared intermediate links, which is relevant to the maximum-link-load objective. Using the smaller demand avoids giving a large bonus when traffic is mostly one-way. This adds at most n(n\u22121)/2 couplings, preserving a compact QUBO.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:45:52.293530",
+  "llm_cost": 0.003567,
+  "llm_model": "gpt-6-luna"
+}

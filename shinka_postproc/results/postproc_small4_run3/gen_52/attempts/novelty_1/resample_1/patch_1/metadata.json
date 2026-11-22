@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "vectorized_stall_kicks",
+  "patch_description": "Vectorize the batched all-pairs shortest-path proxy calculation. It computes the same demand-weighted distances but avoids running a separate Python-level Floyd\u2013Warshall loop for every shortlisted network, reducing screening overhead and helping the search stay within the wall-time limit.\n\nAlso scale multi-switch kicks with the selected parent\u2019s stall count and network size. Recently improving parents retain the existing modest kick depth; repeatedly unproductive parents receive more kick attempts and longer perturbations, giving the search a better chance to leave local basins without imposing that cost throughout the run.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:16:57.074109",
+  "llm_cost": 0.0038665,
+  "llm_model": "gpt-6-luna"
+}

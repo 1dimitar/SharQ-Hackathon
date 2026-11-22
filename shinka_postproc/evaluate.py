@@ -24,7 +24,9 @@ from shinka.core.wrap_eval import save_json_results
 HERE = Path(__file__).resolve().parent
 BEST_KNOWN = {10: 210800, 12: 276474, 13: 300620, 14: 343091, 15: 370870, 16: 397908, 17: 437000, 18: 473375,
               19: 492924, 20: 528528, 21: 569273, 22: 618135, 23: 659369, 24: 663688}
-SECONDS_PER_RUN = 150.0
+# The task message states 150 s; the enforced limit is looser so that a busy machine (two evolutions
+# share the laptop) does not turn a legitimate program into an invalid one.
+SECONDS_PER_RUN = 240.0
 
 # The program must reach the LP only through `tools`, and must not tamper with the oracle.
 FORBIDDEN = [
@@ -49,12 +51,15 @@ def forbidden_use(program_path: str) -> str | None:
 
 
 def main(program_path: str, results_dir: str, pools: str, lp_budget: int, controls: int = -1,
-         run_workers: int = 3, score: str = "mean") -> None:
+         run_workers: int = 3, score: str = "mean", repeats: int = 1) -> None:
     pool_paths = [str(HERE / "pools" / p) for p in pools.split(",")]
     # Hamiltonian that sampled each pool (pools from make_pools.py --tag); older pools share hamiltonian.py
     tags = {p: json.loads(Path(p).read_text()).get("hamiltonian_tag", "hamiltonian.py") for p in pool_paths}
     n_ctrl = len(pool_paths) if controls < 0 else min(controls, len(pool_paths))
-    runs = [(p, False) for p in pool_paths] + [(p, True) for p in pool_paths[:n_ctrl]]
+    # (pool, control, random seed): every pool `repeats` times with different seeds, because one pool's
+    # result changes by several percent with the seed and a single run per pool rewards luck.
+    runs = ([(p, False, i + 1000 * r) for r in range(repeats) for i, p in enumerate(pool_paths)]
+            + [(p, True, i) for i, p in enumerate(pool_paths[:n_ctrl])])
     static_error = forbidden_use(program_path)
     if static_error:  # never execute a program that breaks the rules
         save_json_results(results_dir, {"combined_score": 0.0, "public": {}, "private": {},
@@ -63,7 +68,7 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int, contro
         return
 
     def get_kwargs(i: int) -> dict:
-        return {"pool_path": runs[i][0], "lp_budget": lp_budget, "seed": i % len(pool_paths), "control": runs[i][1],
+        return {"pool_path": runs[i][0], "lp_budget": lp_budget, "seed": runs[i][2], "control": runs[i][1],
                 "time_limit": SECONDS_PER_RUN}
 
     def validate(r) -> tuple[bool, str | None]:
@@ -90,9 +95,18 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int, contro
         gap = lambda r: 100 * (r["best"] / BEST_KNOWN[r["n"]] - 1)  # noqa: E731
         mean = lambda xs: float(sum(xs) / len(xs))  # noqa: E731
         lines = []
+        by_pool: dict[str, list] = {}
         for q in qaoa:
-            line = (f"{Path(q['pool']).stem}: best {q['best']:.0f} vs best known {BEST_KNOWN[q['n']]} "
-                    f"(gap {gap(q):+.2f}%), {q['lp_calls']} LP calls, {q['seconds']:.1f}s")
+            by_pool.setdefault(q["pool"], []).append(q)
+        for pool, qs in by_pool.items():
+            q = min(qs, key=lambda r: r["best"])
+            if len(qs) > 1:
+                line = (f"{Path(pool).stem}: gaps to best known {BEST_KNOWN[q['n']]} with {len(qs)} random seeds "
+                        + ", ".join(f"{gap(r):+.2f}%" for r in qs) + f" (mean {mean([gap(r) for r in qs]):+.2f}%), "
+                        f"{mean([r['lp_calls'] for r in qs]):.0f} LP calls, {mean([r['seconds'] for r in qs]):.1f}s per run")
+            else:
+                line = (f"{Path(q['pool']).stem}: best {q['best']:.0f} vs best known {BEST_KNOWN[q['n']]} "
+                        f"(gap {gap(q):+.2f}%), {q['lp_calls']} LP calls, {q['seconds']:.1f}s")
             if q["pool"] in ctrl:
                 c = ctrl[q["pool"]]
                 line += f" | same program from random starts: {c['best']:.0f} (gap {gap(c):+.2f}%)"
@@ -111,7 +125,8 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int, contro
                      + ", ".join(f"{t} {b['best']:.0f} ({gap(b):+.2f}%)" for t, b in best_of.items()))
         lines.append(f"Mean over Hamiltonians of best_known/best(best of its pools): {group_score:.4f}"
                      f"{' (this is the score)' if score == 'best_per_hamiltonian' else ''}; "
-                     f"mean over all pools: {pool_score:.4f}{' (this is the score)' if score == 'mean' else ''}.")
+                     f"mean over all {'runs' if repeats > 1 else 'pools'}: {pool_score:.4f}"
+                     f"{' (this is the score)' if score == 'mean' else ''}.")
         public = {
             "mean_gap_pct": mean([gap(r) for r in qaoa]),
             "best_gap_pct": min(gap(r) for r in qaoa),
@@ -131,7 +146,8 @@ def main(program_path: str, results_dir: str, pools: str, lp_budget: int, contro
         return {
             "combined_score": combined,
             "public": public,
-            "private": {Path(r["pool"]).stem + ("_control" if r["control"] else ""): r["best"] for r in results},
+            "private": {**{Path(pool).stem: min(r["best"] for r in qs) for pool, qs in by_pool.items()},
+                        **{Path(pool).stem + "_control": c["best"] for pool, c in ctrl.items()}},
             "text_feedback": "\n".join(lines),
         }
 
@@ -160,8 +176,10 @@ if __name__ == "__main__":
     parser.add_argument("--controls", type=int, default=-1,
                         help="random-start control runs on the first N pools (-1: every pool, 0: none)")
     parser.add_argument("--run_workers", type=int, default=3, help="runs in parallel within one evaluation")
+    parser.add_argument("--repeats", type=int, default=1, help="runs per pool, each with its own random seed")
     parser.add_argument("--score", choices=["mean", "best_per_hamiltonian"], default="mean",
                         help="mean over pools, or per Hamiltonian the best of its pools, then mean")
     args = parser.parse_args()
     Path(args.results_dir).mkdir(parents=True, exist_ok=True)
-    main(args.program_path, args.results_dir, args.pools, args.lp_budget, args.controls, args.run_workers, args.score)
+    main(args.program_path, args.results_dir, args.pools, args.lp_budget, args.controls, args.run_workers, args.score,
+         args.repeats)

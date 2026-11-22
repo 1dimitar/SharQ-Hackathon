@@ -1,0 +1,44 @@
+<NAME>
+adaptive_perturbation
+</NAME>
+
+<DESCRIPTION>
+Increase the supply and strength of perturbation proposals modestly at n=13 and n=15, where the current program has its largest remaining gaps. For every size, repeated stalls progressively increase exploration; after an improvement, the existing stall reset naturally returns the search to lighter perturbations. This changes candidate generation rather than LP-batch allocation, preserving the current evaluation mix and LP budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        stalls_here = min(stalls.get(parent, 0), 4)
+        rotation_trials = 5 * n + min(stalls.get(parent, 0), 8) * n
+        for _ in range(rotation_trials):
+=======
+        stalls_here = min(stalls.get(parent, 0), 4)
+        stagnation = min(stalls.get(parent, 0), 8)
+        size_boost = 1.15 if n in (13, 15) else 1.0
+        exploration = min(
+            1.6,
+            size_boost * (1.0 + 0.10 * max(0, stagnation - 1)),
+        )
+        rotation_trials = int(round(
+            (5 * n + stagnation * n) * exploration
+        ))
+        for _ in range(rotation_trials):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        walk_trials = 2 * n + stalls_here * max(1, n // 3)
+        for trial in range(walk_trials):
+            state = parent
+            count = 2 + int(rng.integers(max(2, n // 3))) + stalls_here // 2
+=======
+        walk_trials = int(round(
+            (2 * n + stalls_here * max(1, n // 3)) * exploration
+        ))
+        for trial in range(walk_trials):
+            state = parent
+            count = (
+                2 + int(rng.integers(max(2, n // 3)))
+                + stalls_here // 2
+                + int(exploration >= 1.4)
+            )
+>>>>>>> REPLACE
+</DIFF>

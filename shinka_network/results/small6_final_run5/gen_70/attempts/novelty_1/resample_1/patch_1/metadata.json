@@ -1,0 +1,14 @@
+{
+  "generation": 70,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_balanced_overlap",
+  "patch_description": "The current model uses a 68/32 direct-demand blend, three transit-pressure updates, 2\u20134 selected routes, reciprocal-link penalties, and a size-based degree penalty.\n\nThis revision keeps the compact route model but uses four vectorized pressure updates, limits selection to 2\u20133 routes, and adds modest overlap corrections for heavy demands so direct and two-hop service are not rewarded independently. Route rewards taper gently with size, while weighted route exposure discourages excessive concentration on a few links. The degree penalty adapts narrowly to demand-pressure dispersion and route concentration. These changes target median sample quality and more reliable exchange rankings; improvement requires evaluator confirmation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:52:37.969719",
+  "llm_cost": 0.058482,
+  "llm_model": "gpt-6.1-sol"
+}

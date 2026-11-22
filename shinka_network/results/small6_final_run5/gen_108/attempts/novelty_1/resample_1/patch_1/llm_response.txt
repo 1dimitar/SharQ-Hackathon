@@ -1,0 +1,51 @@
+<NAME>
+endpoint_share_blend
+</NAME>
+
+<DESCRIPTION>
+Blend clipped endpoint-share evidence into the two route-leg supports before ranking candidate paths. A leg is more plausible when it represents a substantial share of its source’s outgoing demand or its destination’s incoming demand, even if its raw demand is moderate. The harmonic mean keeps the bilateral support sensitive to a weak leg, rather than letting one strong leg dominate. This isolates the effect on route selection while preserving the existing sparse coupling scheme.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+=======
+    row_demand = traffic.sum(axis=1)
+    column_demand = traffic.sum(axis=0)
+    incident = np.maximum(column_demand, row_demand)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                leg_a = float(normalized[i, j])
+                leg_b = float(normalized[j, k])
+                edge_pressure = leg_a + leg_b
+                balance = (
+                    2.0 * np.sqrt(leg_a * leg_b)
+                    / (edge_pressure + 1e-12)
+                )
+                pressure = float(node_pressure[j])
+                affinity = (0.25 + edge_pressure) * (0.70 + 0.30 * balance)
+=======
+                leg_a = float(normalized[i, j])
+                leg_b = float(normalized[j, k])
+                share_a = min(
+                    1.0,
+                    n * float(traffic[i, j]) / max(float(row_demand[i]), 1e-12),
+                )
+                share_b = min(
+                    1.0,
+                    n * float(traffic[j, k]) / max(float(column_demand[k]), 1e-12),
+                )
+                leg_a = 0.75 * leg_a + 0.25 * share_a
+                leg_b = 0.75 * leg_b + 0.25 * share_b
+                edge_pressure = leg_a + leg_b
+                balance = (
+                    2.0 * leg_a * leg_b
+                    / (edge_pressure + 1e-12)
+                )
+                pressure = float(node_pressure[j])
+                affinity = (0.25 + edge_pressure) * (0.70 + 0.30 * balance)
+>>>>>>> REPLACE
+</DIFF>

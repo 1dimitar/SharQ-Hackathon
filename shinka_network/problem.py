@@ -82,6 +82,11 @@ SUITES = {
     # network12 plus five random 12-node subsets of the 24-node matrix (run 4). The references of
     # the subsets come from analysis/subset_refs.py; compute them before evolving on this suite.
     "net12mix": [("real", 12, 0, 64)] + [("sub", 12, s, 64) for s in range(1, 6)],
+    # Final surrogate run: six small real instances of different sizes, three annealing seeds each.
+    # Small keeps evaluations cheap; several sizes force terms that scale with n (checked on 18-24 later).
+    "small6": [("real", n, s, 64) for n in (10, 12, 13, 14, 15, 16) for s in (0, 1, 2)],
+    # Held-out check for programs evolved on small6: larger instances never seen in the run.
+    "big4": [("real", n, s, 64) for n in (18, 20, 22, 24) for s in (0, 1)],
     # Pipeline test: small random matrices.
     "toy": [("toy", 6, 0, 32), ("toy", 6, 1, 32), ("toy", 7, 0, 32), ("toy", 7, 1, 32),
             ("toy", 8, 0, 32), ("toy", 8, 1, 32)],
@@ -292,11 +297,77 @@ def score_samples(inst: Instance, samples, arcs, num_quadratic: int) -> dict:
     }
 
 
-def score_terms(inst: Instance, linear, quadratic, penalty_weight) -> dict:
-    """Simulated annealing on the QUBO, then repair and LP-score (the local evaluator)."""
+def score_terms(inst: Instance, linear, quadratic, penalty_weight, post_budget: int = 0) -> dict:
+    """Simulated annealing on the QUBO, then repair and LP-score (the local evaluator).
+
+    post_budget > 0 adds the head-start part: the frozen post-processor spends that many LP calls
+    starting from the same samples, and score = 0.5 * sample quality + 0.5 * ref / best after it.
+    """
     bqm, surrogate, arcs = build_bqm(inst.demand, linear, quadratic, penalty_weight)
     sampleset = SimulatedAnnealingSampler().sample(bqm, num_reads=inst.num_reads, seed=inst.seed)
-    return score_samples(inst, sampleset.samples(), arcs, surrogate.num_interactions)
+    samples = list(sampleset.samples())  # lowest energy first
+    row = score_samples(inst, samples, arcs, surrogate.num_interactions)
+    row["score_raw"] = row["score"]
+    if post_budget > 0:
+        post = post_process(inst, [qt.decode_topology(sm, arcs) for sm in samples], linear, quadratic, post_budget)
+        row["post_best"] = min(post["best"], row["best"])
+        row["post_seconds"], row["post_lp_calls"] = post["seconds"], post["lp_calls"]
+        row["post_arcs"] = post["arcs"] if post["best"] <= row["best"] else row["best_arcs"]
+        row["gap_post_pct"] = 100.0 * (row["post_best"] / inst.ref - 1.0)
+        row["score_post"] = inst.ref / row["post_best"]
+        row["score"] = 0.5 * row["score_raw"] + 0.5 * row["score_post"]
+    return row
+
+
+POST_SECONDS = 90  # wall-time guard for the frozen post-processor on one instance
+
+
+def post_process(inst: Instance, candidates, linear, quadratic, budget: int) -> dict:
+    """Run the frozen post-processor (postproc_frozen.improve) from the sampled link sets.
+
+    The oracle is shinka_postproc's (LP budget, cache, certified best); only tools.energy is
+    replaced by a matrix version of the same sum, so programs with many couplings stay fast.
+    """
+    import signal
+    import time
+
+    import postproc_frozen
+    import postproc_oracle
+
+    n = len(inst.demand)
+    lin = np.zeros(n * n)
+    quad = np.zeros((n * n, n * n))
+    for a, w in linear.items():
+        lin[int(a[0]) * n + int(a[1])] += float(w)
+    for (a, b), w in quadratic.items():
+        quad[int(a[0]) * n + int(a[1]), int(b[0]) * n + int(b[1])] += float(w)
+
+    class Tools(postproc_oracle.Tools):
+        def energy(self, arcs) -> float:
+            idx = np.fromiter({int(i) * n + int(j) for i, j in arcs}, dtype=np.int64)
+            return float(lin[idx].sum() + quad[np.ix_(idx, idx)].sum())
+
+    tools = Tools(inst.demand, budget, None)
+
+    def _timeout(signum, frame):
+        raise postproc_oracle.RunTimeout()
+
+    start = time.perf_counter()
+    old = signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(POST_SECONDS)
+    try:
+        postproc_frozen.improve(np.array(inst.demand).copy(), [list(c) for c in candidates], tools,
+                                np.random.default_rng(inst.seed))
+    except (postproc_oracle.BudgetExhausted, postproc_oracle.RunTimeout):
+        pass
+    except Exception:  # noqa: BLE001  (the frozen program failing on odd samples must not kill the evaluation)
+        pass
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
+    best, arcs = tools.certified_best()
+    return {"best": float(best), "arcs": [list(map(int, a)) for a in arcs] if arcs else None,
+            "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start}
 
 
 # --------------------------------------------------------------------------- #

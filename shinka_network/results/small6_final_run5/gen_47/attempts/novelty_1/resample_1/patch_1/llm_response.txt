@@ -1,0 +1,58 @@
+<NAME>
+transit_load_discount
+</NAME>
+
+<DESCRIPTION>
+After the existing route selection, estimate how much demand is assigned to each transit node by accumulating a small share of each selected route’s demand support. Then mildly reduce the reward for two-hop couplings through nodes whose estimated transit use is above average. This adds a local congestion signal without broadening the coupling graph or changing which routes are selected; the discount is capped so it cannot overwhelm the existing demand-based rewards. Reciprocal-link penalties remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+
+    for i in range(n):
+=======
+    quadratic = {}
+    transit_load = np.zeros(n, dtype=float)
+    path_middle = {}
+
+    for i in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+
+            # Retain one alternative selected by the full-path model's
+=======
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+                path_middle[key] = j
+                transit_load[j] += float(support) / max(1, keep)
+
+            # Retain one alternative selected by the full-path model's
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+
+    # Reciprocal links consume scarce two-hop expansion: i->j->i carries
+=======
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+                path_middle[key] = j
+                transit_load[j] += float(support) / max(1, keep + 1)
+
+    # Mildly discount paths through nodes with above-average estimated
+    # transit use, retaining a bounded and local congestion adjustment.
+    mean_transit = float(np.mean(transit_load)) if n else 0.0
+    if mean_transit > 1e-15:
+        for key, middle in path_middle.items():
+            relative_load = float(transit_load[middle]) / mean_transit
+            excess = min(3.0, max(0.0, relative_load - 1.0))
+            quadratic[key] *= 1.0 / (1.0 + 0.04 * excess)
+
+    # Reciprocal links consume scarce two-hop expansion: i->j->i carries
+>>>>>>> REPLACE
+</DIFF>

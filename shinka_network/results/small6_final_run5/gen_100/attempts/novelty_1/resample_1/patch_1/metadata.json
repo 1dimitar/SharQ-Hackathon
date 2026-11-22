@@ -1,0 +1,14 @@
+{
+  "generation": 100,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "large_n_route_damping",
+  "patch_description": "Cap the route-size multiplier at 1.0 instead of letting it grow with network size. At n=10 and n=12 this leaves the multiplier unchanged; at n=16 it reduces it from about 1.15 to 1.0. Since the multiplier scales both route rewards and their direct-route redundancy terms, this moderates their influence relative to direct-link and cut terms on larger instances. That may improve sample feasibility and keep the energy ranking useful for the post-processor, where feasibility currently drops most at n=16.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:17:49.045765",
+  "llm_cost": 0.0026151,
+  "llm_model": "gpt-6-luna"
+}

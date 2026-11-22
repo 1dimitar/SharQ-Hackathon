@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "load_balance_proxy",
+  "patch_description": "This replaces route-by-route two-hop rewards with a static soft-routing load estimate. Demand is softly assigned across possible intermediate nodes to estimate which links may become heavily loaded; linear costs and sparse pairwise penalties then discourage selecting multiple high-load links with the same source or destination. The resulting couplings are compact and organized around node-local link groups, aiming to give the sampler and post-processor a more useful load-balancing signal without flooding the QUBO with path terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:59:37.974241",
+  "llm_cost": 0.004205,
+  "llm_model": "gpt-6-luna"
+}

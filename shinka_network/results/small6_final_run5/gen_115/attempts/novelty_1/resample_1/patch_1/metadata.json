@@ -1,0 +1,14 @@
+{
+  "generation": 115,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cut_route_exposure",
+  "patch_description": "This version restores the sparse two-node-cut congestion signal and reciprocal-link penalty, which helped the better-performing prior variant rank valid topologies. It retains transit-pressure-aware two-hop rewards, but adds a bounded upper-tail correction using both route frequency and weighted route support. The two exposure measures are corrected separately at the 80th percentile, with their scales summing to 0.12 times the mean direct score. The route couplings remain sparse, and the evaluator continues to supply the degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:31:23.549179",
+  "llm_cost": 0.0045655999999999995,
+  "llm_model": "gpt-6-luna"
+}

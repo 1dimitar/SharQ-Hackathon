@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_route_load_regularizer",
+  "patch_description": "Add a small linear cost to links that appear in the most distinct two-hop route couplings. Such links are attractive to many candidate paths, so they may become overloaded transit choices even when the degree constraints are satisfied. Applying the adjustment only above the 75th-percentile coupling count, and capping it relative to the mean direct-link reward, keeps the bias targeted and avoids broadly weakening useful direct-link rewards. The existing quadratic terms and external degree penalty remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:18:49.531916",
+  "llm_cost": 0.0024431,
+  "llm_model": "gpt-6-luna"
+}

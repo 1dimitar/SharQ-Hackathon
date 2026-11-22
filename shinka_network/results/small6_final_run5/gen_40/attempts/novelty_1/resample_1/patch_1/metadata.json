@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_portal_transport",
+  "patch_description": "This replaces selected two-hop rewards with a **balanced gateway-pair model**. A demand-biased diffusion estimates downstream accessibility over paths of all lengths. Each possible pair of outgoing gateways is then evaluated by routing the node\u2019s demand through those gateways, blending shortest-access routing with a capacity-balanced transport calculation. The same calculation is applied to incoming gateways.\n\nThese pair costs have an exact quadratic representation under the supplied degree constraints. They reward complementary gateways rather than accumulating independent path bonuses, targeting both redundant connectivity and traffic concentration. Coefficients are centered before sparsification, with a mean-field correction for omitted interactions. Performance improvement remains to be verified by the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:22:13.476466",
+  "llm_cost": 0.08014,
+  "llm_model": "gpt-6.1-sol"
+}

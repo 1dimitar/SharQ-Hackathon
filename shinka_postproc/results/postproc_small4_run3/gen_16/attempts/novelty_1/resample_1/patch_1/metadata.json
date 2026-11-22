@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_diverse_relink",
+  "patch_description": "This version keeps LP scoring as the sole authority, while using the free energy and LP-detail signals to choose which networks merit calls. It preserves diverse repaired starts and archive members, then mixes energy-ranked, link-pressure-ranked, and topology-novel moves in each batch. Parent-specific and global stalls increase kick strength and trigger occasional greedy relinking toward a structurally different archive member; finding an improvement resets the diversification pressure. Move counts and perturbation strengths scale with the network size, and cached networks are skipped to avoid wasting LP budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:25:44.004812",
+  "llm_cost": 0.0056855,
+  "llm_model": "gpt-6-luna"
+}

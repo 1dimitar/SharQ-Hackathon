@@ -1,0 +1,14 @@
+{
+  "generation": 104,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "directional_cut_vulnerability",
+  "patch_description": "Refine the existing two-node-cut correction to measure endpoint vulnerability separately for outgoing and incoming traffic. The current factor combines both directions into one incident-demand ratio, which can blur a strongly one-way load. For each endpoint, the replacement compares external outgoing and incoming demand with the corresponding directional totals, then uses the larger share. Taking the more vulnerable endpoint\u2019s value makes the cut correction more sensitive to asymmetric traffic that can stress a directional capacity.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:21:48.611196",
+  "llm_cost": 0.0033780000000000004,
+  "llm_model": "gpt-6-luna"
+}

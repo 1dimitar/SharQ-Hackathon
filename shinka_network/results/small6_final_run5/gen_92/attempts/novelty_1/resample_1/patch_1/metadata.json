@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "transit_load_debias",
+  "patch_description": "Estimate how much demand-weighted traffic the selected two-hop routes would send through each intermediate node. Then mildly discount route rewards through nodes with above-average estimated load, with a bounded discount so a busy node is not ruled out entirely. This adds an O(n\u00b3) prepass but leaves the selected routes and coupling count unchanged; it targets congestion in the route surrogate rather than relying only on each node\u2019s aggregate incident demand.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:13:21.131096",
+  "llm_cost": 0.0034868,
+  "llm_model": "gpt-6-luna"
+}

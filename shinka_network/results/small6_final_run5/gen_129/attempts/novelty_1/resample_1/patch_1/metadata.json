@@ -1,0 +1,14 @@
+{
+  "generation": 129,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_normalized_cut",
+  "patch_description": "Increase the cut correction from 0.80/144 to 0.90/144 while reallocating it toward pairs of higher-pressure nodes. Normalize the pressure multipliers by their load-weighted mean, so the overall correction remains tied to the estimated cut load rather than growing simply because of the reallocation. The existing offset removal is retained, preserving the correction\u2019s intended behavior on valid degree-two topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:44:39.831343",
+  "llm_cost": 0.0029189000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "matching_eda",
+  "patch_description": "Replace local 2-exchange search with a model-based search over complete valid networks. Each network is constructed as two edge-disjoint bipartite perfect matchings, which guarantees exactly two incoming and two outgoing links with no self-loops. An adaptive cross-entropy model learns edge preferences from high-quality, structurally diverse LP-scored networks, while randomized matching, donor networks, and occasional uniform sampling preserve exploration. This searches by recombining learned edge patterns rather than repeatedly screening local moves.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:35:11.223186",
+  "llm_cost": 0.0056108,
+  "llm_model": "gpt-6-luna"
+}

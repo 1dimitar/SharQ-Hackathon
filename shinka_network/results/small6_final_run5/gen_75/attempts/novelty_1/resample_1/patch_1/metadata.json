@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_diffusion_facilities",
+  "patch_description": "Replace selected two-hop rewards with a two-facility routing model. Each possible pair of outgoing links is evaluated jointly: traffic is split between the two branches using multiscale diffusion distances and a congestion-balancing cost. The transposed calculation evaluates incoming-link pairs.\n\nThese pair costs are decomposed into linear link preferences and centered quadratic interactions. Only the strongest interactions are retained, with a mean-field correction for sparsification. A small reciprocal-link cost discourages wasted local circulation. This targets complementary branches and balanced traffic distribution rather than repeatedly rewarding overlapping paths; its diffusion horizon also grows with network size. Performance improvements require evaluation rather than being guaranteed.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:58:46.730169",
+  "llm_cost": 0.087168,
+  "llm_model": "gpt-6.1-sol"
+}

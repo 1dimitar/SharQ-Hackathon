@@ -1,0 +1,115 @@
+<NAME>
+feature_diverse_archive
+</NAME>
+
+<DESCRIPTION>
+Preserve separate representatives of LP quality, QUBO energy, and routing-proxy quality in the archive, then deliberately sample parents from those groups. The current archive is ranked only by LP score, so good networks favored by a different signal can disappear before they have had a chance to improve. Routing proxy values are recorded only for networks already screened, avoiding extra routing calculations; all group sizes and archive limits scale with n.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+
+    def canon(arcs):
+=======
+    parent_stalls = {}
+    proxy_features = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def archive():
+        """Keep excellent networks and the best representatives of distinct regions."""
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= 24:
+                break
+        for net in ranked:
+            if len(out) >= 32:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def archive():
+        """Reserve archive places for LP, energy, and routing-proxy leaders."""
+        ranked = sorted(
+            (net for net in seen if math.isfinite(seen[net])),
+            key=seen.get,
+        )
+        out = []
+
+        def add_group(group, limit):
+            added = 0
+            for net in group:
+                if net in out:
+                    continue
+                if all(distance(net, old) >= 4 for old in out):
+                    out.append(net)
+                    added += 1
+                    if added >= limit:
+                        break
+
+        elite_count = max(4, n // 2)
+        add_group(ranked, elite_count)
+        energy_ranked = sorted(ranked, key=energy)
+        add_group(energy_ranked, max(2, n // 3))
+        proxy_ranked = sorted(
+            (net for net in ranked if net in proxy_features),
+            key=lambda net: proxy_features[net][0] + 0.25 * proxy_features[net][1],
+        )
+        add_group(proxy_ranked, max(2, n // 3))
+
+        # Fill remaining capacity with LP-ranked alternatives, without requiring
+        # every archive member to satisfy the stronger group-separation test.
+        for net in ranked:
+            if len(out) >= 4 * n:
+                break
+            if net not in out:
+                out.append(net)
+        return out or ([best_net] if best_net is not None else [])
+
+    def select_parent(pop):
+        """Sample explicitly across LP, energy, routing, and broad-search groups."""
+        if not pop:
+            return best_net
+
+        elite = pop[:min(max(4, n // 2), len(pop))]
+        energy_group = sorted(pop, key=energy)[:min(n, len(pop))]
+        proxy_group = sorted(
+            (net for net in pop if net in proxy_features),
+            key=lambda net: proxy_features[net][0] + 0.25 * proxy_features[net][1],
+        )[:min(n, len(pop))]
+        groups = [elite, energy_group, proxy_group, pop]
+        probabilities = np.asarray([0.35, 0.20, 0.30, 0.15], dtype=float)
+        available = np.asarray([bool(group) for group in groups])
+        probabilities *= available
+        probabilities /= probabilities.sum()
+        group_id = int(rng.choice(len(groups), p=probabilities))
+        group = groups[group_id]
+        return group[int(rng.integers(len(group)))]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        routing_scores = {net: routing_peaks(net) for net in proxy_pool}
+        proxy_order = sorted(
+=======
+        routing_scores = {net: routing_peaks(net) for net in proxy_pool}
+        for net, scores in routing_scores.items():
+            proxy_features[net] = scores
+        proxy_order = sorted(
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 108,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "endpoint_share_blend",
+  "patch_description": "Blend clipped endpoint-share evidence into the two route-leg supports before ranking candidate paths. A leg is more plausible when it represents a substantial share of its source\u2019s outgoing demand or its destination\u2019s incoming demand, even if its raw demand is moderate. The harmonic mean keeps the bilateral support sensitive to a weak leg, rather than letting one strong leg dominate. This isolates the effect on route selection while preserving the existing sparse coupling scheme.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:25:18.870826",
+  "llm_cost": 0.0034405000000000004,
+  "llm_model": "gpt-6-luna"
+}

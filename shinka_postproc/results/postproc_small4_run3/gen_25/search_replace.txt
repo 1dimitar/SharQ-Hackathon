@@ -1,0 +1,89 @@
+<NAME>
+archive_signal_reservations
+</NAME>
+
+<DESCRIPTION>
+Replace the archive’s single LP-rank-first pass with explicit slots for LP elites, low-energy networks, and structurally novel networks. The energy and novelty selections are restricted to networks whose certified LP scores are within 10% of the best found, so diversity does not displace clearly better results with poor ones. The archive size and quotas scale with n, and novelty is measured against already selected members.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def archive():
+        """Keep excellent networks and the best representatives of distinct regions."""
+        ranked = sorted(seen, key=seen.get)
+        out = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= 24:
+                break
+        for net in ranked:
+            if len(out) >= 32:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+=======
+    def archive():
+        """Reserve archive capacity for LP quality, energy, and topology novelty."""
+        ranked = sorted(seen, key=seen.get)
+        if not ranked:
+            return []
+
+        limit = min(len(ranked), max(2 * n, 24))
+        out = []
+        selected = set()
+
+        # Preserve a reliable core of the best certified networks.
+        elite_count = max(4, n // 2)
+        for net in ranked[:elite_count]:
+            out.append(net)
+            selected.add(net)
+
+        # Energy contributes a separate signal, but only among reasonably
+        # competitive LP-scored networks.
+        cutoff = best_score * 1.10
+        eligible = [net for net in ranked if seen[net] <= cutoff]
+        energy_count = max(4, limit // 3)
+        energy_order = sorted(eligible, key=energy)
+        for net in energy_order:
+            if len(out) >= min(limit, elite_count + energy_count):
+                break
+            if net in selected:
+                continue
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+                selected.add(net)
+
+        # Fill remaining places by farthest-point selection. This explicitly
+        # protects distinct search regions instead of letting LP rank alone
+        # determine which regions remain available as parents.
+        novelty_pool = eligible[:min(len(eligible), max(8 * n, 96))]
+        while len(out) < limit:
+            remaining = [net for net in novelty_pool if net not in selected]
+            if not remaining:
+                remaining = [net for net in ranked if net not in selected]
+            if not remaining:
+                break
+            net = max(
+                remaining,
+                key=lambda x: (
+                    min((distance(x, old) for old in out), default=2 * n),
+                    -seen[x],
+                    -energy(x),
+                ),
+            )
+            out.append(net)
+            selected.add(net)
+
+        # If the eligible set was small, retain additional strong networks.
+        for net in ranked:
+            if len(out) >= limit:
+                break
+            if net not in selected:
+                out.append(net)
+                selected.add(net)
+        return out
+>>>>>>> REPLACE
+
+</DIFF>

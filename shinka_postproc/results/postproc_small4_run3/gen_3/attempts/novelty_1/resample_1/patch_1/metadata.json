@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "dual_metric_bundle",
+  "patch_description": "Learn a reusable routing surrogate from the LP duals, rather than relying exclusively on QUBO energy.\n\nFor each scored network, compute shortest-path distances using its nonnegative dual prices as link lengths. These distances define a valid lower bound for any candidate network: demand-weighted distance divided by the sum of distances across its links. Maintain a bounded collection of complementary metrics and rank candidates by their strongest bound. This transfers information from previous LP calls to new topologies without solving another optimisation problem.\n\nSplit screening between this dual-metric model, the original energy, and genuinely novel networks. The current tail-exploration branch is unreachable because the preceding loop already fills the batch; explicitly reserve slots instead. Measure novelty using compact topology bitmasks against all previously scored networks, and require meaningful separation within the main batch.\n\nThe metric bank is capped at 4n, retaining useful metrics and protecting those obtained from excellent networks. Move generation, archive search, and acceptance remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:57:09.381132",
+  "llm_cost": 0.122184,
+  "llm_model": "gpt-6.1-sol"
+}

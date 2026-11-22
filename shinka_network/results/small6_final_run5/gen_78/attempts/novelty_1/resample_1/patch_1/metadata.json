@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "retained_route_competition",
+  "patch_description": "Replace the three-hop approximation, which reduced both scoring components, with a bounded transit-competition discount on existing two-hop rewards.\n\nSplit each OD pair\u2019s demand among its retained routes in proportion to their reward magnitudes, then accumulate the offered transit load at each intermediate node. Reduce rewards through above-average-load intermediates by at most 20%. This addresses competition created by the selected routes themselves, beyond the existing endpoint-demand pressure estimate. Normalizing by mean transit load keeps the correction size-independent. No new couplings or degree penalties are introduced, and the structural penalties remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:02:22.661577",
+  "llm_cost": 0.078842,
+  "llm_model": "gpt-6.1-sol"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "uncertainty_ucb",
+  "patch_description": "Add a small uncertainty-aware exploration component to the existing online ridge model. Its prediction uncertainty is estimated from the regularized feature-space leverage, so candidates in poorly sampled regions can receive attention without replacing the energy, routing, and novelty signals. Reserve one LP slot for a candidate whose predicted score remains competitive but whose uncertainty improves its lower-confidence-bound ranking. The other batch slots and the existing selection signals remain in place.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:37:03.903191",
+  "llm_cost": 0.0035486000000000003,
+  "llm_model": "gpt-6-luna"
+}

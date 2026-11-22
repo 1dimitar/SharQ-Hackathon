@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "transit_pressure",
+  "patch_description": "Estimate transit congestion from each OD pair\u2019s two best plausible two-hop routes, weighted by their leg evidence and current node pressure. Blend this projected load modestly with each node\u2019s existing incident traffic before ranking route alternatives. This adds route-specific pressure information without requiring an LP or adding couplings. Also remove the three-hop Taylor approximation: its pairwise terms can reward partial paths even when the complete three-edge route is absent, creating misleading energy signals.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:01:53.699979",
+  "llm_cost": 0.0034736999999999997,
+  "llm_model": "gpt-6-luna"
+}

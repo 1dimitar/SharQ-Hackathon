@@ -1,0 +1,14 @@
+{
+  "generation": 127,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_load_pairs",
+  "patch_description": "This design replaces selected two-hop route rewards and reciprocal-link penalties with a sparse load-balancing proxy. It estimates edge loads by softly assigning traffic among direct, two-hop, and three-hop paths, with longer paths and busy transit nodes discounted. It then uses those estimates for modest linear load costs and positive quadratic costs between the most consequential pairs of links sharing an origin or destination. Those pair terms approximate local congestion while keeping the coupling graph compact; direct-demand rewards remain to preserve the value of serving traffic directly.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:42:00.930599",
+  "llm_cost": 0.0052032,
+  "llm_model": "gpt-6-luna"
+}

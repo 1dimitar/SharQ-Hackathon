@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_signal_quotas",
+  "patch_description": "Replace the fixed energy/novelty screening mix with four complementary signals: QUBO energy, LP link pressure, structural novelty, and random exploration. Each signal gets a minimum slot when possible; remaining slots are allocated according to its exponentially smoothed rate of beating the current parent. This lets the screening portfolio adapt to the instance and pool while retaining exploration and avoiding dependence on any single noisy signal.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:28:15.897076",
+  "llm_cost": 0.0038321,
+  "llm_model": "gpt-6-luna"
+}

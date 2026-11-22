@@ -1,0 +1,27 @@
+<NAME>
+reciprocal_synergy
+</NAME>
+
+<DESCRIPTION>
+Add a modest attractive coupling for reciprocal links when demand is substantial in both directions. The linear terms already reward each direction independently; this coupling captures the extra value of selecting both links together, giving the topology a useful two-way connection without rewarding a strong one-way demand as if it were bidirectional. The harmonic mean makes the bonus depend on both directions, and the coefficient keeps it moderate relative to the existing two-hop terms. This adds at most O(n²) couplings, well within the term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+=======
+    quadratic = {}
+
+    # A reciprocal pair can serve substantial traffic in both directions
+    # without relying on alternate paths. Reward the pair only to the extent
+    # that both directional demands are strong.
+    for i in range(n):
+        for j in range(i + 1, n):
+            forward = float(normalized[i, j])
+            backward = float(normalized[j, i])
+            if forward > 0.0 and backward > 0.0:
+                balance = 2.0 * forward * backward / (forward + backward)
+                quadratic[((i, j), (j, i))] = -0.24 * balance
+>>>>>>> REPLACE
+
+</DIFF>

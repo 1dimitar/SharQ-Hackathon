@@ -1,0 +1,32 @@
+<NAME>
+ambiguity_route
+</NAME>
+
+<DESCRIPTION>
+Add at most one extra two-hop route when the candidate just outside the usual selection is nearly tied with the boundary candidate. Such near-ties indicate uncertainty about which transit path will be useful, so modestly rewarding the alternative may improve sampling and give the post-processor a better energy ranking. The extra route gets a reduced weight, while the existing routes retain their previous rank boosts.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        keep = min(len(ranked), 3 if traffic[i, k] >= cutoff else 2)
+        for position, (_, j, pressure, edge_affinity) in enumerate(ranked[:keep]):
+            rank_boost = 1.0 + 0.055 * (keep - position - 1)
+            weight = (
+=======
+        base_keep = min(len(ranked), 3 if traffic[i, k] >= cutoff else 2)
+        keep = base_keep
+        if keep < len(ranked):
+            boundary_rank = ranked[keep - 1][0]
+            next_rank = ranked[keep][0]
+            relative_gap = (boundary_rank - next_rank) / max(boundary_rank, 1e-12)
+            if relative_gap < 0.12:
+                keep += 1
+
+        for position, (_, j, pressure, edge_affinity) in enumerate(ranked[:keep]):
+            if position < base_keep:
+                rank_boost = 1.0 + 0.055 * (base_keep - position - 1)
+            else:
+                rank_boost = 0.72
+            weight = (
+>>>>>>> REPLACE
+</DIFF>

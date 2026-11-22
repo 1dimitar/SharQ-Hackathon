@@ -1,0 +1,157 @@
+<NAME>
+stratified_novelty_reserve
+</NAME>
+
+<DESCRIPTION>
+Replace the link-pressure ranking with a genuine exploration reserve. Removing heavily loaded links does not reliably improve routing, and the current fill loop consumes every remaining slot before exploration can run.
+
+Keep most LP calls for low-energy proposals. Reserve the remaining calls for structurally novel proposals and a randomized move-scale stratum, so numerous rotations cannot crowd out two-switches or longer kicks. Increase this reserve modestly when a parent stalls. Novelty is measured against good archived networks as well as the current batch, encouraging exploration of different basins rather than merely different siblings. All topology comparisons use precomputed edge sets to keep screening inexpensive.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Mix energy-ranked trials with a normalized link-pressure heuristic."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        energy_quota = min(4 if detail else 6, batch_size)
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= energy_quota:
+                break
+
+        # A switch can improve the routing bottleneck by removing heavily used,
+        # expensive links. Penalize new links carrying substantial direct demand.
+        if detail and len(selected) < batch_size:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            if max_demand <= 0:
+                max_demand = 1.0
+
+            pressure_ranked = []
+            parent_set = set(parent)
+            for net in fresh:
+                removed = parent_set - set(net)
+                added = set(net) - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            pressure_quota = min(3, batch_size - len(selected))
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Separate energy exploitation from novelty and move-scale exploration."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        ranked = sorted(fresh, key=energy)
+        target = min(batch_size, len(ranked))
+        stalls = parent_stalls.get(parent, 0)
+        reserve = min(target - 1, max(2, batch_size // 3) + int(stalls >= 3))
+        selected = ranked[:target - reserve]
+        selected_set = set(selected)
+
+        edge_sets = {net: set(net) for net in ranked}
+        parent_set = set(parent)
+
+        # Include the archive, not just siblings: novelty should identify
+        # unexplored regions rather than variants of another good incumbent.
+        references = [
+            set(net) for net in archive()[:max(8, n)]
+        ]
+        references.extend(edge_sets[net] for net in selected)
+
+        # Restrict max-min selection to a broad energy shortlist; leave the
+        # final slot unrestricted so a miscalibrated surrogate cannot veto it.
+        shortlist = ranked[:max(target, (3 * len(ranked)) // 4)]
+        while len(selected) < target - 1:
+            remaining = [net for net in shortlist if net not in selected_set]
+            if not remaining:
+                remaining = [net for net in ranked if net not in selected_set]
+            if not remaining:
+                break
+
+            # Equal-sized networks: edge difference is half symmetric distance.
+            # Iteration in energy order breaks novelty ties toward lower energy.
+            net = max(
+                remaining,
+                key=lambda x: min(
+                    (len(edge_sets[x] - ref) for ref in references),
+                    default=2 * n,
+                ),
+            )
+            selected.append(net)
+            selected_set.add(net)
+            references.append(edge_sets[net])
+
+        # Sample a scale first, then a network. Otherwise the much larger
+        # rotation neighborhood effectively monopolizes random exploration.
+        strata = {}
+        for net in ranked:
+            if net in selected_set:
+                continue
+            removed = len(parent_set - edge_sets[net])
+            scale = 0 if removed <= 2 else (1 if removed == 3 else 2)
+            strata.setdefault(scale, []).append(net)
+        if strata and len(selected) < target:
+            scales = sorted(strata)
+            scale = scales[int(rng.integers(len(scales)))]
+            pool = strata[scale]
+            selected.append(pool[int(rng.integers(len(pool)))])
+
+        return selected[:target]
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 107,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "size_calibrated_routes",
+  "patch_description": "This revision targets the weakening route signal at larger sizes while preserving the direct rewards and structural cut model. Two-hop rewards receive a bounded, smooth size adjustment, and wider route selections share a sublinear reward budget rather than gaining strength simply by adding couplings.\n\nIt also fixes a scale inconsistency: the heavy-demand threshold is now calculated from normalized traffic, matching the values compared against it. The model remains deterministic and sparse, with the existing degree-penalty schedule retained.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:25:57.128139",
+  "llm_cost": 0.11557800000000001,
+  "llm_model": "gpt-6.1-sol"
+}

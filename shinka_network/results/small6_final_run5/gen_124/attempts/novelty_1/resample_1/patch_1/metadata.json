@@ -1,0 +1,14 @@
+{
+  "generation": 124,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "balanced_route_evidence",
+  "patch_description": "Rank intermediates by evidence on both route legs rather than their sum alone. With only two links available per direction, a candidate supported by one strong leg and one negligible leg can waste scarce connectivity. The revised affinity preserves the old value for equally supported legs but discounts asymmetric paths by up to 25%. Apply the same ranking in transit-pressure estimation so its congestion forecast remains consistent with route selection.\n\nLower the heavy-demand threshold from 0.75 to 0.68, giving important demands more routing alternatives. Tighten the near-tie rule slightly and require evidence on both legs before adding an extra candidate. This targets better route coverage without indiscriminately increasing couplings; reward strengths and degree-penalty settings remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:38:35.323627",
+  "llm_cost": 0.033362,
+  "llm_model": "gpt-6.1-sol"
+}

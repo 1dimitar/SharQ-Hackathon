@@ -1,0 +1,14 @@
+{
+  "generation": 150,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cut_capacity_surrogate",
+  "patch_description": "This replaces path-selection rewards with a cut-capacity model. For each two- and three-node set, it estimates the traffic that must cross its outgoing and incoming boundaries. Selecting links internal to the set reduces boundary capacity, so a second-order expansion of a convex congestion proxy produces linear and pairwise QUBO costs. The pairwise terms are sparse and arise from shared cuts, rather than from chosen two-hop routes. Direct-demand rewards remain as a tie-breaker when cut loads are similar.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:08:36.321525",
+  "llm_cost": 0.006317099999999999,
+  "llm_model": "gpt-6-luna"
+}

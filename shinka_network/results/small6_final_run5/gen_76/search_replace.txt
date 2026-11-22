@@ -1,0 +1,46 @@
+<NAME>
+size_calibrated_routes
+</NAME>
+
+<DESCRIPTION>
+Two-hop route rewards become a less reliable proxy for actual load as the network grows: the number of possible routes increases, while only a small subset is rewarded. Attenuate both selected-route and fallback rewards gradually above n=10, with a floor to preserve their influence at larger sizes. Also make a small, independent reduction to degree-penalty growth. Feasibility is already high, so this modestly relaxes sampling pressure without removing the penalty that helps maintain valid topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    pressure = model.pressure
+    pressure_rank = pressure ** 0.75
+
+    for source in range(n):
+=======
+    pressure = model.pressure
+    pressure_rank = pressure ** 0.75
+    route_size_factor = max(
+        0.84, 1.0 - 0.01 * max(0, n - 10)
+    )
+
+    for source in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    -0.46 * support * rank_factor / discount,
+=======
+                    -0.46 * route_size_factor * support * rank_factor / discount,
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    -0.30 * support / discount,
+=======
+                    -0.30 * route_size_factor * support / discount,
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    penalty_weight = min(
+        1.45, 1.30 + 0.008 * max(0, model.n - 10)
+    )
+=======
+    penalty_weight = min(
+        1.40, 1.28 + 0.006 * max(0, model.n - 10)
+    )
+>>>>>>> REPLACE
+</DIFF>

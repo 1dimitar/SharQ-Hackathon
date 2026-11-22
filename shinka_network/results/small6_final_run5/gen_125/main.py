@@ -1,0 +1,365 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Sanitize demand and return scale-free traffic and endpoint profiles."""
+    traffic = np.asarray(demand, dtype=float)
+    n = int(traffic.shape[0])
+
+    traffic = np.nan_to_num(
+        traffic, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = traffic / scale
+
+    row_sum = z.sum(axis=1)
+    col_sum = z.sum(axis=0)
+    row_share = z / np.maximum(row_sum[:, None], 1e-12)
+    col_share = z / np.maximum(col_sum[None, :], 1e-12)
+
+    incident = np.maximum(row_sum, col_sum)
+    largest_incident = float(np.max(incident)) if incident.size else 0.0
+    if largest_incident > 0.0:
+        pressure = 0.68 + 0.64 * incident / largest_incident
+    else:
+        pressure = np.ones(n, dtype=float)
+
+    return traffic, z, row_sum, col_sum, row_share, col_share, incident, pressure
+
+
+def _add_pair(quadratic, first, second, value):
+    """Aggregate a symmetric product under a canonical key."""
+    if value == 0.0 or first == second:
+        return
+    key = (first, second) if first < second else (second, first)
+    quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+
+def _direct_scores(z, row_share, col_share):
+    """Score links using direct traffic and endpoint-specific importance."""
+    n = z.shape[0]
+    share = np.sqrt(np.maximum(row_share * col_share, 0.0))
+    score = (
+        0.62 * np.power(z, 0.76)
+        + 0.25 * np.sqrt(z)
+        + 0.13 * share
+    )
+    return {
+        (i, j): -float(score[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+
+def _build_route_terms(
+    traffic, z, row_share, col_share, pressure, linear, quadratic
+):
+    """Add sparse two-hop rewards and a weak linear transit-use estimate."""
+    n = z.shape[0]
+    positive = z[z > 0.0]
+    if positive.size == 0:
+        return
+
+    cutoff = float(np.quantile(positive, 0.68))
+    root = np.sqrt(z)
+    transit_potential = np.zeros_like(z)
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            demand_strength = (
+                0.66 * z[i, k] ** 0.74 + 0.34 * root[i, k]
+            )
+            # Directly served heavy demands need somewhat less indirect
+            # encouragement than demands with weak direct-link evidence.
+            support = demand_strength * (1.0 - 0.28 * root[i, k])
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first = (
+                    0.56 * np.sqrt(row_share[i, j])
+                    + 0.44 * root[i, j]
+                )
+                second = (
+                    0.56 * np.sqrt(col_share[j, k])
+                    + 0.44 * root[j, k]
+                )
+
+                # The geometric mean requires evidence on both legs.
+                balanced = np.sqrt(max(first * second, 0.0))
+                edge_evidence = 0.16 * (root[i, j] + root[j, k])
+                rank = (
+                    0.16 + balanced + edge_evidence
+                ) / (pressure[j] ** 0.82)
+                candidates.append((float(rank), j, float(balanced)))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            if not candidates:
+                continue
+
+            keep = min(
+                len(candidates),
+                3 if z[i, k] >= cutoff else 2,
+            )
+            best_rank = max(candidates[0][0], 1e-12)
+            selected = candidates[:keep]
+
+            # A soft distribution prevents the best-ranked transit node from
+            # receiving all estimated route use when alternatives are close.
+            raw_weights = np.asarray(
+                [
+                    np.exp(np.clip(2.0 * (rank / best_rank - 1.0), -12.0, 0.0))
+                    for rank, _, _ in selected
+                ],
+                dtype=float,
+            )
+            raw_weights /= max(float(raw_weights.sum()), 1e-12)
+
+            for position, ((rank, j, affinity), probability) in enumerate(
+                zip(selected, raw_weights)
+            ):
+                rank_factor = 1.08 - 0.09 * position
+                pressure_factor = pressure[j] ** 0.36
+                route_strength = (
+                    support
+                    * rank_factor
+                    * (0.52 + 0.48 * affinity)
+                    / pressure_factor
+                )
+
+                first_link = (i, j)
+                second_link = (j, k)
+                _add_pair(
+                    quadratic,
+                    first_link,
+                    second_link,
+                    -0.35 * route_strength,
+                )
+
+                # Small direct/indirect redundancy correction. It is kept
+                # weaker than route completion so it does not erase useful
+                # paths for high-demand pairs.
+                redundancy = (
+                    0.035
+                    * support
+                    * (0.45 + 0.55 * root[i, k])
+                    * (0.5 + 0.5 * affinity)
+                )
+                _add_pair(quadratic, (i, k), first_link, redundancy)
+                _add_pair(quadratic, (i, k), second_link, redundancy)
+
+                estimated_use = support * float(probability)
+                transit_potential[i, j] += estimated_use
+                transit_potential[j, k] += estimated_use
+
+    # Linearize only a small fraction of the estimated path usefulness. This
+    # gives isolated transit links a mild signal without replacing the
+    # stronger pairwise route-completion term.
+    off_diagonal = ~np.eye(n, dtype=bool)
+    max_potential = float(np.max(transit_potential[off_diagonal])) if n > 1 else 0.0
+    if max_potential > 0.0:
+        for i in range(n):
+            for j in range(n):
+                if i != j and transit_potential[i, j] > 0.0:
+                    softened = transit_potential[i, j] / (
+                        1.0 + transit_potential[i, j] / max_potential
+                    )
+                    linear[(i, j)] -= float(
+                        0.075 * softened / max_potential
+                    )
+
+
+def _add_neighbor_diversity(z, row_share, col_share, linear, quadratic):
+    """Discourage selecting pairs of links with strongly overlapping roles."""
+    n = z.shape[0]
+    if n < 4:
+        return
+
+    mean_direct = (
+        sum(-value for value in linear.values()) / max(1, n * (n - 1))
+    )
+    strength = 0.028 * mean_direct
+
+    # For outgoing links v->a and v->b, compare the destinations that a and b
+    # naturally serve. For incoming links, compare the source profiles.
+    budgets = max(1, n // 2)
+    for center in range(n):
+        outgoing = []
+        incoming = []
+
+        for a in range(n):
+            if a == center:
+                continue
+            for b in range(a + 1, n):
+                if b == center:
+                    continue
+
+                out_overlap = float(
+                    np.dot(
+                        np.sqrt(row_share[a]),
+                        np.sqrt(row_share[b]),
+                    )
+                )
+                in_overlap = float(
+                    np.dot(
+                        np.sqrt(col_share[:, a]),
+                        np.sqrt(col_share[:, b]),
+                    )
+                )
+
+                if out_overlap > 0.30:
+                    outgoing.append((out_overlap, a, b))
+                if in_overlap > 0.30:
+                    incoming.append((in_overlap, a, b))
+
+        outgoing.sort(key=lambda item: (-item[0], item[1], item[2]))
+        incoming.sort(key=lambda item: (-item[0], item[1], item[2]))
+
+        for overlap, a, b in outgoing[:budgets]:
+            _add_pair(
+                quadratic,
+                (center, a),
+                (center, b),
+                strength * overlap,
+            )
+
+        for overlap, a, b in incoming[:budgets]:
+            _add_pair(
+                quadratic,
+                (a, center),
+                (b, center),
+                strength * overlap,
+            )
+
+
+def _add_two_node_cut_terms(
+    traffic, row_sum, col_sum, incident, linear, quadratic
+):
+    """Add a small projected inverse-capacity penalty for two-node cuts."""
+    n = traffic.shape[0]
+    if n < 2:
+        return
+
+    incident_scale = max(float(np.max(incident)), 1e-12)
+    cut_linear = np.zeros((n, n), dtype=float)
+    cut_strength = 0.78 / 144.0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal = float(traffic[i, j] + traffic[j, i])
+            external = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal,
+            )
+            if external <= 0.0:
+                continue
+
+            load = (external / incident_scale) ** 2
+            endpoint_ratio = 0.5 * (
+                external / max(float(incident[i]), 1e-12)
+                + external / max(float(incident[j]), 1e-12)
+            )
+            vulnerability = float(np.clip(
+                0.86 + 0.28 * endpoint_ratio, 0.82, 1.18
+            ))
+            coefficient = cut_strength * load * vulnerability
+
+            # For a valid degree-two topology, the cut capacity is
+            # 4 - x_ij - x_ji; these are the linear and product terms of its
+            # inverse-square expansion.
+            cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+            _add_pair(
+                quadratic,
+                (i, j),
+                (j, i),
+                13.0 * coefficient,
+            )
+
+    # Remove endpoint and global potentials, which are constant over valid
+    # directed in/out-degree-two networks.
+    node_offset = cut_linear.sum(axis=1) / (n - 1)
+    edge_offset = float(cut_linear.sum()) / (n * (n - 1))
+    for i, j in linear:
+        linear[(i, j)] += float(
+            cut_linear[i, j]
+            - node_offset[i]
+            - node_offset[j]
+            + edge_offset
+        )
+
+
+def surrogate_terms(demand):
+    """Return linear terms, quadratic terms, and degree-penalty weight."""
+    (
+        traffic,
+        z,
+        row_sum,
+        col_sum,
+        row_share,
+        col_share,
+        incident,
+        pressure,
+    ) = _prepare_demand(demand)
+
+    linear = _direct_scores(z, row_share, col_share)
+    quadratic = {}
+
+    _build_route_terms(
+        traffic,
+        z,
+        row_share,
+        col_share,
+        pressure,
+        linear,
+        quadratic,
+    )
+    _add_neighbor_diversity(
+        z, row_share, col_share, linear, quadratic
+    )
+    _add_two_node_cut_terms(
+        traffic,
+        row_sum,
+        col_sum,
+        incident,
+        linear,
+        quadratic,
+    )
+
+    # Degree penalties are supplied by the evaluator.
+    return linear, quadratic, 1.15
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

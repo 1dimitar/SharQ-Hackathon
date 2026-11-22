@@ -1,0 +1,111 @@
+<NAME>
+routing_robust_screen
+</NAME>
+
+<DESCRIPTION>
+Add a cheap, cached routing screen for a bounded set of energy-promising proposals. It routes each demand along shortest paths under three deterministic tie-breakings, then scores the candidate using both the mean and worst peak link load. The batch still reserves most of its choices for existing energy, operator, and dual-guided signals; only a size-scaled fraction is selected by the routing screen. This adds an independent signal for topologies whose apparent quality depends on how shortest-path ties are resolved, without spending extra LP calls or letting the heuristic dominate selection.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def exchange(net, p, q):
+        """A directed 2-switch; it preserves all in- and out-degrees."""
+=======
+    route_cache = {}
+
+    def routing_estimate(net):
+        """Estimate congestion under several deterministic shortest-path routings."""
+        if net in route_cache:
+            return route_cache[net]
+
+        adjacency = [[] for _ in range(n)]
+        reverse = [[] for _ in range(n)]
+        for u, v in net:
+            adjacency[u].append(v)
+            reverse[v].append(u)
+
+        # Distances to each destination allow every routed commodity to follow
+        # a shortest path while varying only the choice among tied next hops.
+        distances = []
+        for destination in range(n):
+            dist = [-1] * n
+            dist[destination] = 0
+            queue = [destination]
+            for node in queue:
+                for predecessor in reverse[node]:
+                    if dist[predecessor] < 0:
+                        dist[predecessor] = dist[node] + 1
+                        queue.append(predecessor)
+            distances.append(dist)
+
+        peaks = []
+        for variant in range(3):
+            loads = np.zeros((n, n), dtype=float)
+            feasible = True
+            for source in range(n):
+                for destination in range(n):
+                    amount = float(demand[source, destination])
+                    if source == destination or amount <= 0:
+                        continue
+                    dist = distances[destination]
+                    node = source
+                    steps = 0
+                    while node != destination:
+                        choices = [
+                            v for v in adjacency[node]
+                            if dist[v] >= 0 and dist[v] == dist[node] - 1
+                        ]
+                        if not choices:
+                            feasible = False
+                            break
+                        nxt = min(
+                            choices,
+                            key=lambda v: (
+                                (v * v + (variant + 1) * v
+                                 + source * (variant + 2)
+                                 + destination * (variant + 3)) % (n + 1),
+                                v,
+                            ),
+                        )
+                        loads[node, nxt] += amount
+                        node = nxt
+                        steps += 1
+                        if steps > n:
+                            feasible = False
+                            break
+                    if not feasible:
+                        break
+                if not feasible:
+                    break
+            if not feasible:
+                route_cache[net] = float("inf")
+                return route_cache[net]
+            peaks.append(float(np.max(loads)))
+
+        # The worst tie-breaking is a robustness signal; the mean tempers its noise.
+        estimate = 0.65 * max(peaks) + 0.35 * sum(peaks) / len(peaks)
+        route_cache[net] = estimate
+        return estimate
+
+    def exchange(net, p, q):
+        """A directed 2-switch; it preserves all in- and out-degrees."""
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Exploit the energy model first, but avoid a batch of near-identical nets.
+        take(ranked_energy, max(1, batch_size * 2 // 5), min_separation=2)
+
+        # Reserve trials for each structurally different move operator.
+=======
+        # Keep the routing screen bounded to energy-promising proposals, then
+        # reserve a small part of the batch for its independent ranking.
+        route_pool = ranked_energy[:min(len(ranked_energy), max(4 * batch_size, 40))]
+        ranked_route = sorted(route_pool, key=routing_estimate)
+
+        # Exploit the energy model first, but avoid a batch of near-identical nets.
+        take(ranked_energy, max(1, batch_size * 2 // 5), min_separation=2)
+        take(ranked_route, max(1, batch_size // 4), min_separation=2)
+
+        # Reserve trials for each structurally different move operator.
+>>>>>>> REPLACE
+</DIFF>

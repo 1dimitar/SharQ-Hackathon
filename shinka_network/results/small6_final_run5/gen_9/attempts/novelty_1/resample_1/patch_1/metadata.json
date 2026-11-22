@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "staged_path_surrogate",
+  "patch_description": "Separates demand preparation, route selection, and QUBO assembly into small stages. It retains the direct-link reward and sparse two-hop route terms, while selecting alternatives using both endpoint affinity and transit-node pressure. The bounded route selection keeps the coupling count below the required limit and makes the construction easier to tune without changing the interface.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:50:33.483136",
+  "llm_cost": 0.0025293,
+  "llm_model": "gpt-6-luna"
+}

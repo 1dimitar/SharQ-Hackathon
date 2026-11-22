@@ -1,0 +1,205 @@
+--- a/original.py
++++ b/original.py
+@@ -1,102 +1,146 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build direct-link and selectively pressure-discounted two-hop terms."""
+-    matrix = np.asarray(demand, dtype=float)
+-    n = len(matrix)
++    """Return demand-aware link rewards and sparse route/congestion couplings."""
++    traffic = np.asarray(demand, dtype=float)
++    n = len(traffic)
+ 
+-    traffic = np.maximum(matrix, 0.0).copy()
++    traffic = np.maximum(traffic, 0.0).copy()
+     np.fill_diagonal(traffic, 0.0)
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
+-    if scale <= 0.0:
+-        scale = 1.0
++    maximum = float(traffic.max()) if traffic.size else 0.0
++    if maximum <= 0.0:
++        linear = {
++            (i, j): 0.0
++            for i in range(n) for j in range(n) if i != j
++        }
++        return linear, {}, 1.30
+ 
+-    normalized = traffic / scale
+-    roots = np.sqrt(normalized)
+-    linear = {
+-        (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
+-        for i in range(n)
+-        for j in range(n)
+-        if i != j
+-    }
++    t = traffic / maximum
++    root = np.sqrt(t)
++    row = traffic.sum(axis=1)
++    col = traffic.sum(axis=0)
++    node_load = np.maximum(row, col)
++    load_max = max(float(node_load.max()), 1e-12)
++    pressure = np.maximum(0.55, node_load / load_max)
+ 
+-    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-    node_pressure = np.maximum(0.65, incident / max_incident)
++    # Direct links retain a strong service reward, with a mild adjustment
++    # for endpoints that have unusually high traffic.
++    linear = {}
++    for i in range(n):
++        for j in range(n):
++            if i == j:
++                continue
++            endpoint_need = 0.5 * (
++                row[i] / max(float(row.max()), 1e-12)
++                + col[j] / max(float(col.max()), 1e-12)
++            )
++            value = 0.73 * t[i, j] + 0.27 * root[i, j]
++            linear[(i, j)] = -float(value * (0.92 + 0.08 * endpoint_need))
+ 
+-    positive = traffic[traffic > 0.0]
+-    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+     quadratic = {}
+ 
++    def add_q(a, b, weight):
++        if a == b or abs(weight) < 1e-14:
++            return
++        key = (a, b) if a < b else (b, a)
++        quadratic[key] = quadratic.get(key, 0.0) + float(weight)
++
++    # Sparse transit-capacity proxy: multiple selected links entering or
++    # leaving a heavily loaded node tend to concentrate transit there.
++    row_scale = np.maximum(row / max(float(row.max()), 1e-12), 0.10)
++    col_scale = np.maximum(col / max(float(col.max()), 1e-12), 0.10)
++    for v in range(n):
++        in_links = [(u, v) for u in range(n) if u != v]
++        out_links = [(v, w) for w in range(n) if w != v]
++        node_factor = float(pressure[v]) ** 1.2
++
++        for a in range(len(in_links)):
++            i, _ = in_links[a]
++            for b in range(a + 1, len(in_links)):
++                k, _ = in_links[b]
++                strength = 0.075 * node_factor * np.sqrt(row_scale[i] * row_scale[k])
++                add_q(in_links[a], in_links[b], strength)
++
++        for a in range(len(out_links)):
++            _, j = out_links[a]
++            for b in range(a + 1, len(out_links)):
++                _, k = out_links[b]
++                strength = 0.075 * node_factor * np.sqrt(col_scale[j] * col_scale[k])
++                add_q(out_links[a], out_links[b], strength)
++
++    positive = t[t > 0.0]
++    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
++
++    # For each OD pair, rank possible two-hop intermediates by balanced
++    # leg evidence relative to transit pressure. Keep extra choices only
++    # when the rank margin indicates real ambiguity.
+     for i in range(n):
+         for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
++            if i == k or t[i, k] <= 0.0:
+                 continue
+ 
+-            support = 0.70 * normalized[i, k] + 0.30 * roots[i, k]
++            support = 0.72 * t[i, k] + 0.28 * root[i, k]
+             candidates = []
+             for j in range(n):
+                 if j == i or j == k:
+                     continue
+-                edge_pressure = normalized[i, j] + normalized[j, k]
+-                pressure = float(node_pressure[j])
+-                affinity = 0.25 + edge_pressure
+-                rank = affinity / (pressure ** 0.75)
+-                discount = pressure * (1.0 + 0.5 * edge_pressure)
+-                candidates.append((float(rank), j, float(discount)))
++                a = float(t[i, j])
++                b = float(t[j, k])
++                geometric = np.sqrt(a * b)
++                leg_evidence = 0.58 * geometric + 0.21 * (a + b)
++                rank = (0.12 + leg_evidence) / (float(pressure[j]) ** 0.72)
++                balance = 2.0 * geometric / (0.15 + a + b)
++                candidates.append((float(rank), j, float(balance)))
+ 
+-            candidates.sort(reverse=True)
+-            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+-            selected = set()
++            candidates.sort(key=lambda item: (-item[0], item[1]))
++            if not candidates:
++                continue
+ 
+-            for position, (_, j, discount) in enumerate(candidates[:keep]):
+-                selected.add(j)
+-                rank_factor = 1.0 + 0.08 * (keep - position)
+-                weight = -0.46 * float(support) * rank_factor / discount
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = weight
++            keep = min(len(candidates), 4 if t[i, k] >= cutoff else 2)
++            base_keep = keep
++            best_rank = max(candidates[0][0], 1e-12)
+ 
+-            # Retain one alternative selected by the full-path model's
+-            # pressure discount, unless it was already selected by affinity.
+-            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+-            if remaining:
+-                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = -0.30 * float(support) / discount
++            # Increase route coverage only if the next-ranked candidate is
++            # close to the current frontier and also competitive with the best.
++            while keep < min(len(candidates), base_keep + 2):
++                next_rank = candidates[keep][0]
++                frontier = candidates[keep - 1][0]
++                if next_rank / max(frontier, 1e-12) < 0.82:
++                    break
++                if next_rank / best_rank < 0.58:
++                    break
++                keep += 1
+ 
+-    # Reciprocal links directly serve traffic in both directions and can avoid
+-    # forcing either flow through a shared intermediate link.
+-    for i in range(n):
+-        for j in range(i + 1, n):
+-            mutual = min(float(normalized[i, j]), float(normalized[j, i]))
+-            if mutual > 0.0:
+-                quadratic[((i, j), (j, i))] = -0.22 * mutual
++            for rank, j, balance in candidates[:keep]:
++                relative = rank / best_rank
++                # Avoid making one route dominate just because its rank is
++                # marginally higher; leg balance still matters.
++                route_factor = (0.72 + 0.28 * relative) * (0.82 + 0.36 * balance)
++                pressure_discount = float(pressure[j]) ** 0.30
++                reward = 0.34 * float(support) * route_factor / pressure_discount
++                add_q((i, j), (j, k), -reward)
+ 
+-    return linear, quadratic, 1.25
++    return linear, quadratic, 1.30
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

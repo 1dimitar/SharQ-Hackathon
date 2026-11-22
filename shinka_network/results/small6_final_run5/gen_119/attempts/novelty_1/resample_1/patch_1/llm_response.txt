@@ -1,0 +1,94 @@
+<NAME>
+normalized_cut_reallocation
+</NAME>
+
+<DESCRIPTION>
+Strengthen the two-node cut correction slightly while reallocating it toward more vulnerable endpoint pairs. The vulnerability multiplier is widened to 0.8–1.2, then normalized by the squared-load-weighted mean across cuts. This preserves the total load-weighted cut correction, so the change tests where that signal is allocated rather than accidentally changing its overall scale. The calculation remains quadratic in the number of nodes and does not add couplings beyond the existing reciprocal-link terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cut_linear = np.zeros((n, n), dtype=float)
+    incident_scale = max(max_incident, 1e-12)
+    cut_strength = 0.80 / 144.0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal = float(traffic[i, j] + traffic[j, i])
+            external = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal,
+            )
+            if external <= 0.0:
+                continue
+
+            # Scale conservatively according to how exposed each endpoint
+            # is to external traffic, clipping outlier ratios.
+            endpoint_ratio = 0.5 * (
+                external / max(float(incident[i]), 1e-12)
+                + external / max(float(incident[j]), 1e-12)
+            )
+            vulnerability = float(np.clip(
+                0.85 + 0.30 * endpoint_ratio, 0.85, 1.15
+            ))
+            squared_load = (external / incident_scale) ** 2
+            coefficient = cut_strength * squared_load * vulnerability
+
+            # 1/(4-x-y)^2 = 1/16 + 7(x+y)/144 + 13xy/144.
+            cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+            add_pair((i, j), (j, i), 13.0 * coefficient)
+=======
+    cut_linear = np.zeros((n, n), dtype=float)
+    incident_scale = max(max_incident, 1e-12)
+    cut_strength = 0.90 / 144.0
+    cut_records = []
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal = float(traffic[i, j] + traffic[j, i])
+            external = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal,
+            )
+            if external <= 0.0:
+                continue
+
+            endpoint_ratio = 0.5 * (
+                external / max(float(incident[i]), 1e-12)
+                + external / max(float(incident[j]), 1e-12)
+            )
+            vulnerability = float(np.clip(
+                0.85 + 0.30 * endpoint_ratio, 0.80, 1.20
+            ))
+            squared_load = (external / incident_scale) ** 2
+            if squared_load > 0.0:
+                cut_records.append((i, j, squared_load, vulnerability))
+
+    # Keep the total squared-load-weighted cut signal fixed while reallocating
+    # it toward pairs whose endpoints are more exposed to external traffic.
+    if cut_records:
+        weighted_mean = sum(
+            load * vulnerability
+            for _, _, load, vulnerability in cut_records
+        ) / max(
+            1e-12,
+            sum(load for _, _, load, _ in cut_records),
+        )
+        for i, j, squared_load, vulnerability in cut_records:
+            coefficient = (
+                cut_strength * squared_load * vulnerability
+                / max(weighted_mean, 1e-12)
+            )
+
+            # 1/(4-x-y)^2 = 1/16 + 7(x+y)/144 + 13xy/144.
+            cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+            add_pair((i, j), (j, i), 13.0 * coefficient)
+>>>>>>> REPLACE
+
+</DIFF>

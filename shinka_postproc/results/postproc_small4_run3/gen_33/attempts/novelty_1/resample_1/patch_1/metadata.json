@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "hot_anchor_rotations",
+  "patch_description": "The current two-switch neighborhood already considers every swap involving a hot arc, but its three-arc rotations choose arcs uniformly at random, so they may rarely include a bottleneck. Add a size-scaled set of rotations that explicitly anchors one of the parent\u2019s hot arcs and samples two partner arcs. These degree-preserving moves remove the flagged arc while offering alternative links, and are then screened alongside the existing random rotations, kicks, and other proposals. This keeps the added work modest as n grows and preserves the broader move portfolio.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:17:28.912063",
+  "llm_cost": 0.0030988000000000005,
+  "llm_model": "gpt-6-luna"
+}

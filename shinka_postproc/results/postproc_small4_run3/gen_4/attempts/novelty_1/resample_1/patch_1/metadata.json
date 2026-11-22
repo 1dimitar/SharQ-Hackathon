@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "genuine_novelty_portfolio",
+  "patch_description": "Make structural diversity effective rather than nominal. Distinct valid networks already have symmetric-difference distance at least four, so the current archive threshold of four and batch threshold of two exclude nothing. The exploration tail is also unreachable because the preceding loop fills the batch.\n\nKeep elite exploitation, but maintain additional archive members separated by a size-dependent distance. Screen each batch using mostly low-energy moves, plus separate slots for within-batch diversity, novelty relative to previously scored networks, and unbiased exploration. Novelty is computed exactly for a small random shortlist using inexpensive integer edge masks; only evaluated networks are persistently cached. This provides exploration without making bottleneck guidance or either Hamiltonian\u2019s surrogate dominate the search.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:02:10.412889",
+  "llm_cost": 0.07058400000000001,
+  "llm_model": "gpt-6.1-sol"
+}

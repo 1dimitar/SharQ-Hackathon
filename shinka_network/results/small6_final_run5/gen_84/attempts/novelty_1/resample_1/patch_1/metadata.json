@@ -1,0 +1,14 @@
+{
+  "generation": 84,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "scaled_route_flex",
+  "patch_description": "Apply a modest, bounded increase to two-hop route rewards as network size grows, so route information does not weaken relative to direct-link terms at larger n. Also lower the heavy-demand quantile from 0.75 to 0.68, allowing more demands to use the larger candidate set. Both changes are confined to route factors; the scale is capped to avoid letting them dominate the QUBO, and the resulting coupling count remains well below the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:07:24.458098",
+  "llm_cost": 0.0027931,
+  "llm_model": "gpt-6-luna"
+}

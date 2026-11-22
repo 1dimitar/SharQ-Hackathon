@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "weak_leg_discount",
+  "patch_description": "Discount each selected two-hop route when its weaker leg has little demand support. The bounded factor is based on the smaller normalized demand of the two legs, so a route with one weak leg receives less reward even if the other leg is strong; well-supported routes retain the existing reward. This leaves candidate selection, sparse coupling count, path-affinity weighting, and transit-pressure discount unchanged, while reducing the influence of poorly supported shortcuts on both sampling and energy-based ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:16:21.694933",
+  "llm_cost": 0.0021794,
+  "llm_model": "gpt-6-luna"
+}

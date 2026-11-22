@@ -1,0 +1,14 @@
+{
+  "generation": 94,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "near_tied_bilateral_routes",
+  "patch_description": "Retains the current demand-aware direct rewards, bilateral route support, and two-node cut costs. Every demand gets at most two preferred routes; a heavy demand gets a third only when its rank is within 7% of the second route. This targets ambiguous routing choices without indiscriminately adding couplings. A modest, size-aware penalty increase aims to improve feasibility while leaving valid-topology energy rankings unchanged. Performance improvements require evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:13:48.167955",
+  "llm_cost": 0.060668,
+  "llm_model": "gpt-6.1-sol"
+}

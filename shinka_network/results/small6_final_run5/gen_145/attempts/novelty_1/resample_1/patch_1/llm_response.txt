@@ -1,0 +1,47 @@
+<NAME>
+balanced_route_evidence
+</NAME>
+
+<DESCRIPTION>
+Prefer two-hop routes supported by both legs rather than one exceptionally strong leg. Currently, candidate ranking depends only on the sum of the legs’ demands, so a strong first leg can hide a poorly supported second leg.
+
+Replace half of that sum with its geometric-mean counterpart. Balanced routes retain exactly their previous ranking score, while asymmetric routes receive less credit. Also apply a modest, bounded asymmetry discount to their rewards, including fallback routes. This preserves low-demand transit alternatives without treating every high-sum route as equally useful.
+
+This targets misleading route rewards that can impair topology and exchange ranking as n grows. It adds no couplings and leaves degree penalties, cut corrections, and neighbor-service factors unchanged. Performance improvement remains to be tested.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                leg_traffic = float(
+                    t[source, middle] + t[middle, target]
+                )
+                rank = (
+                    (0.25 + leg_traffic) / pressure_rank[middle]
+                )
+                discount = float(
+                    pressure[middle] * (1.0 + 0.5 * leg_traffic)
+                )
+=======
+                first_demand = float(t[source, middle])
+                second_demand = float(t[middle, target])
+                leg_traffic = first_demand + second_demand
+                bilateral = 2.0 * np.sqrt(
+                    first_demand * second_demand
+                )
+                # Equal legs retain the original score. One strong leg
+                # alone provides weaker evidence for a useful full route.
+                route_evidence = 0.5 * (leg_traffic + bilateral)
+                asymmetry = (
+                    abs(first_demand - second_demand)
+                    / max(leg_traffic, 1e-12)
+                )
+                rank = (
+                    (0.25 + route_evidence) / pressure_rank[middle]
+                )
+                discount = float(
+                    pressure[middle]
+                    * (1.0 + 0.5 * leg_traffic)
+                    * (1.0 + 0.20 * asymmetry)
+                )
+>>>>>>> REPLACE
+</DIFF>

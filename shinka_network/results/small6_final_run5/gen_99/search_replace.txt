@@ -1,0 +1,34 @@
+<NAME>
+size_tapered_route_incentive
+</NAME>
+
+<DESCRIPTION>
+The two-hop reward terms can become a crowded signal as network size grows: many candidate routes compete for a topology with fixed degree two. Slightly tapering their strength with n may keep them informative without letting them dominate direct-link and structural signals, potentially improving both sample quality and energy-based ranking at larger sizes. Direct rewards, route selection, and cut correction remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
+    quadratic = {}
+
+    # Sparse two-hop rewards: typically two intermediates per OD, three for
+=======
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
+    quadratic = {}
+    route_size_factor = max(0.82, 1.0 - 0.025 * max(0, n - 12))
+
+    # Sparse two-hop rewards: typically two intermediates per OD, three for
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            weight = (
+                -0.39
+                * float(demand_support)
+=======
+            weight = (
+                -0.39
+                * route_size_factor
+                * float(demand_support)
+>>>>>>> REPLACE
+</DIFF>

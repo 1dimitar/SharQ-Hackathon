@@ -1,0 +1,135 @@
+<NAME>
+shortest_path_screen
+</NAME>
+
+<DESCRIPTION>
+Add a cheap, independent congestion estimate to LP-batch selection. For a small energy-ranked shortlist, route each OD demand uniformly over its shortest paths and use the resulting maximum estimated link load to identify promising moves. The batch still includes energy-ranked options, so this signal supplements rather than replaces the Hamiltonian surrogate. Limiting the estimate to a shortlist keeps its cost bounded as the network size grows.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def distance(a, b):
+=======
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def shortest_path_load(net):
+        """Estimate congestion by splitting each OD demand across shortest paths."""
+        adj = [[] for _ in range(n)]
+        rev = [[] for _ in range(n)]
+        for u, v in net:
+            adj[u].append(v)
+            rev[v].append(u)
+
+        def bfs(graph, start):
+            dist = [-1] * n
+            ways = [0] * n
+            dist[start] = 0
+            ways[start] = 1
+            queue = [start]
+            for u in queue:
+                for v in graph[u]:
+                    if dist[v] < 0:
+                        dist[v] = dist[u] + 1
+                        ways[v] = ways[u]
+                        queue.append(v)
+                    elif dist[v] == dist[u] + 1:
+                        ways[v] += ways[u]
+            return dist, ways
+
+        loads = {(u, v): 0.0 for u, v in net}
+        for s in range(n):
+            dist_s, ways_s = bfs(adj, s)
+            for t in range(n):
+                if t == s or dist_s[t] < 0:
+                    continue
+                dist_t, ways_t = bfs(rev, t)
+                total = ways_s[t]
+                if total <= 0:
+                    continue
+                amount = float(demand[s][t])
+                for u, v in net:
+                    if dist_s[u] >= 0 and dist_t[v] >= 0:
+                        if dist_s[u] + 1 + dist_t[v] == dist_s[t]:
+                            loads[(u, v)] += amount * ways_s[u] * ways_t[v] / total
+        return max(loads.values(), default=0.0)
+
+    def distance(a, b):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        # Score only a bounded energy-ranked shortlist with an independent
+        # shortest-path load estimate; preserve a few slots for energy alone.
+        shortlist = ranked[:min(len(ranked), max(18, 2 * batch_size))]
+        by_load = sorted(
+            ((shortest_path_load(net), net) for _, net in shortlist),
+            key=lambda item: item[0],
+        )
+
+        selected = []
+
+        def add_diverse(net):
+            if net not in selected and all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+
+        for _, net in ranked[:min(3, len(ranked))]:
+            add_diverse(net)
+        for _, net in by_load[:min(3, len(by_load))]:
+            add_diverse(net)
+
+        # Fill with the best remaining surrogate-ranked moves, then use the
+        # load-ranked shortlist as a fallback if diversity filtered too many.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        for _, net in by_load:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

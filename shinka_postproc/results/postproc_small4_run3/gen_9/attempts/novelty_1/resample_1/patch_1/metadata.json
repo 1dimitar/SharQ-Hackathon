@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cycle_breed",
+  "patch_description": "This replaces archive-centered neighborhood search with a degree-preserving evolutionary search. It recombines networks by swapping whole connected components of their bipartite edge differences, so offspring retain exactly two incoming and outgoing links without repair. Mutations add diversity, while a shortest-path traffic proxy and the pool\u2019s QUBO energy independently rank offspring before spending LP calls. LP-scored networks form a diverse breeding population, with dual-priced links occasionally guiding mutations.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:10:44.889730",
+  "llm_cost": 0.0060939,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,105 @@
+<NAME>
+capped_three_hop_routes
+</NAME>
+
+<DESCRIPTION>
+Add at most one three-hop alternative for an OD pair when its two-hop options look weak or closely ranked, or the demand is in the top decile. Rank these alternatives using endpoint-leg affinity and transit-node pressure, then add a small second-order expansion of the selected path reward. This provides a limited signal for pairs that two-hop terms cannot represent, while keeping the added couplings sparse and capped well below the quadratic-term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    quadratic = {}
+=======
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    high_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+    quadratic = {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+
+    return linear, quadratic, 1.25
+=======
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+
+            # Consider one three-hop alternative only for pairs with weak or
+            # ambiguous two-hop evidence, or unusually large direct demand.
+            best_leg_evidence = max(
+                normalized[i, j] + normalized[j, k]
+                for _, j, _ in candidates
+            ) if candidates else 0.0
+            close_two_hop = (
+                len(candidates) > 1
+                and candidates[1][0] >= 0.82 * candidates[0][0]
+            )
+            difficult = (
+                best_leg_evidence < 0.40
+                or close_two_hop
+                or traffic[i, k] >= high_cutoff
+            )
+
+            if difficult:
+                best_path = None
+                for a in range(n):
+                    if a == i or a == k:
+                        continue
+                    for b in range(n):
+                        if b == i or b == k or b == a:
+                            continue
+                        first_leg = float(normalized[i, a])
+                        middle_leg = float(normalized[a, b])
+                        last_leg = float(normalized[b, k])
+                        if first_leg <= 0.0 or middle_leg <= 0.0 or last_leg <= 0.0:
+                            continue
+
+                        endpoint_affinity = float(np.sqrt(first_leg * last_leg))
+                        path_quality = float(
+                            (first_leg * middle_leg * last_leg) ** (1.0 / 3.0)
+                        )
+                        transit_pressure = float(
+                            node_pressure[a] * node_pressure[b]
+                        )
+                        rank = (
+                            0.08 + 0.45 * endpoint_affinity + 0.55 * middle_leg
+                        ) / (transit_pressure ** 0.35)
+                        candidate = (rank, a, b, path_quality, transit_pressure)
+                        if best_path is None or candidate[0] > best_path[0]:
+                            best_path = candidate
+
+                if best_path is not None:
+                    _, a, b, path_quality, transit_pressure = best_path
+                    path_reward = (
+                        0.12
+                        * float(support)
+                        * (0.50 + path_quality)
+                        / (transit_pressure ** 0.25)
+                    )
+                    path_links = ((i, a), (a, b), (b, k))
+                    occupancy = 0.25
+
+                    # Second-order Taylor terms for a three-edge route reward;
+                    # accumulate them so any existing pair coupling is kept.
+                    for edge in path_links:
+                        linear[edge] -= path_reward * occupancy * occupancy
+                    for p in range(3):
+                        for q in range(p + 1, 3):
+                            edge_a, edge_b = path_links[p], path_links[q]
+                            key = (edge_a, edge_b) if edge_a < edge_b else (edge_b, edge_a)
+                            quadratic[key] = (
+                                quadratic.get(key, 0.0)
+                                - path_reward * occupancy
+                            )
+
+    return linear, quadratic, 1.25
+>>>>>>> REPLACE
+</DIFF>

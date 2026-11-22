@@ -1,0 +1,14 @@
+{
+  "generation": 113,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "vulnerable_cut_balance",
+  "patch_description": "Add a sparse pairwise correction for two-node cuts. When reciprocal links are selected, they reduce the links crossing that pair\u2019s boundary; the correction therefore penalizes reciprocated links in proportion to the pair\u2019s estimated external load. Higher-pressure endpoint pairs receive a bounded vulnerability multiplier in the recommended 0.8\u20131.2 range. Normalize that multiplier by the external-load-weighted mean so it redistributes the cut correction without changing its overall scale. Remove node and global offsets from the linear cut terms to avoid adding unnecessary bias to valid degree-two topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:29:58.999238",
+  "llm_cost": 0.0036710000000000002,
+  "llm_model": "gpt-6-luna"
+}

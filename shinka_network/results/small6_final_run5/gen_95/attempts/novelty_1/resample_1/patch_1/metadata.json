@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced-route-pairs",
+  "patch_description": "This version keeps direct-link rewards and two-hop route support, but limits a third route to high-demand pairs whose third-best route is close to the second-best. It adds sparse pairwise terms for outgoing and incoming links that estimate whether two selected neighbors provide complementary service to the node\u2019s demand. The pair costs are decomposed into linear preferences and residual quadratic interactions, retaining only the strongest residuals to keep the model compact. A two-node cut correction remains as a separate load-capacity proxy. Demand is normalized before totals are computed, and the degree penalty is increased modestly to support feasible sampling.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:15:46.387447",
+  "llm_cost": 0.0064066,
+  "llm_model": "gpt-6-luna"
+}

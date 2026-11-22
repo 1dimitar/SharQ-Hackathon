@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "affinity_weighted_routes",
+  "patch_description": "Use the existing two-leg affinity score not only to rank transit nodes, but also to scale the route reward and direct-versus-indirect redundancy terms. This gives stronger support to two-hop alternatives whose legs have demand evidence at both endpoints, while reducing the influence of weakly supported paths and spurious redundancy penalties. The small positive floors retain some signal for alternatives with low measured affinity. This changes neither the number of couplings nor the degree-penalty handling.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:53:20.761524",
+  "llm_cost": 0.0019667,
+  "llm_model": "gpt-6-luna"
+}

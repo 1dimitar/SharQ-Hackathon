@@ -1,0 +1,105 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Diverse Surrogate-Guided Network Search**
+- **Implementation**: Repairs and deduplicates candidate topologies, then seeds a compact, diverse archive ranked by surrogate energy. It iteratively explores degree-preserving swaps, rotations, and multi-switch kicks, screening moves with surrogate energy before spending LP calls and adapting search to stalled parents.
+- **Performance**: Achieved a combined score of 0.98 with a mean gap of 2.32% (best gap 0.51%), using the full 2,000 LP calls per run and averaging 16.87 seconds.
+- **Feedback**: Mean gaps were lowest for n=15 (1.80%) and highest for n=13 (2.80%); best-per-Hamiltonian results were 1.76% and 1.48% above known best. Results varied by pool and seed, while consistently exhausting the LP budget suggests additional gains may require more effective allocation of evaluations.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Energy-Guided Diverse Topology Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then searches with valid arc swaps, three-arc rotations, and larger perturbations from an elite, diverse archive. It screens moves using QUBO energy, batched shortest-path routing features, and an online ridge predictor before spending a limited LP-evaluation budget.
+- **Performance**: Achieved a 0.99 combined score, with a 1.50% mean gap, a best gap of -0.12%, and 2,000 LP calls per run.
+- **Feedback**: Results were consistently strong across sizes n=13–16, with mean gaps of 0.97–2.63% for n=13 and 0.69–2.43% for n=14; the best per-Hamiltonian results were 0.82% and 1.46% gaps. Runtime increased with network size, reaching roughly 41–59 seconds at n=16, while every run used the full LP budget.
+**Program Identifier:** Generation 1 - Patch Name mixed_routing_screen - Correct Program: True
+
+**Program Name: Surrogate-Guided Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, seeds a diverse archive using surrogate energy, then searches with degree-preserving 2-switches, three-link rotations, random walks, and relinking. It uses LP details to target priced or highly loaded links and batches LP evaluations across surrogate quality, bottleneck exposure, operator diversity, and structural novelty.
+- **Performance**: Achieved a combined score of 0.98, with a 2.10% mean gap, 0.99 best-per-Hamiltonian score, and 2,000 LP calls per run averaging 30.73 seconds.
+- **Feedback**: Results were consistently near the best known, with mean gaps ranging from 1.73% at n=14 to 2.44% at n=15; the best run was 0.05% better than the reference. Performance varied by seed and Hamiltonian, with some runs exceeding 3% gaps despite the diverse search and full LP budget.
+**Program Identifier:** Generation 2 - Patch Name portfolio_relink - Correct Program: True
+
+**Program Name: Dual-Guided Diverse Topology Search**
+- **Implementation**: Repairs candidate networks, then searches degree-preserving two-switches, three-link rotations, and multi-switch kicks. It ranks moves using surrogate energy and LP-dual-derived congestion bounds, while maintaining a diverse archive and prioritizing critical links.
+- **Performance**: Achieved a combined score of **0.97** (mean gap **3.19%**, best gap **0.85%**) using **2,000 LP calls** per run and averaging **30.21 seconds**.
+- **Feedback**: Best gaps were **2.84%** for n=13, **2.99%** for n=14, **3.81%** for n=15, and **3.12%** for n=16; n=15 was weakest, with one run at **6.29%**. Results varied by pool and seed, while the search consistently used its full LP budget and passed all validation tests.
+**Program Identifier:** Generation 3 - Patch Name dual_metric_bundle - Correct Program: True
+
+**Program Name: Diverse Dual-Guided Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, chooses energy-ranked but structurally diverse starts, then searches a 32-member archive using degree-preserving switches, three-link rotations, random walks, and target relinking. It prioritizes LP evaluations through surrogate energy, LP price/load signals, novelty, and operator diversity, while caching evaluations and favoring parents that have not stalled less often.
+- **Performance**: Achieved a combined score of 0.98 with a 2.27% mean gap, using the full 2,000 LP calls per run and averaging 33.76 seconds.
+- **Feedback**: Best-known gaps varied by seed and pool: one run reached −0.05%, while the mean gap was lowest at n=16 (1.98%) and highest at n=15 (2.81%). The consistent use of the full LP budget and occasional near-best results suggest the diverse, multi-operator search is effective, but outcomes remain variable and generally a few percent above best known.
+**Program Identifier:** Generation 5 - Patch Name dual_relief_screen - Correct Program: True
+
+**Program Name: Diverse Surrogate-Screened Network Search**
+- **Implementation**: Repairs candidate topologies, selects energy-ranked diverse starts, then searches degree-preserving swaps, rotations, and multi-switch kicks. A diverse elite archive and surrogate-energy screening prioritize LP evaluations while reserving novelty and random exploration.
+- **Performance**: Achieved a combined score of 0.97, with a 2.93% mean gap, 0.56% best gap, and 2,000 LP calls per run.
+- **Feedback**: Results were strongest on n=14 (2.18% mean gap) and weaker on n=13 and n=15 (3.47% and 3.48%). Outcomes varied by pool and seed, with some runs near 1% gaps but others above 5%, indicating the diverse search is effective but not consistently reliable.
+**Program Identifier:** Generation 4 - Patch Name genuine_novelty_portfolio - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then seeds a diverse archive using surrogate energy. It iteratively explores degree-preserving two-switches, rotations, and multi-switch kicks, screening moves by both surrogate energy and demand-distance proxy before spending LP evaluations.
+- **Performance**: Achieved a combined score of 0.98 with a 1.74% mean gap, using the full 2,000 LP calls per run and averaging 31.68 seconds.
+- **Feedback**: Results were consistently near best-known solutions, with mean gaps by size from 1.56% to 1.94%; one run reached −0.05%. Performance varied across pools and seeds, while the r2g181 Hamiltonian’s best result (+0.63%) outperformed r3g128’s (+1.96%).
+**Program Identifier:** Generation 6 - Patch Name demand_distance_screen - Correct Program: True
+
+**Program Name: Diverse Surrogate-Guided Topology Search**
+- **Implementation**: Repairs candidate networks, selects energy-ranked diverse starting points, then searches a bounded archive using degree-preserving two-switches, rotations, and multi-switch kicks. Surrogate energy and LP link-pressure details screen diverse batches before expensive LP evaluation; parent selection mixes elite and archive-wide exploration.
+- **Performance**: Achieved a combined score of 0.97, with a 2.80% mean gap and a 0.63% best gap, using 2,000 LP calls per run.
+- **Feedback**: Results were strongest at n=13 (2.25% mean gap) and weakest at n=15 (3.27%); r2g181 found the best overall network at +0.63%, while r3g128’s best was +1.57%. Runs consistently used the full LP budget, and performance varied across seeds, indicating that the diverse search can find strong solutions but does not reliably reach the best-known result.
+**Program Identifier:** Generation 7 - Patch Name dual_pressure_screen - Correct Program: True
+
+**Program Name: Diverse Archive Guided Network Repair Search**
+- **Implementation**: Repairs QAOA candidates, evaluates valid networks with a cached LP objective, then searches a diverse archive using dual-guided 2-switches, 3-arc rotations, and progressively stronger random kicks. Batches combine surrogate-energy ranking, LP dual guidance, and randomized exploration.
+- **Performance**: Combined score was **0.97** (mean gap **3.20%**), with a **0.63%** best gap; runs used the full **2,000 LP calls** and averaged **32.44 seconds**.
+- **Feedback**: The best result was from Hamiltonian r3g128 (**0.63% gap**); r2g181’s best was **1.57%**. Mean gaps were lowest at n=13 (**2.52%**) and highest at n=15 (**3.71%**), with n=16 also relatively difficult (**3.63%**).
+**Program Identifier:** Generation 8 - Patch Name portfolio_search - Correct Program: True
+
+**Program Name: Degree-Preserving Network Genetic Search**
+- **Implementation**: Repairs QAOA candidates, seeds a diverse low-energy population, and evolves valid degree-preserving networks using alternating-component crossover plus two-link switches and three-link rotations. It selects LP evaluations by combining surrogate-energy and shortest-path-load rankings, with mutation biased toward links flagged as congested.
+- **Performance**: Combined score was **0.95** (mean gap **5.14%**, best gap **2.32%**), using 2,000 LP calls per run at about 29 seconds on average.
+- **Feedback**: Performance weakened as network size increased: mean gaps rose from **4.33% at n=13** to **5.96% at n=16**. The best result was **2.32%** for r3g128; r2g181’s best was **3.62%**, indicating useful but pool-dependent gains from the search.
+**Program Identifier:** Generation 9 - Patch Name cycle_breed - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **Combining surrogate energy, demand-aware routing features, and online LP prediction remains the strongest pattern.** The current best program achieves a **0.99 combined score and 1.50% mean gap**, better than the new diverse-search variants: Generation 6’s demand-distance screen scored **0.98 / 1.74%**, while Generations 4 and 7 scored **0.97 / 2.93%** and **0.97 / 2.80%**. Its routing features include shortest-path work, link-load concentration, source/target work, direct-demand use, and unreachable pairs; a within-run ridge model then ranks candidates for LP evaluation.
+- **Diversity works best when paired with multiple informative rankings, not used as the sole selection principle.** The current program combines learned-score, energy, and demand-proxy rankings, preserves structurally distinct candidates, and reserves batch slots for novelty and random exploration. This is consistent with its **1.50% mean gap**, versus **1.74%** for Generation 6’s energy-plus-demand-distance screening and **2.10%** for the earlier portfolio-relink approach cited in prior insights.
+- **Several degree-preserving operators are useful when evaluation is carefully screened.** The current program mixes two-switches, three-arc rotations, and larger perturbations, with LP-derived bottleneck signals influencing moves. This diversified operator set accompanies stronger results than the Generation 9 genetic search, which used crossover and congestion-biased mutation but reached only **0.95 / 5.14%** mean gap.
+- **The strongest results are relatively balanced across larger sizes.** The current best’s mean gaps are **1.29% at n=14, 1.33% at n=15, and 1.39% at n=16**. That is notably more even than Generation 9, whose mean gap worsened to **5.96% at n=16**, and the new Generation 8 portfolio search, which reached **3.63% at n=16**.
+
+## Ineffective Approaches
+- **Diversity and topology operators alone do not ensure strong candidate ranking.** Generation 4’s diverse surrogate-screened search scored **0.97 / 2.93%**, and Generation 7’s dual-pressure version scored **0.97 / 2.80%**. Both used diverse starts and degree-preserving moves, but neither matched the current program’s routing-feature-plus-learned ranking.
+- **LP-dual or pressure guidance by itself is not consistently sufficient.** Generation 8’s dual-guided archive repair reached **0.97 / 3.20%** mean gap, with **3.71% at n=15** and **3.63% at n=16**. The current program also uses LP prices and loads, but integrates them with surrogate energy, routing features, novelty, and online prediction rather than relying on dual guidance as the main screen.
+- **Genetic crossover and congestion-biased mutation were weaker than the screened local-search portfolio in these evaluations.** Generation 9’s degree-preserving genetic search achieved **0.95 / 5.14%**, with gaps increasing from **4.33% at n=13** to **5.96% at n=16**. Its useful operators did not compensate for weaker evaluation prioritization.
+- **Using the full LP budget does not explain the score differences.** The current program and the new summarized searches all used **2,000 LP calls per run**, yet mean gaps ranged from the current **1.50%** to Generation 9’s **5.14%**. Earlier results likewise showed that candidate ranking and allocation—not call count alone—distinguish outcomes.
+
+## Implementation Insights
+- **The current program uses a staged, multi-signal filter before expensive LP calls.** It computes batched all-pairs shortest paths and estimates equal shortest-path flow, then combines total routing work, peak and upper-tail loads, load RMS, source/target work, direct-demand usage, and unreachable pairs with `tools.energy`. Once enough evaluations exist, a regularized within-run ridge model predicts normalized LP score. This implementation corresponds to the strongest reported result: **0.99 score, 1.50% mean gap**.
+- **Its batch construction explicitly protects exploration capacity.** Candidates are selected from learned, energy, and demand-proxy orderings with structural-separation checks; separate slots are reserved for novelty and a random candidate. This avoids allowing the energy ranking to consume the whole batch and contrasts with the weaker results of searches whose screening relied on fewer signals.
+- **Search responds to evaluated outcomes and congestion information.** The code continues from a successful child, tracks parent visits and stalls, increases rotation trials for stalled parents, and uses LP prices or loads to flag bottleneck-touching moves. These mechanisms complement the diverse archive and multi-switch perturbations rather than replacing candidate-quality prediction.
+- **Runtime grows with instance size despite strong quality.** The current program averages **35.14 seconds**, from roughly **18.5–22.5 seconds at n=13** to **40.6–59.1 seconds at n=16**. The new Generation 6 demand-distance screen averaged **31.68 seconds** with a **1.74% gap**, while Generation 8 averaged **32.44 seconds** with a **3.20% gap**; the comparison shows that runtime alone does not account for solution quality.
+
+## Performance Analysis
+- **The current best leads the newly evaluated programs on aggregate quality.** Its **0.99 score / 1.50% mean gap** improves on Generation 6 (**0.98 / 1.74%**), Generation 4 (**0.97 / 2.93%**), Generation 7 (**0.97 / 2.80%**), Generation 8 (**0.97 / 3.20%**), and Generation 9 (**0.95 / 5.14%**). It also retains the previously reported best gap of **−0.12%**.
+- **The current program’s size-level results are substantially stronger and more even than the new alternatives.** It records **1.98%, 1.29%, 1.33%, and 1.39%** mean gaps for n=13–16. Generation 6 was relatively consistent at **1.56%–1.94%**, but still had a higher overall mean gap; Generation 4’s n=13 and n=15 gaps were **3.47%** and **3.48%**, and Generation 8 was weakest at n=15–16.
+- **Pool and seed variation remains material even for the best approach.** The current program’s run gaps range from **−0.12% to +2.87%**. Its best-per-Hamiltonian gaps are **+1.46% for r2g181** and **+0.82% for r3g128**; n=14 is particularly pool-sensitive, with r2g181 runs averaging about **0.69%** while r3g128 runs average about **1.90%**. Thus, strong aggregate performance does not mean uniformly near-reference results on every pool or seed.
+- **The newer summaries reinforce that search quality depends on screening as much as operator choice.** Generation 6’s demand-distance screen is the closest new result at **1.74% mean gap**, while the diverse, dual-pressure, and portfolio variants are around **2.80%–3.20%** and the genetic variant reaches **5.14%**. All used the full LP budget, supporting the earlier finding that effective ranking and evaluation prioritization are more predictive of performance than LP-call count.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Improve the routing proxy with a small ensemble of feasible path-splitting rules.** For shortlisted candidates, compute routing features using the existing equal shortest-path split plus one or two cheap alternatives, such as deterministic tie-breaking or a lightly perturbed split. Rank candidates using a robust combination of peak and upper-tail link loads across these variants, while retaining energy and learned-score rankings; this directly tests whether more accurate congestion estimates improve the already successful multi-signal screen.
+
+2. **Add uncertainty-aware exploration to the within-run ridge ranking.** Estimate prediction uncertainty from ridge residuals or a small ensemble of fits, then reserve one batch slot for a candidate with high uncertainty and a competitive predicted score. Keep the existing energy, demand-proxy, novelty, and random slots intact so uncertainty exploration supplements rather than displaces the rankings associated with the 1.50% mean gap.
+
+3. **Use LP bottleneck signals to generate targeted degree-preserving moves.** In addition to biasing the sampled move shortlist, deliberately propose switches or rotations that remove one or more highly priced or heavily loaded arcs, then screen those proposals with the existing routing features before LP evaluation. Compare these targeted moves against ordinary moves in the same batch, since dual guidance alone has been weaker but is already useful as one signal in the best program.
+
+4. **Make routing-screen effort adaptive to instance size and observed ranking quality.** Reduce the number of candidates receiving full routing-feature computation on larger instances, where runs take up to about 59 seconds, and spend the saved effort on broader parent or perturbation diversity. Within a run, use agreement between learned, energy, and demand-proxy rankings—or their recent LP outcomes—to decide whether to expand screening or focus evaluations on the more reliable rankings.
+
+5. **Adapt search diversification to stalls and pool-specific performance.** When a parent repeatedly fails to improve, increase larger perturbations and archive relinking, and select parents from structurally distinct regions rather than merely increasing rotation trials; return to ordinary local moves after an improvement. This preserves the successful archive and continuation strategy while targeting the observed seed and Hamiltonian variability without making any single pool’s weak performance the basis for a fixed global bias.
