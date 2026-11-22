@@ -1,0 +1,16 @@
+{
+    // Keep Pylance away from generated files: the evolution runs write thousands of
+    // program copies under results/, and indexing them took over 2 CPU cores.
+    // Setting this replaces Pylance's default excludes, so those are listed too.
+    "python.analysis.exclude": [
+        "**/results/**",
+        "**/cache/**",
+        "**/pools/**",
+        "leaderboard/solutions/**",
+        "qoblib_data/**",
+        "**/node_modules",
+        "**/__pycache__",
+        "**/.venv",
+        ".git"
+    ]
+}

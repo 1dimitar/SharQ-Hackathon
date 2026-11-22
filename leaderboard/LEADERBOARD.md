@@ -1,6 +1,6 @@
 # Leaderboard: QOBLIB 08 network design (whole repository)
 
-Updated 2026-11-22 07:42 from `submissions.jsonl` (162 records logged). Built by `leaderboard.py` (`show`, `scan`, `submit`); do not edit by hand.
+Updated 2026-11-22 08:22 from `submissions.jsonl` (163 records logged). Built by `leaderboard.py` (`show`, `scan`, `submit`); do not edit by hand.
 
 Score: the largest link load of the topology under optimal routing (the routing LP, lower is better), recomputed for every submission. Gap: score / BKV - 1, where BKV is QOBLIB's best known value (network05-10 proven optimal). `=` marks a tie with the BKV, ★ a score below it.
 
@@ -55,7 +55,7 @@ Topologies that came out of a quantum sampler (QAOA, PCE), possibly repaired or 
 | lp_local_search | +0.00% = | – | +0.00% = | – | – | – | – | – | – | – | – | – | – | – | – |
 | postproc (QAOA pool + baseline LP search) | – | – | – | +2.20% | – | – | – | – | – | – | – | – | – | – | – |
 | sa | +4.01% | – | +7.88% | +10.21% | +6.50% | +9.36% | +9.64% | +10.30% | +10.79% | +9.83% | +7.57% | +10.77% | +7.52% | +7.42% | +13.98% |
-| qaoa_partitioned | – | +10.01% | +4.94% | +8.15% | +9.11% | +12.76% | +10.28% | +11.41% | +12.80% | +16.00% | +10.50% | +14.99% | +31.14% | +18.03% | +22.72% |
+| qaoa_partitioned | – | +10.01% | +4.94% | +8.15% | +9.11% | +12.76% | +10.28% | +11.41% | +12.80% | +16.00% | +10.50% | +14.99% | +17.85% | +18.03% | +22.72% |
 
 ## See also
 
