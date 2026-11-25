@@ -2666,25 +2666,6 @@ wheels = [
 ]
 
 [[package]]
-name = "qoblib-tools"
-version = "0.1.0"
-source = { directory = "packages/qoblib_tools" }
-dependencies = [
-    { name = "dimod" },
-    { name = "numpy" },
-    { name = "requests" },
-    { name = "scipy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dimod", specifier = ">=0.12,<0.13" },
-    { name = "numpy", specifier = ">=1.23" },
-    { name = "requests", specifier = ">=2" },
-    { name = "scipy", specifier = ">=1.11" },
-]
-
-[[package]]
 name = "qoro-divi"
 version = "0.16.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3041,7 +3022,6 @@ dependencies = [
     { name = "jupyterlab" },
     { name = "networkx" },
     { name = "numpy" },
-    { name = "qoblib-tools" },
     { name = "qoro-divi", extra = ["jupyter", "qubo-decompose"] },
     { name = "requests" },
     { name = "scipy" },
@@ -3058,7 +3038,6 @@ requires-dist = [
     { name = "jupyterlab", specifier = ">=4.6.6" },
     { name = "networkx" },
     { name = "numpy" },
-    { name = "qoblib-tools", directory = "packages/qoblib_tools" },
     { name = "qoro-divi", extras = ["jupyter", "qubo-decompose"], specifier = "==0.16.2" },
     { name = "requests" },
     { name = "scipy", specifier = ">=1.18.1" },
