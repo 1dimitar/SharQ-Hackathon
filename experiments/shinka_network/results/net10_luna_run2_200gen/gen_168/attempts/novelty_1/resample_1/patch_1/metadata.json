@@ -1,0 +1,14 @@
+{
+  "generation": 168,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop_056",
+  "patch_description": "This version strengthens selective two-hop support to 0.56 while retaining direct demand as the primary link reward. Two-hop rewards use a mildly concave demand signal so smaller demands still contribute, and are discounted when the intermediate node is busy or either edge already has substantial direct demand. This keeps the model within the quadratic-term limit and avoids adding degree penalties that the evaluator supplies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:59:51.186966",
+  "llm_cost": 0.0017986999999999999,
+  "llm_model": "gpt-6-luna"
+}

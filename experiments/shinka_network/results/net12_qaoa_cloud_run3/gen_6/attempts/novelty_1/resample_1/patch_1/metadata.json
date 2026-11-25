@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced-route",
+  "patch_description": "The current approach uses a fixed two-hop strength of 0.46 and gives each relay path a substantial reward independently. Across many possible relays, this can over-reward indirect routing and create a dense interaction graph. This version instead allocates a smaller total two-hop reward per OD pair across relays, favoring relays with lower incident demand.\n\nIt also estimates edge burden from direct traffic and potential two-hop transit, then adds modest positive couplings between high-burden links sharing a source or destination to discourage concentrating load. The degree penalty is increased from 1.0 to 2.0. Path and burden couplings remain within the quadratic-term limit, and all weights are normalized together.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:21:04.626886",
+  "llm_cost": 0.0025047999999999997,
+  "llm_model": "gpt-6-luna"
+}

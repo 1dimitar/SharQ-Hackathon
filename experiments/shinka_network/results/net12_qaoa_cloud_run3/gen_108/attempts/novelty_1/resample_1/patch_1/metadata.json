@@ -1,0 +1,14 @@
+{
+  "generation": 108,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_exponent",
+  "patch_description": "Soften the pressure penalty when selecting which relays receive quadratic terms by ranking candidates with `affinity / pressure**0.75` instead of `affinity / pressure`. This tests the recommended lower pressure sensitivity: it gives plausible relays at busier nodes a better chance of being retained in the sparse interaction set, while the existing pressure discount in the reward still discourages overusing them. The change is limited to candidate selection, leaving the reward scale and interaction count unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:11:38.320271",
+  "llm_cost": 0.0008969000000000001,
+  "llm_model": "gpt-6-luna"
+}

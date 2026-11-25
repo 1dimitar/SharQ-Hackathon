@@ -1,0 +1,14 @@
+{
+  "generation": 195,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor",
+  "patch_description": "Raise the relay-pressure floor from 0.5 to 0.65 and express pressure using the average of incoming and outgoing demand. This avoids strongly discounting a node that is busy in only one direction, while preserving the existing mean-based normalization. The higher floor also limits how much otherwise useful relays are penalized, which may improve the typical sampled topology.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:03:05.425786",
+  "llm_cost": 0.0011844,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,39 @@
+<NAME>
+leg_support_gate
+</NAME>
+
+<DESCRIPTION>
+Dampen two-hop rewards when either constituent link has little independent traffic support. The bounded gate uses both normalized leg demands, ranging from 0.45 for unsupported legs to 1.0 for maximally supported ones. This preserves the existing endpoint-demand reward, route selection, and pressure discount while making the energy less likely to favor routes that depend on weak links. Apply the same gate to the selected routes and the low-pressure fallback so both types of path reward remain consistent.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -0.46
+                    * support
+                    * rank_factor
+                    * reward_scale
+                    / discount
+                )
+=======
+                leg_gate = 0.45 + 0.55 * (
+                    float(normalized[i, j]) * float(normalized[j, k])
+                ) ** 0.25
+                weight = (
+                    -0.46
+                    * support
+                    * rank_factor
+                    * reward_scale
+                    * leg_gate
+                    / discount
+                )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                quadratic[key] = float(-0.30 * support / discount)
+=======
+                leg_gate = 0.45 + 0.55 * (
+                    float(normalized[i, j]) * float(normalized[j, k])
+                ) ** 0.25
+                quadratic[key] = float(-0.30 * support * leg_gate / discount)
+>>>>>>> REPLACE
+</DIFF>

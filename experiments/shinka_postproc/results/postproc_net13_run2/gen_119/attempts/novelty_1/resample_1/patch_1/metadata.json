@@ -1,0 +1,14 @@
+{
+  "generation": 119,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_recombination",
+  "patch_description": "This replaces neighborhood-by-neighborhood local search with an evolutionary edge-inheritance strategy. It builds a diverse archive of LP-scored networks, combines pairs by importing donor links through degree-preserving switches, and uses the surrogate energy to screen offspring before spending an LP call. Occasional random switch mutations help explore beyond the candidate pool; dual prices provide a secondary guide for which parent links to remove. This aims to search across combinations of good networks rather than repeatedly optimizing one parent\u2019s local neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:23:06.307333",
+  "llm_cost": 0.0036710000000000002,
+  "llm_model": "gpt-6-luna"
+}

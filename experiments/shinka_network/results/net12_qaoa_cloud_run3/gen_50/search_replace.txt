@@ -1,0 +1,22 @@
+<NAME>
+gentler_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Keep relay ranking and selection unchanged, but make the pressure discount in the quadratic reward gentler by raising its denominator to 0.75 instead of 1. This tests the suggested pressure-sensitivity adjustment without changing which relays are selected. Less discounting may help preserve useful two-hop support through busy nodes, improving the low-energy topology choices while retaining the current sparse interaction structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * support * rank_factor
+                    / (0.75 + float(node_pressure[j]))
+                )
+=======
+                weight = (
+                    -path_strength * support * rank_factor
+                    / ((0.75 + float(node_pressure[j])) ** 0.75)
+                )
+>>>>>>> REPLACE
+
+</DIFF>

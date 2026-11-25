@@ -1,0 +1,112 @@
+<NAME>
+feature_group_archive
+</NAME>
+
+<DESCRIPTION>
+The archive is currently ordered almost entirely by LP score, so its first few entries can dominate parent selection even when low-energy or routing-proxy-leading networks represent useful, different search regions. Reserve archive places for those two feature groups as well as the existing LP elites and structurally separated networks. Then select parents explicitly across LP, energy, routing-proxy, and diverse groups, with visit-based weighting within each group. This preserves multiple sources of promising structure without changing move generation or spending additional LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def archive():
+        ranked = sorted(
+            (net for net in seen if math.isfinite(seen[net])),
+            key=seen.get,
+        )
+        if not ranked:
+            return [best_net]
+        elite = ranked[:max(4, n // 2)]
+        out = list(elite)
+        sets = [set(x) for x in out]
+        separation = max(3, n // 3)
+        for net in ranked:
+            if len(out) >= 3 * n:
+                break
+            if net in out or seen[net] > best_score * 1.09:
+                continue
+            ns = set(net)
+            if all(m - len(ns & old) >= separation for old in sets):
+                out.append(net)
+                sets.append(ns)
+        return out
+=======
+    def archive():
+        ranked = sorted(
+            (net for net in seen if math.isfinite(seen[net])),
+            key=seen.get,
+        )
+        if not ranked:
+            return [best_net]
+
+        # Keep LP elites, but reserve places for the independent free feature
+        # rankings so that the archive does not collapse onto one criterion.
+        out = ranked[:max(4, n // 2)]
+        group_size = max(2, n // 3)
+        energy_leaders = sorted(ranked, key=lambda net: features[net][0])
+        proxy_leaders = sorted(
+            ranked,
+            key=lambda net: features[net][1] + 0.10 * features[net][3]
+            + features[net][8],
+        )
+        for group in (energy_leaders, proxy_leaders):
+            added = 0
+            for net in group:
+                if net not in out:
+                    out.append(net)
+                    added += 1
+                    if added >= group_size:
+                        break
+
+        sets = [set(x) for x in out]
+        separation = max(3, n // 3)
+        for net in ranked:
+            if len(out) >= 3 * n:
+                break
+            if net in out or seen[net] > best_score * 1.09:
+                continue
+            ns = set(net)
+            if all(m - len(ns & old) >= separation for old in sets):
+                out.append(net)
+                sets.append(ns)
+        return out[:3 * n]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if continuation is not None and rng.random() < 0.62:
+            parent = continuation
+        else:
+            u = rng.random()
+            if u < 0.45:
+                choices = pop[:min(4, len(pop))]
+            elif u < 0.80:
+                choices = pop[:min(n, len(pop))]
+            else:
+                choices = pop
+            weights = np.asarray([
+                1.0 / math.sqrt(1.0 + visits.get(x, 0))
+                for x in choices
+            ])
+            weights /= weights.sum()
+            parent = choices[int(rng.choice(len(choices), p=weights))]
+=======
+        if continuation is not None and rng.random() < 0.62:
+            parent = continuation
+        else:
+            elite = pop[:max(4, n // 2)]
+            energy_group = sorted(pop, key=lambda net: features[net][0])[:max(4, n // 3)]
+            proxy_group = sorted(
+                pop,
+                key=lambda net: features[net][1] + 0.10 * features[net][3]
+                + features[net][8],
+            )[:max(4, n // 3)]
+            diverse_group = pop[max(4, n // 2):] or pop
+            groups = (elite, energy_group, proxy_group, diverse_group)
+            group_id = int(rng.choice(4, p=[0.35, 0.25, 0.25, 0.15]))
+            choices = groups[group_id]
+            weights = np.asarray([
+                1.0 / math.sqrt(1.0 + visits.get(x, 0))
+                for x in choices
+            ])
+            weights /= weights.sum()
+            parent = choices[int(rng.choice(len(choices), p=weights))]
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,332 @@
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    """Search repaired networks with bottleneck-focused moves and a novelty archive."""
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    stalls = {}
+    uses = {}
+    gains = {}
+    op_stats = {op: [1.0, 1.0] for op in ("focused", "random", "rotation", "kick")}
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a).symmetric_difference(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    # Repair all samples without spending LP calls.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    # Seed with low-energy candidates while explicitly keeping structural variety.
+    ordered = sorted(repaired, key=energy)
+    initial = []
+    for net in ordered:
+        if all(distance(net, old) >= 4 for old in initial):
+            initial.append(net)
+        if len(initial) >= min(28, len(ordered)):
+            break
+    for net in ordered:
+        if len(initial) >= min(40, len(ordered)):
+            break
+        if net not in initial:
+            initial.append(net)
+
+    for net in initial:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+    if not seen:
+        return list(initial[0])
+
+    def make_archive():
+        """Combine score elites with networks novel relative to several elites."""
+        ranked = sorted(seen, key=seen.get)
+        out = ranked[:min(10, len(ranked))]
+        if len(out) >= min(30, len(ranked)):
+            return out
+
+        # Novelty is measured against multiple strong networks, not just the nearest.
+        pool = ranked[:min(240, len(ranked))]
+        while len(out) < min(30, len(ranked)):
+            elites = out[:min(6, len(out))]
+            remaining = [x for x in pool if x not in out]
+            if not remaining:
+                remaining = [x for x in ranked if x not in out]
+            if not remaining:
+                break
+
+            def novelty_key(net):
+                avg_dist = sum(distance(net, e) for e in elites) / max(1, len(elites))
+                rank = ranked.index(net)
+                # Mild quality preference prevents archive drift into very poor regions.
+                return avg_dist - 0.025 * rank
+
+            chosen = max(remaining, key=novelty_key)
+            out.append(chosen)
+        return out
+
+    def select_parent(pop):
+        if not pop:
+            return best_net
+        elite = pop[:min(6, len(pop))]
+        total_uses = sum(uses.values())
+        weights = []
+        for rank, net in enumerate(pop):
+            avg_dist = sum(distance(net, other) for other in elite if other != net)
+            avg_dist /= max(1, len(elite) - (1 if net in elite else 0))
+            novelty = min(1.0, avg_dist / 26.0)
+            quality = 1.0 / (1.0 + 0.055 * rank)
+            count = uses.get(net, 0)
+            productivity = gains.get(net, 0.0) / max(1, count)
+            explore = 0.25 * math.sqrt(math.log(total_uses + 2.0) / (count + 1.0))
+            weights.append(quality * (0.65 + 0.55 * novelty) *
+                           (0.8 + min(1.0, 350.0 * productivity)) * (1.0 + explore))
+        pick = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+
+    def switch(net, p, q):
+        arcs = list(net)
+        (a, b), (c, d) = arcs[p], arcs[q]
+        if a == d or c == b:
+            return None
+        cur = set(net)
+        if (a, d) in cur or (c, b) in cur:
+            return None
+        cur.remove((a, b))
+        cur.remove((c, d))
+        cur.add((a, d))
+        cur.add((c, b))
+        return tuple(sorted(cur))
+
+    move_sources = {}
+
+    def make_moves(net, detail):
+        arcs = list(net)
+        current = set(net)
+        moves = set()
+        move_sources.clear()
+
+        def add(cand, source):
+            if cand is not None and cand != net and cand not in moves:
+                moves.add(cand)
+                move_sources[cand] = source
+
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, a)) for a, p in prices.items() if p > 0}
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            hot = {
+                a for _, a in sorted(
+                    ((float(v), tuple(map(int, a))) for a, v in loads.items()),
+                    reverse=True
+                )[:7]
+            }
+
+        # Enumerate all legal two-switches touching a bottleneck.
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                if hot and arcs[p] not in hot and arcs[q] not in hot:
+                    continue
+                add(switch(net, p, q), "focused")
+
+        # Small random sample of non-bottleneck switches keeps exploration broad.
+        for _ in range(48):
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            add(switch(net, p, q), "random")
+
+        if len(arcs) >= 3:
+            trials = min(140, 42 + 18 * stalls.get(net, 0))
+            for _ in range(trials):
+                ids = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                for new in (
+                    {(a, d), (c, f), (e, b)},
+                    {(a, f), (c, b), (e, d)},
+                ):
+                    if any(x == y for x, y in new) or new & (current - old):
+                        continue
+                    add(tuple(sorted((current - old) | new)), "rotation")
+
+        # Multi-switch kicks escape basins that are closed under a single exchange.
+        for _ in range(12):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(4))):
+                now = list(cur)
+                p, q = rng.choice(len(now), size=2, replace=False)
+                (a, b), (c, d) = now[int(p)], now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            if cur != current:
+                add(tuple(sorted(cur)), "kick")
+
+        return [m for m in moves if tools.is_valid(m)]
+
+    def screen_batch(moves, parent, pop):
+        fresh = [m for m in moves if m not in seen and not tools.is_cached(m)]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = sorted(fresh, key=lambda m: energy(m) - base_e)
+        batch_size = 6
+        if stalls.get(parent, 0) >= 3:
+            batch_size = 8
+        if stalls.get(parent, 0) >= 7:
+            batch_size = 9
+        batch_size = min(batch_size, len(ranked))
+
+        selected = []
+        # Take the best surrogate move first, then reserve a slot for novelty.
+        selected.append(ranked[0])
+        elites = pop[:min(5, len(pop))]
+        if len(selected) < batch_size and elites:
+            pool = ranked[:max(12, int(0.6 * len(ranked)))]
+            novel = max(
+                (m for m in pool if m not in selected),
+                key=lambda m: sum(distance(m, e) for e in elites) / len(elites),
+                default=None,
+            )
+            if novel is not None:
+                selected.append(novel)
+
+        # Allocate another slot to an operator with a strong smoothed hit rate.
+        by_op = {}
+        for m in ranked:
+            if m not in selected:
+                by_op.setdefault(move_sources.get(m, "random"), []).append(m)
+        active = [op for op in op_stats if by_op.get(op)]
+        if active and len(selected) < batch_size:
+            weights = [0.12 + op_stats[op][0] / sum(op_stats[op]) for op in active]
+            pick = float(rng.random()) * sum(weights)
+            chosen_op = active[-1]
+            for op, weight in zip(active, weights):
+                pick -= weight
+                if pick <= 0:
+                    chosen_op = op
+                    break
+            selected.append(by_op[chosen_op][0])
+
+        # Fill primarily by surrogate rank, but avoid choosing a cluster of near-copies.
+        for m in ranked:
+            if len(selected) >= batch_size:
+                break
+            if m not in selected and all(distance(m, old) >= 2 for old in selected):
+                selected.append(m)
+        for m in ranked:
+            if len(selected) >= batch_size:
+                break
+            if m not in selected:
+                selected.append(m)
+        return selected[:batch_size]
+
+    rounds = 0
+    while tools.lp_calls_left > 0:
+        rounds += 1
+        pop = make_archive()
+        parent = select_parent(pop)
+        if parent is None:
+            break
+
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+        batch = screen_batch(make_moves(parent, detail), parent, pop)
+
+        if not batch:
+            alternatives = [x for x in pop if x != parent]
+            if alternatives:
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                try:
+                    detail = tools.lp_detail(parent)
+                except Exception:
+                    detail = None
+                batch = screen_batch(make_moves(parent, detail), parent, pop)
+
+        if not batch:
+            if rounds > 5000:
+                break
+            continue
+
+        parent_score = seen.get(parent, float("inf"))
+        batch_best = float("inf")
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score = evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+            batch_best = min(batch_best, score)
+            source = move_sources.get(net, "random")
+            if score < parent_score:
+                op_stats[source][0] += 1.0
+            else:
+                op_stats[source][1] += 1.0
+
+        uses[parent] = uses.get(parent, 0) + 1
+        if batch_best < parent_score:
+            stalls[parent] = 0
+            gains[parent] = gains.get(parent, 0.0) + (
+                parent_score - batch_best
+            ) / max(1.0, abs(parent_score))
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END

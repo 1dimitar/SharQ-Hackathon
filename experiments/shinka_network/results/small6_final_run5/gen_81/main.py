@@ -1,0 +1,230 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _continuation_distances(traffic):
+    """Estimate multihop distances using discounted first-passage weights."""
+    n = len(traffic)
+
+    # A strictly positive off-diagonal background avoids disconnected
+    # fractional graphs, including for highly sparse traffic matrices.
+    affinity = 0.30 + np.exp(1.75 * np.sqrt(traffic))
+    np.fill_diagonal(affinity, 0.0)
+
+    # Balance incoming and outgoing fractional capacity.
+    for _ in range(40):
+        affinity /= np.maximum(affinity.sum(axis=1, keepdims=True), 1e-12)
+        affinity /= np.maximum(affinity.sum(axis=0, keepdims=True), 1e-12)
+    transition = affinity / np.maximum(
+        affinity.sum(axis=1, keepdims=True), 1e-12
+    )
+
+    discount = 0.82
+    green = np.linalg.solve(
+        np.eye(n) - discount * transition, np.eye(n)
+    )
+
+    # G[j,d] / G[d,d] is a discounted first-passage weight.
+    hitting = green / np.maximum(np.diag(green)[None, :], 1e-12)
+    hitting = np.clip(hitting, 1e-12, 1.0)
+    distance = -np.log(hitting)
+    np.fill_diagonal(distance, 0.0)
+
+    off_diagonal = ~np.eye(n, dtype=bool)
+    typical = max(float(np.median(distance[off_diagonal])), 1e-12)
+    return distance / typical
+
+
+def _gateway_costs(od, distances, center, left, right):
+    """Evaluate all two-gateway choices for one origin simultaneously."""
+    n = len(od)
+    weights = od[center].copy()
+    total = float(weights.sum())
+    if total <= 1e-12:
+        return np.zeros(len(left), dtype=float)
+
+    # A gateway equal to the destination has zero continuation cost.
+    first_cost = distances[left].copy()
+    second_cost = distances[right].copy()
+
+    # Approximate the transit headroom available at the gateway.
+    incident = np.maximum(od.sum(axis=0), od.sum(axis=1))
+    incident /= max(float(incident.mean()), 1e-12)
+    pressure = 0.10 * np.clip(incident - 1.0, -0.6, 1.5)
+    first_cost += pressure[left, None]
+    second_cost += pressure[right, None]
+
+    # Do not charge transit pressure when the gateway is the destination.
+    rows = np.arange(len(left))
+    first_cost[rows, left] = 0.0
+    second_cost[rows, right] = 0.0
+
+    # Entropy-regularized splitting with a convex gateway-load penalty.
+    # The scalar dual price for each pair is solved by monotone bisection.
+    temperature = 0.13
+    balance_strength = 0.55
+    low = np.full(len(left), -2.0 * balance_strength)
+    high = np.full(len(left), 2.0 * balance_strength)
+    difference = second_cost - first_cost
+    normalized_weights = weights / total
+
+    for _ in range(19):
+        price = 0.5 * (low + high)
+        logits = np.clip(
+            (difference - price[:, None]) / temperature, -45.0, 45.0
+        )
+        fraction = 1.0 / (1.0 + np.exp(-logits))
+        imbalance = 2.0 * (fraction @ normalized_weights) - 1.0
+        residual = price - 2.0 * balance_strength * imbalance
+        high = np.where(residual > 0.0, price, high)
+        low = np.where(residual > 0.0, low, price)
+
+    price = 0.5 * (low + high)
+    logits = np.clip(
+        (difference - price[:, None]) / temperature, -45.0, 45.0
+    )
+    fraction = 1.0 / (1.0 + np.exp(-logits))
+    imbalance = 2.0 * (fraction @ normalized_weights) - 1.0
+
+    routing_cost = np.sum(
+        weights[None, :]
+        * (fraction * first_cost + (1.0 - fraction) * second_cost),
+        axis=1,
+    )
+
+    # Include entropy consistently with the routing split just optimized.
+    fraction = np.clip(fraction, 1e-12, 1.0 - 1e-12)
+    entropy = np.sum(
+        weights[None, :]
+        * (
+            fraction * np.log(fraction)
+            + (1.0 - fraction) * np.log1p(-fraction)
+        ),
+        axis=1,
+    )
+    return (
+        routing_cost
+        + total * balance_strength * imbalance * imbalance / 2.0
+        + temperature * entropy
+    )
+
+
+def surrogate_terms(demand):
+    """Return linear costs, quadratic costs, and the external degree penalty."""
+    traffic = np.asarray(demand, dtype=float).copy()
+    traffic = np.nan_to_num(
+        traffic, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    traffic = np.maximum(traffic, 0.0)
+    np.fill_diagonal(traffic, 0.0)
+    n = len(traffic)
+
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+    if maximum <= 0.0:
+        return {link: 0.0 for link in links}, {}, 1.50
+    traffic /= maximum
+
+    distance = _continuation_distances(traffic)
+
+    # A modest direct-demand anchor complements the gateway objective.
+    coefficients = -0.28 * traffic - 0.07 * np.sqrt(traffic)
+    quadratic = {}
+
+    for inbound in (False, True):
+        od = traffic.T if inbound else traffic
+        continuation = distance.T if inbound else distance
+
+        for center in range(n):
+            branches = np.array(
+                [j for j in range(n) if j != center], dtype=int
+            )
+            m = len(branches)
+            u, v = np.triu_indices(m, 1)
+            left, right = branches[u], branches[v]
+
+            costs = 0.38 * _gateway_costs(
+                od, continuation, center, left, right
+            )
+
+            # Exact least-squares additive decomposition on the complete
+            # graph of candidate gateways:
+            # C[j,k] = additive[j] + additive[k] + interaction[j,k].
+            row_sum = np.zeros(m, dtype=float)
+            np.add.at(row_sum, u, costs)
+            np.add.at(row_sum, v, costs)
+            additive_total = float(costs.sum()) / max(m - 1, 1)
+            additive = (
+                row_sum - additive_total
+            ) / max(m - 2, 1)
+
+            interaction = costs - additive[u] - additive[v]
+
+            # Removing a common additive offset changes only a constant
+            # when exactly two branches are selected.
+            additive -= float(additive.mean())
+
+            for position, node in enumerate(branches):
+                node = int(node)
+                link = (node, center) if inbound else (center, node)
+                coefficients[link] += float(additive[position])
+
+            for position in range(len(u)):
+                weight = float(interaction[position])
+                if abs(weight) < 1e-10:
+                    continue
+                j, k = int(left[position]), int(right[position])
+                first = (j, center) if inbound else (center, j)
+                second = (k, center) if inbound else (center, k)
+                key = (
+                    (first, second)
+                    if first < second
+                    else (second, first)
+                )
+                quadratic[key] = weight
+
+    # A small structural correction discourages reciprocal capacity that
+    # provides little directed expansion; heavy reciprocal demand discounts it.
+    for i in range(n):
+        for j in range(i + 1, n):
+            weight = 0.075 * (
+                1.0 - 0.5 * float(traffic[i, j] + traffic[j, i])
+            )
+            if weight > 1e-10:
+                quadratic[((i, j), (j, i))] = weight
+
+    # Remove linear row/column gauge components. On valid networks these
+    # are constants, not useful signals for ranking topologies or exchanges.
+    gauge = coefficients.copy()
+    np.fill_diagonal(gauge, 0.0)
+    for _ in range(12):
+        row_mean = gauge.sum(axis=1) / max(n - 1, 1)
+        gauge -= row_mean[:, None]
+        np.fill_diagonal(gauge, 0.0)
+        column_mean = gauge.sum(axis=0) / max(n - 1, 1)
+        gauge -= column_mean[None, :]
+        np.fill_diagonal(gauge, 0.0)
+
+    linear = {link: float(gauge[link]) for link in links}
+    return linear, quadratic, 1.50
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

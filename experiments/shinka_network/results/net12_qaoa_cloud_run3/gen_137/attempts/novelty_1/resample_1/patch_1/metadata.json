@@ -1,0 +1,14 @@
+{
+  "generation": 137,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "load_balanced_paths",
+  "patch_description": "The prior programs mainly reward individual direct demands and selected two-hop paths. This design instead estimates the load contribution of plausible direct and two-hop routes, then uses sparse positive couplings to discourage choosing links that would jointly concentrate traffic on the same source or destination. A small, demand-weighted set of relay paths supplies alternatives without allowing zero-affinity routes to dominate. The interaction budget is bounded by the number of nodes, preserving manageable communities; direct rewards remain the primary signal. All weights are normalized together, and the evaluator continues to supply degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:51:38.363971",
+  "llm_cost": 0.001587,
+  "llm_model": "gpt-6-luna"
+}

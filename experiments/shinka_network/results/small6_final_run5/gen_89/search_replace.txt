@@ -1,0 +1,57 @@
+<NAME>
+ambiguous_third_route
+</NAME>
+
+<DESCRIPTION>
+Limit each demand to its two best two-hop routes by default. For demands above the existing 68th-percentile cutoff, add a third route only when its rank is within 8% of the second route’s rank. This targets genuinely ambiguous routing choices while dropping the unconditional low-pressure fallback and many weaker couplings, keeping the model more compact and reducing rewards for poorly supported routes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            keep = min(
+                len(candidates),
+                4 if t[source, target] >= model.heavy_cutoff else 2,
+            )
+
+            for position, (_, middle, discount) in enumerate(
+                candidates[:keep]
+            ):
+                rank_factor = 1.0 + 0.08 * (keep - position)
+                builder.add_pair(
+                    (source, middle),
+                    (middle, target),
+                    -0.46 * route_size_factor * support * rank_factor / discount,
+                )
+
+            # A low-pressure fallback complements affinity-based choices.
+            if keep < len(candidates):
+                _, middle, discount = min(
+                    candidates[keep:],
+                    key=lambda item: (item[2], item[1]),
+                )
+                builder.add_pair(
+                    (source, middle),
+                    (middle, target),
+                    -0.30 * route_size_factor * support / discount,
+                )
+=======
+            keep = min(2, len(candidates))
+            # Reserve a third route for heavy demands with near-tied options.
+            if (
+                t[source, target] >= model.heavy_cutoff
+                and len(candidates) > 2
+                and candidates[2][0] >= 0.92 * candidates[1][0]
+            ):
+                keep = 3
+
+            for position, (_, middle, discount) in enumerate(
+                candidates[:keep]
+            ):
+                rank_factor = 1.0 + 0.08 * (keep - position)
+                builder.add_pair(
+                    (source, middle),
+                    (middle, target),
+                    -0.46 * route_size_factor * support * rank_factor / discount,
+                )
+>>>>>>> REPLACE
+</DIFF>

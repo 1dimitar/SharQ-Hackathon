@@ -1,0 +1,39 @@
+<NAME>
+targeted_high_demand_relays
+</NAME>
+
+<DESCRIPTION>
+Add two relay candidates only for OD pairs in the top demand quintile, leaving the existing relay budget unchanged for the rest. High-volume pairs are most likely to dominate the maximum link load, and extra candidate routes give the QUBO a chance to support them without adding relay couplings for every pair. The added terms remain well below the allowed quadratic-term cap; the existing aggregation also avoids duplicate keys.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+
+    for i in range(n):
+=======
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+
+    # Spend a small extra relay budget on the highest-demand OD pairs.
+    positive_od = traffic[traffic > 0.0]
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.80)) if positive_od.size else float("inf")
+    )
+    extra_relays = min(2, max(0, n - 2 - relay_count))
+
+    for i in range(n):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            for rank, j in candidates[:relay_count]:
+=======
+            pair_relay_count = relay_count
+            if od >= high_demand_cutoff:
+                pair_relay_count = min(n - 2, relay_count + extra_relays)
+
+            for rank, j in candidates[:pair_relay_count]:
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "adaptive_parent_productivity",
+  "patch_description": "Adapt parent selection using each archive member\u2019s search history. The existing elite bias remains as a baseline, while repeated unproductive visits reduce a parent\u2019s selection weight and recent improvements increase it. This should spend fewer LP calls revisiting stalled regions without permanently abandoning parents that have previously produced useful moves.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:54:09.557085",
+  "llm_cost": 0.0025480000000000004,
+  "llm_model": "gpt-6-luna"
+}

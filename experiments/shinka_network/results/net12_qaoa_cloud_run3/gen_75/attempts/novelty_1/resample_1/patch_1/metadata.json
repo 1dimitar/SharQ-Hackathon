@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_selection",
+  "patch_description": "Select three relays per demand pair, favoring paths with demand support on both legs while discounting busy relays and edges. A fixed reward budget prevents indirect service from overwhelming direct-link incentives and reduces the interaction count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:23:05.326844",
+  "llm_cost": 0.008853,
+  "llm_model": "gpt-6.1-terra"
+}

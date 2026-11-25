@@ -1,0 +1,16 @@
+<NAME>
+linear_component_pressure
+</NAME>
+
+<DESCRIPTION>
+Replace the nonlinear component-link discount with `1 + 0.75 * edge_pressure`, keeping demand support, node capacity, and reward allocation unchanged. The current power discount can suppress paths using busy component links sharply, even when those paths are valuable; this milder linear form tests whether preserving more such alternatives improves the typical sampled topology and median routing score.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                pressure_discount = (1.0 + edge_pressure) ** pressure_exponent
+=======
+                pressure_discount = 1.0 + 0.75 * edge_pressure
+>>>>>>> REPLACE
+
+</DIFF>

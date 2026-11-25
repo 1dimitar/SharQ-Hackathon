@@ -1,0 +1,192 @@
+<NAME>
+transit_compact
+</NAME>
+
+<DESCRIPTION>
+Combines the compact two-hop route selection and estimated transit pressure from the strongest inspiration program with the reciprocal-link reward used by the current program. The direct-link weights remain unchanged. Route terms are accumulated canonically, and the transit estimate discourages overusing attractive but already busy intermediate nodes. It omits broader direct-versus-route couplings to keep the QUBO compact.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and compact, pressure-aware route terms."""
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.nan_to_num(
+        matrix, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(traffic.max()) if traffic.size else 0.0
+    if scale <= 0.0:
+        linear = {
+            (i, j): 0.0
+            for i in range(n)
+            for j in range(n)
+            if i != j
+        }
+        return linear, {}, 1.25
+
+    normalized = traffic / scale
+    roots = np.sqrt(normalized)
+
+    # Preserve the established direct-service signal.
+    linear = {
+        (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+    max_incident = max(float(incident.max()), 1e-12)
+    initial_pressure = np.maximum(0.65, incident / max_incident)
+
+    # Softly estimate transit load by splitting each OD pair over its two
+    # strongest supported two-hop alternatives.
+    transit_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+
+            routes = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                evidence = float(normalized[i, j] + normalized[j, k])
+                if evidence <= 0.02:
+                    continue
+                rank = (0.25 + evidence) / (float(initial_pressure[j]) ** 0.75)
+                routes.append((rank, j, evidence))
+
+            routes.sort(reverse=True)
+            selected = routes[:2]
+            if not selected:
+                continue
+
+            strengths = [
+                rank * rank * (0.20 + evidence)
+                for rank, _, evidence in selected
+            ]
+            strength_sum = sum(strengths)
+            if strength_sum <= 0.0:
+                continue
+
+            routed_fraction = 0.35 + 0.65 * (1.0 - float(normalized[i, k]))
+            for (_, j, _), strength in zip(selected, strengths):
+                transit_load[j] += (
+                    float(traffic[i, k])
+                    * routed_fraction
+                    * strength
+                    / strength_sum
+                )
+
+    projected_pressure = incident / max_incident + (
+        0.35 * transit_load / max_incident
+    )
+    node_pressure = np.maximum(
+        0.65, np.minimum(1.8, projected_pressure)
+    )
+
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+
+    quadratic = {}
+
+    def add_quadratic(first, second, weight):
+        if first == second or abs(weight) < 1e-13:
+            return
+        key = (first, second) if first < second else (second, first)
+        quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    # Reward plausible two-hop alternatives, selecting a small number per
+    # demand pair and discounting routes through pressured transit nodes.
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+
+            support = float(
+                0.70 * normalized[i, k] + 0.30 * roots[i, k]
+            )
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_evidence = float(normalized[i, j] + normalized[j, k])
+                pressure = float(node_pressure[j])
+                rank = (0.25 + edge_evidence) / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_evidence)
+                candidates.append((rank, j, discount))
+
+            candidates.sort(reverse=True)
+            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+            selected = set()
+
+            for position, (_, j, discount) in enumerate(candidates[:keep]):
+                selected.add(j)
+                rank_factor = 1.0 + 0.08 * (keep - position)
+                weight = -0.46 * support * rank_factor / max(discount, 1e-12)
+                add_quadratic((i, j), (j, k), weight)
+
+            # Also retain one alternative with a particularly favorable
+            # pressure discount, if it is not already among the ranked routes.
+            remaining = [
+                candidate for candidate in candidates
+                if candidate[1] not in selected
+            ]
+            if remaining:
+                _, j, discount = min(
+                    remaining, key=lambda candidate: (candidate[2], candidate[1])
+                )
+                weight = -0.30 * support / max(discount, 1e-12)
+                add_quadratic((i, j), (j, k), weight)
+
+    # A reciprocal pair can serve traffic directly in both directions.
+    for i in range(n):
+        for j in range(i + 1, n):
+            reciprocal_support = min(
+                float(normalized[i, j]), float(normalized[j, i])
+            )
+            if reciprocal_support > 0.0:
+                add_quadratic(
+                    (i, j), (j, i), -0.18 * reciprocal_support
+                )
+
+    quadratic = {
+        key: value
+        for key, value in quadratic.items()
+        if abs(value) >= 1e-12
+    }
+    return linear, quadratic, 1.25
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

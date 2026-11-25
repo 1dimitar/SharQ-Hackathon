@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_credit_balance",
+  "patch_description": "This design replaces broad two-hop rewards with a sparse, fixed-budget route-credit model. For each OD pair, it ranks relays using edge exposure and pressure-aware node availability, then distributes a capped incentive across only the two strongest two-hop alternatives. This avoids rewarding every possible relay independently. It also adds small, localized positive couplings between high-demand links sharing a tail or head, approximating endpoint crowding without creating a dense interaction graph. Relay availability uses the gentler pressure exponent suggested by the prior feedback.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:54:41.718967",
+  "llm_cost": 0.0030282,
+  "llm_model": "gpt-6-luna"
+}

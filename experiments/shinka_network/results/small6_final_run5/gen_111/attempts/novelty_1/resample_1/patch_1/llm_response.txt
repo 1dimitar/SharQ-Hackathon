@@ -1,0 +1,49 @@
+<NAME>
+two_route_selective_third
+</NAME>
+
+<DESCRIPTION>
+Use two affinity-selected routes per demand, admitting a third only when it is nearly tied with the second. Apply a stricter admission ratio of 0.96 to ordinary demands while retaining 0.92 for the highest-demand quartile.
+
+This limits redundant path rewards that can favor poor topologies and distort exchange rankings. Heavy demands retain more routing flexibility, and the existing low-pressure fallback remains unchanged. Compare traffic against the traffic-derived cutoff so the high-demand classification is scale invariant. Structural terms, reward strengths, and degree penalties remain unchanged to isolate the route-selection change.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    boundary_ratio = 0.92
+=======
+    boundary_ratio = 0.96
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            base_keep = min(
+                len(candidates),
+                4 if normalized[i, k] >= cutoff else 2,
+            )
+=======
+            # Two supported routes are the default; a third must pass
+            # the ambiguity test below, even for high-demand pairs.
+            base_keep = min(len(candidates), 2)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            if keep == base_keep and keep < len(candidates):
+                next_rank = candidates[keep][0]
+                if (
+                    next_rank >= boundary_ratio * candidates[keep - 1][0]
+                    and next_rank >= leading_ratio * best_rank
+                ):
+                    keep += 1
+=======
+            if keep == base_keep and keep < len(candidates):
+                next_rank = candidates[keep][0]
+                # The cutoff is in original traffic units. Heavy demands
+                # receive slightly more latitude, but no automatic routes.
+                admission_ratio = (
+                    0.92 if traffic[i, k] >= cutoff else boundary_ratio
+                )
+                if (
+                    next_rank >= admission_ratio * candidates[keep - 1][0]
+                    and next_rank >= leading_ratio * best_rank
+                ):
+                    keep += 1
+>>>>>>> REPLACE
+</DIFF>

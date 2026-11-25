@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "diverse_batch_progress",
+  "patch_description": "The current LP batch is chosen almost entirely by surrogate energy, so its calls can cluster around near-duplicate topologies and miss useful alternatives. Select energy-ranked proposals while first enforcing a minimum edge-set distance; then fill remaining slots by energy rank. Also fix the progress check: `evaluate` updates `best_score`, so comparing the returned value against `best_score` immediately afterward can never detect a new best. Comparing against the score before evaluation lets the search reset its stale counter when it actually improves.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:41:07.784288",
+  "llm_cost": 0.0016826,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,28 @@
+<NAME>
+relay_share_normalization
+</NAME>
+
+<DESCRIPTION>
+Measure relay usefulness using the share of traffic entering node j that comes from i and the share leaving j that goes to k. The current inbound factor divides by i’s total outgoing traffic, which can favor links that are common destinations for i without establishing that j is a meaningful receiving relay. Normalizing by j’s incoming traffic instead makes the path-specific factor reflect both sides of the relay. Keep the existing small background reward and congestion discount so the change adjusts, rather than replaces, the current two-hop signal.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    in_fit = float(d[i, j]) / (float(row[i]) + 1e-12)
+                    out_fit = float(d[j, k]) / (float(row[j]) + 1e-12)
+
+                    # A small background term permits useful transit routes
+                    # even when the exact adjacent OD traffic is absent.
+                    fit = 0.15 + 0.85 * np.sqrt(in_fit * out_fit)
+=======
+                    # Measure how specifically j serves this incoming source
+                    # and outgoing destination, rather than normalizing the
+                    # incoming leg by i's unrelated total outgoing traffic.
+                    in_fit = float(d[i, j]) / (float(col[j]) + 1e-12)
+                    out_fit = float(d[j, k]) / (float(row[j]) + 1e-12)
+
+                    # Keep a small background reward while prioritizing paths
+                    # whose two legs are substantial shares of relay traffic.
+                    fit = 0.15 + 0.85 * np.sqrt(in_fit * out_fit)
+>>>>>>> REPLACE
+</DIFF>

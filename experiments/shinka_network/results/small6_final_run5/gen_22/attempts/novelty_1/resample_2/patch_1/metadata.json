@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "coverage_curvature",
+  "patch_description": "This design models outgoing and incoming links as portfolios of routing opportunities. A deterministic fractional network estimates destination coverage over several hops. A second-order expansion of a logarithmic coverage objective then rewards complementary neighbors and penalizes redundant ones.\n\nSparse two-link completion rewards provide topology-dependent routing information, while the coverage model supplies longer-range information missing from direct-demand and two-hop-only surrogates. Route selection accounts for estimated fractional transit load. Coupling counts remain O(n\u00b3), and degree penalties are left entirely to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:11:47.059461",
+  "llm_cost": 0.07176199999999999,
+  "llm_model": "gpt-6.1-sol"
+}

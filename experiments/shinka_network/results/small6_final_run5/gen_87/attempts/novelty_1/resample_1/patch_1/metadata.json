@@ -1,0 +1,14 @@
+{
+  "generation": 87,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_competition_discount",
+  "patch_description": "Discount route rewards at intermediate nodes that already carry many strong retained routes. The accumulated absolute route-coupling magnitude is demand-weighted by the existing route support and selection factors, so it provides a lightweight proxy for competition without adding new couplings or changing the route-selection logic. The discount is bounded to at most 18%, preserving the existing signal while making heavily used transit nodes somewhat less attractive.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:09:08.311349",
+  "llm_cost": 0.0029879,
+  "llm_model": "gpt-6-luna"
+}

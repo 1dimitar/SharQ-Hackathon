@@ -1,0 +1,16 @@
+<NAME>
+expand_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Increase the per-OD relay support from roughly one fifth to one third of the nodes, capped at the number of eligible relays. The current budget is only two relays for the 12-node cases, producing a sparse QUBO with 176 quadratic terms. A broader shortlist gives the solver more viable two-hop alternatives when the top-ranked relays are not part of a good overall topology, while still avoiding the broad support of including every relay. This is a targeted test of the suggested support-size sweep; the existing relay ranking and weights remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    relay_budget = max(1, n // 5)
+=======
+    relay_budget = min(n - 2, max(1, n // 3))
+>>>>>>> REPLACE
+
+</DIFF>

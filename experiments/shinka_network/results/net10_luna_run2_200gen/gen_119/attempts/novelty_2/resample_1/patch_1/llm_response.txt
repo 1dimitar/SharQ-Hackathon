@@ -1,0 +1,88 @@
+<NAME>
+cap_two_hop_support
+</NAME>
+
+<DESCRIPTION>
+The current two-hop terms can accumulate across all \(n-2\) intermediate nodes for each OD pair, so their combined influence may greatly exceed that pair’s direct-link reward. Keep the existing path-quality ranking, but rescale the terms for each OD pair together when their total magnitude exceeds 50% of its linear reward. This limits aggregate two-hop influence without changing which intermediate paths are preferred, and leaves OD pairs with no direct demand without two-hop rewards.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.25
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                # The product is symmetric in its two binary factors; store
+                # the key in canonical order for a stable representation.
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                quadratic[key] = weight
+=======
+    quadratic = {}
+    path_strength = 0.25
+    support_cap = 0.50
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+            od_terms = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                # The product is symmetric in its two binary factors; store
+                # the key in canonical order for a stable representation.
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                od_terms.append((key, weight))
+
+            # Bound the aggregate two-hop reward for this OD pair relative
+            # to its direct-link reward, preserving relative path quality.
+            total_support = sum(abs(weight) for _, weight in od_terms)
+            support_limit = support_cap * abs(linear[(i, k)])
+            factor = min(1.0, support_limit / total_support) if total_support > 0.0 else 1.0
+            for key, weight in od_terms:
+                quadratic[key] = factor * weight
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "recombine_anneal",
+  "patch_description": "This design shifts the search from repeated small neighborhoods toward an adaptive mixture of guided switches, multi-switch perturbations, and repaired edge-set recombination. Recombination uses the repaired QAOA pool as a reservoir of alternate structures, while an LP-scored archive supplies stronger donors. Parent selection balances solution quality with under-exploration, and operator probabilities respond to which proposal types have recently produced improvements. LP calls are spent on a small, varied batch screened by the available surrogate rather than on a large neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:16:21.340152",
+  "llm_cost": 0.0039833,
+  "llm_model": "gpt-6-luna"
+}

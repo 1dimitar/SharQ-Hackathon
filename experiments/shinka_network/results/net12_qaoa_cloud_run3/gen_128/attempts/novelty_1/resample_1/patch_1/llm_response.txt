@@ -1,0 +1,20 @@
+<NAME>
+relay_pressure_exponent
+</NAME>
+
+<DESCRIPTION>
+Reduce the pressure exponent in relay ranking from 1 to 0.75 while leaving the affinity formula and candidate budgets unchanged. This tests whether the current ranking discounts high-pressure relays too strongly: high-affinity candidates can rank better even when their node pressure is elevated. The selected relay weights and the separate full-path alternative remain unchanged, isolating the effect to candidate ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                pressure = float(node_pressure[j])
+                rank = (0.25 + edge_pressure) / pressure
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+=======
+                pressure = float(node_pressure[j])
+                affinity = 0.25 + edge_pressure
+                rank = affinity / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+>>>>>>> REPLACE
+</DIFF>

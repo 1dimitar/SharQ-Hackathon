@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elite_path_relinking",
+  "patch_description": "Add a short, degree-preserving path from the current parent toward a high-quality network already scored. Ordinary local moves can improve the parent, but may not connect it to a better region of the search space; the intermediate networks on this path give the LP a chance to find useful stepping stones. Each step uses a two-switch that strictly increases the number of shared links with the target, so the path makes progress and cannot cycle. The path is bounded to keep its generation cost small.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:42:23.384481",
+  "llm_cost": 0.0026712000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,63 @@
+<NAME>
+price_guided_batches
+</NAME>
+
+<DESCRIPTION>
+Rank proposed moves using the directional LP-price signal: removing positively priced links and adding unpriced links is a promising way to reduce congestion. Reserve part of each LP batch for the strongest price-benefit moves, while retaining energy-ranked and diverse selections for exploration. This makes dual guidance affect which networks receive LP calls without letting the surrogate or prices become a hard filter.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Rank cheaply by energy, but diversify the expensive LP batch by
+        # requiring distinct edge sets before filling any remaining slots.
+        fresh.sort(key=tools.energy)
+        batch_size = min(9, len(fresh))
+        batch = []
+        for net in fresh:
+            if all(len(set(net) ^ set(old)) >= 4 for old in batch):
+                batch.append(net)
+            if len(batch) >= batch_size:
+                break
+        for net in fresh:
+            if len(batch) >= batch_size:
+                break
+            if net not in batch:
+                batch.append(net)
+=======
+        # A positive dual price marks a link whose load contributes to the
+        # current congestion objective. Prefer moves that remove priced links.
+        price_map = {tuple(a): float(p) for a, p in prices.items()}
+        parent_edges = set(parent)
+
+        def move_priority(net):
+            removed = parent_edges - set(net)
+            added = set(net) - parent_edges
+            price_gain = sum(price_map.get(a, 0.0) for a in removed)
+            price_gain -= sum(price_map.get(a, 0.0) for a in added)
+            return price_gain, float(tools.energy(net))
+
+        batch_size = min(9, len(fresh))
+        ranked_energy = sorted(fresh, key=tools.energy)
+        ranked_price = sorted(fresh, key=lambda net: move_priority(net)[0], reverse=True)
+
+        # Reserve some calls for the strongest directional dual signals, then
+        # diversify the remainder while keeping the surrogate as a useful guide.
+        batch = []
+        price_slots = min(3, batch_size)
+        for net in ranked_price:
+            if net not in batch:
+                batch.append(net)
+            if len(batch) >= price_slots:
+                break
+        for net in ranked_energy:
+            if len(batch) >= batch_size:
+                break
+            if all(len(set(net) ^ set(old)) >= 4 for old in batch):
+                batch.append(net)
+        for net in ranked_energy:
+            if len(batch) >= batch_size:
+                break
+            if net not in batch:
+                batch.append(net)
+>>>>>>> REPLACE
+</DIFF>

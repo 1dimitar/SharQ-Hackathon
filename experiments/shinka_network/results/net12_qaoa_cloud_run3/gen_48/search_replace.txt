@@ -1,0 +1,20 @@
+<NAME>
+stronger_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Increase the pressure sensitivity of the relay discount from linear to a power of 1.25, in both candidate ranking and the resulting two-hop reward. This preserves the current candidate set and affinity features while more strongly discouraging paths through nodes with high incident demand, which may reduce transit bottlenecks and improve topology quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = affinity / (0.75 + float(node_pressure[j]))
+=======
+                rank = affinity / (0.75 + float(node_pressure[j])) ** 1.25
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                weight = -0.25 * support / (0.75 + float(node_pressure[j]))
+=======
+                weight = -0.25 * support / (0.75 + float(node_pressure[j])) ** 1.25
+>>>>>>> REPLACE
+</DIFF>

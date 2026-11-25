@@ -1,0 +1,14 @@
+{
+  "generation": 102,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_relay_budget",
+  "patch_description": "Reduce the default relay count to `max(1, n // 5)` and retain up to two extra relays for OD pairs in the top 20% of positive demands. This tests a sparser interaction graph while preserving additional routing options for the most important traffic. The cutoff is computed from normalized demand, and zero-demand matrices safely receive no extra relays.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:59:51.932231",
+  "llm_cost": 0.0011494,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "stall_adaptive_relink",
+  "patch_description": "When a parent stalls, increase the number and depth of chained switch walks, and bias relinking toward a structurally distant archive member. This gives stalled searches a stronger way to leave their current neighborhood while retaining the existing, lighter behavior for productive parents. The extra effort is capped and scales with \\(n\\).",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:39:28.552465",
+  "llm_cost": 0.0036512000000000003,
+  "llm_model": "gpt-6-luna"
+}

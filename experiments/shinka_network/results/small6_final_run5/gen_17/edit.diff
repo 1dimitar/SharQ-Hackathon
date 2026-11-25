@@ -1,0 +1,192 @@
+--- a/original.py
++++ b/original.py
+@@ -1,125 +1,128 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def _prepare_demand(demand):
+-    """Return nonnegative, zero-diagonal demand and normalized features."""
++    """Return normalized demand, transit pressure, and a heavy-demand cutoff."""
+     traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+-    n = traffic.shape[0]
+     np.fill_diagonal(traffic, 0.0)
+ 
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
+-    if scale <= 0.0:
+-        scale = 1.0
+-
+-    normalized = traffic / scale
++    scale = float(traffic.max()) if traffic.size else 0.0
++    normalized = traffic / (scale if scale > 0.0 else 1.0)
+     roots = np.sqrt(normalized)
+ 
+-    # Transit pressure reflects both traffic entering and leaving each node.
+-    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-    pressure = np.maximum(0.65, incident / max_incident)
++    incident = np.maximum(normalized.sum(axis=0), normalized.sum(axis=1))
++    peak = float(incident.max()) if incident.size else 0.0
++    pressure = np.maximum(0.65, incident / (peak if peak > 0.0 else 1.0))
+ 
+-    positive = traffic[traffic > 0.0]
++    positive = normalized[normalized > 0.0]
+     cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+-    return traffic, normalized, roots, pressure, cutoff
++    return normalized, roots, pressure, cutoff
+ 
+ 
+-def _add_route(quadratic, i, j, k, weight):
+-    """Accumulate a two-edge route interaction under a canonical key."""
+-    first, second = (i, j), (j, k)
++def _add_pair(quadratic, first, second, weight):
++    """Accumulate a coupling using a canonical, deterministic key."""
+     key = (first, second) if first < second else (second, first)
+     quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+ 
+ 
+-def _build_route_terms(traffic, normalized, roots, pressure, cutoff):
+-    """Choose a small set of pressure-aware two-hop alternatives per demand."""
+-    n = traffic.shape[0]
++def _build_route_terms(normalized, roots, pressure, cutoff):
++    """Select affinity routes plus one low-pressure alternative per demand."""
++    n = len(normalized)
+     quadratic = {}
++    links = [[(i, j) for j in range(n)] for i in range(n)]
++    support = 0.70 * normalized + 0.30 * roots
++    inverse_pressure_rank = pressure ** -0.75
+ 
++    # Vectorize feature construction while retaining sparse dictionary output.
+     for i in range(n):
++        edge_pressure = normalized[i, :, None] + normalized
++        ranks = (0.25 + edge_pressure) * inverse_pressure_rank[:, None]
++        discounts = pressure[:, None] * (1.0 + 0.5 * edge_pressure)
++
+         for k in range(n):
+-            amount = traffic[i, k]
++            amount = float(normalized[i, k])
+             if i == k or amount <= 0.0:
+                 continue
+ 
+-            support = 0.70 * normalized[i, k] + 0.30 * roots[i, k]
+-            candidates = []
++            heavy = amount >= cutoff
++            candidates = [
++                (float(ranks[j, k]), j, float(discounts[j, k]))
++                for j in range(n)
++                if j != i and j != k
++            ]
+ 
+-            for j in range(n):
+-                if j == i or j == k:
+-                    continue
++            # Match the inspiration program's tie-breaking order.
++            candidates.sort(reverse=True)
++            keep = min(len(candidates), 4 if heavy else 2)
++            selected = []
+ 
+-                edge_pressure = normalized[i, j] + normalized[j, k]
+-                transit_pressure = float(pressure[j])
+-                affinity = 0.25 + edge_pressure
+-                rank = affinity / (transit_pressure ** 0.75)
+-                discount = transit_pressure * (1.0 + 0.5 * edge_pressure)
+-                candidates.append((float(rank), j, float(discount)))
++            route_support = float(support[i, k])
++            for position in range(keep):
++                _, j, discount = candidates[position]
++                rank_factor = 1.0 + 0.08 * (keep - position)
++                weight = -0.46 * route_support * rank_factor / discount
++                selected.append((j, weight))
+ 
+-            # Strong demands get a wider menu; weak demands keep the model sparse.
+-            candidates.sort(key=lambda item: (-item[0], item[1]))
+-            keep = min(len(candidates), 4 if amount >= cutoff else 2)
+-            selected = set()
++            # The unselected suffix avoids a separate set and filtering pass.
++            if keep < len(candidates):
++                _, j, discount = min(
++                    candidates[keep:],
++                    key=lambda item: (item[2], item[1]),
++                )
++                selected.append((j, -0.30 * route_support / discount))
+ 
+-            for position, (_, j, discount) in enumerate(candidates[:keep]):
+-                selected.add(j)
+-                rank_factor = 1.0 + 0.08 * (keep - position)
+-                weight = -0.46 * float(support) * rank_factor / discount
+-                _add_route(quadratic, i, j, k, weight)
++            direct = links[i][k]
++            for j, weight in selected:
++                first, second = links[i][j], links[j][k]
++                _add_pair(quadratic, first, second, weight)
+ 
+-            # Preserve one distinct alternative with a favorable pressure discount.
+-            remaining = [item for item in candidates if item[1] not in selected]
+-            if remaining:
+-                _, j, discount = min(remaining, key=lambda item: (item[2], item[1]))
+-                _add_route(
+-                    quadratic,
+-                    i,
+-                    j,
+-                    k,
+-                    -0.30 * float(support) / discount,
+-                )
++                # Strong demands otherwise receive substantial duplicated
++                # credit from a direct edge and several two-hop alternatives.
++                # Limit overlap couplings to these demands to stay compact.
++                if heavy:
++                    correction = -0.25 * weight
++                    _add_pair(quadratic, direct, first, correction)
++                    _add_pair(quadratic, direct, second, correction)
+ 
+     return quadratic
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build direct-link rewards and sparse, pressure-aware route couplings."""
+-    traffic, normalized, roots, pressure, cutoff = _prepare_demand(demand)
+-    n = traffic.shape[0]
++    """Build sparse direct-demand, route, and selective overlap terms."""
++    normalized, roots, pressure, cutoff = _prepare_demand(demand)
++    n = len(normalized)
+ 
+-    # Blend linear and concave rewards so medium-sized demands remain relevant.
++    direct_values = 0.75 * normalized + 0.25 * roots
+     linear = {
+-        (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
++        (i, j): -float(direct_values[i, j])
+         for i in range(n)
+         for j in range(n)
+         if i != j
+     }
+ 
+-    quadratic = _build_route_terms(
+-        traffic, normalized, roots, pressure, cutoff
+-    )
++    quadratic = _build_route_terms(normalized, roots, pressure, cutoff)
++
++    # Degree constraints are added exclusively by the evaluator.
+     return linear, quadratic, 1.25
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

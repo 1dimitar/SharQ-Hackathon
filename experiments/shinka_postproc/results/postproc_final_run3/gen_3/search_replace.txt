@@ -1,0 +1,155 @@
+<NAME>
+ecmp_portfolio_screen
+</NAME>
+
+<DESCRIPTION>
+Add an independent, demand-aware screening signal: shortest-path distances and equal-cost multipath routing estimate both traffic work and link congestion without LP calls. Evaluate this proxy only on a size-dependent shortlist to keep screening inexpensive.
+
+Replace the energy-only batch selection with a portfolio of energy-ranked, routing-ranked, combined-rank, and topologically novel moves. The current tail-exploration branch never executes because the preceding loop already fills the batch; explicitly reserving two slots fixes that issue. Novelty is measured against good archived networks, encouraging exploration beyond small variations of the current elite.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    traffic = np.asarray(demand, dtype=float).copy()
+    np.fill_diagonal(traffic, 0.0)
+    nodes = np.arange(n)
+    sources = np.repeat(nodes, 2)
+
+    def routing_proxy(net):
+        """Cheap ECMP routing, not an LP: combine work and load concentration."""
+        targets = np.fromiter((b for a, b in net), dtype=int, count=2 * n)
+        dist = np.full((n, n), n + 1, dtype=np.int32)
+        dist[nodes, nodes] = 0
+        dist[sources, targets] = 1
+        for k in range(n):
+            np.minimum(dist, dist[:, k, None] + dist[None, k, :], out=dist)
+        diameter = int(dist.max())
+        if diameter > n:
+            return float("inf")
+
+        # For every destination, forward only along distance-decreasing links.
+        downhill = dist[sources, :] == dist[targets, :] + 1
+        count = downhill.reshape(n, 2, n).sum(axis=1)
+        count = np.maximum(count, 1)
+        incoming = np.argsort(targets, kind="stable").reshape(n, 2)
+        flow = traffic.copy()
+        loads = np.zeros(2 * n)
+        for level in range(diameter, 0, -1):
+            sent = (flow / count)[sources, :] * downhill
+            sent *= dist[sources, :] == level
+            loads += sent.sum(axis=1)
+            flow += sent[incoming, :].sum(axis=1)
+
+        # Mean load is a shortest-path work lower bound. The other terms
+        # penalize concentration without trusting ECMP's maximum too strongly.
+        return (0.55 * float(loads.mean())
+                + 0.30 * float(np.sqrt(np.mean(loads * loads)))
+                + 0.15 * float(loads.max()))
+
+    def screen_batch(moves, parent, batch_size=9):
+        """Mix Hamiltonian, independent routing, and archive-novelty screens."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        ranked = sorted(fresh, key=lambda net: (energy(net), net))
+
+        # Bound free-routing work as the neighborhood grows. Include random
+        # alternatives so the Hamiltonian cannot veto the independent proxy.
+        shortlist = ranked[:4 * n]
+        remainder = ranked[4 * n:]
+        if remainder:
+            ids = rng.choice(len(remainder), size=min(2 * n, len(remainder)),
+                             replace=False)
+            shortlist.extend(remainder[int(i)] for i in ids)
+        route_order = sorted(shortlist, key=lambda net: (routing_proxy(net), net))
+        erank = {net: i for i, net in enumerate(ranked)}
+        rrank = {net: i for i, net in enumerate(route_order)}
+        combined = sorted(
+            shortlist,
+            key=lambda net: (
+                erank[net] / max(1, len(ranked))
+                + rrank[net] / max(1, len(shortlist)),
+                net,
+            ),
+        )
+
+        selected = []
+        def take(order, number):
+            added = 0
+            for net in order:
+                if net not in selected:
+                    selected.append(net)
+                    added += 1
+                    if added >= number:
+                        break
+
+        take(ranked, min(3, batch_size))
+        take(route_order, min(3, max(0, batch_size - len(selected))))
+        if len(selected) < batch_size - 2:
+            take(combined, batch_size - 2 - len(selected))
+
+        # Reserve actual capacity for diverse proposals. Compare against a
+        # bounded elite reference set, rather than just the current batch.
+        references = sorted(seen, key=seen.get)[:2 * n]
+        reference_sets = [set(net) for net in references]
+        remaining = [net for net in shortlist if net not in selected]
+        while remaining and len(selected) < batch_size:
+            comparison = reference_sets + [set(net) for net in selected]
+            def novelty(net):
+                links = set(net)
+                separation = min(
+                    (2 * n - len(links & old) for old in comparison),
+                    default=2 * n,
+                )
+                return (separation,
+                        -rrank[net] / max(1, len(shortlist))
+                        -erank[net] / max(1, len(ranked)))
+            chosen = max(remaining, key=novelty)
+            selected.append(chosen)
+            remaining.remove(chosen)
+        if len(selected) < batch_size:
+            take(ranked, batch_size - len(selected))
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,77 @@
+<NAME>
+hot_anchor_rotations
+</NAME>
+
+<DESCRIPTION>
+The current two-switch neighborhood already considers every swap involving a hot arc, but its three-arc rotations choose arcs uniformly at random, so they may rarely include a bottleneck. Add a size-scaled set of rotations that explicitly anchors one of the parent’s hot arcs and samples two partner arcs. These degree-preserving moves remove the flagged arc while offering alternative links, and are then screened alongside the existing random rotations, kicks, and other proposals. This keeps the added work modest as n grows and preserves the broader move portfolio.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        stalls_here = min(stalls.get(parent, 0), 4)
+        rotation_trials = 5 * n + min(stalls.get(parent, 0), 8) * n
+        for _ in range(rotation_trials):
+            ids = rng.choice(m, size=3, replace=False)
+            old = [parent[int(i)] for i in ids]
+            tails = [a for a, b in old]
+            heads = [b for a, b in old]
+            if len(set(tails)) < 3 or len(set(heads)) < 3:
+                continue
+            shift = 1 + int(rng.integers(2))
+            new = {
+                (tails[k], heads[(k + shift) % 3]) for k in range(3)
+            }
+            rest = cur.difference(old)
+            if any(a == b for a, b in new) or new & rest:
+                continue
+            candidate = tuple(sorted(rest | new))
+            moves[candidate] = int(bool(set(old) & hot))
+
+        # Larger perturbations and short steps toward another archive topology.
+=======
+        stalls_here = min(stalls.get(parent, 0), 4)
+        rotation_trials = 5 * n + min(stalls.get(parent, 0), 8) * n
+        for _ in range(rotation_trials):
+            ids = rng.choice(m, size=3, replace=False)
+            old = [parent[int(i)] for i in ids]
+            tails = [a for a, b in old]
+            heads = [b for a, b in old]
+            if len(set(tails)) < 3 or len(set(heads)) < 3:
+                continue
+            shift = 1 + int(rng.integers(2))
+            new = {
+                (tails[k], heads[(k + shift) % 3]) for k in range(3)
+            }
+            rest = cur.difference(old)
+            if any(a == b for a, b in new) or new & rest:
+                continue
+            candidate = tuple(sorted(rest | new))
+            moves[candidate] = int(bool(set(old) & hot))
+
+        # Explicitly anchor additional rotations on bottleneck arcs so they are
+        # not left to chance in the uniformly sampled three-arc neighborhood.
+        hot_ids = [i for i, edge in enumerate(parent) if edge in hot]
+        if hot_ids:
+            partner_ids = [i for i in range(m)]
+            for _ in range(max(2 * n, 24)):
+                p = hot_ids[int(rng.integers(len(hot_ids)))]
+                available = [i for i in partner_ids if i != p]
+                q, r = (int(i) for i in rng.choice(available, size=2, replace=False))
+                old = [parent[p], parent[q], parent[r]]
+                tails = [a for a, b in old]
+                heads = [b for a, b in old]
+                if len(set(tails)) < 3 or len(set(heads)) < 3:
+                    continue
+                rest = cur.difference(old)
+                for shift in (1, 2):
+                    new = {
+                        (tails[k], heads[(k + shift) % 3]) for k in range(3)
+                    }
+                    if any(a == b for a, b in new) or new & rest:
+                        continue
+                    candidate = tuple(sorted(rest | new))
+                    moves[candidate] = 1
+
+        # Larger perturbations and short steps toward another archive topology.
+>>>>>>> REPLACE
+</DIFF>

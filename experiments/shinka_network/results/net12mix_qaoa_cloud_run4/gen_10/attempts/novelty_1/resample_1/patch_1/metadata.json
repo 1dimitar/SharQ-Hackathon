@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_surrogate",
+  "patch_description": "Separates demand preprocessing, relay selection, and coefficient assembly into small deterministic stages. It keeps direct-link demand as the primary signal, then distributes a discounted two-hop reward across a small set of suitable relays for each origin-destination pair. Limiting relays keeps the interaction graph sparser than a fully connected path model while retaining useful route structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:26:49.513161",
+  "llm_cost": 0.001451,
+  "llm_model": "gpt-6-luna"
+}

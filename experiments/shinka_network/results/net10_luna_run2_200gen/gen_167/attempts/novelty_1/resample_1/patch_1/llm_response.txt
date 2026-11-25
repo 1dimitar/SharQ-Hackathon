@@ -1,0 +1,16 @@
+<NAME>
+moderate_path_strength
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward strength from 0.46 to 0.50, leaving the direct-link signal, transit-pressure estimate, and edge discount unchanged. This is a controlled step toward the suggested narrow sweep around 0.56: indirect routes matter because most traffic cannot be carried directly, but increasing their reward too much risks favoring paths whose component links compete for capacity. Testing 0.50 first keeps that risk modest while measuring whether stronger two-hop support improves both the best and typical sampled topology.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.46
+=======
+    path_strength = 0.50
+>>>>>>> REPLACE
+
+</DIFF>

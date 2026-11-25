@@ -1,0 +1,14 @@
+{
+  "generation": 176,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_twohop_support",
+  "patch_description": "For each positive-demand OD pair, the existing loop can add a reward for every possible two-hop route. Together, those alternatives may outweigh the direct-link reward even when no individual route is compelling. Collect the pair\u2019s two-hop terms and proportionally scale them only when their total magnitude exceeds 0.75 of that pair\u2019s direct-link reward. This preserves the relative ranking of candidate intermediate nodes while limiting aggregate two-hop support. The quadratic term count is unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:36.964552",
+  "llm_cost": 0.0011538,
+  "llm_model": "gpt-6-luna"
+}

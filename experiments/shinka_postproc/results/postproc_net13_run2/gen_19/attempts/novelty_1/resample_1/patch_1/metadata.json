@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 7,
+  "patch_name": "adaptive_neighborhood",
+  "patch_description": "Track whether two-switches, three-link rotations, or multi-switch kicks produce improvements, then allocate more generation effort to move classes with better observed improvement rates. A small exploration floor keeps every neighborhood active, while a modest cap prevents early noisy results from starving other move types. The classification uses the number of changed arcs, so it requires no changes to move-generation interfaces.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:54:50.034758",
+  "llm_cost": 0.001595,
+  "llm_model": "gpt-6-luna"
+}

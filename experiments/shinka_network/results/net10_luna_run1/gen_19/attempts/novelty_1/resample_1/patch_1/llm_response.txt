@@ -1,0 +1,25 @@
+<NAME>
+balance_direct_path
+</NAME>
+
+<DESCRIPTION>
+The current QUBO gives direct demand a coefficient of −1.0 and two-hop paths a coefficient of 0.12. Sweep toward a less dominant direct reward and a moderately stronger path reward: use −0.8 for direct links and 0.16 for qualifying two-hop paths. This preserves the existing positive-endpoint-demand and traffic-share filters while testing whether the low-energy topologies better account for traffic that can be carried through relays.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): -float(t[i, j])
+        for i in range(n)
+=======
+    direct_coefficient = 0.8
+    linear = {
+        (i, j): -direct_coefficient * float(t[i, j])
+        for i in range(n)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                value = 0.12 * float(t[i, k]) * profile
+=======
+                value = 0.16 * float(t[i, k]) * profile
+>>>>>>> REPLACE
+</DIFF>

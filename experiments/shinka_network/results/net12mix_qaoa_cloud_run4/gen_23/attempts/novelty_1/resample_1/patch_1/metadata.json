@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "The current baseline uses only globally normalized direct demand and no interactions, so it misses useful relay structure. This version keeps direct demand dominant, adds a small concave adjustment to avoid concentrating all reward on the largest demands, and allocates a modest two-hop bonus across relays, mildly favoring nodes with lower traffic activity. Small reciprocal-link bonuses provide additional topology structure without overwhelming direct demand. The degree penalty is increased from 1.0 to 2.5 to make degree-feasible assignments more influential before repair. The interaction count remains well below the 4\u00b7n\u00b3 limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:36:01.542081",
+  "llm_cost": 0.0020466,
+  "llm_model": "gpt-6-luna"
+}

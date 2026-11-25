@@ -1,0 +1,93 @@
+<NAME>
+incumbent_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Add a short path-relinking search from each selected parent toward the best network found so far. Each step uses a valid degree-preserving two-switch that increases the number of links shared with the incumbent, and contributes the intermediate networks to the existing move pool. This can explore useful combinations of two good topologies that ordinary local moves may not prioritize.
+
+Also fix the batch filler: its current surrogate-ranking loop fills every available slot before the tail-exploration code runs, so the intended random exploration slot is never reserved. Leave one slot for a random fresh move when alternatives remain, preserving a small amount of exploration alongside the ranked trials. Both changes scale with n and use the existing RNG and LP-scoring pipeline.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+
+        # Relink the parent toward the incumbent through improving-overlap switches.
+        target = best_net
+        if target is not None and target != net:
+            target_set = set(target)
+            cur = set(net)
+            for _ in range(2 * n):
+                out_by_source = {}
+                in_by_dest = {}
+                for a, b in cur:
+                    out_by_source.setdefault(a, []).append(b)
+                    in_by_dest.setdefault(b, []).append(a)
+
+                best_step = None
+                best_gain = 0
+                for a, b in target_set - cur:
+                    for d in out_by_source.get(a, ()):
+                        for c in in_by_dest.get(b, ()):
+                            replacement = (c, d)
+                            if c == d or replacement in cur:
+                                continue
+                            removed = ((a, d), (c, b))
+                            gain = (
+                                1 + int(replacement in target_set)
+                                - int(removed[0] in target_set)
+                                - int(removed[1] in target_set)
+                            )
+                            if gain > best_gain:
+                                best_gain = gain
+                                best_step = (removed, ((a, b), replacement))
+
+                if best_step is None:
+                    break
+                removed, added = best_step
+                cur.difference_update(removed)
+                cur.update(added)
+                moves.add(tuple(sorted(cur)))
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        # Fill by surrogate rank, reserving one slot for exploration if possible.
+        tail = [net for _, net in ranked if net not in selected]
+        fill_limit = batch_size - 1 if tail else batch_size
+        for _, net in ranked:
+            if len(selected) >= fill_limit:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # A random fresh move complements the energy- and pressure-guided picks.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            selected.append(tail[int(rng.integers(len(tail)))])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

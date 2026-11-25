@@ -1,0 +1,14 @@
+{
+  "generation": 107,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "portfolio_archive_search",
+  "patch_description": "Reorganizes the search around a compact scored archive and a modular operator portfolio. Each operator proposes its own neighborhood; a smoothed success-rate model allocates LP trials among bottleneck-focused switches, exploratory switches, rotations, kicks, and consensus-guided moves. Candidate ranking is cached, and each batch keeps some top-ranked proposals while preserving structural diversity. This avoids rebuilding and broadly screening large mixed neighborhoods every round, while retaining multiple ways to escape local minima.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:10:55.158893",
+  "llm_cost": 0.0049124,
+  "llm_model": "gpt-6-luna"
+}

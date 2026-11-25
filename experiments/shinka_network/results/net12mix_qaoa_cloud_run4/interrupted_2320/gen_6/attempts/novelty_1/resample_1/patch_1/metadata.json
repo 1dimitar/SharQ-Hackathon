@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_twohop",
+  "patch_description": "Keep the direct-demand reward, but add a restrained bonus when two selected links form a two-hop route for a demand pair. Scale that bonus down for relays with high total incoming and outgoing demand, since they are more likely to become congested. This preserves useful routing synergies without applying the same unconditional two-hop reward to every path. The resulting interactions are sparse\u2014at most one per ordered two-hop path\u2014and naturally connect links that can jointly serve traffic. Increase the degree penalty so violating the required degree is less attractive than improving the surrogate cost.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:08.599453",
+  "llm_cost": 0.0017573999999999999,
+  "llm_model": "gpt-6-luna"
+}

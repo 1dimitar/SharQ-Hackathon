@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_relink",
+  "patch_description": "This uses LP bottleneck information to generate focused moves, but replaces the existing archive-driven batch search with an annealed walk and target-directed path relinking. Relinking attempts degree-preserving exchanges that add edges from a different elite network, helping the walk cross between promising regions. A small, diverse LP-scored archive supplies both parents and relinking targets. The move mix adapts from LP-confirmed improvements, while surrogate energy only helps rank proposals rather than deciding which networks are good.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:43:53.815341",
+  "llm_cost": 0.0041575,
+  "llm_model": "gpt-6-luna"
+}

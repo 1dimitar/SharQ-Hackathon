@@ -1,0 +1,89 @@
+<NAME>
+cap_indirect_support
+</NAME>
+
+<DESCRIPTION>
+The current two-hop reward for an OD pair is repeated across every possible intermediate node. Even with pressure discounts, its aggregate can therefore outweigh the reward for serving that OD pair directly, making indirect routes too influential in the low-energy region. Keep the existing route-quality estimates, but rescale each OD pair’s two-hop terms together so their total absolute reward is at most 60% of that pair’s direct-link reward. This preserves preferences among candidate relays while limiting the incentive to accumulate many indirect-route terms; it should help prevent indirect rewards from distorting both the best and typical sampled topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reward two-hop paths according to the OD traffic they could carry.
+    # The concave path support preserves some influence for smaller demands.
+    quadratic = {}
+    path_strength = 0.46
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+    # Reward two-hop paths according to the OD traffic they could carry, but
+    # cap their aggregate reward per OD pair to keep indirect support bounded.
+    quadratic = {}
+    path_strength = 0.46
+    indirect_cap = 0.60
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            route_terms = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                route_terms.append((key, weight))
+
+            total_support = sum(abs(weight) for _, weight in route_terms)
+            direct_reward = abs(linear[(i, k)])
+            cap = indirect_cap * direct_reward
+            factor = min(1.0, cap / total_support) if total_support > 0.0 else 1.0
+            for key, weight in route_terms:
+                quadratic[key] = weight * factor
+>>>>>>> REPLACE
+
+</DIFF>

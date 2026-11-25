@@ -1,0 +1,314 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return direct costs, adaptive path couplings, and degree penalty."""
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.maximum(matrix, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    normalized = traffic / scale
+    roots = np.sqrt(normalized)
+    linear = {
+        (i, j): -float(
+            0.75 * normalized[i, j] + 0.25 * roots[i, j]
+        )
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    node_pressure = np.maximum(
+        0.65, incident / max(max_incident, 1e-15)
+    )
+
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+    quadratic = {}
+
+    # Selection parameters:
+    # - discard trailing routes below 70% of the leading affinity;
+    # - add one route only if it is within 8% of the boundary score
+    #   and retains at least 78% of the leading score;
+    # - keep reward growth sublinear when adding alternatives.
+    weak_ratio = 0.70
+    boundary_ratio = 0.92
+    leading_ratio = 0.78
+    reward_exponent = 0.35
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+
+            support = float(
+                0.70 * normalized[i, k] + 0.30 * roots[i, k]
+            )
+            candidates = []
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                edge_pressure = float(
+                    normalized[i, j] + normalized[j, k]
+                )
+                pressure = float(node_pressure[j])
+                rank = (0.25 + edge_pressure) / (pressure ** 0.75)
+                discount = pressure * (1.0 + 0.5 * edge_pressure)
+                candidates.append((float(rank), j, float(discount)))
+
+            candidates.sort(reverse=True)
+            if not candidates:
+                continue
+
+            base_keep = min(
+                len(candidates),
+                4 if traffic[i, k] >= cutoff else 2,
+            )
+            keep = base_keep
+            best_rank = candidates[0][0]
+
+            # Clear score gaps indicate that broadening route coverage
+            # would mostly reward unlikely combinations of links.
+            while (
+                keep > 1
+                and candidates[keep - 1][0] < weak_ratio * best_rank
+            ):
+                keep -= 1
+
+            # Broaden only an unresolved boundary, not an already-pruned
+            # candidate list. The extra route is strictly capped at one.
+            if keep == base_keep and keep < len(candidates):
+                next_rank = candidates[keep][0]
+                if (
+                    next_rank >= boundary_ratio * candidates[keep - 1][0]
+                    and next_rank >= leading_ratio * best_rank
+                ):
+                    keep += 1
+
+            # Adding a route should improve coverage, not simply make an
+            # OD pair much more influential. Do not amplify pruned lists.
+            reward_scale = min(
+                1.0, (float(base_keep) / keep) ** reward_exponent
+            )
+            selected = set()
+
+            for position, (_, j, discount) in enumerate(candidates[:keep]):
+                selected.add(j)
+                # Preserve existing rewards for the original ranks.
+                rank_factor = 1.0 + 0.08 * max(
+                    1, base_keep - position
+                )
+                weight = (
+                    -0.46
+                    * support
+                    * rank_factor
+                    * reward_scale
+                    / discount
+                )
+                first, second = (i, j), (j, k)
+                key = (
+                    (first, second)
+                    if first < second
+                    else (second, first)
+                )
+                quadratic[key] = float(weight)
+
+            # Keep a distinct low-pressure fallback. It serves a different
+            # purpose from the affinity-boundary ambiguity candidate.
+            remaining = [
+                candidate
+                for candidate in candidates
+                if candidate[1] not in selected
+            ]
+            if remaining:
+                _, j, discount = min(
+                    remaining, key=lambda candidate: (
+                        candidate[2], candidate[1]
+                    )
+                )
+                first, second = (i, j), (j, k)
+                key = (
+                    (first, second)
+                    if first < second
+                    else (second, first)
+                )
+                quadratic[key] = float(-0.30 * support / discount)
+
+    # Preserve the successful sparse structural penalty.
+    mean_direct = -float(sum(linear.values())) / max(1, n * (n - 1))
+    depth_scale = max(
+        0.75, float(np.log2(max(n, 2))) / float(np.log2(10.0))
+    )
+    backtrack_weight = 0.65 * mean_direct * depth_scale
+
+    if backtrack_weight > 0.0:
+        for i in range(n):
+            for j in range(i + 1, n):
+                mutual = min(
+                    float(normalized[i, j]),
+                    float(normalized[j, i]),
+                )
+                quadratic[((i, j), (j, i))] = float(
+                    backtrack_weight * (1.0 - 0.45 * mutual)
+                )
+
+    # Two useful neighbors need not provide two distinct useful routes.
+    # Penalize the strongest demand-weighted coverage overlaps, rather
+    # than rewarding every supported two-hop path independently.
+    diversity_scale = 0.45 * mean_direct * depth_scale
+    pair_budget = max(1, n // 2)
+
+    if diversity_scale > 0.0:
+        for reverse in (False, True):
+            # Outgoing: neighbor a can forward traffic to destination k.
+            # Incoming: predecessor a can collect traffic from source k.
+            profiles = normalized.T if reverse else normalized
+            for v in range(n):
+                weights = normalized[:, v] if reverse else normalized[v, :]
+                total = float(weights.sum())
+                if total <= 0.0:
+                    continue
+                weights = weights / total
+                coverage = profiles @ weights
+                neighbors = [a for a in range(n) if a != v]
+                best_coverage = max(float(coverage[a]) for a in neighbors)
+                if best_coverage <= 1e-15:
+                    continue
+
+                overlaps = []
+                for position, a in enumerate(neighbors):
+                    for b in neighbors[position + 1:]:
+                        overlap = float(
+                            np.dot(np.minimum(profiles[a], profiles[b]), weights)
+                        ) / best_coverage
+                        if overlap > 0.35:
+                            overlaps.append((overlap, a, b))
+
+                overlaps.sort(reverse=True)
+                for overlap, a, b in overlaps[:pair_budget]:
+                    first = (a, v) if reverse else (v, a)
+                    second = (b, v) if reverse else (v, b)
+                    key = (
+                        (first, second)
+                        if first < second
+                        else (second, first)
+                    )
+                    quadratic[key] = quadratic.get(key, 0.0) + float(
+                        diversity_scale * overlap
+                    )
+
+    # At most six other nodes fit within a degree-two, two-hop expansion.
+    long_hop_share = max(0.0, (n - 7.0) / max(1, n - 1))
+    if long_hop_share > 0.0 and positive.size:
+        # Approximate degree-two link probabilities, accounting for both
+        # competition among outgoing links and competition among incoming links.
+        affinity = 0.75 * normalized + 0.25 * roots
+        row_total = affinity.sum(axis=1)
+        col_total = affinity.sum(axis=0)
+        link_prior = np.minimum(
+            0.90,
+            2.0 * affinity / np.sqrt(np.maximum(
+                row_total[:, None] * col_total[None, :], 1e-15
+            )),
+        )
+        pressure_product = node_pressure[:, None] * node_pressure[None, :]
+        three_kernel = normalized / (pressure_product ** 1.125)
+        two_discount = node_pressure ** 0.75
+
+        for i in range(n):
+            for k in range(n):
+                if (
+                    i == k
+                    or traffic[i, k] <= 0.0
+                    or traffic[i, k] < cutoff
+                ):
+                    continue
+
+                two_quality = (
+                    np.sqrt(normalized[i] * normalized[:, k])
+                    / two_discount
+                )
+                two_quality.sort()
+                best_two = float(two_quality[-1])
+                second_two = float(two_quality[-2])
+                if best_two >= 0.55 and second_two < 0.94 * best_two:
+                    continue
+
+                # Rows and columns are the two intermediate nodes.
+                # A zero-demand leg makes the complete route's score zero.
+                quality = np.cbrt(
+                    normalized[i, :, None]
+                    * three_kernel
+                    * normalized[:, k][None, :]
+                )
+                quality[[i, k], :] = 0.0
+                quality[:, [i, k]] = 0.0
+                a, b = divmod(int(np.argmax(quality)), n)
+                if float(quality[a, b]) < max(0.50, 1.08 * best_two):
+                    continue
+
+                support = float(
+                    0.70 * normalized[i, k] + 0.30 * roots[i, k]
+                )
+                leg_sum = float(
+                    normalized[i, a]
+                    + normalized[a, b]
+                    + normalized[b, k]
+                )
+                weight = (
+                    0.24 * long_hop_share * support
+                    / (float(pressure_product[a, b]) * (1.0 + 0.5 * leg_sum))
+                )
+
+                first, bridge, last = (i, a), (a, b), (b, k)
+                p_first = float(link_prior[i, a])
+                p_last = float(link_prior[b, k])
+
+                # For route bits x,y,z, use
+                # -w*y*(p_last*x + p_first*z - p_first*p_last).
+                # This matches completion's value and first derivatives
+                # at the endpoint priors without coupling disconnected stubs.
+                linear[bridge] += float(weight * p_first * p_last)
+                for left, right, missing_prior in (
+                    (first, bridge, p_last),
+                    (bridge, last, p_first),
+                ):
+                    key = (
+                        (left, right) if left < right else (right, left)
+                    )
+                    quadratic[key] = float(
+                        quadratic.get(key, 0.0) - weight * missing_prior
+                    )
+
+    penalty_weight = min(1.45, 1.30 + 0.008 * max(0, n - 10))
+    return linear, quadratic, float(penalty_weight)
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

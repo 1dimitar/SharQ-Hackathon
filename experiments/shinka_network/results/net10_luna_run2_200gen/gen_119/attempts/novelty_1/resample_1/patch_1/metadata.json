@@ -1,0 +1,14 @@
+{
+  "generation": 119,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "Combines the stronger direct-link signal from the current implementation with the inspiration program\u2019s concave demand transforms, which retain influence for moderate-demand pairs. Two-hop rewards are discounted by mean-normalized transit pressure and estimated direct edge load, helping distinguish useful relays from already-busy ones. The implementation also sanitizes invalid demand values and canonicalizes quadratic keys so each link pair has a consistent representation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:40.033673",
+  "llm_cost": 0.0016396,
+  "llm_model": "gpt-6-luna"
+}

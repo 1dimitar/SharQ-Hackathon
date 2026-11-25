@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_route_portfolio",
+  "patch_description": "Reorganizes term construction into normalization, node-pressure estimation, and sparse route-portfolio stages. For each positive-demand origin-destination pair, it retains only the three best relay candidates, ranking them with a weak-leg-sensitive affinity and a relay-pressure discount. This keeps the QUBO sparse while still offering multiple plausible two-hop routes; the degree penalty is increased to encourage more feasible samples before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:46:34.093553",
+  "llm_cost": 0.0021910000000000002,
+  "llm_model": "gpt-6-luna"
+}

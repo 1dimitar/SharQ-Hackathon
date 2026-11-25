@@ -1,0 +1,15 @@
+<NAME>
+tune_twohop_strength
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward coefficient from 0.48 to 0.25 as a targeted strength sweep. The current formulation already gates on positive demand and discounts busy intermediates, so this leaves those mechanisms and the linear terms unchanged. A more moderate path reward may reduce the incentive to select indirect paths that do not actually ease bottleneck link loads.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    -0.48
+=======
+                    -0.25
+>>>>>>> REPLACE
+</DIFF>

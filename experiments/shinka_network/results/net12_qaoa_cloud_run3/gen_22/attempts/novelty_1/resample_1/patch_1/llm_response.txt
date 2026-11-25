@@ -1,0 +1,20 @@
+<NAME>
+calibrated_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Use a softer, power-calibrated relay-pressure discount in the two-hop reward. The current linear discount, `0.60 + 0.80 * pressure`, can strongly favor low-pressure relays over busy ones. Raising a positive-offset pressure score to an exponent below one compresses that difference, while still preferring less-loaded relays. This may reduce overconcentration on a small set of relays and improve the typical sampled topology. The change leaves the direct-link rewards and quadratic-term structure unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                relay_discount = 0.60 + 0.80 * float(node_pressure[j])
+                edge_discount = 1.0 + 0.35 * edge_pressure
+=======
+                # A sublinear pressure discount preserves a preference for
+                # lightly loaded relays without making that preference too sharp.
+                relay_discount = (0.75 + float(node_pressure[j]) / 1.75) ** 0.75
+                edge_discount = 1.0 + 0.35 * edge_pressure
+>>>>>>> REPLACE
+
+</DIFF>

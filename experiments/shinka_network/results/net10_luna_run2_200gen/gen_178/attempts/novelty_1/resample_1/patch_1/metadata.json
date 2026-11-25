@@ -1,0 +1,14 @@
+{
+  "generation": 178,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "directional_relay_pressure",
+  "patch_description": "Estimate relay pressure from the larger of a node\u2019s incoming and outgoing demand totals, rather than their sum. Transit requires both an incoming and an outgoing link, and each node has only two of each; a node with a strongly one-sided traffic profile can therefore be a bottleneck even when its combined incident total looks moderate. Using the larger directional total in the existing path discount is a targeted way to discourage over-reliance on such relays while leaving direct-link rewards and the number of quadratic terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:46.990624",
+  "llm_cost": 0.0011062000000000001,
+  "llm_model": "gpt-6-luna"
+}

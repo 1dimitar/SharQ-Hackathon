@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "recombine_walk",
+  "patch_description": "This design replaces the archive-driven neighborhood search with a recombination-and-walk strategy. It first LP-scores a small, diverse set of repaired QAOA samples, then alternates between degree-preserving walks and short paths toward other promising networks. Path steps increase overlap with a chosen target, providing a directed way to combine useful link patterns from different samples. LP calls are spent on a small screened set of proposals, while a temperature-based acceptance rule lets the walk cross local score barriers. Bottleneck information biases some exchanges, but unrestricted proposals remain available to avoid overfitting to a single LP dual solution.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:20:00.369841",
+  "llm_cost": 0.0034305000000000004,
+  "llm_model": "gpt-6-luna"
+}

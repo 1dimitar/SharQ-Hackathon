@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "tie_robust_routing",
+  "patch_description": "Add a complementary routing estimate that sends traffic along shortest paths using three deterministic tie-breakings: lowest next-node ID, highest next-node ID, and a node/destination parity rule. Use the 75th-percentile and worst-case peak link loads across these routings as extra candidate features. These are ranking signals only: the search still retains its existing energy, learned, novelty, and random selections, while reserving one LP evaluation slot for candidates ranked by the tie-robust estimate. This can identify networks whose apparent quality depends on an unusually favorable equal-split routing, without excluding them from other selection channels.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:57:11.530781",
+  "llm_cost": 0.0042807,
+  "llm_model": "gpt-6-luna"
+}

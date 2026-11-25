@@ -1,0 +1,14 @@
+{
+  "generation": 80,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_budget_coverage",
+  "patch_description": "Increase the minimum number of candidate relays per positive-demand OD pair from two to four (when the network has enough intermediate nodes). The current sparse relay selection may omit useful two-hop routes, contributing to the poor median topology score. A modest increase adds alternatives for the QUBO to combine, while retaining the pressure-aware ranking and keeping the interaction count well below the allowed limit. For small networks, the budget remains capped by the number of available relays.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:25:09.960136",
+  "llm_cost": 0.0009405,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "size_calibrated_routes",
+  "patch_description": "Two-hop route rewards become a less reliable proxy for actual load as the network grows: the number of possible routes increases, while only a small subset is rewarded. Attenuate both selected-route and fallback rewards gradually above n=10, with a floor to preserve their influence at larger sizes. Also make a small, independent reduction to degree-penalty growth. Feasibility is already high, so this modestly relaxes sampling pressure without removing the penalty that helps maintain valid topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:59:26.186054",
+  "llm_cost": 0.0032728,
+  "llm_model": "gpt-6-luna"
+}

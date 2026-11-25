@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "gated_route_pipeline",
+  "patch_description": "Separates demand preparation, transit estimation, route selection, exposure correction, and branch diversity into reusable stages. Two-hop rewards are gated by demand on both constituent links, reducing rewards for unsupported routes. A degree-balanced exposure correction limits excessive attraction to links participating in many rewarded paths. The model retains sparse couplings and avoids incomplete three-hop rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:29:10.350119",
+  "llm_cost": 0.059588,
+  "llm_model": "gpt-6.1-sol"
+}

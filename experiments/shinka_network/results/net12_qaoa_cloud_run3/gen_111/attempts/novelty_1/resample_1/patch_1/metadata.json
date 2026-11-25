@@ -1,0 +1,14 @@
+{
+  "generation": 111,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_rank125",
+  "patch_description": "Increase the pressure sensitivity used to rank relay candidates from power 1 to 1.25. This makes high-pressure nodes less likely to be selected as relays, which may reduce transit concentration and improve load balance. The reward\u2019s existing pressure discount remains unchanged, isolating the effect to candidate selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:12:45.599717",
+  "llm_cost": 0.0009224000000000001,
+  "llm_model": "gpt-6-luna"
+}

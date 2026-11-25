@@ -1,0 +1,14 @@
+{
+  "generation": 100,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "operator_stall_scaling",
+  "patch_description": "Track stalls separately for random switches and rotations, and scale each operator\u2019s sampling effort according to its own history rather than only the parent\u2019s overall stall count. This gives an underexplored or persistently unproductive neighborhood room to broaden, while keeping both trial counts capped to control proposal-generation time. The batch result updates the operator stall counters for the operators used in that round.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:55:47.567353",
+  "llm_cost": 0.0028230000000000004,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_load_balance",
+  "patch_description": "This approach estimates whether a demand can use a selected two-link route, then rewards that route only when both links are present. It combines those path-completion rewards with direct-link value and a mild congestion penalty for pairs of links that share a heavily loaded endpoint. Demand is normalized using a blend of peak and positive-traffic mean, so a few exceptionally large entries are less likely to suppress the rest of the signal. The resulting sparse, demand-conditioned terms aim to encourage useful relays without making every two-hop path equally attractive.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:17:09.062747",
+  "llm_cost": 0.0014539000000000002,
+  "llm_model": "gpt-6-luna"
+}

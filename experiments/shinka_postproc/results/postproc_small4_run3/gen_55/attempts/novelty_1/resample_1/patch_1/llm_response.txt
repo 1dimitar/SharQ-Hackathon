@@ -1,0 +1,75 @@
+<NAME>
+improving_continuation
+</NAME>
+
+<DESCRIPTION>
+Continue a search from a batch’s best improving neighbor instead of always choosing the next parent afresh from the archive. This adds a short local-improvement trajectory through promising networks, while retaining archive-based exploration on the remaining rounds. It also records the best improvement relative to the actual parent, avoiding a separate batch-wide minimum calculation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+    focused_moves = set()
+=======
+    parent_stalls = {}
+    focused_moves = set()
+    continuation = None
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        pop = archive()
+        parent = select_parent(pop)
+        if parent is None:
+            break
+=======
+        pop = archive()
+        if continuation is not None and rng.random() < 0.62:
+            parent = continuation
+        else:
+            parent = select_parent(pop)
+        continuation = None
+        if parent is None:
+            break
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent_score = seen.get(parent, float("inf"))
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+=======
+        parent_score = seen.get(parent, float("inf"))
+        local_best = None
+        local_score = parent_score
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                score = evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+            if score < local_score:
+                local_best = net
+                local_score = score
+
+        if local_best is not None:
+            parent_stalls[parent] = 0
+            continuation = local_best
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+</DIFF>

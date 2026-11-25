@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay-aware-two-hop",
+  "patch_description": "The current approach gives every possible two-hop relay the same bonus for an OD pair, regardless of whether demand supports either leg. This version keeps the direct-demand signal and degree-penalty weight, but scales each two-hop bonus by a bounded relay-connectivity factor: the geometric mean of the source\u2019s demand share to the relay and the relay\u2019s demand share to the destination, with a modest floor for plausible routes that lack direct-leg evidence. The factor is capped at 1, and the path coefficient remains modest to avoid letting accumulated route bonuses overwhelm direct-link evidence.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:17:10.453130",
+  "llm_cost": 0.0016708,
+  "llm_model": "gpt-6-luna"
+}

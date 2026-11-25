@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "price_guided_batches",
+  "patch_description": "Rank proposed moves using the directional LP-price signal: removing positively priced links and adding unpriced links is a promising way to reduce congestion. Reserve part of each LP batch for the strongest price-benefit moves, while retaining energy-ranked and diverse selections for exploration. This makes dual guidance affect which networks receive LP calls without letting the surrogate or prices become a hard filter.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:46:59.101771",
+  "llm_cost": 0.0018109,
+  "llm_model": "gpt-6-luna"
+}

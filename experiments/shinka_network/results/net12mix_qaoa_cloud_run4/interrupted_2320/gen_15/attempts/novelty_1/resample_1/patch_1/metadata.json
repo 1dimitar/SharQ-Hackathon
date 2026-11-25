@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_paths",
+  "patch_description": "Keep the direct-demand reward, and add a modest reward for selected two-hop paths. Unlike a uniform two-hop reward, discount paths through nodes with high total traffic, which are more likely to become transit bottlenecks. The path couplings also give the interaction graph useful structure while remaining within the quadratic-term limit. Increase the degree penalty so invalid degree patterns are less attractive during QUBO sampling.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:46.914683",
+  "llm_cost": 0.0016524,
+  "llm_model": "gpt-6-luna"
+}

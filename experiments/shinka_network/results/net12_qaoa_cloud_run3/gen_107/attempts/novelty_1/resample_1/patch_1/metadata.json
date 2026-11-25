@@ -1,0 +1,14 @@
+{
+  "generation": 107,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_relay_budget",
+  "patch_description": "Use fewer relay candidates for ordinary-demand OD pairs, while retaining extra relay choices for the highest-demand pairs. This follows the promising sparse-construction direction: reducing weak interactions may make communities easier to solve, while the two additional candidates preserve support for the most important traffic. The per-pair budget is capped by the number of valid relay nodes.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:11:24.258262",
+  "llm_cost": 0.0009562,
+  "llm_model": "gpt-6-luna"
+}

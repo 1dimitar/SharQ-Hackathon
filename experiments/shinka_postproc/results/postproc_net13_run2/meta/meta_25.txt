@@ -1,0 +1,198 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate networks, ranks up to 30 diverse starting points by surrogate energy, and searches from an archive using degree-preserving two-switches, rotations, and multi-switch kicks. It screens valid, unseen moves by surrogate energy and topology diversity before spending LP evaluations, with adaptive rotation sampling for stalled parents.
+- **Performance**: Achieved a combined score of 0.97 (mean pool score 0.97; mean gap 3.26%, best gap 2.21%), using the full 2,000 LP calls per pool and averaging 14.73 seconds.
+- **Feedback**: Results were consistent across pools, with best per-Hamiltonian gaps from 2.21% to 3.48%; the strongest pool reached 307,260 versus the 300,620 best known. Exhausting the LP budget every time suggests the search uses its evaluation allowance effectively, though it did not close the remaining gap to the known optimum.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Surrogate-Guided Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then seeds a diverse archive ranked by surrogate energy. It explores degree-preserving two-switches, rotations, and multi-switch kicks, screening batches using bottleneck-link prices and surrogate energy before spending LP evaluations.
+- **Performance**: Achieved a combined score of 0.96, with mean gap 6.77%, best gap 2.45%, and a mean of 2,000 LP calls in 25.74 seconds.
+- **Feedback**: All 16 runs used the full LP budget; best results varied by Hamiltonian, from 2.45% to 6.53% above the known optimum. The archive and varied neighborhoods found strong candidates, but typical gaps of roughly 5–10% show that search quality remained inconsistent.
+**Program Identifier:** Generation 1 - Patch Name bottleneck_aware_screening - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate networks, selects energy-ranked diverse starting points, then searches a bounded archive using degree-preserving two-switches, rotations, and multi-switch kicks. A surrogate ranks candidate moves before small batches are evaluated with the LP oracle; search adapts rotation sampling when parents stall.
+- **Performance**: Achieved a combined score of 0.99, with a 2.19% mean gap and 0.40% best gap, using all 2,000 LP calls per run and averaging 45.95 seconds.
+- **Feedback**: Results varied by Hamiltonian: the best pool reached a 0.40% gap, while several others had best gaps near 2%. The diverse archive and surrogate screening found strong networks, but typically exhausted the LP budget without closing the remaining gap to the known best.
+**Program Identifier:** Generation 2 - Patch Name adaptive_small_batches - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate topologies, ranks diverse starting networks by surrogate energy, and searches an archive with degree-preserving two-switches, rotations, and multi-switch kicks. It screens novel moves by surrogate energy before spending LP calls, while tracking cached evaluations and parent stalls.
+- **Performance**: Achieved a combined score of 0.98, with a 2.33% mean gap, 0.61% best gap, and 2,000 LP calls per pool (42.42 seconds on average).
+- **Feedback**: The strongest result was 302,445 (0.61% gap) for Hamiltonian r2g181; other Hamiltonians’ best gaps ranged from 1.86% to 2.03%. Results were consistently close but remained above the known optimum, and every run exhausted its LP budget.
+**Program Identifier:** Generation 3 - Patch Name adaptive_microbatches - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate topologies, selects energy-ranked diverse starts, and searches a bounded archive with degree-preserving two-switches, rotations, and multi-switch kicks. LP evaluations are screened in small batches using surrogate energy and LP dual prices, with topology-distance diversity guiding selection.
+- **Performance**: Achieved a combined score of 0.95 (mean pool score 0.93), with mean gap 7.16%, best gap 3.34%, and exactly 2,000 LP calls per pool.
+- **Feedback**: Results varied by Hamiltonian: the best per-Hamiltonian gap ranged from 3.34% to 6.18%, while individual pool gaps reached 9.76%. The search consistently used its LP budget; the archive and neighborhood diversification found strong solutions, but performance remained sensitive to the starting pool and Hamiltonian.
+**Program Identifier:** Generation 4 - Patch Name dual_guided_screening - Correct Program: True
+
+**Program Name: Diverse Basin Network Postprocessor**
+- **Implementation**: Repairs candidate topologies, seeds a diverse portfolio, then searches with degree-preserving directed two-switches, three-arc rotations, and occasional larger perturbations. It prioritizes LP-critical links and surrogate-energy rankings when screening novel moves, and uses visit-weighted archive selection to balance strong basins with less-explored ones.
+- **Performance**: Achieved a combined score of 0.95, with mean gap 6.60%, best gap 3.79%, and 2,000 LP calls per pool (about 32.1 seconds on average).
+- **Feedback**: All validation tests passed, and the best result was 312,020 versus the known 300,620; best-per-Hamiltonian gaps ranged from 3.79% to 6.27%. Results varied across pools (up to a 9.46% gap), suggesting the diverse search found strong networks but did not consistently reach the best-known solution.
+**Program Identifier:** Generation 5 - Patch Name basin_portfolio - Correct Program: True
+
+**Program Name: Surrogate-Guided Network Topology Search**
+- **Implementation**: Repairs and diversifies candidate networks, then searches with valid degree-preserving two-edge switches and three-edge rotations. It uses Hamiltonian energy to screen proposals, LP evaluations to rank them, and an archive of strong, diverse networks to choose parents.
+- **Performance**: Achieved a combined score of 0.98 (mean pool score 0.97), with a 2.80% mean gap and 1.46% best gap, using all 2,000 LP calls per run.
+- **Feedback**: The best result came from Hamiltonian r2g181 at 305,000, 1.46% above the known best; other Hamiltonians’ best gaps ranged from 1.70% to 2.01%. Results varied by seed, with individual gaps reaching 4.65%, suggesting the search is effective but still sensitive to the candidate pool and random exploration.
+**Program Identifier:** Generation 6 - Patch Name adaptivebottleneck - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate topologies, chooses up to 30 starts ranked by surrogate energy and diversity, then searches a bounded archive using degree-preserving two-switches, rotations, multi-switch kicks, and path relinking. Surrogate energy screens diverse batches before expensive LP evaluation, with adaptive neighborhood exploration for stalled parents.
+- **Performance**: Achieved a combined score of 0.99 (mean pool score 0.97), with a 2.64% mean gap, 0.48% best gap, and 2,000 LP calls per pool.
+- **Feedback**: Best results varied notably by Hamiltonian: the strongest pool was 0.48% from the known best, while the weakest was 5.07% away. All runs used the full LP budget and completed in about 26.5–41.1 seconds, suggesting the search is effective overall but remains sensitive to pool and seed quality.
+**Program Identifier:** Generation 7 - Patch Name elite_path_relink - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate topologies, seeds a surrogate-energy-ranked diverse set, then searches an archive using degree-preserving two-switches, sampled rotations, and multi-switch kicks. Surrogate scores and topology distance screen batches of candidate moves before costly LP evaluation.
+- **Performance**: Achieved a combined score of 0.98, with 2.55% mean gap, 1.15% best gap, and 2,000 LP calls per pool on average.
+- **Feedback**: The search consistently improved on the known best, but pool gaps varied from 1.15% to 4.37%; best-per-Hamiltonian gaps ranged from 1.15% to 2.03%. All runs used the full LP budget, suggesting the approach makes effective use of evaluations but does not reliably reach near-optimal results across pools.
+**Program Identifier:** Generation 8 - Patch Name diverse_batch_screening - Correct Program: True
+
+**Program Name: Diverse Surrogate-Guided Topology Search**
+- **Implementation**: Repairs candidate networks, selects structurally diverse seeds using a Hamiltonian energy surrogate, then explores valid two-switch and three-link-rotation neighborhoods. It prioritizes bottleneck links from LP details, screens moves by surrogate energy, and uses a diverse frontier with a 2,000-call LP budget.
+- **Performance**: Achieved a combined score of 0.98, with a 2.53% mean gap and 1.32% best gap; runs averaged 2,000 LP calls and 38.23 seconds.
+- **Feedback**: All 16 runs completed validation, with gaps from 1.32% to 3.79%; each Hamiltonian’s best result was within 2.03% of the known optimum. Results show consistent near-optimal performance, though the full LP budget was used in every run.
+**Program Identifier:** Generation 10 - Patch Name diverse_frontier_search - Correct Program: True
+
+**Program Name: Surrogate-Guided Diverse Topology Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then seeds a diverse archive using surrogate energy rankings. It searches with degree-preserving two-switches, rotations, multi-switch kicks, and paths toward strong archived solutions, screening batches before spending LP evaluations.
+- **Performance**: Achieved a combined score of 0.98, with a 2.36% mean gap and 1.15% best gap, using all 2,000 LP calls per pool and averaging 74.64 seconds.
+- **Feedback**: Best results varied by Hamiltonian, from a 2.12% gap for r2g181 to 1.15% for r3g128; the strongest individual result was 304,091. The search consistently used its full LP budget, while diverse moves and surrogate screening helped find near-best networks but did not close the remaining gaps.
+**Program Identifier:** Generation 9 - Patch Name elite_path_relinking - Correct Program: True
+
+**Program Name: Surrogate-Guided Adaptive Topology Search**
+- **Implementation**: Repairs candidate networks, selects diverse valid starting topologies, then searches with degree-preserving two-switches, three-edge rotations, and multi-switch kicks. It prioritizes surrogate-energy and LP-detail bottlenecks, evaluates proposals in batches under an LP budget, and adapts operator weights while maintaining an archive of strong, diverse networks.
+- **Performance**: Achieved a combined score of 0.98 (mean pool score 0.97; mean gap 2.74%; best gap 1.99%), using all 2,000 LP calls per pool and averaging 47.85 seconds.
+- **Feedback**: It passed all validation tests and consistently found solutions within 1.99–3.79% of the best known across 16 pools. The best per-Hamiltonian gaps ranged from 1.99% to 2.23%, while pool runtimes varied from 38.8 to 60.0 seconds.
+**Program Identifier:** Generation 11 - Patch Name adaptive-mixed-search - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, seeds a diverse archive using surrogate energy, then searches with degree-preserving two-switches, rotations, and multi-switch kicks. It screens moves by surrogate improvement, absolute energy, and novelty before spending LP calls, while using LP details to focus moves on critical links.
+- **Performance**: Achieved a combined score of 0.98 (mean gap 2.68%, best gap 1.79%), averaging 2,000 LP calls and 70.08 seconds per run.
+- **Feedback**: Across 16 pools, best results were 306,000 versus the known 300,620; all runs used the full LP budget, with gaps ranging from 1.79% to 4.56%. The archive and varied degree-preserving moves found strong solutions across Hamiltonians, though results varied by pool and did not reach the known best.
+**Program Identifier:** Generation 12 - Patch Name archive_relative_screening - Correct Program: True
+
+**Program Name: Adaptive Diverse Degree-Preserving Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then searches a diverse frontier using LP-scored evaluations. It proposes degree-preserving two-switches and three-arc rotations, prioritizes moves involving high-price or high-load links, ranks batches with a Hamiltonian surrogate, and adapts parent selection to visits and search stalls.
+- **Performance**: Achieved a combined score of **0.99**, with a **2.23% mean gap**, **−0.30% best gap**, and an average of **2,000 LP calls** and **35.02 seconds** per run.
+- **Feedback**: Results were strong but variable across Hamiltonians: one pool beat the known best, while most pools were roughly **1.8–3.3%** above it. The full LP budget was used in every run, suggesting the search consistently spent its evaluation budget but did not reliably reach the best-known solution.
+**Program Identifier:** Generation 13 - Patch Name adaptive_frontier_search - Correct Program: True
+
+**Program Name: Diverse Surrogate-Screened Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then seeds a surrogate-energy-ranked, diversity-aware archive. It searches with degree-preserving two-switches, rotations, and multi-switch kicks, screening diverse moves by surrogate energy before spending LP calls; an adaptive archive and batch size respond to stagnation.
+- **Performance**: Combined score was 0.99, with mean gap 2.63% (mean pool score 0.97); all runs used 2,000 LP calls and averaged 27.17 seconds.
+- **Feedback**: It found a network 0.30% better than the known best on one pool, but most pools remained 1–5% above it. Results varied by Hamiltonian, suggesting the search can exploit a favorable pool while surrogate-guided exploration does not reliably deliver comparable improvements across pools.
+**Program Identifier:** Generation 14 - Patch Name adaptive_lp_batches - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate topologies, evaluates an energy-ranked diverse starting set, then searches an archive using degree-preserving two-switches, rotations, multi-switch kicks, and paths toward strong archived solutions. Surrogate energy screens small LP-evaluation batches; topology-distance diversity, stall-aware exploration, caching, and a bounded archive balance exploitation with exploration.
+- **Performance**: Achieved a combined score of 0.98, with mean gap 2.37% (best gap 1.69%), using all 2,000 LP calls per pool and averaging 55.34 seconds.
+- **Feedback**: Results were consistent across 16 pools, with best gaps per Hamiltonian ranging from 1.69% to 2.12%; the overall mean pool score was 0.9769. The search reliably improves candidate networks, but consuming the full LP budget without closing the remaining roughly 2% gap suggests scope for more effective evaluation allocation or exploration.
+**Program Identifier:** Generation 15 - Patch Name stall_adaptive_exploration - Correct Program: True
+
+**Program Name: Adaptive Weighted-Matching Search**
+- **Implementation**: Repairs and ranks candidate networks, initializes an edge-frequency prior, and samples valid topologies using randomized depth-first perfect matchings. It updates a smoothed model from diverse low-scoring LP-evaluated networks, mixes in the prior, and uses uniform sampling after repeated duplicates.
+- **Performance**: Achieved a combined score of 0.90 (mean pool score 0.88), with a 13.07% mean gap and 8.15% best gap, using all 2,000 LP calls per pool.
+- **Feedback**: Results varied across pools, with best-per-Hamiltonian gaps from 10.72% to 12.67%; the strongest individual result was 325,112 versus the 300,620 reference. Validation passed, but the fixed LP budget was consistently exhausted without closing the remaining gap.
+**Program Identifier:** Generation 16 - Patch Name cross_entropy_matchings - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate networks, seeds a diverse energy-ranked archive, then searches degree-preserving two-switches, rotations, kicks, and paths toward elite networks. Surrogate energy screens diverse batches before LP evaluation, with adaptive neighborhood escalation for stalled parents.
+- **Performance**: Achieved a combined score of 0.98 (mean pool score 0.98; mean gap 2.23%, best gap 1.37%), using all 2,000 LP calls per pool and averaging 29.64 seconds.
+- **Feedback**: Results varied by Hamiltonian: the best pool reached a 1.37% gap, while the weakest Hamiltonian’s best was 2.69%. All runs completed validation, but consistently exhausting the LP budget suggests the search did not reliably reach the known best.
+**Program Identifier:** Generation 17 - Patch Name adaptive_relink_escapes - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate networks, selects energy-ranked diverse starts, then searches a bounded archive using degree-preserving two-switches, rotations, and multi-switch kicks. Surrogate energy screens diverse batches for LP evaluation, while adaptive parent selection favors productive networks and discounts stalled ones.
+- **Performance**: Combined score was 0.99, with a 2.50% mean gap and 0.56% best gap; all runs used 2,000 LP calls and averaged 24.52 seconds.
+- **Feedback**: It found strong networks across all four Hamiltonians, with best gaps ranging from 0.56% to 2.03%. Results varied by pool and seed (up to a 4.53% gap), suggesting the diverse search is effective but does not consistently reach the best-known solution.
+**Program Identifier:** Generation 18 - Patch Name adaptive_parent_productivity - Correct Program: True
+
+**Program Name: Surrogate-Guided Diverse Network Search**
+- **Implementation**: Repairs candidate networks, selects diverse low-surrogate-energy starts, then searches a bounded archive using degree-preserving swaps, rotations, and multi-switch kicks. LP evaluation is prioritized by surrogate scores, critical-link information, neighborhood diversity, and adaptive operator/stall statistics.
+- **Performance**: Achieved a combined score of 0.99 with mean gap 2.52%, best gap 0.79%, and mean pool score 0.98, using all 2,000 LP calls per pool and averaging 21.39 seconds.
+- **Feedback**: Results were consistently within 0.79–4.12% of the best known value; the strongest pool reached 303,000 versus 300,620. Best-per-Hamiltonian gaps ranged from 0.79% to 1.46%, indicating robust performance across Hamiltonians despite variation between pools.
+**Program Identifier:** Generation 19 - Patch Name adaptive_neighborhood - Correct Program: True
+
+**Program Name: Surrogate-Guided Diverse Network Search**
+- **Implementation**: Repairs and deduplicates candidate topologies, then seeds a bounded archive with low-energy, structurally diverse networks. It searches using degree-preserving two-switches, sampled rotations and multi-switch kicks, plus path-relinking; surrogate energy screens diverse batches before expensive LP evaluation.
+- **Performance**: Achieved a 0.99 combined score (mean gap 2.64%, mean pool score 0.97) using all 2,000 LP calls per pool and averaging 48.12 seconds.
+- **Feedback**: Best pool was within 0.48% of the known optimum, while the weakest was 5.07% away; best results varied by Hamiltonian, from 0.48% to 2.03% gap. The consistent full-budget use and relatively fast runs indicate effective search throughput, but the spread across seeds and pools shows solution quality remains variable.
+**Program Identifier:** Generation 20 - Patch Name archive_novelty_screen - Correct Program: True
+
+**Program Name: Diverse Surrogate-Guided Network Search**
+- **Implementation**: Repairs and deduplicates candidate topologies, seeds a diverse set ranked by surrogate energy, then searches from a bounded archive using degree-preserving two-switches, rotations, multi-switch kicks, and paths toward archived solutions. Surrogate scores screen small LP-evaluation batches; parent selection adapts to past improvements and stalls.
+- **Performance**: Achieved a combined score of **0.99** (mean pool score **0.98**, mean gap **2.05%**, best gap **0.13%**) using **2,000 LP calls per pool** and averaging **59.64 seconds**.
+- **Feedback**: It passed all validation tests and found near-best results consistently, with the strongest Hamiltonian reaching a **0.13%** gap. Results varied by pool and Hamiltonian, with gaps as high as **3.34%**, suggesting the fixed LP budget and heuristic search do not reliably reach the best-known solution.
+**Program Identifier:** Generation 21 - Patch Name adaptive_parent_productivity - Correct Program: True
+
+**Program Name: Adaptive Dual-Guided Network Search**
+- **Implementation**: Repairs and deduplicates candidate networks, seeds a diverse archive, then searches with degree-preserving two-switches, three-switches, and multi-switch kicks. It uses LP dual prices and surrogate energy to rank proposals, adaptively adjusts move probabilities from improvement feedback, and spends LP evaluations on a diverse batch under the call budget.
+- **Performance**: Achieved a combined score of 0.99, with mean gap 2.79%, mean pool score 0.97, and 2,000 LP calls per run (about 29 seconds on average).
+- **Feedback**: Results varied substantially by pool: the best was 0.30% better than the known solution, while the worst was 5.12% worse. Best-per-Hamiltonian results ranged from 1.65% above the known solution to 0.30% below it, indicating strong occasional solutions but inconsistent search quality.
+**Program Identifier:** Generation 22 - Patch Name adaptive_dual_search - Correct Program: True
+
+**Program Name: Surrogate-Screened Diverse Network Search**
+- **Implementation**: Repairs candidate networks, ranks up to 30 starting topologies by surrogate energy and diversity, then searches a bounded archive using degree-preserving two-switches, rotations, multi-switch kicks, and guided relinking. It screens diverse moves by surrogate energy before spending LP calls, caching exact scores and using LP details to focus moves on congested links.
+- **Performance**: Achieved a combined score of 0.99 (mean gap 2.40%, best gap −0.30%), averaging 2,000 LP calls and 29.99 seconds per pool.
+- **Feedback**: It found a better-than-known result for one pool and near-best results for another, but performance varied across Hamiltonians: their best gaps ranged from −0.30% to +2.67%. Every pool used the full LP budget, suggesting the search was effective but remained budget-bound and did not consistently reach the strongest known topology.
+**Program Identifier:** Generation 23 - Patch Name elite_path_relinking - Correct Program: True
+
+**Program Name: Adaptive Degree-Preserving Network Search**
+- **Implementation**: Repairs and filters candidate networks, then searches valid degree-preserving two-switches, three-switches, and multi-switch kicks. It ranks proposals using surrogate energy and LP dual prices, adapts operator selection from observed improvements, and tracks a diverse archive of evaluated networks.
+- **Performance**: Combined score was 0.0; evaluation did not complete successfully, so no valid performance result was obtained.
+- **Feedback**: Validation failed because `improve` uses `math.exp` without importing `math`, raising `NameError`. Importing `math` is necessary before the search can be evaluated.
+**Program Identifier:** Generation 24 - Patch Name productivity_aware_parent_selection - Correct Program: False
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+
+- **The current best, Surrogate-Guided Diverse Network Search (Generation 20), confirms the value of surrogate-screened search over a diverse archive.** It achieved a **0.99 combined score**, **2.64% mean gap**, and **0.97 mean pool score**, evaluating **2,000 LP calls per pool** in **48.12 seconds**. Repairing and deduplicating candidates, preserving structurally diverse low-energy starts, and screening batches before LP evaluation produced a strong overall result.
+- **Adaptive archive search can improve mean gap and best-case quality, though not the combined score.** Generation 21’s Diverse Surrogate-Guided Network Search also scored **0.99**, with **2.05% mean gap** and a **0.13% best gap**—better on those gap metrics than Generation 20. It used adaptive parent selection alongside two-switches, rotations, multi-switch kicks, and path relinking. Its **3.34% worst gap** shows that the improvement in averages and best case did not eliminate pool variation.
+- **Guided relinking and dual-informed moves can produce exceptional individual solutions.** Generation 23’s Surrogate-Screened Diverse Network Search found a **−0.30% best gap** (better than the reference) with a **2.40% mean gap** and **0.99 combined score**. Generation 22’s Adaptive Dual-Guided Network Search also reached a **−0.30% best gap**. These results support combining surrogate ranking and LP-derived signals with broad topology moves, rather than relying on one guidance signal alone.
+- **A varied degree-preserving move portfolio remains a consistent strength.** Across the current program and Generations 20–23, two-switches combined with rotations, three- or multi-switch moves, kicks, or relinking produced strong overall scores. The current program uses two-switches, three-switches, and kicks, while Generation 20’s rotations and multi-switch kicks also accompanied a **0.99** score.
+
+## Ineffective Approaches
+
+- **Full LP-budget use is not sufficient for consistent quality.** The current program used all **2,000 calls in every pool**, yet gaps ranged from **−0.30% to +5.12%**. Generation 22 likewise used the full budget but had a **2.79% mean gap** and a **5.12% worst gap**. This extends the earlier observation from Generations 15–19: consuming the budget does not guarantee convergence to strong solutions.
+- **Search quality remains sensitive to pool and seed, even with strong aggregate scores.** In the current program, `r2g181` ranged from **−0.30% to +4.65%**, while `r3g109` ranged from **+0.97% to +5.12%**. Generation 20’s pools ranged from **0.48% to 5.07%**, and Generation 21 reached **3.34%** at its weakest. Archive diversity and adaptive search improve overall performance but do not remove this variability.
+- **The evaluated failure in Generation 24 was implementation-related, not evidence against its search design.** Its score was **0.0** because `improve` called `math.exp` without importing `math`, causing validation to fail. As with other invalid evaluations, no algorithmic performance comparison can be drawn from that result.
+
+## Implementation Insights
+
+- **The current best’s pipeline combines candidate repair, surrogate-ranked starts, and archive-based exploration.** It repairs and deduplicates candidates, orders valid networks by `tools.energy`, selects up to 24 starts separated by a topology distance of at least 4, then fills to 30. Its archive similarly preserves up to 18 separated networks before filling to 30 by LP score. This concretely implements the quality-plus-diversity pattern identified in earlier generations.
+- **LP-derived prices steer proposals and their ranking, while surrogate energy screens a compact batch.** The current program extracts positive dual prices (or falls back to high-load links), uses those links to focus two- and three-switch proposals, and ranks moves by surrogate energy change adjusted by dual-price gain. It then evaluates up to three diverse high-ranked moves plus an occasional exploratory tail move. This balances targeted search with exploration and accompanies the current program’s **0.99 score** and **28.95-second** mean runtime.
+- **Adaptive operator selection is present, but its feedback is local to improvements over the selected parent.** The current program adjusts probabilities for two-switches, three-switches, and kicks using smoothed reward-to-attempt rates; it also tracks parent stalls. This is consistent with the strong results of adaptive search variants, including Generation 21’s adaptive parent-productivity search, although the current evaluation’s pool gaps show that adaptation does not guarantee robust results across seeds.
+- **The current implementation is faster than the earlier current-best baseline described in the previous insights, while retaining a comparable combined score.** It averages **28.95 seconds** at **0.99**, compared with the earlier Generation 19 result of **21.39 seconds** at **0.99** and **2.52% mean gap**. The current program’s **2.79% mean gap** is slightly worse, and its run time is higher; therefore, its strong best-known result does not represent an across-the-board improvement over Generation 19.
+
+## Performance Analysis
+
+- **The current program is strong on aggregate and Hamiltonian-best metrics, but not uniformly strong across pools.** It scored **0.99 combined**, **0.97 mean pool score**, and **0.9909 mean Hamiltonian-best score**. Best-per-Hamiltonian gaps were **−0.30%** (`r2g181`), **+1.37%** (`r3g028`), **+0.97%** (`r3g109`), and **+1.65%** (`r3g128`); individual pools nevertheless reached **+5.12%**.
+- **Generation 21 leads the current program on mean and best gap, while both have a 0.99 combined score.** Generation 21 reported **2.05% mean gap** and **0.13% best gap**, compared with the current program’s **2.79% mean gap** and **−0.30% best gap**. The current program has the better single best result, but Generation 21’s lower mean gap indicates stronger average performance in its evaluation.
+- **The current program’s metrics are competitive with the earlier Generation 19 baseline but do not dominate it.** Generation 19 had **0.99 combined score**, **2.52% mean gap**, **0.98 mean pool score**, and **21.39-second** runtime. The current program has a slightly worse mean gap (**2.79%**) and mean pool score (**0.97**), a better best gap (**−0.30% versus +0.79%**), and a longer runtime (**28.95 seconds**).
+- **Recent variants show that best-case improvements do not necessarily translate into better averages.** Generation 23’s **−0.30% best gap** matches the current program’s best gap, but its **2.40% mean gap** is better than the current program’s **2.79%**. Generation 22 also reached **−0.30%** but had a **2.79% mean gap** and substantial pool variation. The results reinforce the distinction between finding an exceptional topology and consistently finding strong ones.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Make surrogate-screened batch selection archive-aware.** Keep the current energy-plus-dual ranking, but add a novelty term measuring each proposal’s distance from the best archived networks. Use each LP batch for a mix of top-ranked moves and candidates from underrepresented regions; the current diverse archive is a strength, but parent-relative ranking can still spend calls on near-duplicates.
+
+2. **Choose parents using measured productivity and exploration exposure.** Track each archive member’s selection count, LP evaluations, and improvement magnitude, then favor recently productive or underexplored parents while gradually reducing the weight of repeatedly stalled ones. This extends the adaptive parent selection that achieved strong mean gaps in Generation 21 and targets the pool-to-pool variability that remains in the current program.
+
+3. **Improve operator adaptation using exact LP outcomes.** Record proposal counts, LP-evaluated counts, and both improvement frequency and magnitude separately for two-switches, three-switches, and kicks. Adjust their proposal probabilities and batch representation from these measurements, with a minimum quota for every operator so an initially unlucky move type is not eliminated.
+
+4. **Use guided path relinking to escape stalls.** When a parent has stalled, select a distant, high-quality archive member and generate valid degree-preserving intermediate topologies that progressively move the parent toward it. Screen those intermediates with the existing surrogate before LP evaluation; recent strong results from relinking and dual-informed search suggest this can complement random kicks with directed exploration.
+
+5. **Calibrate surrogate ranking against LP results and preserve a screening fallback.** For evaluated moves, track how energy and dual-adjusted rank relate to exact LP improvement, and use that history to tune the ranking weight or identify phases where the surrogate is unreliable. In those phases, reserve part of the batch for diverse mid- or lower-ranked proposals, rather than relying mainly on the current top-ranked moves.

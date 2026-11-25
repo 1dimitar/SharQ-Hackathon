@@ -1,0 +1,14 @@
+{
+  "generation": 128,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "protected_archive_relinking",
+  "patch_description": "Protect one archive-relinking intermediate from being crowded out by surrogate-ranked moves. The current code generates short paths toward archive members, but `select_batch` may never evaluate those intermediates if their energy ranking is poor. This change records the current parent's relinking steps and reserves one batch slot for a randomly chosen step, while still allowing the remaining slots to favor low-energy and diverse proposals. Targets are sampled from the full set of sufficiently distant archive members rather than only a small quality-ranked subset, giving bridges between different regions a chance to be tested.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:29:58.408267",
+  "llm_cost": 0.0029894,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,27 @@
+<NAME>
+bottleneck_aware_paths
+</NAME>
+
+<DESCRIPTION>
+Discount each two-hop candidate when either component link already has high direct demand. Those links are plausible routes, but rewarding them as transit links as well may concentrate load and worsen the maximum-link objective. A mild, symmetric congestion factor keeps the existing support and transit-node preferences while steering some indirect reward toward less-loaded components. This changes only the allocation among candidate intermediates; it adds no variables or quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                support_factor = 0.12 + 0.88 * support / (1.0 + support)
+                transit_factor = 1.0 / (0.65 + float(pressure[j]))
+                score = support_factor * transit_factor
+=======
+                support_factor = 0.12 + 0.88 * support / (1.0 + support)
+                transit_factor = 1.0 / (0.65 + float(pressure[j]))
+
+                # Avoid assigning too much indirect-route value to paths
+                # whose component links already carry substantial direct
+                # demand, which is a rough proxy for link congestion.
+                congestion_factor = 1.0 / np.sqrt(
+                    (1.0 + 0.6 * first) * (1.0 + 0.6 * second)
+                )
+                score = support_factor * transit_factor * congestion_factor
+>>>>>>> REPLACE
+
+</DIFF>

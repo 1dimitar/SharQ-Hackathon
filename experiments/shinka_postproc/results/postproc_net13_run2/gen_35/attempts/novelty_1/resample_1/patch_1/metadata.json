@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archive_novelty_screen",
+  "patch_description": "The current batch screen prioritizes surrogate energy and only enforces distance between proposals in the same batch. That can spend LP calls on moves from regions already well represented in the archive. This edit keeps most batch capacity for promising, mutually diverse low-energy moves, then reserves two slots for proposals with the greatest minimum topology distance from the archive. Those novel proposals may reveal useful regions the current archive has not explored; remaining capacity still favors surrogate quality.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:08:02.507391",
+  "llm_cost": 0.0020272,
+  "llm_model": "gpt-6-luna"
+}

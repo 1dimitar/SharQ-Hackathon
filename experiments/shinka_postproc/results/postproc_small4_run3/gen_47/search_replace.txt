@@ -1,0 +1,119 @@
+<NAME>
+tie_robust_routing
+</NAME>
+
+<DESCRIPTION>
+Add a complementary routing estimate that sends traffic along shortest paths using three deterministic tie-breakings: lowest next-node ID, highest next-node ID, and a node/destination parity rule. Use the 75th-percentile and worst-case peak link loads across these routings as extra candidate features. These are ranking signals only: the search still retains its existing energy, learned, novelty, and random selections, while reserving one LP evaluation slot for candidates ranked by the tie-robust estimate. This can identify networks whose apparent quality depends on an unusually favorable equal-split routing, without excluding them from other selection channels.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            flow += incoming_flow
+
+        linkloads = loads.reshape(b, m) / scale
+=======
+            flow += incoming_flow
+
+        # Check how concentrated traffic can become under deterministic
+        # shortest-path tie-breakings, independently of equal splitting.
+        tie_peaks = []
+        for policy in range(3):
+            if policy == 0:
+                prefer0 = np.ones((1, n, n), dtype=bool)
+            elif policy == 1:
+                prefer0 = np.zeros((1, n, n), dtype=bool)
+            else:
+                nodes = np.arange(n)
+                prefer0 = ((nodes[:, None] + nodes[None, :]) % 2 == 0)[None, :, :]
+            choose0 = ok0 & (~ok1 | prefer0)
+            choose1 = ok1 & ~choose0
+            tie_flow = np.broadcast_to(D, (b, n, n)).copy()
+            tie_loads = np.zeros((b, n, 2), dtype=float)
+            for level in range(diameter, 0, -1):
+                active = tie_flow * (dist == level)
+                f0 = active * choose0
+                f1 = active * choose1
+                tie_loads[:, :, 0] += f0.sum(axis=2)
+                tie_loads[:, :, 1] += f1.sum(axis=2)
+                edgeflow = np.stack((f0, f1), axis=2).reshape(b, m, n)
+                incoming_flow = np.take_along_axis(
+                    edgeflow, incoming[:, :, None], axis=1
+                ).reshape(b, n, 2, n).sum(axis=2)
+                tie_flow += incoming_flow
+            tie_peaks.append(tie_loads.reshape(b, m).max(axis=1) / scale)
+        tie_peaks = np.asarray(tie_peaks).T
+        tie_q75 = np.quantile(tie_peaks, 0.75, axis=1)
+        tie_worst = tie_peaks.max(axis=1)
+
+        linkloads = loads.reshape(b, m) / scale
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+            direct,
+            unreachable,
+        ))
+=======
+            direct,
+            unreachable,
+            tie_q75,
+            tie_worst,
+        ))
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    initial_proxy = np.argsort(
+        initial_features[:, 1] + 0.10 * initial_features[:, 3]
+        + initial_features[:, 8],
+        kind="stable",
+    )
+=======
+    initial_proxy = np.argsort(
+        initial_features[:, 1] + 0.10 * initial_features[:, 3]
+        + initial_features[:, 8] + 0.10 * initial_features[:, 9]
+        + 0.05 * initial_features[:, 10],
+        kind="stable",
+    )
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+        eorder = np.argsort(X[:, 0], kind="stable")
+        porder = np.argsort(proxy, kind="stable")
+=======
+        proxy = (
+            X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+            + 0.10 * X[:, 9] + 0.05 * X[:, 10]
+        )
+        eorder = np.argsort(X[:, 0], kind="stable")
+        porder = np.argsort(proxy, kind="stable")
+        torder = np.argsort(X[:, 9] + 0.25 * X[:, 10], kind="stable")
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        take_from(lorder, max(2, batch_size // 3))
+        take_from(eorder, max(2, batch_size // 3))
+        take_from(porder, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+=======
+        take_from(lorder, max(2, batch_size // 3))
+        take_from(eorder, max(2, batch_size // 3))
+        take_from(porder, 1)
+        take_from(torder, 1)
+
+        # Genuine exploration capacity: unlike filling the batch first, these
+>>>>>>> REPLACE
+
+</DIFF>

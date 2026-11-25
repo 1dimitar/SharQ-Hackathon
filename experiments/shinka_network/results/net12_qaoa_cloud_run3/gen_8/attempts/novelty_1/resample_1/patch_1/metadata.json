@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "strengthen_degree_feasibility",
+  "patch_description": "Only 17% of the sampled topologies are valid before repair, so many QUBO samples may be substantially changed before they are scored. Increase the evaluator\u2019s degree-penalty weight from 1 to 5 to make violations less attractive relative to the normalized surrogate costs. This should concentrate sampling on topologies that need less repair while retaining the existing demand-based terms. The penalty remains within the allowed range.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:20:36.223886",
+  "llm_cost": 0.0007975,
+  "llm_model": "gpt-6-luna"
+}

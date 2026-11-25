@@ -1,0 +1,134 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: QAOA-Guided Network Repair and Local Search**
+- **Implementation**: Repairs each QAOA candidate into a valid network, scores unique networks with the routing LP, then applies randomized 2-exchange descent to the top five. It repeatedly kicks the current best network and descends until the LP budget is exhausted.
+- **Performance**: Achieved a combined score of 0.97, mean gap of 3.42%, and 2,000 LP calls in about 12.41 seconds.
+- **Feedback**: QAOA starts averaged 0.9671 best-known/best versus 0.9393 for random starts, showing a consistent benefit from QAOA initialization. Across three seeds, gaps ranged from 1.64% to 5.23%; random-start gaps were worse in every case.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Bottleneck-Guided Annealed Topology Search**
+- **Implementation**: Seeds a topology pool from repaired QAOA candidates, selects diverse elite starts, and explores degree-preserving two-switches and three-cycle rotations. It prioritizes LP-priced links, ranks proposals with a surrogate energy, and evaluates valid candidates with LP calls during annealed walks with stagnation reheating.
+- **Performance**: Achieved a combined score of 0.95, mean gap of 5.66%, and 2,000 mean LP calls in 11.27 seconds; QAOA starts averaged a best-known/best ratio of 0.9465.
+- **Feedback**: QAOA starts beat random starts on all three network-12 seeds, improving the average ratio from 0.9185 to 0.9465. The search is effective at leveraging QAOA initialization, but still ends 4.76–6.19% above the best-known solutions.
+**Program Identifier:** Generation 1 - Patch Name bottleneck_tempering - Correct Program: True
+
+**Program Name: QAOA-Guided Bottleneck-Aware Local Search**
+- **Implementation**: Repairs and deduplicates QAOA candidates, scores valid networks through the routing LP, and applies 2-link exchanges prioritized by positive LP dual prices. It descends from the five best starts, then repeatedly kicks and descends from the current best until the LP budget is exhausted.
+- **Performance**: Achieved a combined score of 0.97, with a 3.28% mean gap using 2,000 LP calls in about 15.11 seconds.
+- **Feedback**: QAOA starts averaged 0.9684 best-known/best versus 0.9248 for random starts, showing a clear advantage from candidate guidance. Across the three reported cases, QAOA improved gaps to 2.08–5.29%, while random starts had 7.61–8.80% gaps.
+**Program Identifier:** Generation 2 - Patch Name bottleneck_guided_swaps - Correct Program: True
+
+**Program Name: Dual-Guided Annealed Topology Search**
+- **Implementation**: Repairs and ranks candidate networks, then searches degree-preserving two-arc exchanges. It uses LP dual prices to guide proposals, a surrogate energy to prioritize LP evaluations, and annealed acceptance with a diverse elite archive.
+- **Performance**: Combined score was 0.0; the program did not pass validation.
+- **Feedback**: Evaluation rejected the evolved code because it contains the forbidden construct `__class__`, used to identify `BudgetExhausted` exceptions.
+**Program Identifier:** Generation 3 - Patch Name bottleneck_portfolio - Correct Program: False
+
+**Program Name: LP-Guided QAOA Topology Local Search**
+- **Implementation**: Repairs and deduplicates QAOA candidates, scores them with the routing LP, then applies 2-link exchanges prioritized by LP dual prices and loads. It descends from the five best starts and uses randomized kicks to explore further until the LP-call budget is exhausted.
+- **Performance**: Achieved a combined score of 0.97, with a 3.09% mean gap, 2,000 LP calls, and 19.01 seconds per run.
+- **Feedback**: QAOA starts averaged 0.9701 best-known/best versus 0.9331 for random starts, showing a clear benefit from the candidate pool. Across three runs, gaps were 2.08–4.01%; randomized local search from scratch was consistently worse.
+**Program Identifier:** Generation 5 - Patch Name bottleneck_guided_swaps - Correct Program: True
+
+**Program Name: Bottleneck-Guided Network Local Search**
+- **Implementation**: Repairs candidate networks, selects diverse starts using a surrogate energy, then explores degree-preserving two- and three-arc exchanges, prioritizing links with high LP prices or loads. It ranks moves by surrogate energy and evaluates them with a cached LP, maintaining an elite set and periodically applying randomized kicks.
+- **Performance**: Achieved a combined score of 0.98, with a 2.38% mean gap, 2,000 mean LP calls, and 20.51 seconds per run.
+- **Feedback**: QAOA starts averaged 0.9768 best-known/best versus 0.9496 for random starts, showing a clear benefit from informed initialization. Across three network-12 seeds, gaps ranged from 1.74% to 2.98%, consistently outperforming the corresponding random-start results.
+**Program Identifier:** Generation 4 - Patch Name bottleneck_guided_search - Correct Program: True
+
+**Program Name: Dual-Guided Network Topology Search**
+- **Implementation**: Repairs and deduplicates candidate networks, then searches with degree-preserving two-switches and sampled three-link rotations. It screens neighborhoods using surrogate energy and LP dual-price bottlenecks, evaluates a limited set under the LP budget, and uses simulated-annealing acceptance plus an archive for exploration.
+- **Performance**: Combined score was 0.98, with a 2.08% mean gap, 2,000 LP calls, and 23.47 seconds on average; QAOA starts slightly outperformed random starts (0.9797 vs. 0.9746 mean best-known/best).
+- **Feedback**: QAOA starts produced mixed results across the three seeds: gaps ranged from 0.40% to 3.19%, and random starts were better on two seeds. The small average advantage suggests the search is effective, but QAOA initialization provides only a modest, inconsistent benefit.
+**Program Identifier:** Generation 6 - Patch Name dual_archive_search - Correct Program: True
+
+**Program Name: QAOA-Guided Network Repair and Local Search**
+- **Implementation**: Repairs each QAOA candidate into a valid network, scores unique networks with the routing LP, and applies two-link exchanges with positive-price links prioritized. It descends from the five best starts, then uses randomized exchange kicks and further descent until the LP budget is exhausted.
+- **Performance**: Achieved a combined score of 0.97, with a 3.48% mean gap, 2,000 LP calls, and 11.75 seconds mean runtime.
+- **Feedback**: QAOA starts averaged 0.9664 best-known/best versus 0.9370 for random starts, showing a meaningful benefit from the candidate pool. Across three network-12 seeds, gaps were 2.59–3.99%; random starts performed worse in each case.
+**Program Identifier:** Generation 7 - Patch Name bottleneck_first_swaps - Correct Program: True
+
+**Program Name: QAOA-Guided LP Local Search**
+- **Implementation**: Repairs and deduplicates QAOA candidates, scores networks with the routing LP, then applies degree-preserving two-link exchanges prioritized by positive LP dual prices. It descends from the five best starts and uses randomized kicks and restarts among promising candidates until the LP budget is exhausted.
+- **Performance**: Achieved a combined score of 0.97, with a 3.28% mean gap, 2,000 LP calls, and 17.65 seconds per run.
+- **Feedback**: QAOA starts averaged 0.9684 best-known/best versus 0.9248 for random starts; across three seeds, they produced gaps of 2.08–5.29%, compared with 7.61–8.80% from random starts. This indicates that repaired QAOA samples provide substantially stronger starting points for the local search.
+**Program Identifier:** Generation 8 - Patch Name diverse_restarts - Correct Program: True
+
+**Program Name: QAOA-Guided Bottleneck-Weighted Network Search**
+- **Implementation**: Repairs each QAOA candidate into a valid network, scores unique networks with the routing LP, and applies 2-exchange descent from the five best starts. Exchanges are prioritized using LP link prices and loads; iterated local search then kicks the best network and descends until the LP budget is exhausted.
+- **Performance**: Achieved a combined score of 0.96, a 3.91% mean gap, and a 0.04 advantage over random-start control, using 2,000 LP calls in about 22.32 seconds on average.
+- **Feedback**: QAOA starts substantially improved the mean best-known/best ratio over random starts (0.9626 vs. 0.9224), though results varied by seed. One seed’s random-start result slightly beat its QAOA-start result, indicating the search can be sensitive to initialization.
+**Program Identifier:** Generation 9 - Patch Name directional_swap_order - Correct Program: True
+
+**Program Name: Surrogate-Guided QAOA Topology Local Search**
+- **Implementation**: Repairs and diversifies candidate networks, scores them with LP calls, then searches valid two-arc exchanges and sampled three-arc cyclic reassignments, prioritizing bottleneck links identified from LP details. It mixes surrogate-energy-ranked moves with random diversity and periodic incumbent kicks, while caching scores and respecting call and time budgets.
+- **Performance**: Achieved a combined score of 0.98, with a 2.54% mean gap, 2,000 LP calls, and 26.33 seconds per run.
+- **Feedback**: QAOA starts averaged a 0.9753 best-known/best ratio versus 0.9684 for random starts, but the advantage was small and inconsistent across seeds. QAOA improved two of three cases; on seed 1, random starts performed better.
+**Program Identifier:** Generation 10 - Patch Name price-guided basin search - Correct Program: True
+
+**Program Name: QAOA-Guided Network Repair and Local Search**
+- **Implementation**: Repairs each QAOA candidate into a valid network, scores unique networks with the routing LP, then applies dual/load-informed two-link swaps and descent from the five best starts. It uses further randomized swap kicks and descent until the LP budget is exhausted.
+- **Performance**: Achieved a 0.96 combined score, 3.91% mean gap, and 0.04 advantage over random-start control, using 2,000 LP calls in about 23.57 seconds on average.
+- **Feedback**: QAOA starts reached a mean best-known/best ratio of 0.9626 versus 0.9224 for random starts. Results varied by seed: one was within 1.56% of the best known, while others had gaps of 4.37% and 5.80%.
+**Program Identifier:** Generation 11 - Patch Name priced_swap_order - Correct Program: True
+
+**Program Name: LP-Guided QAOA Network Refinement**
+- **Implementation**: Repairs and ranks candidate networks, then iteratively explores valid link-switch neighborhoods and repaired crossovers. It prioritizes LP-price “hot” links, uses QUBO energy and demand as inexpensive screening signals, and spends a capped LP budget on promising proposals while keeping a diverse population.
+- **Performance**: Combined score was 0.98, with a 1.76% mean gap, 2,000 LP calls, and 37.28 seconds on average; QAOA starts averaged 0.9827 best-known/best versus 0.9736 for random starts.
+- **Feedback**: QAOA initialization generally improved results over random starts, but not on every seed: random starts did better on seed 2. The method passed all validation tests and achieved gaps of 1.25–2.49% across the reported QAOA runs.
+**Program Identifier:** Generation 12 - Patch Name surrogate_guided_population - Correct Program: True
+
+**Program Name: QAOA-Seeded Congestion Local Search**
+- **Implementation**: Repairs and deduplicates candidate networks, caches LP scores, then explores degree-preserving destination swaps ranked by congestion prices, loads, surrogate energy, and demand. A bounded iterated local search uses elite restarts, random tie-breaking, and annealed acceptance under LP-call and time limits.
+- **Performance**: Combined score was 0.96, with a 3.85% mean gap, 2,000 mean LP calls, and 32.37 seconds per run; QAOA starts averaged 0.9630 best-known/best versus 0.9229 for random starts.
+- **Feedback**: Across three network12 seeds, QAOA-seeded results were 2.21–4.74% above the best known, while random starts were 5.11–10.23% above it. The consistent advantage indicates that the repaired QAOA pool provides useful starting topologies for the local search.
+**Program Identifier:** Generation 13 - Patch Name ranked_bottleneck_search - Correct Program: True
+
+**Program Name: QAOA-Guided Network Local Search**
+- **Implementation**: Repairs and scores candidate networks, then uses LP-guided 2-link swaps and selected 3-link rotations for descent; dual prices and loads prioritize moves, while surrogate energy ranks rotation candidates. It explores the top five starts and applies randomized swap kicks until the LP budget is exhausted.
+- **Performance**: Achieved a combined score of 0.97, with a 3.09% mean gap, 2,000 LP calls, and 25.66 seconds on average.
+- **Feedback**: QAOA starts averaged 0.9701 best-known/best versus 0.9308 for random starts, showing a clear benefit from candidate initialization. Across three network12 seeds, gaps ranged from 2.08% to 4.01%; every run used the full LP budget.
+**Program Identifier:** Generation 15 - Patch Name targeted_rotation_escape - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **LP-priced bottleneck search combined with surrogate screening is the strongest pattern in the evaluations.** The current best, **LP-Guided QAOA Network Refinement**, achieved a **1.76% mean gap and 0.98 combined score**, improving on the previous best’s **2.08% gap** at the same score. It uses LP prices to identify hot links, screens candidate moves cheaply using QUBO energy and demand, and spends LP calls on a selected batch.
+- **Maintaining a diverse set of strong solutions can support effective exploration.** The current best keeps a population of up to 24 networks, prefers members that differ substantially in their links, and periodically combines members with repaired crossovers. Its three QAOA-run gaps were **1.25%, 2.49%, and 1.53%**, all better than the previous leader’s reported mean gap.
+- **Mixing targeted and unconstrained exchanges helps avoid over-reliance on bottleneck-only neighborhoods.** The current best prioritizes switches involving positive-price links, but also adds unconstrained switches every other iteration and occasional crossovers. This complements the prior evidence favoring dual-guided moves while retaining paths to escape locally focused neighborhoods.
+- **Repaired QAOA starts remain useful in aggregate, though their benefit varies by seed.** The current best’s mean best-known/best ratio was **0.9827 for QAOA starts versus 0.9736 for random starts**. Other examples include Generation 13’s **0.9630 vs. 0.9229** and Generation 15’s **0.9701 vs. 0.9308**, though the current best lost to random starts on one seed.
+
+## Ineffective Approaches
+- **QAOA initialization is not a per-seed guarantee.** For the current best, random starts did better on seed 2 (**279,334** versus **280,715** for QAOA; gaps **1.03% vs. 1.53%**). Similar reversals occurred in earlier evaluations, including seed 1 for Generation 10 and seed 2 for Generation 12.
+- **Strong initialization advantages do not necessarily yield the best overall gaps.** Generation 11 had a sizable QAOA-versus-random ratio advantage (**0.9626 vs. 0.9224**) but a **3.91% mean gap** and **0.96 score**. Generation 13 also had a large initialization advantage (**0.9630 vs. 0.9229**) but a **3.85% gap** and **0.96 score**, well behind the current best’s 1.76% gap.
+- **Broader search mechanisms and additional move types have not reliably improved results.** Prior results found that annealed broader exploration reached a **5.66% gap and 0.95 score**, while the more focused current-best search reached **1.76% and 0.98**. Three-link rotations likewise did not beat the earlier focused-exchange leader, underscoring that added neighborhood breadth alone is not sufficient.
+
+## Implementation Insights
+- **The current best separates cheap proposal ranking from expensive LP evaluation.** It deduplicates valid repaired candidates, generates switch and crossover proposals, orders fresh networks by surrogate energy and demand-on-selected-links, then LP-evaluates a capped batch (with occasional random picks). This directs the fixed **2,000-call budget** toward screened proposals while retaining some protection against surrogate misranking.
+- **Its population and incumbent tracking serve different purposes.** The population is pruned for both quality and edge-set diversity, while `best_net`/`best_score` retain the best result found. This allows search to branch from multiple strong topologies without losing the incumbent; the program also caches and skips already evaluated networks.
+- **LP details are used for move ordering rather than as the only search constraint.** Positive-price links define the hot set for targeted exchanges, but the program periodically adds all valid switches. That combination is consistent with the broader evaluation evidence: price/load prioritization is common in the strongest searches, while exploration beyond bottlenecks helps avoid an overly narrow neighborhood.
+- **Runtime remains a notable cost of this implementation.** The current best used **37.28 seconds on average** for 2,000 LP calls, compared with **25.66 seconds** for Generation 15 and **23.57 seconds** for Generation 11. Its better gap is therefore not explained by a larger LP budget; it comes with substantially more wall-clock time among these evaluated variants.
+
+## Performance Analysis
+- **The current best leads this evaluation set on mean gap:** **1.76%**, with a **0.98 combined score**. It improves on the previous global best, Dual-Guided Network Topology Search (**2.08%, 0.98**), and the prior 0.98-scoring Bottleneck-Guided Network Local Search (**2.38%**).
+- **The current best is materially ahead of the other newly evaluated programs on gap.** Generation 10 had **2.54%** and score **0.98**; Generation 15 had **3.09%** and **0.97**; Generations 11 and 13 had **3.91%** and **3.85%**, both scoring **0.96**. The current best used the same **2,000 LP calls** as these programs.
+- **Seed results show consistent quality but a modest QAOA-control aggregate advantage.** The current best’s QAOA gaps were **1.25–2.49%**, compared with random-start gaps of **1.03–4.07%**. Its mean ratio advantage (**0.9827 vs. 0.9736**) is positive, but smaller than some earlier QAOA-seeded searches and does not hold on every seed.
+- **The gap improvement comes with higher runtime.** At **37.28 seconds**, the current best is slower than the earlier 2.08%-gap leader (**23.47 seconds**) and the 2.38%-gap search (**20.51 seconds**). The evaluation therefore shows a stronger quality result at the common LP-call limit, but with a meaningful time tradeoff.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Rank exchanges by directional dual benefit before surrogate energy.** For each two-switch candidate, calculate the sum of prices on removed links minus the sum on added links, and use this as an explicit ranking feature alongside `tools.energy` and demand on selected links. The current program successfully uses LP prices to focus proposals, but this could distinguish exchanges that actually relieve priced bottlenecks from those that merely involve them.
+
+2. **Make LP batch selection diverse, not just top-ranked.** Keep the best energy-ranked candidates, but remove near-duplicates by edge overlap and reserve part of each batch for distinct candidates with competitive energy and strong directional dual benefit. This builds on the existing cheap screening and diversity-aware population, while reducing the risk of spending LP calls on similar proposals.
+
+3. **Trigger targeted compound moves after local stagnation.** Track whether a parent’s screened two-switch neighborhood improves the incumbent; after several unsuccessful rounds, generate a bounded set of three-link rotations centered on its highest-price links and rank them with the same surrogate and dual signals. The current search already mixes targeted and unconstrained two-switches, so making compound moves conditional may add escape routes without paying their cost every iteration.
+
+4. **Adapt search effort to branch productivity.** Track LP calls and incumbent or population improvements for each archive member, then allocate more neighborhood evaluations to productive branches while retaining a minimum budget for other diverse members. This extends the current round-robin archive search and may make better use of its fixed LP budget when some starting topologies are much more promising than others.
+
+5. **Use adaptive, archive-based kicks when progress stalls.** After repeated iterations without improving `best_score`, generate a small number of multi-switch perturbations from a diverse, high-quality population member; increase kick size with continued stagnation and return to ordinary exchanges after an improvement. This preserves the strong archive and dual-guided local search while offering a controlled way out of bottleneck-focused local optima.

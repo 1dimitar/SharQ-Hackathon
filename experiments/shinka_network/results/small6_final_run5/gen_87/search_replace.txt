@@ -1,0 +1,43 @@
+<NAME>
+route_competition_discount
+</NAME>
+
+<DESCRIPTION>
+Discount route rewards at intermediate nodes that already carry many strong retained routes. The accumulated absolute route-coupling magnitude is demand-weighted by the existing route support and selection factors, so it provides a lightweight proxy for competition without adding new couplings or changing the route-selection logic. The discount is bounded to at most 18%, preserving the existing signal while making heavily used transit nodes somewhat less attractive.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reduce incentives for links that occur in a disproportionate
+    # number of distinct path interactions.
+=======
+    # Estimate competition among retained routes at their intermediate
+    # nodes. Existing route weights already reflect OD demand and route
+    # support, so their magnitudes give a compact demand-weighted usage proxy.
+    route_usage = {}
+    route_nodes = {}
+    for key, weight in quadratic.items():
+        (a, b), (c, d) = key
+        if b == c:
+            middle = b
+        elif d == a:
+            middle = d
+        else:
+            continue
+        route_nodes[key] = middle
+        route_usage[middle] = route_usage.get(middle, 0.0) + abs(weight)
+
+    peak_route_usage = max(route_usage.values()) if route_usage else 0.0
+    if peak_route_usage > 1e-15:
+        for key, middle in route_nodes.items():
+            relative_usage = min(
+                1.0, route_usage[middle] / peak_route_usage
+            )
+            # Keep the competition effect mild and bounded.
+            quadratic[key] *= 1.0 - 0.18 * relative_usage
+
+    # Reduce incentives for links that occur in a disproportionate
+    # number of distinct path interactions.
+>>>>>>> REPLACE
+
+</DIFF>

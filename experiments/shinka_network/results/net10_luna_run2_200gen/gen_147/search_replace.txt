@@ -1,0 +1,18 @@
+<NAME>
+stronger_path_support
+</NAME>
+
+<DESCRIPTION>
+Test the recommended upper side of the controlled path-strength sweep by changing only `path_strength` from 0.56 to 0.62. Stronger two-hop support may help the best sampled topologies serve heavy demands without direct links. Since stronger support can also bias typical samples toward indirect routes, evaluate both best and median gaps against the current setting.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Controlled sweep change: strengthen selective two-hop support from 0.46.
+    path_strength = 0.56
+=======
+    # Test stronger selective two-hop support while holding other terms fixed.
+    path_strength = 0.62
+>>>>>>> REPLACE
+
+</DIFF>

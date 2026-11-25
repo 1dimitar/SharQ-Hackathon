@@ -1,0 +1,14 @@
+{
+  "generation": 70,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "concave_path_signal",
+  "patch_description": "Increase the mild concave component in both direct-link and two-hop demand signals. This gives medium-demand OD pairs more influence relative to the largest demands, which may encourage a more balanced topology and improve typical sampled solutions. The adjustment keeps direct demand dominant and does not add quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:46:39.274139",
+  "llm_cost": 0.0009745000000000001,
+  "llm_model": "gpt-6-luna"
+}

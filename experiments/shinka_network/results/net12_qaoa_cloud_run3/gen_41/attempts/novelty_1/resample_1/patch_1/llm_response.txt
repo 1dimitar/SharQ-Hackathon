@@ -1,0 +1,126 @@
+<NAME>
+fractional_congestion
+</NAME>
+
+<DESCRIPTION>
+This approach estimates how much traffic each link could attract using a fractional, demand-weighted two-hop routing model. It uses those estimates to reward useful direct links and penalize pairs of links that are likely to carry correlated traffic. Unlike a broad reward for every two-hop path, the sparse positive couplings emphasize congestion and diminishing returns, encouraging a more balanced low-energy network. Couplings are limited to links sharing an endpoint, keeping the interaction graph manageable.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build a congestion-aware QUBO from fractional two-hop load estimates."""
+    t = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = len(t)
+    np.fill_diagonal(t, 0.0)
+
+    scale = float(np.max(t)) if t.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    a = t / scale
+
+    # Estimate how much each OD pair can be served directly, and how much
+    # has plausible two-hop alternatives. Relay allocation is fractional:
+    # no single relay is presumed to carry the entire OD flow.
+    row = a.sum(axis=1)
+    col = a.sum(axis=0)
+    pressure = np.maximum(row, col)
+    pmax = float(pressure.max()) if n else 0.0
+    if pmax > 0:
+        pressure = pressure / pmax
+
+    # Demand-weighted potential load on each directed edge.
+    load = a.copy()
+    for s in range(n):
+        for d in range(n):
+            od = a[s, d]
+            if s == d or od <= 0:
+                continue
+            relays = []
+            for r in range(n):
+                if r == s or r == d:
+                    continue
+                # Geometric leg compatibility with a discount for busy relays.
+                affinity = np.sqrt((a[s, r] + 0.015) * (a[r, d] + 0.015))
+                affinity /= 0.65 + pressure[r]
+                if affinity > 0.0:
+                    relays.append((affinity, r))
+            if relays:
+                total = sum(v for v, _ in relays)
+                # Give indirect service a modest share; split it across
+                # plausible relays rather than rewarding every path equally.
+                indirect = 0.32 * od
+                for affinity, r in relays:
+                    share = indirect * affinity / total
+                    load[s, r] += share
+                    load[r, d] += share
+
+    # Direct utility favors links with high estimated usefulness but has
+    # diminishing returns, preventing only the largest OD values from mattering.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                q = float(load[i, j])
+                linear[(i, j)] = -(0.72 * q + 0.28 * np.sqrt(q))
+
+    # Pairwise congestion: links with a common tail compete for outgoing
+    # capacity, and links with a common head compete for incoming capacity.
+    # The edge-load product is a second-order approximation to concentration
+    # in the largest link loads. Keep the strongest interactions per node.
+    quadratic = {}
+    for v in range(n):
+        outgoing = [(v, j) for j in range(n) if j != v]
+        incoming = [(i, v) for i in range(n) if i != v]
+
+        for group in (outgoing, incoming):
+            ranked = sorted(group, key=lambda e: -load[e[0], e[1]])
+            # Sparse local interactions reduce oversized communities while
+            # retaining the most consequential congestion conflicts.
+            keep = ranked[:min(8, len(ranked))]
+            for p in range(len(keep)):
+                e1 = keep[p]
+                for q in range(p + 1, len(keep)):
+                    e2 = keep[q]
+                    x = float(load[e1[0], e1[1]])
+                    y = float(load[e2[0], e2[1]])
+                    w = 0.20 * np.sqrt(max(0.0, x * y))
+                    if w <= 1e-12:
+                        continue
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+                    quadratic[key] = quadratic.get(key, 0.0) + w
+
+    # Encourage complementary two-hop connectivity only for the strongest
+    # OD/relay opportunities, avoiding indiscriminate path rewards.
+    for s in range(n):
+        for d in range(n):
+            od = float(a[s, d])
+            if s == d or od <= 0:
+                continue
+            choices = []
+            for r in range(n):
+                if r == s or r == d:
+                    continue
+                score = np.sqrt((a[s, r] + 0.01) * (a[r, d] + 0.01))
+                score /= 0.7 + pressure[r]
+                choices.append((score, r))
+            choices.sort(reverse=True)
+            for score, r in choices[:2]:
+                e1, e2 = (s, r), (r, d)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                # Small negative coupling supports a viable route without
+                # overwhelming direct utility or congestion penalties.
+                w = -0.07 * od * score
+                quadratic[key] = quadratic.get(key, 0.0) + w
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 8.0
+
+
+# EVOLVE-BLOCK-END
+``` 
+</CODE>

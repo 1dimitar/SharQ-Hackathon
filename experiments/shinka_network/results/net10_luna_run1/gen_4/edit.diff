@@ -1,0 +1,158 @@
+--- a/original.py
++++ b/original.py
+@@ -1,48 +1,135 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
++def _normalized_demand(demand):
++    """Return a nonnegative, scale-free demand array and its traffic statistics."""
++    t = np.asarray(demand, dtype=float)
++    if t.ndim != 2 or t.shape[0] != t.shape[1]:
++        raise ValueError("demand must be a square matrix")
++
++    # Negative entries are not meaningful traffic. Ignore them if present.
++    t = np.maximum(t, 0.0).copy()
++    np.fill_diagonal(t, 0.0)
++
++    peak = float(t.max()) if t.size else 0.0
++    if peak > 0.0:
++        t /= peak
++
++    rows = t.sum(axis=1)
++    cols = t.sum(axis=0)
++    return t, rows, cols
++
++
++def _link_benefits(t, rows, cols):
++    """Estimate the value of directly connecting each ordered node pair."""
++    n = t.shape[0]
++    total = float(rows.sum())
++    if total > 0.0:
++        row_share = rows / total
++        col_share = cols / total
++    else:
++        row_share = np.zeros(n)
++        col_share = np.zeros(n)
++
++    benefits = {}
++    for i in range(n):
++        for j in range(n):
++            if i == j:
++                continue
++            # Direct traffic is the strongest signal. Endpoint traffic statistics
++            # provide a modest proxy for the value of access to busy nodes.
++            endpoint_value = 0.5 * (row_share[i] + col_share[j])
++            benefits[(i, j)] = float(t[i, j] + 0.20 * endpoint_value)
++    return benefits
++
++
++def _pair_congestion_terms(t, rows, cols):
++    """Build sparse penalties for links competing at a common endpoint."""
++    n = t.shape[0]
++    total = float(rows.sum())
++    if total > 0.0:
++        row_share = rows / total
++        col_share = cols / total
++    else:
++        row_share = np.zeros(n)
++        col_share = np.zeros(n)
++
++    q = {}
++
++    # The two selected outgoing links of a node share the traffic originating
++    # there; similarly, selected incoming links share the traffic terminating
++    # there. Penalize especially heavy endpoints, with a small local-demand
++    # correction so that a high-demand pair is not treated as interchangeable.
++    for i in range(n):
++        outgoing = [(i, j) for j in range(n) if j != i]
++        for a in range(len(outgoing)):
++            e1 = outgoing[a]
++            for b in range(a + 1, len(outgoing)):
++                e2 = outgoing[b]
++                local = 0.5 * (t[e1] + t[e2])
++                q[(e1, e2)] = 0.12 * row_share[i] * (1.0 + float(local))
++
++    for j in range(n):
++        incoming = [(i, j) for i in range(n) if i != j]
++        for a in range(len(incoming)):
++            e1 = incoming[a]
++            for b in range(a + 1, len(incoming)):
++                e2 = incoming[b]
++                local = 0.5 * (t[e1] + t[e2])
++                key = (e1, e2)
++                q[key] = q.get(key, 0.0) + 0.12 * col_share[j] * (
++                    1.0 + float(local)
++                )
++
++    # Reciprocal links are useful when both directions carry appreciable traffic.
++    # Represent this as a negative pair term rather than duplicating a linear
++    # reward that could encourage one-sided reciprocal links.
++    for i in range(n):
++        for j in range(i + 1, n):
++            mutual = min(float(t[i, j]), float(t[j, i]))
++            if mutual > 0.0:
++                key = ((i, j), (j, i))
++                q[key] = q.get(key, 0.0) - 0.08 * mutual
++
++    # Remove negligible terms and ensure a deterministic, canonical key order.
++    result = {}
++    for (e1, e2), value in q.items():
++        if abs(value) > 1e-14:
++            if e2 < e1:
++                e1, e2 = e2, e1
++            result[(e1, e2)] = float(value)
++    return result
++
++
+ def surrogate_terms(demand):
+-    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
++    """Build linear and quadratic cost terms for the directed-link QUBO."""
++    t, rows, cols = _normalized_demand(demand)
++    linear = {key: -value for key, value in _link_benefits(t, rows, cols).items()}
++    quadratic = _pair_congestion_terms(t, rows, cols)
+ 
+-    Args:
+-        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+-            (zero diagonal).
+-
+-    Returns:
+-        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+-            (x_ij = 1 if the directed link i -> j is built), i != j.
+-        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+-        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+-            after rescaling these terms so the largest |weight| is 1.
+-
+-    Lower energy must mean a better topology. Baseline: reward each link by the demand
+-    it carries directly.
+-    """
+-    n = len(demand)
+-    scale = float(demand.max()) or 1.0
+-    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+-    quadratic = {}
+-    penalty_weight = 1.0
++    # Degree constraints are added by the evaluator. Keep their strength
++    # substantial relative to the bounded, normalized objective coefficients.
++    penalty_weight = 1.5
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

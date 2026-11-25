@@ -1,0 +1,99 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link and pressure-discounted two-hop cost terms."""
+    matrix = np.asarray(demand, dtype=float)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("demand must be a square matrix")
+    n = int(matrix.shape[0])
+
+    # Sanitize inputs and exclude self-traffic.
+    traffic = np.nan_to_num(
+        matrix, nan=0.0, posinf=0.0, neginf=0.0
+    ).copy()
+    np.maximum(traffic, 0.0, out=traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    # Preserve the existing direct-link signal.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            value = float(traffic[i, j]) / scale
+            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+
+    # Node transit pressure is unchanged from the current program.
+    incident = np.sum(traffic, axis=0) + np.sum(traffic, axis=1)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    node_pressure = np.maximum(0.75, incident / max_incident)
+
+    # Two-hop rewards are discounted more strongly when either component
+    # edge carries substantial demand; all other modeling choices are retained.
+    quadratic = {}
+    path_strength = 0.50
+    edge_discount = 0.85
+
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (
+                        float(node_pressure[j])
+                        * (1.0 + edge_discount * edge_pressure)
+                    )
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = float(weight)
+
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,21 @@
+<NAME>
+nonlinear_edge_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the discount on two-hop rewards for paths whose component edges carry substantial direct demand, using a power of 1.5 rather than a linear denominator. This tests stronger, nonlinear edge-load discounting while leaving the direct-link rewards, node pressure, and path support unchanged. It preserves the current term count and may steer the low-energy region away from concentrating traffic on already-demand-heavy edges.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    edge_pressure_strength = 0.50
+=======
+    edge_pressure_exponent = 1.5
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                        * (1.0 + edge_pressure_strength * edge_pressure)
+=======
+                        * ((1.0 + edge_pressure) ** edge_pressure_exponent)
+>>>>>>> REPLACE
+</DIFF>

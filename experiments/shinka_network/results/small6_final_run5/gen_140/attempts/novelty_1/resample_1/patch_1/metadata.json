@@ -1,0 +1,14 @@
+{
+  "generation": 140,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "sparse_service_pairs",
+  "patch_description": "Add sparse pairwise factors for the two outgoing and two incoming links at each node. These factors estimate whether a pair of neighbors provides complementary service to the node\u2019s traffic, while also discouraging an uneven split of that traffic. Decomposing the estimated pair cost into linear endpoint effects and a sparse residual lets the QUBO capture this signal without adding a dense set of couplings. The budget of `n // 4` pairs per node and direction keeps the interactions compact; the strength is scaled by average direct-link score and node traffic.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:58:01.754829",
+  "llm_cost": 0.004033,
+  "llm_model": "gpt-6-luna"
+}

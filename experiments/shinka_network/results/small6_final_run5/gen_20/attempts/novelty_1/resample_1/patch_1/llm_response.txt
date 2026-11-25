@@ -1,0 +1,35 @@
+<NAME>
+adaptive_route_margin
+</NAME>
+
+<DESCRIPTION>
+Adapt the number of retained two-hop routes to how clearly the candidate ranks are separated. If the best candidate strongly dominates the runner-up, retain one fewer route; if the boundary between retained and omitted candidates is close, expand the set by up to two routes. This focuses extra couplings on ambiguous choices instead of increasing density uniformly, while preserving the existing high-demand and low-demand allowances as the starting point. The rule is deterministic and keeps the term count within the allowed bound.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+=======
+            base_keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+            keep = base_keep
+
+            # Use fewer routes when the top candidate is clearly superior.
+            if (
+                len(candidates) > 1
+                and candidates[0][0] > 1.75 * candidates[1][0]
+            ):
+                keep = max(1, base_keep - 1)
+            else:
+                # Near-tied candidates at the selection boundary are
+                # ambiguous, so retain up to two additional alternatives.
+                while keep < min(len(candidates), base_keep + 2):
+                    boundary_rank = candidates[keep - 1][0]
+                    next_rank = candidates[keep][0]
+                    relative_gap = (
+                        boundary_rank - next_rank
+                    ) / max(boundary_rank, 1e-12)
+                    if relative_gap >= 0.12:
+                        break
+                    keep += 1
+>>>>>>> REPLACE
+</DIFF>

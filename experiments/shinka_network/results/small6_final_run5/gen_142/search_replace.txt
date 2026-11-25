@@ -1,0 +1,18 @@
+<NAME>
+degree_penalty_ramp
+</NAME>
+
+<DESCRIPTION>
+The current penalty weight rises only from 1.20 at n=12 to 1.224 at n=16, where the raw feasible-sample rate drops as low as 86%. Increase the evaluator-supplied degree penalty to a moderate size-dependent ramp, reaching 1.348 at n=16. This targets invalid samples without adding degree terms to the QUBO or changing its cost factors.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # The evaluator supplies all degree-constraint terms.
+    penalty_weight = float(min(1.32, 1.20 + 0.006 * max(0, n - 12)))
+=======
+    # The evaluator supplies all degree-constraint terms. Strengthen them
+    # gradually with size to maintain feasible samples at larger n.
+    penalty_weight = float(min(1.45, 1.30 + 0.008 * max(0, n - 10)))
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_selection",
+  "patch_description": "Select archive parents using both solution quality and search history, rather than choosing uniformly from the elite or the whole archive. Reward parents whose neighborhoods have produced improvements, while giving underexplored and structurally distinct networks a greater chance of selection. Update usage counts and accumulated improvement after each batch. This preserves elite exploitation but reduces repeated searches in unproductive regions and encourages exploration of diverse basins.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:18:18.150691",
+  "llm_cost": 0.0028628000000000004,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 142,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "clamp_path_discount",
+  "patch_description": "Clamp the combined node- and edge-pressure discount to 0.7\u20131.5. The current discount can become very small for pressured transit nodes or large edge demands, suppressing useful two-hop alternatives and making the typical sampled topology less robust. A lower bound preserves some support for those routes, while the upper bound limits excessive rewards. This isolates the proposed multiplier-bound experiment without changing the linear terms or degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:39.877324",
+  "llm_cost": 0.0008788000000000001,
+  "llm_model": "gpt-6-luna"
+}

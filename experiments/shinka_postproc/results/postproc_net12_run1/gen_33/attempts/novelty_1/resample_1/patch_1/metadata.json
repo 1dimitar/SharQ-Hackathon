@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_edge_evolution",
+  "patch_description": "Replaces repeated descent with a diverse, repair-based evolutionary search. It seeds a small, topology-diverse set from the repaired QAOA samples, then breeds and perturbs promising networks. Bottleneck prices guide some mutations, while QUBO energy and topology diversity rank proposals before spending LP calls. This aims to use the expensive evaluations across distinct search regions rather than repeatedly exploring one local neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:47:11.248658",
+  "llm_cost": 0.0039029,
+  "llm_model": "gpt-6-luna"
+}

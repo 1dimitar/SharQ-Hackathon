@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relink_destroy_rebuild",
+  "patch_description": "This approach replaces the broad archive-neighborhood search with a two-part exploration strategy. It first scores a diverse set of repaired QAOA samples, then repeatedly chooses two scored networks and path-relinks between them by adding edges from one guide network while preserving degree constraints with valid two-switches. When relinking stalls, it uses bottleneck information from `lp_detail` to propose targeted switches, with occasional more disruptive switches to escape local structure. Candidate moves are screened using the pool\u2019s energy surrogate and topology diversity before spending LP calls. A small annealed acceptance rule lets the search move between regions rather than relying only on improving parents.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:38:39.859243",
+  "llm_cost": 0.0026648,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "profiled_path_qubo",
+  "patch_description": "Separates demand preprocessing, path scoring, and redundancy scoring into small helpers. The QUBO combines direct-traffic rewards with discounted two-hop path rewards, while weak profile-overlap couplings discourage redundant links. The construction uses at most about \\(2.5n^3\\) quadratic terms and raises the degree penalty to favor valid topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:47.941068",
+  "llm_cost": 0.0022363,
+  "llm_model": "gpt-6-luna"
+}

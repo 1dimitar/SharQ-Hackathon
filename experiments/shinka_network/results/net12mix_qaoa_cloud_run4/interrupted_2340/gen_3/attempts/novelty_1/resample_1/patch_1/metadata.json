@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_discounted_paths",
+  "patch_description": "Keep the direct-demand reward, but add restrained bonuses for useful two-hop paths. A path\u2019s bonus is discounted when its intermediate node has high total traffic, making heavily demanded nodes less attractive as transit hubs. Dividing by the square root of the number of possible intermediates keeps the aggregate path reward moderate as network size grows, rather than letting many candidate paths overwhelm the direct-link signal. Also increase the evaluator\u2019s degree-penalty weight so invalid degree patterns are less competitive before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:27:43.856179",
+  "llm_cost": 0.0016529,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 85,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "bilateral_route_support",
+  "patch_description": "Rank and weight two-hop routes using evidence from both legs rather than letting a strong leg dominate the existing affinity score. The harmonic mean of the legs\u2019 direct-demand support is limited by the weaker leg; a bounded endpoint-share factor modestly adjusts that evidence using each leg\u2019s share of the source\u2019s outgoing or destination\u2019s incoming demand. Applying the same bounded factor to route ranking and coupling magnitude keeps the sparse structure unchanged while making the energy more consistent about which routes it rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:07:32.781744",
+  "llm_cost": 0.003689,
+  "llm_model": "gpt-6-luna"
+}

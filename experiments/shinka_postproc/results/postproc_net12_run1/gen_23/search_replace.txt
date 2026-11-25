@@ -1,0 +1,65 @@
+<NAME>
+productive_branch_allocation
+</NAME>
+
+<DESCRIPTION>
+Keep a small archive of distinct promising networks and track how often each branch produces an improvement. Cap each descent’s 2-exchange scan so one branch cannot consume the entire LP budget; then allocate subsequent searches more often to branches with better improvement histories, while still occasionally exploring less-proven branches. This applies the branch-productivity recommendation and replaces the current best-only kick loop, which repeatedly searches around the incumbent and can neglect other useful starting networks.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        while True:
+            improved = False
+            for cand in swaps(net):
+                s = tools.lp(cand)
+                if s < score:
+                    net, score, improved = cand, s, True
+                    break
+=======
+        while True:
+            improved = False
+            # Bound each descent round so one branch cannot monopolize the budget.
+            for tried, cand in enumerate(swaps(net)):
+                if tried >= 80:
+                    break
+                s = tools.lp(cand)
+                if s < score:
+                    net, score, improved = cand, s, True
+                    break
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    while True:
+        net = best_net
+        for _ in range(2 + int(rng.integers(3))):
+            net = next(swaps(net), net)
+        net, score = descend(net, tools.lp(net))
+        if score < best:
+            best_net, best = net, score
+=======
+    # Preserve diverse, improving branches and allocate extra trials to those
+    # that have recently generated better LP scores.
+    archive = [(net, pool[net], 0) for net in ranked[:min(10, len(ranked))]]
+    for net, score, _ in archive:
+        if score < best:
+            best_net, best = net, score
+    while tools.lp_calls_left > 0:
+        weights = np.asarray([1.0 + max(0, 3 - wins) for _, _, wins in archive],
+                             dtype=float)
+        # Productivity boosts branches that have improved; the floor retains exploration.
+        weights += np.asarray([2.0 * wins for _, _, wins in archive], dtype=float)
+        idx = int(rng.choice(len(archive), p=weights / weights.sum()))
+        base, base_score, wins = archive[idx]
+        net = base
+        for _ in range(2 + int(rng.integers(3))):
+            net = next(swaps(net), net)
+        score0 = tools.lp(net)
+        net, score = descend(net, score0)
+        if score < best:
+            best_net, best = net, score
+        if score < base_score:
+            archive[idx] = (net, score, wins + 1)
+        elif len(archive) < 12 and all(net != old for old, _, _ in archive):
+            archive.append((net, score, 0))
+>>>>>>> REPLACE
+
+</DIFF>

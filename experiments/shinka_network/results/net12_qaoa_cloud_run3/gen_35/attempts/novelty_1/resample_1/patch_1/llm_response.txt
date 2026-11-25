@@ -1,0 +1,21 @@
+<NAME>
+top_od_relay_focus
+</NAME>
+
+<DESCRIPTION>
+Focus the extra relay candidate budget on the most exceptional OD demands rather than all pairs above the current 80th-percentile cutoff. Raising the cutoff to the 90th percentile and adding just one extra relay per qualifying pair limits broad two-hop interactions, while preserving extra route options for the heaviest traffic. This should also keep the interaction graph sparser and reduce unnecessary coupling between variables.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.80)) if positive_od.size else float("inf")
+    )
+    extra_relays = min(2, max(0, n - 2 - relay_count))
+=======
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.90)) if positive_od.size else float("inf")
+    )
+    extra_relays = min(1, max(0, n - 2 - relay_count))
+>>>>>>> REPLACE
+</DIFF>

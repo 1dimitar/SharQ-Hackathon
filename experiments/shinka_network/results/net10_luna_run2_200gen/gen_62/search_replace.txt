@@ -1,0 +1,15 @@
+<NAME>
+moderate_path_strength
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward budget from 0.8 to 0.62 while leaving the direct-link rewards and transit-pressure formula unchanged. Since a two-hop demand can receive credit from several candidate paths, a more moderate reward should limit overcounting and keep the QUBO’s low-energy topologies more strongly guided by direct demand. This tests a lower path-strength setting without changing the term structure or term count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    indirect_fraction = 0.8
+=======
+    indirect_fraction = 0.62
+>>>>>>> REPLACE
+</DIFF>

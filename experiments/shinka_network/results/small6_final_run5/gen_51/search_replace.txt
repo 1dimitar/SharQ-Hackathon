@@ -1,0 +1,29 @@
+<NAME>
+ambiguous_route
+</NAME>
+
+<DESCRIPTION>
+A fixed top-k rule can discard a nearly equally attractive two-hop route, even when the ranking is ambiguous. Keep the existing two-or-three route selection, but add at most one more route when the next candidate’s affinity-to-pressure score is within 8% of the last selected candidate’s score. This provides limited routing flexibility for uncertain OD pairs without broadly increasing the coupling density; the extra route also receives a lower rank factor in the existing scoring loop.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+
+            for position, (rank, j, path_affinity) in enumerate(candidates[:keep]):
+=======
+            keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+            selected_candidates = candidates[:keep]
+
+            # Preserve one additional route when the selection boundary is
+            # ambiguous, without adding couplings for clearly inferior paths.
+            if (
+                len(candidates) > keep
+                and candidates[keep][0] >= 0.92 * candidates[keep - 1][0]
+            ):
+                selected_candidates.append(candidates[keep])
+
+            for position, (rank, j, path_affinity) in enumerate(selected_candidates):
+>>>>>>> REPLACE
+
+</DIFF>

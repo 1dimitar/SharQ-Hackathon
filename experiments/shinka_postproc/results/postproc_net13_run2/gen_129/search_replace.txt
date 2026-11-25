@@ -1,0 +1,46 @@
+<NAME>
+diverse_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Replace uniform sampling from the full archive with a two-part parent policy: most selections still come from the top six, while the rest favor archive members that are structurally distant from the elite, under-selected, or stalled. Bounded novelty and history multipliers preserve quality bias while steering search toward underexplored regions, as suggested by the performance feedback.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    parent_visits = {}
+
+    def select_parent(pop):
+        """Favor elite parents, but reserve selections for novel, underexplored regions."""
+        if not pop:
+            return best_net
+
+        elite = pop[:min(6, len(pop))]
+        pool = elite if rng.random() < 0.55 else pop
+        weights = []
+        for rank, net in enumerate(pool):
+            # Broad-archive parents are rewarded for distance from the elite;
+            # elite parents use distance from their other elite peers.
+            refs = [other for other in elite if other != net]
+            novelty = min((distance(net, other) for other in refs), default=0)
+            novelty_factor = 1.0 + min(1.5, novelty / 12.0)
+            underused = 1.0 + 1.0 / math.sqrt(1.0 + parent_visits.get(net, 0))
+            stale = 1.0 + min(1.5, 0.10 * parent_stalls.get(net, 0))
+            quality = 1.0 / (1.0 + 0.08 * rank)
+            weights.append(quality * novelty_factor * underused * stale)
+
+        total = sum(weights)
+        idx = int(rng.choice(len(pool), p=np.asarray(weights) / total))
+        parent = pool[idx]
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        return parent
+>>>>>>> REPLACE
+</DIFF>

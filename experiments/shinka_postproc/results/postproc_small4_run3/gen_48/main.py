@@ -1,0 +1,564 @@
+"""Starting program of post-processing run 2 (network13): run 1's best program (gen 49, combined
+score 0.9901 on network12), copied from results/postproc_net12_run1/best/main.py. Only the fixed
+wrapper below the EVOLVE block changed (tools.energy uses each pool's own Hamiltonian).
+"""
+
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    """Feedback-driven portfolio search over repaired and degree-preserving networks."""
+    n = int(tools.n)
+    m = 2 * n
+    started = time.perf_counter()
+    D = np.asarray(demand, dtype=float).copy()
+    np.fill_diagonal(D, 0.0)
+    traffic = max(float(D.sum()), 1.0)
+    scale = traffic / max(m, 1)
+
+    seen = {}
+    details = {}
+    feature_cache = {}
+    visits = {}
+    stalls = {}
+    training_x, training_y = [], []
+    best_net, best_score = None, float("inf")
+    continuation = None
+
+    # Adaptive sampling weights, one per candidate-ranking source.
+    source_names = ("energy", "routing", "learned", "bottleneck", "novelty")
+    source_weights = np.ones(len(source_names), dtype=float)
+    source_success = np.zeros(len(source_names), dtype=float)
+    source_trials = np.zeros(len(source_names), dtype=float)
+
+    def canon(arcs):
+        return tuple(sorted((int(a), int(b)) for a, b in arcs))
+
+    def energy(net):
+        try:
+            value = float(tools.energy(net))
+            return value if math.isfinite(value) else 0.0
+        except Exception:
+            return 0.0
+
+    def edge_mask(net):
+        value = 0
+        for a, b in net:
+            value |= 1 << (a * n + b)
+        return value
+
+    def routing_features(nets):
+        """Fast equal-split shortest-path routing features for a batch of networks."""
+        b = len(nets)
+        if not b:
+            return np.empty((0, 9), dtype=float)
+
+        arcs = np.asarray(nets, dtype=np.int64)
+        heads = arcs[:, :, 1].reshape(b, n, 2)
+        rows = np.arange(n)
+        bi = np.arange(b)[:, None]
+
+        dist = np.full((b, n, n), n + 1, dtype=np.int16)
+        dist[:, rows, rows] = 0
+        dist[bi, arcs[:, :, 0], arcs[:, :, 1]] = 1
+        for k in range(n):
+            np.minimum(dist, dist[:, :, k, None] + dist[:, None, k, :], out=dist)
+
+        unreachable = (dist > n).sum(axis=(1, 2)).astype(float)
+        d0 = dist[bi, heads[:, :, 0], :]
+        d1 = dist[bi, heads[:, :, 1], :]
+        ok0 = (dist == d0 + 1) & (dist <= n)
+        ok1 = (dist == d1 + 1) & (dist <= n)
+        denom = np.maximum(ok0.astype(float) + ok1, 1.0)
+        frac0, frac1 = ok0 / denom, ok1 / denom
+
+        incoming = np.argsort(heads.reshape(b, m), axis=1, kind="stable")
+        flow = np.broadcast_to(D, (b, n, n)).copy()
+        loads = np.zeros((b, n, 2), dtype=float)
+        diameter = min(n - 1, int(np.max(np.minimum(dist, n - 1))))
+        for level in range(diameter, 0, -1):
+            active = flow * (dist == level)
+            f0, f1 = active * frac0, active * frac1
+            loads[:, :, 0] += f0.sum(axis=2)
+            loads[:, :, 1] += f1.sum(axis=2)
+            edgeflow = np.stack((f0, f1), axis=2).reshape(b, m, n)
+            flow += np.take_along_axis(
+                edgeflow, incoming[:, :, None], axis=1
+            ).reshape(b, n, 2, n).sum(axis=2)
+
+        linkloads = loads.reshape(b, m) / scale
+        ordered = np.sort(linkloads, axis=1)
+        work = dist * D[None, :, :]
+        return np.column_stack((
+            np.asarray([energy(net) for net in nets]),
+            work.sum(axis=(1, 2)) / traffic,
+            ordered[:, -1],
+            ordered[:, -min(4, m):].mean(axis=1),
+            np.sqrt(np.mean(linkloads * linkloads, axis=1)),
+            work.sum(axis=2).max(axis=1) / scale,
+            work.sum(axis=1).max(axis=1) / scale,
+            D[arcs[:, :, 0], arcs[:, :, 1]].sum(axis=1) / traffic,
+            unreachable,
+        ))
+
+    def evaluate(net, feat=None):
+        nonlocal best_net, best_score
+        if net not in seen:
+            detail = tools.lp_detail(net)
+            score = float(detail["score"])
+            seen[net] = score
+            details[net] = detail
+            if feat is None:
+                feat = routing_features([net])[0]
+            feat = np.asarray(feat, dtype=float)
+            feature_cache[net] = feat
+            if math.isfinite(score):
+                training_x.append(feat)
+                training_y.append(score / scale)
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def predict(X):
+        """Regularized online regression with a conservative uncertainty estimate."""
+        if len(training_y) < max(3 * n, 36):
+            return None
+        A = np.asarray(training_x, dtype=float)
+        y = np.asarray(training_y, dtype=float)
+        mean = A.mean(axis=0)
+        sd = np.maximum(A.std(axis=0), 1e-8)
+        Z = np.clip((A - mean) / sd, -12.0, 12.0)
+        target = float(y.mean())
+        system = Z.T @ Z + 8.0 * np.eye(Z.shape[1])
+        try:
+            coef = np.linalg.solve(system, Z.T @ (y - target))
+            inverse = np.linalg.solve(system, np.eye(Z.shape[1]))
+        except np.linalg.LinAlgError:
+            return None
+        ZX = np.clip((X - mean) / sd, -12.0, 12.0)
+        pred = target + ZX @ coef
+        residual = y - target - Z @ coef
+        sigma = max(float(np.sqrt(np.mean(residual * residual))),
+                    0.01 * max(abs(target), 1.0))
+        uncertainty = sigma * np.sqrt(np.maximum(
+            np.einsum("ij,jk,ik->i", ZX, inverse, ZX), 0.0
+        ))
+        return pred, uncertainty
+
+    def topology_distance(a, b):
+        return m - len(set(a).intersection(b))
+
+    def distinct_starts(pool, features, limit):
+        """Interleave low-energy and routing-ranked repaired networks."""
+        if not pool:
+            return []
+        eorder = np.argsort(features[:, 0], kind="stable")
+        porder = np.argsort(
+            features[:, 1] + 0.10 * features[:, 3] + features[:, 8],
+            kind="stable",
+        )
+        masks = [edge_mask(x) for x in pool]
+        picked, used = [], set()
+        orders = (eorder, eorder, porder)
+        positions = [0, 0, 0]
+        while len(picked) < limit and len(used) < len(pool):
+            changed = False
+            for source, order in enumerate(orders):
+                while positions[source] < len(order):
+                    i = int(order[positions[source]])
+                    positions[source] += 1
+                    if i in used:
+                        continue
+                    used.add(i)
+                    changed = True
+                    if all((masks[i] ^ masks[j]).bit_count() >= 6 for j in picked):
+                        picked.append(i)
+                    break
+                if len(picked) >= limit:
+                    break
+            if not changed:
+                break
+        if not picked:
+            picked = [int(eorder[0])]
+        return picked
+
+    # Repair all samples cheaply and remove duplicate repaired topologies.
+    repaired = set()
+    for candidate in candidates:
+        try:
+            net = canon(tools.repair(candidate))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    initial_pool = sorted(repaired)
+    initial_X = routing_features(initial_pool)
+    initial_ids = distinct_starts(initial_pool, initial_X, min(2 * n + 4, len(initial_pool)))
+    for i in initial_ids:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(initial_pool[i], initial_X[i])
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+    if best_net is None:
+        return list(initial_pool[initial_ids[0]])
+
+    def archive():
+        ranked = sorted(
+            (x for x in seen if math.isfinite(seen[x])),
+            key=seen.get,
+        )
+        if not ranked:
+            return [best_net]
+        out = ranked[:max(4, n // 2)]
+        masks = [edge_mask(x) for x in out]
+        separation = 2 * max(3, n // 3)
+        for net in ranked[len(out):]:
+            if len(out) >= 3 * n or seen[net] > best_score * 1.09:
+                break
+            value = edge_mask(net)
+            if all((value ^ old).bit_count() >= separation for old in masks):
+                out.append(net)
+                masks.append(value)
+        return out
+
+    def switch(net, p, q, current):
+        a, b = net[p]
+        c, d = net[q]
+        if a == c or b == d or a == d or c == b:
+            return None
+        if (a, d) in current or (c, b) in current:
+            return None
+        return tuple(sorted((current - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+
+    def generate_moves(parent, pop):
+        """Mix complete 2-switches, three-link rotations, and archive relinking."""
+        current = set(parent)
+        detail = details.get(parent, {})
+        prices = detail.get("prices", {})
+        hot = {
+            tuple(map(int, arc)) for arc, price in prices.items()
+            if float(price) > 1e-10
+        }
+        if not hot:
+            loads = detail.get("loads", {})
+            hot = set(sorted(loads, key=loads.get, reverse=True)[:max(2, n // 4)])
+
+        # Move metadata carries a bottleneck-touch flag used by its own ranking source.
+        moves = {}
+        for p in range(m):
+            for q in range(p + 1, m):
+                child = switch(parent, p, q, current)
+                if child is not None:
+                    moves[child] = int(parent[p] in hot or parent[q] in hot)
+
+        rotation_trials = 5 * n + min(stalls.get(parent, 0), 8) * n
+        for _ in range(rotation_trials):
+            ids = rng.choice(m, size=3, replace=False)
+            old = [parent[int(i)] for i in ids]
+            tails, heads = [a for a, _ in old], [b for _, b in old]
+            if len(set(tails)) < 3 or len(set(heads)) < 3:
+                continue
+            shift = 1 + int(rng.integers(2))
+            new = {(tails[k], heads[(k + shift) % 3]) for k in range(3)}
+            rest = current.difference(old)
+            if any(a == b for a, b in new) or new & rest:
+                continue
+            moves[tuple(sorted(rest | new))] = int(bool(set(old) & hot))
+
+        # Short path relinking: repeatedly choose switches that approach another
+        # archive member, while also retaining randomized transitions.
+        if len(pop) > 1:
+            target = pop[int(rng.integers(len(pop)))]
+            target_set = set(target)
+            for trial in range(2 * n):
+                state = parent
+                steps = 2 + int(rng.integers(max(2, n // 3)))
+                for step in range(steps):
+                    state_set = set(state)
+                    options = []
+                    for _ in range(7):
+                        p, q = rng.choice(m, size=2, replace=False)
+                        child = switch(state, int(p), int(q), state_set)
+                        if child is not None:
+                            options.append(child)
+                    if options:
+                        if trial < n:
+                            state = max(options, key=lambda x: len(target_set.intersection(x)))
+                        else:
+                            state = options[int(rng.integers(len(options)))]
+                if state != parent:
+                    moves[state] = 0
+
+        return {
+            net: flag for net, flag in moves.items()
+            if net not in seen and not tools.is_cached(net) and tools.is_valid(net)
+        }
+
+    def choose_parent(pop):
+        nonlocal continuation
+        if continuation is not None and rng.random() < 0.60:
+            parent, continuation = continuation, None
+            return parent
+        continuation = None
+        if rng.random() < 0.48:
+            choices = pop[:min(4, len(pop))]
+        elif rng.random() < 0.68:
+            choices = pop[:min(n, len(pop))]
+        else:
+            choices = pop
+        weights = np.asarray([1.0 / math.sqrt(1.0 + visits.get(x, 0)) for x in choices])
+        weights /= weights.sum()
+        return choices[int(rng.choice(len(choices), p=weights))]
+
+    def update_source_weights(improved_sources):
+        """Reward sources that produced parent improvements, with bounded adaptation."""
+        for s in range(len(source_names)):
+            source_trials[s] += 1.0
+            source_success[s] *= 0.94
+        for s, gain in improved_sources:
+            source_success[s] += min(1.0, max(0.0, gain))
+        rates = source_success / np.maximum(source_trials, 1.0)
+        # Keep a nonzero floor so a temporarily cold signal is never discarded.
+        target = 0.55 + 4.0 * rates
+        source_weights[:] = 0.82 * source_weights + 0.18 * target
+        source_weights[:] = np.clip(source_weights, 0.45, 3.0)
+
+    rounds = 0
+    while tools.lp_calls_left > 0 and time.perf_counter() - started < 140:
+        rounds += 1
+        pop = archive()
+        parent = choose_parent(pop)
+        visits[parent] = visits.get(parent, 0) + 1
+
+        moves = generate_moves(parent, pop)
+        if not moves:
+            stalls[parent] = stalls.get(parent, 0) + 1
+            if rounds > 10 * max(1, len(seen)):
+                break
+            continue
+
+        move_list = list(moves)
+        move_energy = np.asarray([energy(x) for x in move_list])
+        eorder = np.argsort(move_energy, kind="stable")
+        # Keep the best energy proposals and sample the remainder, favoring moves
+        # that interact with a current bottleneck.
+        head = min(3 * n, len(eorder))
+        shortlist_ids = list(map(int, eorder[:head]))
+        rest = eorder[head:]
+        if len(rest):
+            take = min(4 * n, len(rest))
+            weights = np.asarray([2.0 if moves[move_list[int(i)]] else 1.0 for i in rest])
+            weights /= weights.sum()
+            sampled = rng.choice(len(rest), size=take, replace=False, p=weights)
+            shortlist_ids.extend(int(rest[int(i)]) for i in sampled)
+
+        shortlist = [move_list[i] for i in shortlist_ids]
+        X = routing_features(shortlist)
+        learned_result = predict(X)
+        energy_order = np.argsort(X[:, 0], kind="stable")
+        routing_proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+        routing_order = np.argsort(routing_proxy, kind="stable")
+
+        flags = np.asarray([moves[x] for x in shortlist], dtype=float)
+        bottleneck_order = np.argsort(-flags, kind="stable")
+        if learned_result is None:
+            # Rank aggregation keeps both independent cheap signals represented.
+            re = np.empty(len(shortlist), dtype=float)
+            rp = np.empty(len(shortlist), dtype=float)
+            re[energy_order] = np.arange(len(shortlist))
+            rp[routing_order] = np.arange(len(shortlist))
+            learned_order = np.argsort(re + rp, kind="stable")
+            prediction = uncertainty = None
+        else:
+            prediction, uncertainty = learned_result
+            learned_order = np.argsort(prediction, kind="stable")
+
+        # Novelty is computed against the archive and subsequently against this batch.
+        masks = [edge_mask(x) for x in shortlist]
+        refs = [edge_mask(x) for x in pop[:2 * n]]
+        novelty_order = sorted(
+            range(len(shortlist)),
+            key=lambda i: min(
+                ((masks[i] ^ old).bit_count() for old in refs),
+                default=2 * m,
+            ),
+            reverse=True,
+        )
+
+        orders = [
+            list(map(int, energy_order)),
+            list(map(int, routing_order)),
+            list(map(int, learned_order)),
+            list(map(int, bottleneck_order)),
+            list(map(int, novelty_order)),
+        ]
+        batch_size = max(8, n // 2)
+        # Adaptive quotas: at least one opportunity for each usable signal, with
+        # remaining slots allocated in proportion to observed source productivity.
+        usable = [s for s, order in enumerate(orders) if order]
+        quota = np.zeros(len(orders), dtype=int)
+        for s in usable:
+            quota[s] = 1
+        remaining = max(0, batch_size - int(quota.sum()))
+        if remaining:
+            probs = source_weights[usable].astype(float)
+            probs /= probs.sum()
+            allocations = rng.multinomial(remaining, probs)
+            for s, amount in zip(usable, allocations):
+                quota[s] += int(amount)
+
+        selected = []
+        attribution = {}
+        selected_masks = []
+
+        def add_from(source, count):
+            added = 0
+            for i in orders[source]:
+                if len(selected) >= batch_size or added >= count:
+                    break
+                if i in attribution:
+                    continue
+                # Preserve moderate structural variety in the evaluation batch.
+                if any((masks[i] ^ old).bit_count() < 4 for old in selected_masks):
+                    continue
+                attribution[i] = source
+                selected.append(i)
+                selected_masks.append(masks[i])
+                added += 1
+
+        for s in range(len(orders)):
+            add_from(s, int(quota[s]))
+        # Fill any slots lost to overlap or diversity filtering using the
+        # currently best-weighted source orders.
+        source_priority = sorted(usable, key=lambda s: source_weights[s], reverse=True)
+        while len(selected) < batch_size:
+            old_len = len(selected)
+            for s in source_priority:
+                add_from(s, batch_size)
+                if len(selected) >= batch_size:
+                    break
+            if len(selected) == old_len:
+                # At this point, prefer any unselected candidate over a deadlock
+                # caused by the diversity constraint.
+                for s in source_priority:
+                    for i in orders[s]:
+                        if i not in attribution:
+                            attribution[i] = s
+                            selected.append(i)
+                            selected_masks.append(masks[i])
+                            break
+                    if len(selected) > old_len:
+                        break
+            if len(selected) == old_len:
+                break
+
+        parent_score = seen[parent]
+        local_best, local_score = None, parent_score
+        improved_sources = []
+        for i in selected:
+            if tools.lp_calls_left <= 0:
+                break
+            net = shortlist[i]
+            try:
+                score = evaluate(net, X[i])
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    break
+                continue
+            if score < parent_score:
+                gain = (parent_score - score) / max(abs(parent_score), 1.0)
+                improved_sources.append((attribution.get(i, 0), gain))
+            if score < local_score:
+                local_best, local_score = net, score
+
+        update_source_weights(improved_sources)
+        if local_best is not None:
+            stalls[parent] = 0
+            continuation = local_best
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "targeted_high_demand_relays",
+  "patch_description": "Add two relay candidates only for OD pairs in the top demand quintile, leaving the existing relay budget unchanged for the rest. High-volume pairs are most likely to dominate the maximum link load, and extra candidate routes give the QUBO a chance to support them without adding relay couplings for every pair. The added terms remain well below the allowed quadratic-term cap; the existing aggregation also avoids duplicate keys.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:46:10.913752",
+  "llm_cost": 0.0008669000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "portfolio_relink",
+  "patch_description": "Reorganizes the search into a small start portfolio, a bounded network archive, and a proposal pipeline. Each round generates moves from a selected archive member, ranks them using the pool\u2019s energy surrogate and LP bottleneck prices, then spends LP calls on a small, diverse batch. A deliberate path-relinking operator adds bridges between structurally distinct strong networks, while occasional multi-switch perturbations help escape local minima. The compact batch policy leaves more of the LP budget for distinct search rounds.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:52:25.091991",
+  "llm_cost": 0.0038301000000000003,
+  "llm_model": "gpt-6-luna"
+}

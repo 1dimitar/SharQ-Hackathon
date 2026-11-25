@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_surrogate",
+  "patch_description": "This combines direct-link rewards with a mild concave demand transform, so moderate-demand links retain influence without discarding the strongest direct traffic. For indirect traffic, it rewards selected two-hop paths, but scales each origin-destination pair\u2019s reward across its eligible intermediates rather than assigning every candidate path the same raw demand reward. A transit penalty based on the intermediate node\u2019s total traffic discourages concentrating paths through already busy nodes. The resulting quadratic terms remain limited to two-hop paths, keeping the term count within the required bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:35.505289",
+  "llm_cost": 0.000987,
+  "llm_model": "gpt-6-luna"
+}

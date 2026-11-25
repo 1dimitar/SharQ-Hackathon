@@ -1,0 +1,14 @@
+{
+  "generation": 134,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_discount",
+  "patch_description": "Increase the discount on two-hop paths that use edges with substantial direct demand, changing only the edge-load factor and leaving relay-node pressure unchanged. This makes indirect-path rewards favor combinations of less-loaded edges, which may reduce competition for the same links and improve load balance. The change is deliberately isolated so its effect can be evaluated against the current program.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:04.460704",
+  "llm_cost": 0.0008954,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "stall_escalated_rotations",
+  "patch_description": "The current search samples the same fixed number of targeted rotations for every parent, even when a parent has repeatedly failed to produce an improvement. Track consecutive unproductive batches per parent and escalate the number of rotation triples only for stalled parents. Reserve some batch slots for the best-ranked rotation proposals at high stall levels, so escalation actually spends LP calls on those moves rather than letting them be crowded out by switches. Reset the stall count when the parent\u2019s batch finds a new incumbent. This directs more exploratory effort toward difficult basins while preserving the usual switch-heavy search elsewhere.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:50:03.584641",
+  "llm_cost": 0.0019871000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capacity_aware_twohop",
+  "patch_description": "Keep the direct-demand reward, and add a smaller reward when two selected links form a two-hop route for an origin\u2013destination pair. Since degree-two topologies can have at most four such routes for a pair, divide the indirect reward across those four possibilities to limit duplicate credit. Discount routes through nodes with high total incident demand, which are less attractive as transit nodes. This adds at most \\(n(n-1)(n-2)\\) quadratic terms and preserves the existing degree-penalty weight.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:55.942597",
+  "llm_cost": 0.0015356,
+  "llm_model": "gpt-6-luna"
+}

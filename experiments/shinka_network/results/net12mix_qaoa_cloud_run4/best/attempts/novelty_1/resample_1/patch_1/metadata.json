@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_link_load",
+  "patch_description": "Keep the direct-demand reward, but add a congestion surrogate for pairs of links sharing a tail or a head. A node has only two outgoing and two incoming links, so selecting two links with high estimated traffic exposure at the same endpoint is a warning sign for an unbalanced topology. The exposure estimate combines direct demand on the link with a modest share of the relevant node\u2019s total traffic, reflecting transit pressure. Positive pair costs discourage concentrating that pressure on a single node; the direct-demand reward still favors useful links. The number of added terms is O(n^3), within the limit, and the stronger degree penalty helps preserve feasible degree patterns before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:59:27.032215",
+  "llm_cost": 0.0007339,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive-portfoliolocal",
+  "patch_description": "The current search spends LP calls from fixed, overlapping selection quotas and uses a relatively costly routing screen. This version keeps diverse repaired starts and a mixed move portfolio, but adapts the allocation among energy, dual guidance, routing, novelty, and random exploration according to their recent improvement rates. It uses a cheaper shortest-path congestion proxy on a bounded subset of proposals, and gives dual-guided moves a score based on the parent network\u2019s LP prices. Batch size, move counts, archive size, and search effort scale with n; each source retains a minimum allocation so the adaptive policy cannot eliminate exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:47:05.871503",
+  "llm_cost": 0.0051906,
+  "llm_model": "gpt-6-luna"
+}

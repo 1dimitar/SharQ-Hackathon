@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "max_normalized_transit_pressure",
+  "patch_description": "Normalize transit-node incident demand by the maximum rather than the mean, and use a bounded discount from 1.0 to 0.75. This avoids making low-load nodes disproportionately attractive\u2014as the current mean-based inverse factor can\u2014while still mildly discouraging routes through the busiest nodes. The change preserves the existing two-hop terms and their count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:06.456602",
+  "llm_cost": 0.0010961,
+  "llm_model": "gpt-6-luna"
+}

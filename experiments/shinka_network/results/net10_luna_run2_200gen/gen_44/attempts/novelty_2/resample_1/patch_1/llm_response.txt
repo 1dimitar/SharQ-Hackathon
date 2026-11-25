@@ -1,0 +1,20 @@
+<NAME>
+twohop_strength_015
+</NAME>
+
+<DESCRIPTION>
+Increase the selective two-hop reward from 0.12 to 0.15 while leaving positive-demand gating and both pressure discounts unchanged. This tests a modestly stronger signal for links that jointly provide short routes, without making the indirect reward so large that it overwhelms the direct-demand preference.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    quadratic[((i, j), (j, k))] = (
+                        -0.12 * traffic / dmax / (1.0 + 0.25 * edge_pressure)
+                    )
+=======
+                    quadratic[((i, j), (j, k))] = (
+                        -0.15 * traffic / dmax / (1.0 + 0.25 * edge_pressure)
+                    )
+>>>>>>> REPLACE
+
+</DIFF>

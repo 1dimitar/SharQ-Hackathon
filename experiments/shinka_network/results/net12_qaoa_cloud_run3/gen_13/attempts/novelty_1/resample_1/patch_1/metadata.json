@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_sparse_relays",
+  "patch_description": "Restrict each OD pair\u2019s two-hop reward to a small, demand-dependent set of relay candidates. Low-demand pairs keep only the two strongest relays, while the heaviest pairs may use four. Candidates are ranked by relay pressure and the demand already incident to the two path edges, preserving promising paths while reducing weak, diffuse couplings. This should create clearer QUBO communities and reduce simulator work without removing flexibility for the traffic most likely to determine the maximum link load.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:29:35.603118",
+  "llm_cost": 0.0008833000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 127,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_bottleneck_search",
+  "patch_description": "This version keeps the search centered on valid repaired candidates, then spends LP calls in small batches on varied degree-preserving moves. It uses bottleneck links to guide some switches and rotations, but reserves proposals for unrestricted moves and archive-guided changes so dual prices do not dictate the entire search. A compact, visit-adjusted archive balances exploiting strong networks with exploring less-visited regions; surrogate energy helps rank proposals without deciding which moves get tested on its own.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:30:19.254956",
+  "llm_cost": 0.004378,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,15 @@
+<NAME>
+concave_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Shift the direct-link reward from 0.85/0.15 to 0.75/0.25 between normalized demand and its square root. This controlled adjustment gives moderate-demand links more influence, which may improve typical sampled topologies while retaining a substantial preference for high-demand direct links. The two-hop terms and all other settings remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+=======
+            linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+>>>>>>> REPLACE
+</DIFF>

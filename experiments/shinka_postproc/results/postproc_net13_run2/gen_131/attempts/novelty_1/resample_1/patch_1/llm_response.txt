@@ -1,0 +1,63 @@
+<NAME>
+protected_archive_relink
+</NAME>
+
+<DESCRIPTION>
+Relinking paths are currently mixed into the general move set, so surrogate screening can discard every bridge step in a batch. Track the relinking intermediates separately and reserve one LP evaluation for a fresh bridge whenever one is available. Also choose the target from the full set of sufficiently distant archive members rather than repeatedly favoring the first few score-ranked targets. This preserves a chance to test relinking progress while varying which strong, structurally distinct region it connects to.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_score = float("inf")
+    parent_stalls = {}
+=======
+    best_score = float("inf")
+    parent_stalls = {}
+    relink_moves = set()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def make_moves(net, detail):
+        """Build a focused two-switch neighborhood plus sampled rotations and kicks."""
+        arcs = list(net)
+=======
+    def make_moves(net, detail):
+        """Build a focused two-switch neighborhood plus sampled rotations and kicks."""
+        relink_moves.clear()
+        arcs = list(net)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if targets:
+            targets.sort(key=lambda x: seen.get(x, float("inf")))
+            target = targets[int(rng.integers(min(6, len(targets))))]
+=======
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                walk = advancing[int(rng.integers(len(advancing)))]
+                moves.add(walk)
+=======
+                walk = advancing[int(rng.integers(len(advancing)))]
+                moves.add(walk)
+                relink_moves.add(walk)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+=======
+        selected = []
+        # Protect one fresh path intermediate so a relinking bridge is actually tested.
+        bridges = [net for net in fresh if net in relink_moves]
+        if bridges:
+            selected.append(min(bridges, key=lambda net: energy(net) - base_e))
+
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+>>>>>>> REPLACE
+
+</DIFF>

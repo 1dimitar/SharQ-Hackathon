@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_lp_batches",
+  "patch_description": "Adapt the number of LP evaluations per neighborhood to both search stagnation and surrogate ambiguity. The current fixed batch of nine can undersample a neighborhood when the parent has repeatedly failed to improve, or when many candidate moves have nearly tied surrogate scores and their ranking is unreliable. Keep small batches for clearly ranked moves, but expand them progressively for stalled parents and close-ranked neighborhoods, up to 24. This spends the existing LP budget on more informative comparisons where the surrogate is least decisive, without changing move generation or exceeding the budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:50:02.287992",
+  "llm_cost": 0.0011669,
+  "llm_model": "gpt-6-luna"
+}

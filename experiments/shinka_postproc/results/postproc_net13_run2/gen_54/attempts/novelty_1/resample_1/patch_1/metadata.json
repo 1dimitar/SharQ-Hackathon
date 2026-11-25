@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stalled_archive_escape",
+  "patch_description": "Add an occasional, bounded path-relinking escape when a parent has stalled. It chooses a high-quality LP-scored archive member that is sufficiently different, then generates a few degree-preserving two-switches that increase overlap with that target. This supplies structured moves toward promising regions instead of relying only on random kicks, while limiting extra work to stalled parents and keeping the normal validity and surrogate-screening pipeline unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:20:22.521120",
+  "llm_cost": 0.0026605,
+  "llm_model": "gpt-6-luna"
+}

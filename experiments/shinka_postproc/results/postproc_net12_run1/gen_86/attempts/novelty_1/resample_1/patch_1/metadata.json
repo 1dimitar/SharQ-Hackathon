@@ -1,0 +1,14 @@
+{
+  "generation": 86,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_model_dual_search",
+  "patch_description": "This approach combines dual-guided local moves with an adaptive probabilistic model of promising links. Rather than relying mainly on repeated walks from a few parents, it learns link frequencies from a diverse elite of LP-scored networks, samples new raw topologies from those frequencies, and uses the free repair operation to make them valid. It also ranks local 2-switches by their estimated effect on priced bottleneck links. The mix of model-generated candidates and dual-ranked moves is intended to balance broad basin exploration with targeted improvement.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:13:06.318582",
+  "llm_cost": 0.0041055,
+  "llm_model": "gpt-6-luna"
+}

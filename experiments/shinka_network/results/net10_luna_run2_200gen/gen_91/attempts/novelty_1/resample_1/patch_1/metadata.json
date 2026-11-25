@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This crossover combines the concave direct-link and endpoint-volume rewards from the inspiration program with the current program\u2019s demand-sensitive two-hop signal and edge-pressure discount. Rather than rewarding every candidate route independently, it divides each OD pair\u2019s bounded indirect-reward budget among its intermediate nodes. Transit-node capacity and direct-edge pressure shape that allocation, while a uniform component keeps weaker alternatives represented. This retains at most one quadratic term per two-hop path and stays within the requested term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:14.858081",
+  "llm_cost": 0.0019424999999999998,
+  "llm_model": "gpt-6-luna"
+}

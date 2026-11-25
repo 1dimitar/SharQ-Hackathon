@@ -1,0 +1,128 @@
+<NAME>
+sparse_load_balance
+</NAME>
+
+<DESCRIPTION>
+Reorganizes construction into demand preparation, direct-link scoring, and sparse route scoring. Instead of spreading each OD pair’s indirect reward across every possible intermediate, it retains only its three strongest supported two-hop routes, with congestion discounting based on component-edge demand and transit-node pressure. This reduces quadratic-term count, avoids rewarding implausible routes, and keeps the indirect reward budget bounded per OD pair. The returned interface and evaluator-supplied degree penalties are unchanged.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Sanitize traffic and compute normalized node statistics."""
+    d = np.asarray(demand, dtype=float)
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0).copy()
+    n = int(d.shape[0])
+    np.fill_diagonal(d, 0.0)
+
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = d / scale
+
+    rows = np.sum(z, axis=1)
+    cols = np.sum(z, axis=0)
+    incident = rows + cols
+    max_incident = max(float(np.max(incident)) if n else 0.0, 1.0)
+    pressure = incident / max_incident
+    return z, rows, cols, pressure
+
+
+def _make_linear(z, rows, cols):
+    """Score direct links and endpoint throughput."""
+    n = int(z.shape[0])
+    max_incident = max(
+        float(np.max(rows + cols)) if n else 0.0, 1.0
+    )
+    result = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(z[i, j])
+            endpoint = (float(rows[i]) + float(cols[j])) / (2.0 * max_incident)
+            result[(i, j)] = -(
+                0.72 * direct + 0.18 * np.sqrt(direct) + 0.10 * endpoint
+            )
+    return result
+
+
+def _make_route_terms(z, pressure, route_limit=3):
+    """Build sparse, congestion-discounted two-hop route rewards."""
+    n = int(z.shape[0])
+    quadratic = {}
+
+    for source in range(n):
+        for target in range(n):
+            traffic = float(z[source, target])
+            if source == target or traffic <= 0.0:
+                continue
+
+            # Keep only the best supported intermediates. This gives the
+            # QUBO route terms a focused signal without changing their total
+            # reward budget for an OD pair.
+            candidates = []
+            for middle in range(n):
+                if middle == source or middle == target:
+                    continue
+                first = float(z[source, middle])
+                second = float(z[middle, target])
+                support = np.sqrt(first * second)
+
+                support_factor = 0.12 + 0.88 * support / (1.0 + support)
+                transit_factor = 1.0 / (0.65 + float(pressure[middle]))
+                edge_load = first + second
+                congestion_factor = 1.0 / (1.0 + 0.85 * edge_load)
+                score = support_factor * transit_factor * congestion_factor
+                candidates.append((score, middle))
+
+            candidates.sort(reverse=True)
+            chosen = candidates[:route_limit]
+            denominator = sum(score for score, _ in chosen)
+            if denominator <= 0.0:
+                continue
+
+            budget = 0.58 * traffic
+            for score, middle in chosen:
+                key = ((source, middle), (middle, target))
+                quadratic[key] = -budget * float(score) / denominator
+
+    return quadratic
+
+
+def surrogate_terms(demand):
+    """Return linear and quadratic QUBO objective terms."""
+    z, rows, cols, pressure = _prepare_demand(demand)
+    linear = _make_linear(z, rows, cols)
+    quadratic = _make_route_terms(z, pressure)
+
+    # Degree penalties are added by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

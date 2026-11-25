@@ -1,0 +1,65 @@
+<NAME>
+congestion_aware_paths
+</NAME>
+
+<DESCRIPTION>
+Keep direct-demand rewards, but temper them slightly for very large direct demands and add sparse two-hop interactions. A two-hop path is rewarded according to the traffic it can serve, with the reward reduced when its links already have high direct demand; a small congestion term offsets the reward for paths whose links are both heavily demanded. Reciprocal links are encouraged when demand is strong in both directions and mildly discouraged otherwise. These adjustments make the two-hop signal more selective than an unconditional path reward. Raising the degree penalty should also reduce the low feasible-sample rate, while leaving degree penalties out of the returned QUBO terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    d = np.maximum(np.asarray(demand, dtype=float), 0.0)
+    scale = float(d.max()) or 1.0
+    d = d / scale
+
+    # Direct links are useful, but their marginal value should not grow
+    # linearly without limit when one pair has exceptionally large demand.
+    linear = {
+        (i, j): -float(d[i, j]) + 0.12 * float(d[i, j] ** 2)
+        for i in range(n) for j in range(n) if i != j
+    }
+    quadratic = {}
+
+    def add_pair(a, b, weight):
+        key = (a, b) if a < b else (b, a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    # A composed path i -> j -> k can serve i-to-k traffic. Discount its
+    # benefit when either link already has substantial direct demand, and
+    # add a modest congestion cost for combining two heavily demanded links.
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                left = float(d[i, j])
+                right = float(d[j, k])
+                path_demand = float(d[i, k])
+                suitability = 1.0 / (1.0 + 0.5 * (left + right))
+                benefit = 0.22 * path_demand * suitability
+                congestion = 0.08 * (left * right) ** 0.5
+                add_pair((i, j), (j, k), congestion - benefit)
+
+    # Reciprocal links are worthwhile for mutually heavy traffic, but are
+    # less attractive when both directions carry little demand.
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual = (float(d[i, j]) * float(d[j, i])) ** 0.5
+            add_pair((i, j), (j, i), 0.06 - 0.18 * mutual)
+
+    # Strengthen the evaluator's degree penalty to encourage valid samples.
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

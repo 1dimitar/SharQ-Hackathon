@@ -1,0 +1,22 @@
+<NAME>
+cut_endpoint_vulnerability
+</NAME>
+
+<DESCRIPTION>
+Make the two-node cut penalty more sensitive to endpoint vulnerability. The current cut coefficient depends only on squared external demand, so it can treat equally loaded cuts similarly even when one cut’s endpoints have very different incident traffic. Scaling it by a clipped measure of external demand relative to each endpoint’s incident demand gives more weight to cuts whose endpoints are especially exposed. The factor is bounded to keep this correction from overwhelming the other surrogate terms, and the existing valid-topology offset removal remains unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            coefficient = cut_strength * squared_load
+=======
+            endpoint_ratio = 0.5 * (
+                external_demand / max(float(incident[i]), 1e-12)
+                + external_demand / max(float(incident[j]), 1e-12)
+            )
+            vulnerability = float(np.clip(
+                0.85 + 0.30 * endpoint_ratio, 0.85, 1.15
+            ))
+            coefficient = cut_strength * squared_load * vulnerability
+>>>>>>> REPLACE
+</DIFF>

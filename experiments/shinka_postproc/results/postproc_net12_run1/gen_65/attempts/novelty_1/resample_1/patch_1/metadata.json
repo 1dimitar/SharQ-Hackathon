@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "adaptive_neighborhood_effort",
+  "patch_description": "Track whether focused switches, random switches, or three-edge rotations produce improvements. Periodically adjust their proposal counts modestly according to recent improvement rates, while enforcing a minimum number of proposals for each move type. This lets the search spend more generation effort on productive neighborhoods without eliminating exploration of the others. Path-relink moves are grouped with random switches for this lightweight adaptation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:32.258303",
+  "llm_cost": 0.0040205,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_aware_paths",
+  "patch_description": "Discount each two-hop candidate when either component link already has high direct demand. Those links are plausible routes, but rewarding them as transit links as well may concentrate load and worsen the maximum-link objective. A mild, symmetric congestion factor keeps the existing support and transit-node preferences while steering some indirect reward toward less-loaded components. This changes only the allocation among candidate intermediates; it adds no variables or quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:58.019351",
+  "llm_cost": 0.0017236,
+  "llm_model": "gpt-6-luna"
+}

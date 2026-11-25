@@ -1,0 +1,14 @@
+{
+  "generation": 89,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "high_demand_cutoff_90",
+  "patch_description": "Raise the demand cutoff for assigning the larger relay budget from the 75th to the 90th percentile. This concentrates the extra relay alternatives on the highest-demand OD pairs, while leaving the ranking and reward formulas and the existing two-extra-relay allowance unchanged. The sparser selection should also avoid adding interactions for as many lower-demand pairs.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:40:51.746879",
+  "llm_cost": 0.0009731000000000001,
+  "llm_model": "gpt-6-luna"
+}

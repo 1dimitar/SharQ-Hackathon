@@ -1,0 +1,59 @@
+<NAME>
+max_incident_transit_pressure
+</NAME>
+
+<DESCRIPTION>
+Discount two-hop rewards according to the transit node’s incident demand, normalized by the busiest node rather than by an average. A modest 0.85 floor prevents the busiest node from being penalized so heavily that useful routes through it lose all incentive. This adds no quadratic terms and retains the existing direct-demand and edge-pressure signals.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic > 0.0:
+                    # Discount indirect value when either chosen route edge
+                    # already carries substantial direct demand.
+                    edge_pressure = (
+                        float(demand[i, j]) + float(demand[j, k])
+                    ) / dmax
+                    quadratic[((i, j), (j, k))] = (
+                        -0.15 * traffic / dmax / (1.0 + 0.25 * edge_pressure)
+                    )
+=======
+    # A busy transit node has less spare capacity for additional routed flow.
+    # Normalize by the maximum incident demand so pressure remains meaningful
+    # even when the demand distribution is highly uneven.
+    node_pressure = np.maximum(row, col)
+    max_node_pressure = float(np.max(node_pressure)) or 1.0
+
+    quadratic = {}
+    pressure_floor = 0.85
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            transit_pressure = float(node_pressure[j]) / max_node_pressure
+            transit_factor = 1.0 - (1.0 - pressure_floor) * transit_pressure
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic > 0.0:
+                    # Retain the edge congestion discount while also reducing
+                    # the value of routes through heavily used transit nodes.
+                    edge_pressure = (
+                        float(demand[i, j]) + float(demand[j, k])
+                    ) / dmax
+                    quadratic[((i, j), (j, k))] = (
+                        -0.15 * (traffic / dmax) * transit_factor
+                        / (1.0 + 0.25 * edge_pressure)
+                    )
+>>>>>>> REPLACE
+</DIFF>

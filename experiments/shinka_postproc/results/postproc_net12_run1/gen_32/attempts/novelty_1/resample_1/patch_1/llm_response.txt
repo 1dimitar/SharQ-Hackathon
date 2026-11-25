@@ -1,0 +1,66 @@
+<NAME>
+diverse_basin_kicks
+</NAME>
+
+<DESCRIPTION>
+The current iterated search always kicks from the incumbent, which can repeatedly revisit the same basin. Keep a small archive of strong, structurally distinct networks and, after sustained stagnation, launch bounded kicks from a non-elite archive member. Increase kick size gradually with further stagnation, then locally descend as before. This adds basin changes without replacing the incumbent-focused search or spending extra LP calls on the kick itself; only the resulting valid network and descent proposals are scored.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    while True:
+        net = best_net
+        for _ in range(2 + int(rng.integers(3))):
+            net = next(swaps(net), net)
+        net, score = descend(net, tools.lp(net))
+        if score < best:
+            best_net, best = net, score
+
+
+=======
+    # Keep strong alternatives around so prolonged stagnation can change basins.
+    basin_archive = list(ranked[:min(10, len(ranked))])
+    stagnant = 0
+    while True:
+        if stagnant >= 12 and len(basin_archive) > 1:
+            # Exclude the incumbent when possible; ramp kick size gradually.
+            alternatives = [x for x in basin_archive if x != best_net]
+            if not alternatives:
+                alternatives = basin_archive
+            base = alternatives[int(rng.integers(len(alternatives)))]
+            kick_size = min(8, 2 + (stagnant - 12) // 8 + int(rng.integers(3)))
+        else:
+            base = best_net
+            kick_size = 2 + int(rng.integers(3))
+
+        net = base
+        for _ in range(kick_size):
+            moves = list(swaps(net))
+            if not moves:
+                break
+            net = moves[int(rng.integers(len(moves)))]
+        score0 = tools.lp(net)
+        net, score = descend(net, score0)
+
+        if score < best:
+            best_net, best = net, score
+            stagnant = 0
+        else:
+            stagnant += 1
+
+        # Retain a few diverse, high-quality basins rather than only near-clones.
+        if net not in basin_archive:
+            if len(basin_archive) < 10:
+                basin_archive.append(net)
+            else:
+                distances = [len(set(net) ^ set(old)) for old in basin_archive]
+                replace_at = max(range(len(basin_archive)),
+                                 key=lambda i: pool.get(basin_archive[i], best)
+                                 - 0.01 * distances[i])
+                if score <= pool.get(basin_archive[replace_at], float("inf")) or \
+                        distances[replace_at] >= 8:
+                    basin_archive[replace_at] = net
+
+
+>>>>>>> REPLACE
+</DIFF>

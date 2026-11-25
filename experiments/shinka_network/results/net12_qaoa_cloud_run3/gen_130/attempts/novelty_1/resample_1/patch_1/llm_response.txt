@@ -1,0 +1,15 @@
+<NAME>
+heavier_direct_demand
+</NAME>
+
+<DESCRIPTION>
+Increase the emphasis on large demands in direct-link rewards. Serving a heavy demand directly can avoid loading multiple links, which is particularly valuable for a maximum-load objective. Keep the relay logic unchanged to isolate the effect.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                linear[(i, j)] = -(0.75 * value + 0.25 * math.sqrt(value))
+=======
+                linear[(i, j)] = -(0.85 * value + 0.15 * math.sqrt(value))
+>>>>>>> REPLACE
+</DIFF>

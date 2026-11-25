@@ -1,0 +1,14 @@
+{
+  "generation": 139,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor_085",
+  "patch_description": "Raise the relay-pressure floor from 0.75 to 0.85 as a focused sweep of the suggested parameter. This reduces the relative reward for paths through otherwise very quiet relays, whose estimated transit capacity may be misleading, while leaving all other terms unchanged. The edit isolates whether this stronger protection improves the balance of sampled topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:33.878560",
+  "llm_cost": 0.0008219000000000001,
+  "llm_model": "gpt-6-luna"
+}

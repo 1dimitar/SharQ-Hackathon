@@ -1,0 +1,77 @@
+<NAME>
+adaptive_operator_budget
+</NAME>
+
+<DESCRIPTION>
+Allocate proposal effort among two-switches, rotations, and multi-switch kicks according to their observed LP improvement rates. Smoothed success estimates prevent early results from dominating, while clipping each operator’s multiplier preserves exploration. Update those estimates from evaluated moves, classifying them by the number of changed links. The focused bottleneck neighborhood remains intact; only the additional sampled proposals adapt.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_successes = {}
+    archive_guided = set()
+=======
+    parent_successes = {}
+    archive_guided = set()
+    operator_trials = {"swap": 1, "rotation": 1, "kick": 1}
+    operator_wins = {"swap": 0, "rotation": 0, "kick": 0}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+        # Adapt sampled proposal effort using smoothed LP improvement rates.
+        rates = {
+            name: (operator_wins[name] + 1.0) / (operator_trials[name] + 4.0)
+            for name in operator_trials
+        }
+        mean_rate = sum(rates.values()) / len(rates)
+        factors = {
+            name: min(1.8, max(0.55, rates[name] / max(mean_rate, 1e-12)))
+            for name in rates
+        }
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(int(70 * factors["swap"])):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            rotation_trials = min(350, 70 * (1 + stalls // 3))
+=======
+            rotation_trials = min(
+                350, int(70 * (1 + stalls // 3) * factors["rotation"])
+            )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(24):
+            cur = set(net)
+=======
+        for _ in range(int(24 * factors["kick"])):
+            cur = set(net)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+=======
+                score = evaluate(net)
+                changed = len(set(net) ^ set(parent))
+                kind = "swap" if changed <= 4 else ("rotation" if changed <= 6 else "kick")
+                operator_trials[kind] += 1
+                if score < parent_score:
+                    operator_wins[kind] += 1
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        batch_best = min((seen.get(net, float("inf")) for net in batch), default=float("inf"))
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,73 @@
+<NAME>
+sparse_pressure_routes
+</NAME>
+
+<DESCRIPTION>
+Use a modest source/target-aware adjustment to the transit-node ranking, while keeping the route set sparse: two intermediates by default and four for demands above the existing 0.68 quantile cutoff. Add one distinct, low-pressure fallback route reward per OD pair when an alternative exists. This gives the surrogate another plausible escape route without broadly rewarding every two-hop fragment; the fallback adds no direct-versus-indirect couplings, limiting term growth.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = (0.18 + balance + edge_evidence) / (pressure[j] ** 0.88)
+                candidates.append((float(rank), j, float(balance)))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Spend couplings on more alternatives for larger demands, but
+            # keep the graph compact for the numerous small demands.
+            keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+
+            for position, (rank, j, path_affinity) in enumerate(candidates[:keep]):
+=======
+                # Blend transit congestion with endpoint pressure. The small
+                # endpoint exponents influence route choice without allowing
+                # source/target load to overwhelm the leg-affinity evidence.
+                source_blend = 0.5 * (pressure[i] + pressure[j])
+                target_blend = 0.5 * (pressure[j] + pressure[k])
+                congestion = (
+                    pressure[j] ** 0.72
+                    * source_blend ** 0.08
+                    * target_blend ** 0.08
+                )
+                rank = (0.18 + balance + edge_evidence) / congestion
+                candidates.append((float(rank), j, float(balance)))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Keep route coverage selective: two choices for ordinary demands,
+            # with a four-route allowance for the heavier demands.
+            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+            selected_nodes = set()
+
+            for position, (rank, j, path_affinity) in enumerate(candidates[:keep]):
+                selected_nodes.add(j)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                add_pair((i, k), first, direct_redundancy)
+                add_pair((i, k), second, direct_redundancy)
+
+    # A two-node cut has 4 - x_ij - x_ji boundary links in each
+=======
+                add_pair((i, k), first, direct_redundancy)
+                add_pair((i, k), second, direct_redundancy)
+
+            # Preserve one distinct low-pressure fallback for cases where the
+            # affinity-ranked routes are poor or unavailable in a topology.
+            fallback = min(
+                (candidate for candidate in candidates
+                 if candidate[1] not in selected_nodes),
+                key=lambda candidate: (
+                    pressure[candidate[1]], -candidate[0], candidate[1]
+                ),
+                default=None,
+            )
+            if fallback is not None:
+                _, j, path_affinity = fallback
+                add_pair(
+                    (i, j),
+                    (j, k),
+                    -0.20 * support * (0.45 + 0.85 * path_affinity)
+                    / (pressure[j] ** 0.35),
+                )
+
+    # A two-node cut has 4 - x_ij - x_ji boundary links in each
+>>>>>>> REPLACE
+</DIFF>

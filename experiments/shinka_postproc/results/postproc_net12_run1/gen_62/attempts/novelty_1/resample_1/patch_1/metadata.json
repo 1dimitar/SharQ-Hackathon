@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "random_start_hedge",
+  "patch_description": "Add a small quota of random valid topologies to the initial scored seeds, while keeping the repaired QAOA seeds intact. Each topology is built as the union of two distinct derangement permutations, which guarantees exactly two incoming and outgoing links per node and no self-loops. This provides a modest hedge against pools where repaired QAOA candidates are weak without displacing the stronger QAOA initializations.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:00:49.830454",
+  "llm_cost": 0.0020352,
+  "llm_model": "gpt-6-luna"
+}

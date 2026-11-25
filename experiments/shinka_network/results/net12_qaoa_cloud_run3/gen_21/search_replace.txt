@@ -1,0 +1,16 @@
+<NAME>
+moderate_twohop_reward
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward multiplier from 0.46 to 0.36 while leaving the direct-link blend, pressure discounts, and degree penalty unchanged. Two-hop rewards can make a topology look attractive for many individually plausible paths even when those paths compete for the same limited links. A modest reduction should lessen that overcounting and give direct high-demand links more influence, without removing the useful two-hop signal. The intermediate value is a targeted test between the current setting and the weaker two-hop reward that performed less well overall.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.46
+=======
+    path_strength = 0.36
+>>>>>>> REPLACE
+
+</DIFF>

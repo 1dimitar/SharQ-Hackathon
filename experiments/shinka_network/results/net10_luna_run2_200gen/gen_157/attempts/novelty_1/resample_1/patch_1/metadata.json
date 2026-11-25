@@ -1,0 +1,14 @@
+{
+  "generation": 157,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_path_support",
+  "patch_description": "This version keeps the direct-link reward, but limits the total two-hop reward for each origin\u2013destination pair to 75% of its direct-link reward. Candidate routes are weighted by transit-node pressure and the direct demand on their component links, so indirect support favors less congested paths. The cap prevents a pair with many possible intermediates from accumulating excessive reward. A moderately stronger degree penalty is intended to encourage more feasible samples before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:46.498760",
+  "llm_cost": 0.0024373,
+  "llm_model": "gpt-6-luna"
+}

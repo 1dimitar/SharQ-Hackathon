@@ -1,0 +1,84 @@
+<NAME>
+bottleneck_screening
+</NAME>
+
+<DESCRIPTION>
+The current batch screen ranks proposals almost entirely by QUBO energy, even though the LP detail identifies links that can directly limit the objective. Reserve part of each LP batch for low-energy proposals that modify positive-price bottleneck links, then fill the rest using the existing energy ranking. This adds targeted congestion-oriented exploration without letting the LP’s dual information crowd out surrogate-favored moves. The detail lookup is cached for an already-scored parent, so it does not spend an LP call.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        base_e = energy(parent)
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {tuple(map(int, arc)) for arc, price in prices.items() if price > 0}
+
+        ranked = []
+        hot_ranked = []
+        for net in fresh:
+            delta = energy(net) - base_e
+            ranked.append((delta, net))
+            # Give priority to proposals that actually replace an active bottleneck.
+            changed_hot = len((set(parent) ^ set(net)) & hot)
+            if changed_hot:
+                hot_ranked.append((delta, -changed_hot, net))
+        ranked.sort(key=lambda item: item[0])
+        hot_ranked.sort(key=lambda item: (item[0], item[1]))
+
+        selected = []
+        # Reserve roughly half the batch for surrogate-good moves touching bottlenecks.
+        focused_limit = min(batch_size // 2, len(hot_ranked))
+        for _, _, net in hot_ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= focused_limit:
+                break
+
+        # Fill with the best surrogate-ranked moves, preserving the former diversity rule.
+        for _, net in ranked:
+            if len(selected) >= min(6, batch_size):
+                break
+            if net not in selected and all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+
+        # Complete the batch by energy rank, retaining some breadth when possible.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        return selected[:batch_size]
+>>>>>>> REPLACE
+</DIFF>

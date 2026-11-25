@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "two_hop_strength_025",
+  "patch_description": "Increase the two-hop reward strength from 0.20 to 0.25, leaving the demand gating and both pressure discounts unchanged. This is a focused sweep of the feature identified in the feedback: a modestly stronger reward may help the best sampled topologies by making useful two-hop routes more influential, while changing no other part of the surrogate.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:01.198205",
+  "llm_cost": 0.000941,
+  "llm_model": "gpt-6-luna"
+}

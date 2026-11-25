@@ -1,0 +1,57 @@
+<NAME>
+selective_third_route
+</NAME>
+
+<DESCRIPTION>
+Use two rewarded routes per demand by default, allowing a discounted third only for heavy demands whose third route is nearly as attractive as the second. Tighten both requirements gradually with network size. This reduces credit for marginal paths that may consume scarce degree capacity without relieving bottlenecks, while retaining alternatives where split routing is most valuable. It also reduces coupling count without adding interaction types.
+
+Restore the transit-pressure ranking exponent to 0.82: the supplied comparisons show that reducing it to 0.75 weakened both sample quality and post-processing performance. Leave reward strength and feasibility penalties unchanged to isolate the route-selection change.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        / node_pressure[None, :, None] ** 0.75
+=======
+        / node_pressure[None, :, None] ** 0.82
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    positive = z[z > 0.0]
+    heavy_cutoff = float(np.quantile(positive, 0.72)) if positive.size else 0.0
+    demand_support = 0.66 * z + 0.34 * root
+=======
+    positive = z[z > 0.0]
+    heavy_quantile = min(0.84, 0.72 + 0.010 * max(0, n - 12))
+    heavy_cutoff = (
+        float(np.quantile(positive, heavy_quantile))
+        if positive.size else 0.0
+    )
+    third_route_ratio = min(0.98, 0.96 + 0.002 * max(0, n - 12))
+    demand_support = 0.66 * z + 0.34 * root
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            candidates = ordering[i, :, k]
+            base_keep = min(n - 2, 3 if z[i, k] >= heavy_cutoff else 2)
+            keep = base_keep
+
+            # Preserve one extra route only when the selection boundary is
+            # ambiguous, keeping the coupling graph compact.
+            if keep < n - 2:
+                boundary = float(ranks[i, int(candidates[keep - 1]), k])
+                following = float(ranks[i, int(candidates[keep]), k])
+                relative_gap = (boundary - following) / max(boundary, 1e-12)
+                if relative_gap < 0.12:
+                    keep += 1
+=======
+            candidates = ordering[i, :, k]
+            base_keep = min(n - 2, 2)
+            keep = base_keep
+
+            # Credit a third route only for substantial demand and a genuine
+            # near tie. It receives the existing discounted alternative weight.
+            if keep < n - 2 and z[i, k] >= heavy_cutoff:
+                boundary = float(ranks[i, int(candidates[keep - 1]), k])
+                following = float(ranks[i, int(candidates[keep]), k])
+                if following >= third_route_ratio * boundary:
+                    keep += 1
+>>>>>>> REPLACE
+</DIFF>

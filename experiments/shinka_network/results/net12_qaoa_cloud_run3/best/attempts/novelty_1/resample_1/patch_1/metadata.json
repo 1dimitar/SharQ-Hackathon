@@ -1,0 +1,14 @@
+{
+  "generation": 109,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_relay_budget",
+  "patch_description": "Reduce the number of relay interactions for ordinary OD pairs, while retaining extra relay options for the heaviest demands. The current square-root budget gives every positive-demand pair the same number of relay couplings; fewer routine couplings may simplify the interaction communities and reduce competition among paths. A deterministic 80th-percentile cutoff allocates up to two extra relays to high-demand pairs, preserving additional routing support where it is most valuable.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:11:40.800217",
+  "llm_cost": 0.000995,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_twohop",
+  "patch_description": "This crossover keeps the baseline\u2019s direct-demand link reward and combines it with the pressure-adjusted two-hop terms from the stronger prior implementation. It avoids the concave direct-demand blend, which performed worse in the reported results, and discounts two-hop routes through busier intermediate nodes or links with higher direct demand. The number of quadratic terms is at most \\(n(n-1)(n-2)\\), within the stated limit. Degree penalties remain external to the returned terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:24.059408",
+  "llm_cost": 0.0013611,
+  "llm_model": "gpt-6-luna"
+}

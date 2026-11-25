@@ -1,0 +1,14 @@
+{
+  "generation": 192,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_discount",
+  "patch_description": "Increase the edge-pressure discount from 0.5 to 0.85 while keeping the existing relay-pressure and path logic fixed. This more strongly reduces the reward for two-hop paths that use edges associated with high demand, which may help avoid concentrating traffic on already pressured links. It is a targeted change that preserves the current number of quadratic terms and tests the suggested adjustment directly.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:02:19.943856",
+  "llm_cost": 0.0007893,
+  "llm_model": "gpt-6-luna"
+}

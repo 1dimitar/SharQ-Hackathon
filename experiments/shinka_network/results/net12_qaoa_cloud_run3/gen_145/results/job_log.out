@@ -1,0 +1,9 @@
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', BrokenPipeError(32, 'Broken pipe')) │
+╰──────────────────────────────────────────────────────────────────────────────╯
+network12_s0: sampling attempt 1 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 21s
+╭── Program Failure (Programs ('P0', 11), ('P1', 11), ('P2', 11) and 9 more) ──╮
+│ ConnectionError: ('Connection aborted.', TimeoutError('The write operation   │
+│ timed out'))                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+network12_s0: sampling attempt 2 failed (RuntimeError: Ensemble execution failed: 0/12 programs completed before failure.); retrying in 53s

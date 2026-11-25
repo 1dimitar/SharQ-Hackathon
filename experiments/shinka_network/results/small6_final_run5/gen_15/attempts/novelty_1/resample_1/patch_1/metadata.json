@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_exposure",
+  "patch_description": "This design uses a soft, demand-based routing proxy rather than rewarding a fixed number of two-hop paths in isolation. For each OD pair, it selects up to two low-pressure transit nodes, then estimates how much traffic those routes would expose each directed link to. That exposure informs both a modest link reward and sparse positive couplings between heavily exposed links sharing an endpoint, approximating local load balancing. Two-hop rewards remain, but are discounted by the estimated route pressure; a small reciprocal-link penalty discourages unproductive backtracking without forbidding useful mutual links.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:56:42.210153",
+  "llm_cost": 0.0032676,
+  "llm_model": "gpt-6-luna"
+}

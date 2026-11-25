@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_delta_screen",
+  "patch_description": "Rank proposed exchanges by their directional change in LP dual prices before using surrogate energy. A move that removes high-priced links and adds low-priced links is more directly aligned with relieving the current congestion bottlenecks than one that merely touches a hot link. Use demand relief as a secondary tie-breaker, then retain surrogate energy as a further screen. This is a cheap way to spend the limited LP budget on moves with a stronger local signal from the routing LP.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:39:34.632416",
+  "llm_cost": 0.0018375000000000002,
+  "llm_model": "gpt-6-luna"
+}

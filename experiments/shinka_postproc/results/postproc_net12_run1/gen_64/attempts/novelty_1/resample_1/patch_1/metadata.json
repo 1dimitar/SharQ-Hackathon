@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "adaptive_move_effort",
+  "patch_description": "Track the LP improvement rate of focused switches, sampled random switches, rotations, and kicks. Allocate the neighborhood screening batch adaptively using a smoothed success rate plus an exploration bonus, while reserving at least one screening slot for each available move type. This lets productive move types receive more LP evaluations without permanently starving less-tested types; kick frequency also responds to its observed returns.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:21.852177",
+  "llm_cost": 0.0036338,
+  "llm_model": "gpt-6-luna"
+}

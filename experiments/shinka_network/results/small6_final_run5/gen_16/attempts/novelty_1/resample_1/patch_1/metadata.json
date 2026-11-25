@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "capped_three_hop_routes",
+  "patch_description": "Add at most one three-hop alternative for an OD pair when its two-hop options look weak or closely ranked, or the demand is in the top decile. Rank these alternatives using endpoint-leg affinity and transit-node pressure, then add a small second-order expansion of the selected path reward. This provides a limited signal for pairs that two-hop terms cannot represent, while keeping the added couplings sparse and capped well below the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:58:11.855537",
+  "llm_cost": 0.0037546000000000003,
+  "llm_model": "gpt-6-luna"
+}

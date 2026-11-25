@@ -1,0 +1,46 @@
+<NAME>
+relay_balanced_indirect_rewards
+</NAME>
+
+<DESCRIPTION>
+Distribute each demand pair’s two-hop reward among its possible relay nodes instead of giving every relay the same full reward. Favor relays with lower combined incoming and outgoing demand, which are plausible candidates for carrying transit traffic. This avoids accumulating a large reward simply because many two-hop paths exist, while retaining the direct-demand linear terms. The modest multiplier increase from 0.20 to 0.30 tests a stronger indirect signal without making it the dominant term.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            for k in range(n):
+                if k == j or k == i:
+                    continue
+                traffic = float(d[i, k])
+                if traffic <= 0.0:
+                    continue
+                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))
+                value = -0.20 * (traffic / scale) * (scale / pressure)
+                if value:
+                    quadratic[((i, j), (j, k))] = value
+=======
+    quadratic = {}
+    # Lower-demand nodes are preferred as relays. Normalize suitability for
+    # each endpoint pair so the total reward does not grow with relay count.
+    node_pressure = row + col
+    for i in range(n):
+        for k in range(n):
+            traffic = float(d[i, k])
+            if i == k or traffic <= 0.0:
+                continue
+            relays = [j for j in range(n) if j != i and j != k]
+            suitability = [1.0 / (1.0 + float(node_pressure[j]) / scale) for j in relays]
+            suitability_total = sum(suitability)
+            pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))
+            pair_reward = 0.30 * (traffic / scale) * (scale / pressure)
+            for j, fit in zip(relays, suitability):
+                value = -pair_reward * (fit / suitability_total)
+                if value:
+                    quadratic[((i, j), (j, k))] = value
+>>>>>>> REPLACE
+</DIFF>

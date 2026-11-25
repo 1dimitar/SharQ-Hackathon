@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_diverse_switch",
+  "patch_description": "Combines the current implementation\u2019s diverse repaired seeds and archive with the inspiration program\u2019s exhaustive 2-switch neighborhood and dual-price move ranking. Each batch reserves LP calls for high dual-gain moves, then fills from surrogate-ranked, topology-diverse moves. Small rotation samples and archive-based restarts help escape local optima, while a bounded archive avoids repeatedly exploring near-duplicate networks.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:01:43.634061",
+  "llm_cost": 0.0032873,
+  "llm_model": "gpt-6-luna"
+}

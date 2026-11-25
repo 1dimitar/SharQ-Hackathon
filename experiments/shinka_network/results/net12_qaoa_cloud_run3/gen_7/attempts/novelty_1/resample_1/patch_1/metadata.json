@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_qubo",
+  "patch_description": "This version keeps direct-link rewards but uses a more conservative, concave reward for useful two-hop paths, discounted when the intermediate node has high incident demand. It also adds a small reciprocal-link penalty when traffic is strongly one-sided, discouraging unproductive two-cycles without penalising balanced traffic. The stronger evaluator-supplied degree penalty is intended to reduce invalid samples before repair. All terms are derived deterministically from the demand matrix; the quadratic-term count remains within the required bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:21:01.170973",
+  "llm_cost": 0.0022732,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,58 @@
+<NAME>
+adaptive_kick_exploration
+</NAME>
+
+<DESCRIPTION>
+Increase multi-switch exploration gradually when the search has stalled, using both parent-specific stalls and time since the last global improvement. The increase is capped by instance size and remains modest; it is slightly stronger on smaller instances, where the search has relatively fewer possible link pairs. Because `since_best` resets after an improvement, the search naturally shifts back toward smaller perturbations when progress resumes. This adds diverse proposals without increasing the LP batch size.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        escalation = min(
+            max(1, n // 3),
+            stalls.get(parent, 0) // 2 + since_best // max(1, 12 * n),
+        )
+        for _ in range(n + escalation):
+            cur = current.copy()
+            strength = 2 + int(rng.integers(3)) + escalation // 2
+            successes = 0
+            for _ in range(3 * strength):
+                net = random_switch(cur)
+                if net is not None:
+                    cur = set(net)
+                    successes += 1
+                    if successes >= strength:
+                        break
+            net = tuple(sorted(cur))
+            if net != parent:
+                moves.setdefault(net, 2)
+=======
+        # Escalate perturbations after prolonged stagnation, but return to
+        # lighter kicks after improvements. Smaller instances get a modest
+        # extra exploration allowance without changing the LP batch size.
+        size_boost = max(0.0, (16.0 - n) / 12.0)
+        escalation = min(
+            max(1, n // 3),
+            stalls.get(parent, 0) // 2 + since_best // max(1, 8 * n),
+        )
+        kick_trials = n + int(math.ceil((1.0 + 2.0 * size_boost) * escalation))
+        max_strength = max(2, n // 3)
+        for _ in range(kick_trials):
+            cur = current.copy()
+            strength = min(
+                max_strength,
+                2 + int(rng.integers(3)) + escalation // 2,
+            )
+            successes = 0
+            for _ in range(3 * strength):
+                net = random_switch(cur)
+                if net is not None:
+                    cur = set(net)
+                    successes += 1
+                    if successes >= strength:
+                        break
+            net = tuple(sorted(cur))
+            if net != parent:
+                moves.setdefault(net, 2)
+>>>>>>> REPLACE
+</DIFF>

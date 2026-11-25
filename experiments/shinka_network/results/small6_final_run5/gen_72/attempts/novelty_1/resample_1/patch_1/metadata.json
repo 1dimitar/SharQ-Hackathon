@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_degree_penalty",
+  "patch_description": "Make the external degree penalty respond mildly to how unevenly incident demand is distributed. A high coefficient of variation signals that demand incentives are more uneven and can pull the sampler toward degree-imbalanced choices, so the penalty rises modestly; balanced or zero-demand instances use a lower value. The adjustment is bounded to [1.15, 1.35], retaining a narrow range around the current setting to avoid disrupting the strong feasible-sample rate.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:54:41.004138",
+  "llm_cost": 0.0022499,
+  "llm_model": "gpt-6-luna"
+}

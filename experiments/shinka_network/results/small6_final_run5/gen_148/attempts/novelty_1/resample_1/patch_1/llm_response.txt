@@ -1,0 +1,17 @@
+<NAME>
+sparse_route_budget
+</NAME>
+
+<DESCRIPTION>
+Reduce the number of two-hop alternatives while leaving their ranking and weight calculation unchanged. The current QUBO contains roughly 400 quadratic terms, and lower-ranked alternatives can add noisy attractions without providing much additional route information. Keep one route for ordinary-demand pairs and two for high-demand pairs; the existing near-tie rule can still retain one extra when the choice is ambiguous. This tests a sparser service-pair budget while preserving the existing service scoring.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        base_keep = min(len(ranked), 3 if traffic[i, k] >= cutoff else 2)
+=======
+        # Use a sparse service budget; the near-tie rule below can still
+        # preserve one extra alternative when the ranking is ambiguous.
+        base_keep = min(len(ranked), 2 if traffic[i, k] >= cutoff else 1)
+>>>>>>> REPLACE
+</DIFF>

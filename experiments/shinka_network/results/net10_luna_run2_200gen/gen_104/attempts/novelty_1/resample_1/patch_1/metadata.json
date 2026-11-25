@@ -1,0 +1,14 @@
+{
+  "generation": 104,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "shadow_price_routes",
+  "patch_description": "This approach builds a congestion-aware menu of two-hop routes. For each origin-destination pair, it distributes a bounded routing reward across candidate relays, favoring relays and constituent links with lower estimated traffic pressure. Direct links retain a separate service reward. Unlike a uniform two-hop bonus, the route rewards compete for a fixed per-pair budget, so adding more candidate paths does not inflate their total influence. The construction uses at most \\(n(n-1)(n-2)\\) quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:03.352345",
+  "llm_cost": 0.0024270999999999997,
+  "llm_model": "gpt-6-luna"
+}

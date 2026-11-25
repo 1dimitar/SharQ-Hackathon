@@ -1,0 +1,18 @@
+<NAME>
+balanced_relay_affinity
+</NAME>
+
+<DESCRIPTION>
+Blend the geometric mean with the harmonic mean of the two leg affinities. This mildly favors relays with two useful legs over those relying on one strong and one weak leg, while retaining the existing relay budget and pressure discount. Unlike replacing the operands with their minimum and maximum, this changes the ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = np.sqrt((0.1 + first_leg) * (0.1 + second_leg))
+=======
+                a = 0.1 + first_leg
+                b = 0.1 + second_leg
+                affinity = 0.5 * np.sqrt(a * b) + 0.5 * (2.0 * a * b / (a + b))
+>>>>>>> REPLACE
+
+</DIFF>

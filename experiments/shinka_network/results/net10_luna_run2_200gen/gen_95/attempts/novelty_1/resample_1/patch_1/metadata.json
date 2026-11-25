@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_capped_paths",
+  "patch_description": "Separates demand preparation, link scoring, and path-term construction into small helpers. Direct demand remains the primary signal; indirect rewards are capped per OD pair and assigned only to a few promising transit nodes, reducing diffuse quadratic terms while preserving demand-aware path incentives. The sparse construction also stays within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:40.004206",
+  "llm_cost": 0.0013105,
+  "llm_model": "gpt-6-luna"
+}

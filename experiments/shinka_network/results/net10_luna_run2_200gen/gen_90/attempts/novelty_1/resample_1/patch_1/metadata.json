@@ -1,0 +1,14 @@
+{
+  "generation": 90,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_pressure_floor",
+  "patch_description": "Calibrate the existing incident-demand transit penalty using a pressure floor of 0.75, with pressure measured relative to mean incident demand. Using the inverse square root of floored pressure gives low-incident nodes a modest preference as intermediates while discounting high-pressure nodes. This increases the relative distinction between transit candidates without making the penalty as sharp as a direct inverse-pressure rule.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:08.754595",
+  "llm_cost": 0.0013161000000000002,
+  "llm_model": "gpt-6-luna"
+}

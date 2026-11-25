@@ -1,0 +1,69 @@
+<NAME>
+sparse_transit_load_pairs
+</NAME>
+
+<DESCRIPTION>
+Add a sparse, positive congestion coupling between pairs of links that both enter the same node or both leave it. Their service scores combine estimated two-hop route exposure with direct demand, so pairs carrying substantial traffic are penalized more when they share a node. This approximates load balancing without adding degree penalties: the evaluator still handles degrees, while these terms distinguish which links are chosen. Keeping only the top `max(2, n // 3)` candidate links on each side of a node bounds the added interactions and varies sparsity independently of the fixed 0.24 strength.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): float(costs[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+=======
+    # Sparse second-order load-balancing factors: avoid concentrating
+    # estimated service exposure on pairs of links at the same node.
+    pair_budget = min(n - 1, max(2, n // 3))
+    base_strength = 0.24
+    service = route_support + 0.25 * direct_score
+
+    for node in range(n):
+        incoming_links = [
+            (float(service[i, node]), i, node)
+            for i in range(n)
+            if i != node
+        ]
+        outgoing_links = [
+            (float(service[node, j]), node, j)
+            for j in range(n)
+            if j != node
+        ]
+
+        for links in (incoming_links, outgoing_links):
+            links.sort(key=lambda item: (-item[0], item[1], item[2]))
+            selected = links[:pair_budget]
+            local_max = max(
+                (item[0] for item in selected), default=0.0
+            )
+            if local_max <= 0.0:
+                continue
+
+            for first_index in range(len(selected)):
+                first_score, first_u, first_v = selected[first_index]
+                for second_index in range(first_index + 1, len(selected)):
+                    second_score, second_u, second_v = selected[second_index]
+                    first = (first_u, first_v)
+                    second = (second_u, second_v)
+                    key = (first, second) if first < second else (second, first)
+                    relative_exposure = np.sqrt(
+                        max(0.0, first_score * second_score)
+                    ) / local_max
+                    quadratic[key] = quadratic.get(key, 0.0) + float(
+                        base_strength
+                        * node_pressure[node]
+                        * relative_exposure
+                    )
+
+    linear = {
+        (i, j): float(costs[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+>>>>>>> REPLACE
+
+</DIFF>

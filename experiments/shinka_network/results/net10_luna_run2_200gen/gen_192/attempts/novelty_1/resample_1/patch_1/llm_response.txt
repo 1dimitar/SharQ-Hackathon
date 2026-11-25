@@ -1,0 +1,16 @@
+<NAME>
+stronger_edge_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the edge-pressure discount from 0.5 to 0.85 while keeping the existing relay-pressure and path logic fixed. This more strongly reduces the reward for two-hop paths that use edges associated with high demand, which may help avoid concentrating traffic on already pressured links. It is a targeted change that preserves the current number of quadratic terms and tests the suggested adjustment directly.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+=======
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+>>>>>>> REPLACE
+
+</DIFF>

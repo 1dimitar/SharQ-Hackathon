@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_move_mix",
+  "patch_description": "Adapt the nine energy-ranked LP evaluations between 2-switches and 3-link rotations using their observed improvement rates. A fixed shortlist can under-sample whichever neighborhood is more productive on a particular run. This change classifies moves by the number of changed arcs, guarantees at least two evaluations for each move type, and allocates the remaining slots according to smoothed improvement rates. The existing dual-guided and random reserves remain in place.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:10:30.634221",
+  "llm_cost": 0.0029122,
+  "llm_model": "gpt-6-luna"
+}

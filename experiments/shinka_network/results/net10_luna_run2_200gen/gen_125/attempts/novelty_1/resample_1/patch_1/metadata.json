@@ -1,0 +1,14 @@
+{
+  "generation": 125,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_pressure_normalization",
+  "patch_description": "Switch relay-pressure normalization from mean incident demand to maximum incident demand, keeping the floor at 0.75 and leaving route-quality and reward settings unchanged. This isolates the normalization choice: the busiest node has pressure 1, while quieter nodes are discounted relative to it. Comparing this version against the current mean-based version tests whether the mean normalization is over-penalizing busy relays.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:02.997828",
+  "llm_cost": 0.00103,
+  "llm_model": "gpt-6-luna"
+}

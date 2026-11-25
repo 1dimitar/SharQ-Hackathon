@@ -1,0 +1,16 @@
+18 distinct topologies recorded during results/net12_qaoa_cloud_run3
+pool: 9018 distinct topologies, best 292000 (+5.62%)
+
+2-exchange descent from the 40 best starts (24s):
+   start 304000 -> local optimum 283334
+   start 299250 -> local optimum 284895
+   start 301917 -> local optimum 285000
+   start 298100 -> local optimum 285625
+   start 301273 -> local optimum 286077
+   best local optimum: 283334 (+2.48%), 40 distinct local optima
+
+Iterated local search, 4 workers x 240s (243s): best 276474 (+0.00%)
+
+BEST network12: 276474 vs best known 276474 (+0.00%)
+arcs (1-indexed): [(1, 2), (1, 8), (2, 5), (2, 7), (3, 5), (3, 11), (4, 1), (4, 10), (5, 6), (5, 7), (6, 4), (6, 12), (7, 9), (7, 11), (8, 3), (8, 4), (9, 3), (9, 10), (10, 6), (10, 8), (11, 1), (11, 12), (12, 2), (12, 9)]
+saved to results/reports/network12_lp_local_search.json

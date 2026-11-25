@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_aware_two_hop",
+  "patch_description": "Add gated two-hop path rewards with strength 0.25. The reward reflects demand between the path\u2019s endpoints, discounts paths through high-throughput transit nodes and links already carrying high direct demand, and is accumulated using canonical link-pair keys. This tests a stronger path signal while keeping the existing direct-demand rewards and same-endpoint load penalties. The added terms remain within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:43.871495",
+  "llm_cost": 0.0014325000000000002,
+  "llm_model": "gpt-6-luna"
+}

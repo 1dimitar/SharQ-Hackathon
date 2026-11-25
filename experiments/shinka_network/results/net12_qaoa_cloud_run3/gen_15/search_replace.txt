@@ -1,0 +1,81 @@
+<NAME>
+sparse_relay_support
+</NAME>
+
+<DESCRIPTION>
+Limit each positive-demand OD pair to its strongest relay candidates instead of coupling every possible two-hop path. Rank relays using the existing pressure-discounted path weight, retaining `max(1, n // 5)` candidates per pair. This produces about 264 quadratic terms at n=12, rather than 880, while preserving the most promising two-hop interactions and keeping the interaction graph sparser for QAOA partitioning.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.46
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+    quadratic = {}
+    path_strength = 0.46
+    relay_budget = max(1, n // 5)
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+
+            # Keep only the best pressure-adjusted relays for this OD pair.
+            relay_candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+                relay_candidates.append((weight, j))
+
+            relay_candidates.sort()
+            for weight, j in relay_candidates[:relay_budget]:
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+>>>>>>> REPLACE
+</DIFF>

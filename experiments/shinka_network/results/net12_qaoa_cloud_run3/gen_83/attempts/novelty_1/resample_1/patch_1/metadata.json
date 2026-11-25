@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_path_support",
+  "patch_description": "Keep the existing direct-link rewards and candidate-relay selection, but make two-hop support demand-dependent. OD pairs in the top 20% of positive demands receive a modest 1.1 multiplier, while other positive-demand pairs receive 0.9. This focuses relay couplings on the traffic most likely to dominate link load without increasing the quadratic-term count or changing the interaction structure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:36:40.359197",
+  "llm_cost": 0.0007385,
+  "llm_model": "gpt-6-luna"
+}

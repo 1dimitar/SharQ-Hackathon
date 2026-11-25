@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_overlap_crossover",
+  "patch_description": "Combines the current program\u2019s modular structure with the inspiration program\u2019s candidate ordering and sparse route selection. Route features are precomputed with NumPy to reduce repeated work.\n\nA selective overlap correction, applied only to the strongest demands, discourages rewarding both a direct link and redundant alternatives. This borrows the median-quality improvement of the overlap variant without tripling every route\u2019s couplings. Direct-link rewards and the degree-penalty weight remain unchanged. Performance gains require evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:58:44.808275",
+  "llm_cost": 0.046262000000000005,
+  "llm_model": "gpt-6.1-sol"
+}

@@ -1,0 +1,233 @@
+<NAME>
+stall_adaptive_diversification
+</NAME>
+
+<DESCRIPTION>
+Reserve explicit LP-batch capacity for candidates that are structurally distant from the scored archive, rather than letting energy-ranked moves fill nearly every slot. Increase that exploration share as a parent stalls, while retaining slots for energy and link-pressure guidance. Also make kicks from stalled parents progressively longer and more numerous, so the search can cross barriers instead of repeatedly sampling small variations. All changes scale with the instance size or stall count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        for _ in range(24):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(4))):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+=======
+        # Stalled parents get more and longer multi-switch kicks to cross barriers.
+        stalls = parent_stalls.get(net, 0)
+        kick_trials = min(3 * n, 16 + 2 * stalls)
+        max_kick_length = max(2, 2 + n // 2)
+        for _ in range(kick_trials):
+            cur = set(net)
+            kick_length = min(max_kick_length, 2 + int(rng.integers(4)) + stalls // 4)
+            for _ in range(kick_length):
+                arcs_now = list(cur)
+                if len(arcs_now) < 2:
+                    break
+                p, q = rng.choice(len(arcs_now), size=2, replace=False)
+                a, b = arcs_now[int(p)]
+                c, d = arcs_now[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            cand = tuple(sorted(cur))
+            if cand != net:
+                moves.add(cand)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Mix energy-ranked trials with a normalized link-pressure heuristic."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        energy_quota = min(4 if detail else 6, batch_size)
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= energy_quota:
+                break
+
+        # A switch can improve the routing bottleneck by removing heavily used,
+        # expensive links. Penalize new links carrying substantial direct demand.
+        if detail and len(selected) < batch_size:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            if max_demand <= 0:
+                max_demand = 1.0
+
+            pressure_ranked = []
+            parent_set = set(parent)
+            for net in fresh:
+                removed = parent_set - set(net)
+                added = set(net) - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            pressure_quota = min(3, batch_size - len(selected))
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        """Adapt energy, pressure, and archive-novelty slots to search progress."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        energy_order = sorted(fresh, key=energy)
+        stalls = parent_stalls.get(parent, 0)
+        explore_quota = min(
+            max(1, batch_size // 2),
+            1 + stalls // 2,
+            max(0, batch_size - 2),
+        )
+        pressure_quota = min(
+            2, max(0, batch_size - explore_quota - 2)
+        ) if detail else 0
+        energy_quota = max(0, batch_size - explore_quota - pressure_quota)
+
+        selected = []
+        for net in energy_order:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= energy_quota:
+                break
+
+        # Use dual prices and loads as a complementary, not dominant, move signal.
+        if detail and pressure_quota:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            if max_demand <= 0:
+                max_demand = 1.0
+
+            parent_set = set(parent)
+            pressure_ranked = []
+            for net in fresh:
+                removed = parent_set - set(net)
+                added = set(net) - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if net not in selected and all(
+                    distance(net, old) >= 2 for old in selected
+                ):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+
+        # Explicitly spend exploration slots on networks far from the scored archive.
+        if explore_quota:
+            references = archive()
+            if not references:
+                references = [parent]
+            novelty_pool = [net for net in fresh if net not in selected]
+            rng.shuffle(novelty_pool)
+            novelty_pool.sort(
+                key=lambda net: min(distance(net, ref) for ref in references),
+                reverse=True,
+            )
+            target = min(batch_size, len(selected) + explore_quota)
+            for net in novelty_pool:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                if len(selected) >= target:
+                    break
+
+        # Fill any unused quota with the best remaining energy-ranked moves.
+        for net in energy_order:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

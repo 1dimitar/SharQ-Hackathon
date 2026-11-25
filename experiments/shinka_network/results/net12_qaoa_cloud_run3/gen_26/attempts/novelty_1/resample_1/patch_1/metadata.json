@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "targeted_relay_options",
+  "patch_description": "Give the top 20% of positive-demand OD pairs up to four promising relay choices instead of two, while leaving the relay count for other pairs unchanged. This focuses additional QUBO interactions on the largest traffic demands, where a useful indirect route can most affect the maximum link load, without broadly increasing the model size. The deterministic ranking handles ties consistently, and even at four relays the quadratic-term count remains within the stated \\(4n^3\\) limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:45:53.712138",
+  "llm_cost": 0.0012716,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,43 @@
+<NAME>
+archive_novelty_slot
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP evaluation in each screened batch for a candidate from an underrepresented archive region. Instead of measuring novelty only against the nearest scored network, rank fresh moves by their average distance from several distinct elite representatives. Use surrogate energy as a tie-breaker, and avoid duplicating candidates already selected through the guided path. This adds a deliberate exploration route while keeping the rest of the batch’s existing energy-based selection unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+=======
+        # Reserve one LP call for a region distant from several elite
+        # representatives, rather than relying only on nearest-neighbor novelty.
+        if len(selected) < batch_size:
+            elites = sorted(seen, key=seen.get)[:12]
+            if elites:
+                remaining = [net for net in fresh if net not in selected]
+                if remaining:
+                    energy_rank = {net: delta for delta, net in ranked}
+                    novel = max(
+                        remaining,
+                        key=lambda net: (
+                            sum(distance(net, elite) for elite in elites) / len(elites),
+                            -energy_rank[net],
+                        ),
+                    )
+                    selected.append(novel)
+
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+>>>>>>> REPLACE
+
+</DIFF>

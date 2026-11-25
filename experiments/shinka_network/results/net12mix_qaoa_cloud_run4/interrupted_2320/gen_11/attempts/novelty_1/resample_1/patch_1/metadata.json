@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_paths",
+  "patch_description": "Keep the direct-demand reward, but add a deliberately modest reward for useful two-hop routes. Unlike an unweighted two-hop term, this discounts routes through intermediates with high total in- and out-traffic, which are more likely to become transit bottlenecks. The terms connect links that form actual directed paths and stay below the quadratic-term limit. Raising the degree-penalty weight should also make the QUBO less willing to trade degree violations for small changes in the surrogate cost.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:03:30.951979",
+  "llm_cost": 0.0016774,
+  "llm_model": "gpt-6-luna"
+}

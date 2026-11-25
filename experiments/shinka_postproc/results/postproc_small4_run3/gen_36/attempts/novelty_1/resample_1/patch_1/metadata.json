@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "routing_coverage_search",
+  "patch_description": "Combines explicit archive quotas for LP quality, Hamiltonian energy, routing-proxy quality, and structural coverage. A batched, congestion-aware routing heuristic provides an independent move-ranking signal; an online ridge model learns which proxy changes actually predict LP improvements. Mixed neighborhoods, diverse batch reservations, and short improvement chains preserve exploration without letting bottleneck guidance dominate. All certified scores use the supplied tools, and the search checks its wall-time budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:30:37.461786",
+  "llm_cost": 0.18856000000000003,
+  "llm_model": "gpt-6.1-sol"
+}

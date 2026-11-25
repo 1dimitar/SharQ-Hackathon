@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_relay_budget",
+  "patch_description": "Restrict each demanded OD pair\u2019s two-hop support to its strongest relay candidates, using the existing pressure- and edge-demand-adjusted path weight to rank them. A budget of max(1, n // 5), capped at n - 2, gives 2 relays per OD pair at n=12 and reduces the interaction graph from 880 terms to at most 264 there. This preserves the current scoring logic for selected paths while avoiding broad coupling that can make QAOA communities harder to solve.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:38:06.448952",
+  "llm_cost": 0.0014158,
+  "llm_model": "gpt-6-luna"
+}

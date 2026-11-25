@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balancedpathqubo",
+  "patch_description": "The baseline uses only direct-demand linear rewards and has no quadratic terms. This version retains a direct-link reward, adds bounded rewards for completing two-hop paths, and adds positive couplings between high-demand links sharing a source or destination as a simple congestion-balance proxy. Two-hop rewards are attenuated according to network size and the intermediate node\u2019s traffic, rather than applying the same large reward to every path. The degree penalty is raised to 4.0 to put more pressure on feasible degree patterns before repair. The construction uses about \\(2n^3\\) quadratic terms, within the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:28:03.629079",
+  "llm_cost": 0.0025387,
+  "llm_model": "gpt-6-luna"
+}

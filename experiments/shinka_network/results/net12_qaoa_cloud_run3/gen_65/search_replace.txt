@@ -1,0 +1,19 @@
+<NAME>
+selective_high_demand_relays
+</NAME>
+
+<DESCRIPTION>
+Raise the high-demand cutoff from the 80th to the 90th percentile while keeping the relay cap and all other settings unchanged. This concentrates the two extra relay options on the most exceptional OD pairs, which may improve best-topology quality without increasing the 304-term interaction graph or changing its community structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.80)) if positive_od.size else float("inf")
+    )
+=======
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.90)) if positive_od.size else float("inf")
+    )
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,54 @@
+<NAME>
+demand_weighted_branch_diversity
+</NAME>
+
+<DESCRIPTION>
+Add a compact positive-coupling correction for redundant outgoing and incoming branches. Two successors with similar demand-weighted destination profiles offer overlapping routing options; similarly, two predecessors with similar origin profiles provide little inbound diversity. The existing negative path rewards do not distinguish complementary branches from redundant ones.
+
+Use weighted profile inner products to identify redundancy, including each branch endpoint itself as directly reachable. Retain only the three strongest overlaps per node and direction, adding at most 6n couplings. Normalize locally and cap the correction at 0.24 so it supplements rather than replaces the established direct-link and two-hop rewards. This targets typical-sample quality and exchange ranking without introducing incomplete three-hop rewards or degree penalties.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # Three-hop Taylor terms are omitted: pairwise fragments can
+            # reward incomplete paths and misrank valid two-link exchanges.
+
+    return linear, quadratic, 1.25
+=======
+            # Three-hop Taylor terms are omitted: pairwise fragments can
+            # reward incomplete paths and misrank valid two-link exchanges.
+
+    # Penalize a small number of demand-weighted redundant branch pairs.
+    # Outbound profiles describe destinations; transposed profiles describe
+    # origins for the analogous inbound correction.
+    for inbound in (False, True):
+        od = normalized.T if inbound else normalized
+        profiles = np.sqrt(od).copy()
+        np.fill_diagonal(profiles, 1.0)
+        for center in range(n):
+            weights = od[center]
+            if float(weights.sum()) <= 0.0:
+                continue
+            gram = (profiles * weights[None, :]) @ profiles.T
+            branches = [j for j in range(n) if j != center]
+            normalizer = max(float(gram[j, j]) for j in branches)
+            if normalizer <= 1e-12:
+                continue
+
+            redundant = []
+            for position, j in enumerate(branches):
+                for k in branches[position + 1:]:
+                    overlap = float(gram[j, k]) / normalizer
+                    if overlap > 0.15:
+                        redundant.append((overlap, j, k))
+            redundant.sort(reverse=True)
+
+            for overlap, j, k in redundant[:3]:
+                first = (j, center) if inbound else (center, j)
+                second = (k, center) if inbound else (center, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = quadratic.get(key, 0.0) + 0.24 * overlap
+
+    return linear, quadratic, 1.25
+>>>>>>> REPLACE
+</DIFF>

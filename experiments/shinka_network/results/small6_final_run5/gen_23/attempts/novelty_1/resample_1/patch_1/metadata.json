@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "shortcut_aware_route_rewards",
+  "patch_description": "The current surrogate rewards a two-hop route even when its demand already has a direct link. This double counting can favor redundant local connectivity instead of useful reachability.\n\nModel each route benefit as \u2212reward \u00d7 (1 \u2212 x_ik) \u00d7 x_ij \u00d7 x_jk. Approximate its cubic correction by a second-order expansion around link density p = 2/(n\u22121), retaining both quadratic and linear corrections. This introduces competition between a direct shortcut and its alternative route without auxiliary variables. The correction naturally weakens with network size, and the total coupling count remains below 4n\u00b3 even before duplicate keys are merged. This is a targeted experiment to improve topology and exchange ranking; its performance requires evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:03:51.306867",
+  "llm_cost": 0.048243999999999995,
+  "llm_model": "gpt-6.1-sol"
+}

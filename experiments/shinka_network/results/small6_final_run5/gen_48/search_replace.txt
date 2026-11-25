@@ -1,0 +1,29 @@
+<NAME>
+ambiguity_route
+</NAME>
+
+<DESCRIPTION>
+Add at most one two-hop route for an OD pair when the next candidate is nearly tied with the last currently selected route, remains competitive with the best route, and has nontrivial traffic on its legs. This gives genuinely ambiguous demands another routing option without broadly increasing route coverage; the leg-evidence gate also avoids adding routes based only on the ranking’s constant baseline affinity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+            selected = set()
+=======
+            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+            # Add one alternative only when the route ranking is genuinely
+            # ambiguous and the candidate has evidence on both of its legs.
+            if keep < len(candidates):
+                frontier = candidates[keep - 1][0]
+                next_rank, next_j, _ = candidates[keep]
+                next_evidence = float(normalized[i, next_j] + normalized[next_j, k])
+                best_rank = max(candidates[0][0], 1e-12)
+                if (next_rank / max(frontier, 1e-12) >= 0.92
+                        and next_rank / best_rank >= 0.65
+                        and next_evidence >= 0.05):
+                    keep += 1
+            selected = set()
+>>>>>>> REPLACE
+
+</DIFF>

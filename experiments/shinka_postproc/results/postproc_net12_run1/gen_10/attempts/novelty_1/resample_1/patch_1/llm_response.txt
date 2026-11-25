@@ -1,0 +1,213 @@
+<NAME>
+price-guided basin search
+</NAME>
+
+<DESCRIPTION>
+This approach uses repaired QAOA candidates to seed a diverse, LP-scored elite, then alternates focused neighborhood search with controlled basin escapes. LP dual prices and high loads identify links worth changing; promising two-link exchanges are ranked cheaply with the surrogate energy, while occasional targeted three-link rotations explore moves unavailable to pair exchanges. Rather than continually sampling random neighbors, the search periodically revisits elite networks and perturbs the incumbent, directing the LP budget toward distinct candidates likely to improve the best known network.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    k = 2 * n
+    seen = set()
+    scored = {}
+    details = {}
+
+    def canon(arcs):
+        return tuple(sorted(arcs))
+
+    def evaluate(net):
+        net = canon(net)
+        if net not in scored:
+            if tools.lp_calls_left <= 0:
+                return float("inf")
+            try:
+                scored[net] = tools.lp(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    raise
+                scored[net] = float("inf")
+        return scored[net]
+
+    # Repairs are free: rank them cheaply and score a diversified set.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+    if not repaired:
+        net = canon(tools.repair([]))
+        if tools.is_valid(net):
+            repaired.add(net)
+
+    ordered = sorted(repaired, key=lambda x: tools.energy(x))
+    starts = []
+    for net in ordered:
+        if all(len(set(net) & set(old)) < k - 2 for old in starts):
+            starts.append(net)
+        if len(starts) >= 20:
+            break
+    for net in ordered:
+        if len(starts) >= 32:
+            break
+        if net not in starts:
+            starts.append(net)
+    if not starts:
+        return []
+
+    for net in starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+    if not scored:
+        return starts[0]
+
+    def best_items():
+        return sorted(scored, key=scored.get)
+
+    best = best_items()[0]
+    elite = best_items()[:8]
+
+    def get_hot(net):
+        if net not in details:
+            try:
+                details[net] = tools.lp_detail(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    raise
+                details[net] = {}
+        d = details[net]
+        prices = d.get("prices", {})
+        hot = {tuple(a) for a, p in prices.items() if p > 0}
+        if not hot:
+            loads = d.get("loads", {})
+            vals = sorted(loads.values())
+            if vals:
+                cutoff = vals[int(0.65 * (len(vals) - 1))]
+                hot = {tuple(a) for a, v in loads.items() if v >= cutoff}
+        return hot
+
+    def make_moves(net, hot, limit=100):
+        arcs = list(net)
+        cur = set(net)
+        moves = set()
+
+        # Complete two-arc exchange neighborhood, prioritizing changes to hot links.
+        pairlist = []
+        for p in range(len(arcs)):
+            a, b = arcs[p]
+            for q in range(p + 1, len(arcs)):
+                c, d = arcs[q]
+                if (arcs[p] not in hot and arcs[q] not in hot) and hot:
+                    continue
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                pairlist.append(canon((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+        moves.update(pairlist)
+
+        # Targeted cyclic destination reassignment, including paths through non-hot arcs.
+        if len(arcs) >= 3:
+            for _ in range(100):
+                ix = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ix)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                new = {(a, d), (c, f), (e, b)}
+                if any(x == y for x, y in new) or len(new) != 3:
+                    continue
+                if new & (cur - old):
+                    continue
+                moves.add(canon((cur - old) | new))
+        return [m for m in moves if tools.is_valid(m)]
+
+    iteration = 0
+    while tools.lp_calls_left > 0:
+        iteration += 1
+        elite = best_items()[:8]
+        if iteration % 5 == 0:
+            base = best
+        else:
+            base = elite[int(rng.integers(len(elite)))]
+
+        try:
+            hot = get_hot(base)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            hot = set()
+
+        moves = make_moves(base, hot)
+        fresh = [m for m in moves if m not in scored and not tools.is_cached(m)]
+        if not fresh and hot:
+            moves = make_moves(base, set())
+            fresh = [m for m in moves if m not in scored and not tools.is_cached(m)]
+        if fresh:
+            # Spend most calls on surrogate-promising candidates, reserving some for diversity.
+            fresh.sort(key=lambda m: tools.energy(m))
+            batch = fresh[:8]
+            tail = fresh[8:]
+            if tail:
+                count = min(3, len(tail))
+                batch.extend(tail[int(i)] for i in rng.choice(len(tail), size=count, replace=False))
+            for cand in batch:
+                if tools.lp_calls_left <= 0:
+                    break
+                try:
+                    evaluate(cand)
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+                if scored[cand] < scored[best]:
+                    best = cand
+
+        # Kick the incumbent with a short sequence of valid exchanges, biased toward bottlenecks.
+        if iteration % 3 == 0 and tools.lp_calls_left > 0:
+            kick = set(best)
+            try:
+                khot = get_hot(best)
+            except Exception:
+                khot = set()
+            for _ in range(2 + int(rng.integers(4))):
+                arcs = list(kick)
+                if len(arcs) < 2:
+                    break
+                pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+                if khot:
+                    focused = [(p, q) for p, q in pairs
+                               if arcs[p] in khot or arcs[q] in khot]
+                    if focused:
+                        pairs = focused
+                p, q = pairs[int(rng.integers(len(pairs)))]
+                a, b = arcs[p]
+                c, d = arcs[q]
+                if a != d and c != b and (a, d) not in kick and (c, b) not in kick:
+                    kick.remove((a, b))
+                    kick.remove((c, d))
+                    kick.update(((a, d), (c, b)))
+            kn = canon(kick)
+            if tools.is_valid(kn) and kn not in scored and not tools.is_cached(kn):
+                try:
+                    evaluate(kn)
+                    if scored[kn] < scored[best]:
+                        best = kn
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+
+    return best
+
+
+# EVOLVE-BLOCK-END
+```
+</CODE>

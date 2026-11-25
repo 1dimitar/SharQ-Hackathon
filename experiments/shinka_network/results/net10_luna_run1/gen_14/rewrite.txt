@@ -1,0 +1,107 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic cost terms from a directed demand matrix."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n == 0:
+        return {}, {}, 1.5
+
+    # Sanitize inputs and disregard self-traffic.
+    t = np.where(np.isfinite(t), np.maximum(t, 0.0), 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+
+    positive = t[t > 0.0]
+    if positive.size == 0:
+        return {(i, j): 0.0 for i in range(n) for j in range(n) if i != j}, {}, 1.5
+
+    maximum = float(positive.max())
+    mean_positive = float(positive.mean())
+
+    # Blend ordinary max normalization with a robust capped normalization.
+    # The cap is based on the upper tail but cannot fall below the mean.
+    cap = float(np.quantile(positive, 0.90))
+    cap = max(cap, 1.5 * mean_positive)
+    cap = min(cap, maximum)
+    if cap <= 0.0:
+        cap = maximum
+
+    d_max = t / maximum
+    d_clip = np.minimum(t, cap) / cap
+    utility = 0.72 * d_max + 0.28 * d_clip
+
+    row = utility.sum(axis=1)
+    col = utility.sum(axis=0)
+
+    # A weak link-level proxy for a link's potential to carry transit traffic.
+    transit = np.sqrt(np.maximum(col[:, None], 0.0) *
+                      np.maximum(row[None, :], 0.0))
+    transit_scale = float(transit.max())
+    if transit_scale > 0.0:
+        transit /= transit_scale
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            value = 0.96 * utility[i, j] + 0.04 * transit[i, j]
+            linear[(i, j)] = -float(value)
+
+    # Add very small two-hop bonuses, restricted to the best two relay
+    # candidates for each OD pair to keep the signal sparse and bounded.
+    quadratic = {}
+    path_weight = 0.018
+    relay_capacity = np.sqrt(np.maximum(row, 0.0) * np.maximum(col, 0.0))
+    relay_max = float(relay_capacity.max())
+    if relay_max > 0.0:
+        relay_capacity /= relay_max
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or utility[i, k] <= 0.0:
+                continue
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                # Prefer relays with both incoming and outgoing demand
+                # capacity; mildly discount already demand-heavy route legs.
+                leg_pressure = utility[i, j] + utility[j, k]
+                score = (0.65 + 0.35 * relay_capacity[j]) / (1.0 + 0.5 * leg_pressure)
+                candidates.append((score, j))
+
+            candidates.sort(reverse=True)
+            for score, j in candidates[:2]:
+                a = (i, j)
+                b = (j, k)
+                key = (a, b) if a < b else (b, a)
+                weight = -path_weight * float(utility[i, k]) * float(score)
+                quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    penalty_weight = 1.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

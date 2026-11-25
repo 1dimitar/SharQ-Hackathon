@@ -1,0 +1,17 @@
+<NAME>
+relay_pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Keep the route-quality, congestion, and indirect-budget settings unchanged, but apply a 0.75 floor to the existing max-normalized relay pressure. This isolates the effect of pressure normalization: very quiet nodes no longer receive a disproportionate transit reward solely because their incident demand is small, while busier nodes retain their relative pressure. The floor is a focused test of the suggested max-based normalization variants and avoids changing unrelated route-scoring behavior.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    pressure = incident / max_incident
+    for i in range(n):
+=======
+    pressure = np.maximum(0.75, incident / max_incident)
+    for i in range(n):
+>>>>>>> REPLACE
+</DIFF>

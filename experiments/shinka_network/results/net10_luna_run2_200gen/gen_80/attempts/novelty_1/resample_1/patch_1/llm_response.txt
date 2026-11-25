@@ -1,0 +1,26 @@
+<NAME>
+concave_through_signal
+</NAME>
+
+<DESCRIPTION>
+Apply a mild concave transform only to the two-hop through-demand signal. The linear direct-link rewards remain unchanged, preserving their useful demand ranking, while the square-root component gives medium-sized through-demands more influence relative to the largest demands. This may help the sampled topologies balance indirect routing opportunities instead of focusing too heavily on only the biggest OD pairs.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * (through_demand / scale)
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+=======
+                through_fraction = through_demand / scale
+                through_signal = (
+                    0.8 * through_fraction + 0.2 * np.sqrt(through_fraction)
+                )
+                weight = (
+                    -path_strength * through_signal
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+>>>>>>> REPLACE
+
+</DIFF>

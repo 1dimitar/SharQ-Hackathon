@@ -1,0 +1,78 @@
+<NAME>
+vulnerable_cut_signal
+</NAME>
+
+<DESCRIPTION>
+Add a compact two-node-cut congestion signal, scaled toward endpoint pairs whose external demand is large relative to their incident demand. The reciprocal-link coupling represents a pair of nodes sharing a small cut; a compensating linear correction keeps the cut signal from simply rewarding or penalizing links uniformly on degree-balanced topologies. The gain is tied to the mean direct-link coefficient so the added signal remains modest and scales with the existing objective. This tests the suggested vulnerability-weighted cut correction without changing the existing route model.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    pressure_cv = float(np.std(incident) / max(float(np.mean(incident)), 1e-12))
+=======
+    # Add a modest small-cut congestion signal. Vulnerability is measured
+    # by external demand relative to the incident demand of each endpoint
+    # pair, then centered and clipped to avoid dominating the route terms.
+    if n > 2:
+        outgoing = normalized.sum(axis=1)
+        incoming = normalized.sum(axis=0)
+        incident_load = np.maximum(outgoing, incoming)
+
+        external = np.maximum(
+            outgoing[:, None] + outgoing[None, :],
+            incoming[:, None] + incoming[None, :],
+        ) - normalized - normalized.T
+        external = np.maximum(0.0, external)
+        incident_pair = incident_load[:, None] + incident_load[None, :]
+        vulnerability = external / np.maximum(incident_pair, 1e-12)
+        off_diagonal = ~np.eye(n, dtype=bool)
+        positive_vulnerability = vulnerability[
+            off_diagonal & (external > 0.0)
+        ]
+        if positive_vulnerability.size:
+            vulnerability /= max(
+                float(np.mean(positive_vulnerability)), 1e-12
+            )
+            vulnerability = np.clip(vulnerability, 0.75, 1.25)
+
+            singleton_bound = 0.5 * np.maximum(
+                incident_load[:, None], incident_load[None, :]
+            )
+            one_internal = np.maximum(
+                0.0, external / 3.0 - singleton_bound
+            )
+            two_internal = np.maximum(
+                0.0, external / 2.0 - singleton_bound
+            )
+            cut_linear = vulnerability * one_internal
+            cut_pair = vulnerability * np.maximum(
+                0.0, two_internal - 2.0 * one_internal
+            )
+            np.fill_diagonal(cut_linear, 0.0)
+            np.fill_diagonal(cut_pair, 0.0)
+
+            mean_cut = float(cut_pair.sum()) / max(1, n * (n - 1))
+            mean_direct = -float(sum(linear.values())) / max(
+                1, n * (n - 1)
+            )
+            if mean_cut > 1e-12 and mean_direct > 0.0:
+                cut_gain = 0.20 * mean_direct / mean_cut
+                row_sum = cut_linear.sum(axis=1)
+                offset_total = float(row_sum.sum()) / (2.0 * (n - 1))
+                offsets = (row_sum - offset_total) / (n - 2)
+
+                for i in range(n):
+                    for j in range(i + 1, n):
+                        key = ((i, j), (j, i))
+                        quadratic[key] = quadratic.get(key, 0.0) + float(
+                            cut_gain * cut_pair[i, j]
+                        )
+                        correction = cut_gain * (
+                            cut_linear[i, j] - offsets[i] - offsets[j]
+                        )
+                        linear[(i, j)] += float(correction)
+                        linear[(j, i)] += float(correction)
+
+    pressure_cv = float(np.std(incident) / max(float(np.mean(incident)), 1e-12))
+>>>>>>> REPLACE
+</DIFF>

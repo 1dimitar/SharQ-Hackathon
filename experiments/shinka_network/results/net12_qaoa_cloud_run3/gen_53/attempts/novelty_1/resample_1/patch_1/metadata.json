@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capacity_pairing",
+  "patch_description": "This approach treats each selected link as a way to serve traffic at both its source and destination, rather than primarily rewarding two-hop paths. Linear weights combine direct demand with source and destination traffic pressure. Sparse pairwise terms then reward reciprocal links when traffic is balanced in both directions, and mildly discourage reciprocal links when they would spend scarce degree capacity on a one-sided connection. For each OD pair, only its best relay is considered; a small path reward is added only when that relay offers a plausible alternative to a direct link. This changes the interaction structure substantially while keeping the number of terms well below the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:53:01.427966",
+  "llm_cost": 0.0014034,
+  "llm_model": "gpt-6-luna"
+}

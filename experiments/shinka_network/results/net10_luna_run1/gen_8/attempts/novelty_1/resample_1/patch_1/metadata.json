@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_congestion",
+  "patch_description": "The current two-hop terms reward every selected two-link path, which can favor topologies that route traffic through the same busy intermediaries. Replace that reward with a modest positive congestion cost: selecting both links of a path incurs more cost when its demand is high and the intermediate node has heavy inbound or outbound traffic. This retains the direct-demand signal while discouraging especially risky transit paths, without exceeding the existing O(n\u00b3) term count.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:10.706804",
+  "llm_cost": 0.0015279,
+  "llm_model": "gpt-6-luna"
+}

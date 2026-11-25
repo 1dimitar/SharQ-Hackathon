@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "single_ambiguous_route",
+  "patch_description": "Keep the existing two-or-four route quota, but add at most one route when the affinity-to-pressure rank just beyond that quota is close to the last selected route. The current logic can instead shrink the quota based on the top two candidates or add as many as two alternatives, increasing coupling density and potentially hurting feasibility. Using `base_keep` for the rank bonus preserves the weights of the original selected routes when an extra candidate is added, while giving the added route a smaller bonus.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:24:02.289706",
+  "llm_cost": 0.0025789,
+  "llm_model": "gpt-6-luna"
+}

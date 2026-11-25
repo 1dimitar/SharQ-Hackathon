@@ -1,0 +1,716 @@
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+
+
+def improve(demand, candidates, tools, rng):
+    """Repair QAOA samples, then search with a diverse archive and uncertainty-aware screening."""
+    n = int(tools.n)
+    link_count = 2 * n
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    parent_stalls = {}
+    parent_visits = {}
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a).symmetric_difference(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    # Compact network descriptors for the online LP predictor. The random
+    # projections are generated once per run and are used only for ranking.
+    all_arcs = [(i, j) for i in range(n) for j in range(n) if i != j]
+    arc_index = {a: k for k, a in enumerate(all_arcs)}
+    m = len(all_arcs)
+    p1_dim = 40
+    p2_dim = 20
+    proj1 = rng.normal(size=(m, p1_dim)) / np.sqrt(float(p1_dim))
+    proj2 = rng.normal(size=(m, p2_dim)) / np.sqrt(float(p2_dim))
+
+    dem = np.asarray(demand, dtype=float)
+    positive = dem[dem > 0]
+    demand_scale = float(np.mean(positive)) if positive.size else 1.0
+    demand_scale = max(demand_scale, 1e-9)
+    demand_norm = np.maximum(dem / demand_scale, 0.0)
+    demand_cap = max(1.0, float(np.max(demand_norm)) if demand_norm.size else 1.0)
+
+    def feature(net):
+        incidence = np.zeros(m, dtype=float)
+        weighted = np.zeros(m, dtype=float)
+        out_dem = np.zeros(n, dtype=float)
+        in_dem = np.zeros(n, dtype=float)
+        selected_demands = []
+
+        for a, b in net:
+            k = arc_index[(a, b)]
+            incidence[k] = 1.0
+            val = min(6.0, float(demand_norm[a, b]))
+            weighted[k] = val
+            out_dem[a] += val
+            in_dem[b] += val
+            selected_demands.append(val)
+
+        projected_edges = incidence @ proj1
+        projected_demand = weighted @ proj2
+        node_scale = max(1.0, np.log1p(2.0 * demand_cap))
+        node_features = np.concatenate(
+            (np.log1p(out_dem) / node_scale, np.log1p(in_dem) / node_scale)
+        )
+
+        if selected_demands:
+            vals = np.asarray(selected_demands, dtype=float)
+            demand_stats = np.array(
+                [
+                    float(np.mean(vals)) / 6.0,
+                    float(np.max(vals)) / 6.0,
+                    float(np.std(vals)) / 6.0,
+                    float(np.mean(vals > 1.0)),
+                ],
+                dtype=float,
+            )
+        else:
+            demand_stats = np.zeros(4, dtype=float)
+
+        return np.concatenate(
+            (
+                np.array([1.0]),
+                projected_edges,
+                projected_demand,
+                node_features,
+                demand_stats,
+            )
+        )
+
+    # The predictor stores only evaluated samples; candidate feature arrays
+    # are temporary, keeping memory bounded during long runs.
+    train_x = []
+    train_y = []
+    model_beta = None
+    model_cov = None
+    model_resid = 0.006
+    model_scale = None
+    since_fit = 0
+    feature_dim = 1 + p1_dim + p2_dim + 2 * n + 4
+    ridge = 1.25
+    ridge_diag = np.full(feature_dim, ridge, dtype=float)
+    ridge_diag[0] = 1e-4
+
+    def fit_model(force=False):
+        nonlocal model_beta, model_cov, model_resid, model_scale, since_fit
+        min_samples = max(30, feature_dim // 2)
+        if len(train_x) < min_samples:
+            return
+        if not force and since_fit < 32:
+            return
+        try:
+            xmat = np.vstack(train_x)
+            yvec = np.asarray(train_y, dtype=float)
+            gram = xmat.T @ xmat
+            gram.flat[:: feature_dim + 1] += ridge_diag
+            rhs = xmat.T @ yvec
+            beta = np.linalg.solve(gram, rhs)
+            cov = np.linalg.inv(gram)
+            residual = yvec - xmat @ beta
+            dof = max(1, len(yvec) - min(feature_dim, len(yvec) // 2))
+            sigma = float(np.sqrt(np.dot(residual, residual) / dof))
+            model_beta = beta
+            model_cov = cov
+            model_resid = max(0.0025, min(0.04, sigma))
+            model_scale = float(np.median(yvec))
+            since_fit = 0
+        except Exception:
+            # Keep the previous fit if numerical conditioning is poor.
+            since_fit = 0
+
+    def evaluate(net):
+        nonlocal best_net, best_score, model_scale, since_fit
+        net = canon(net)
+        if net not in seen:
+            score = float(tools.lp(net))
+            seen[net] = score
+            x = feature(net)
+            if model_scale is None:
+                model_scale = max(1.0, abs(score))
+            train_x.append(x)
+            train_y.append(score / model_scale)
+            since_fit += 1
+            fit_model()
+        score = seen[net]
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def repaired_samples():
+        result = set()
+        for cand in candidates:
+            try:
+                net = canon(tools.repair(cand))
+                if tools.is_valid(net):
+                    result.add(net)
+            except Exception:
+                continue
+
+        if not result:
+            try:
+                net = canon(tools.repair([]))
+                if tools.is_valid(net):
+                    result.add(net)
+            except Exception:
+                pass
+        return result
+
+    def choose_starts(repaired, limit):
+        ordered = sorted(repaired, key=energy)
+        chosen = []
+        # First preserve regions of the topology space, then fill from the
+        # energy ranking when the pool is too small or clustered.
+        for net in ordered:
+            if all(distance(net, old) >= 4 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= limit:
+                break
+        for net in ordered:
+            if len(chosen) >= limit:
+                break
+            if net not in chosen:
+                chosen.append(net)
+        return chosen
+
+    repaired = repaired_samples()
+    if not repaired:
+        return []
+
+    initial_limit = min(26, len(repaired))
+    initial = choose_starts(repaired, initial_limit)
+    for net in initial:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            continue
+
+    if best_net is None:
+        return list(initial[0])
+
+    def make_archive():
+        ranked = sorted(seen, key=seen.get)
+        out = []
+
+        # Keep a small, unconditionally strong elite followed by distant
+        # representatives so that archive choice does not become purely
+        # score- or energy-driven.
+        elite_count = min(7, len(ranked))
+        out.extend(ranked[:elite_count])
+
+        for net in ranked[elite_count:]:
+            if all(distance(net, old) >= 4 for old in out):
+                out.append(net)
+            if len(out) >= 28:
+                break
+
+        for net in ranked:
+            if len(out) >= 36:
+                break
+            if net not in out:
+                out.append(net)
+        return out
+
+    archive = make_archive()
+
+    def select_parent(pop):
+        if not pop:
+            return best_net
+
+        # One component exploits the best few; the other samples the broader
+        # archive while discouraging repeatedly visited parents.
+        if rng.random() < 0.43:
+            top = pop[: min(6, len(pop))]
+            weights = np.array(
+                [1.0 / (1.0 + parent_visits.get(x, 0)) for x in top],
+                dtype=float,
+            )
+            weights /= np.sum(weights)
+            return top[int(rng.choice(len(top), p=weights))]
+
+        pool = pop[:]
+        weights = []
+        for net in pool:
+            rank = pop.index(net)
+            quality = 1.0 / (1.0 + 0.035 * rank)
+            novelty = 1.0 / (1.0 + 0.18 * parent_visits.get(net, 0))
+            weights.append(quality * novelty)
+        weights = np.asarray(weights, dtype=float)
+        weights /= np.sum(weights)
+        return pool[int(rng.choice(len(pool), p=weights))]
+
+    def switch(net, p, q):
+        arcs = list(net)
+        (a, b), (c, d) = arcs[p], arcs[q]
+        if a == d or c == b:
+            return None
+        cur = set(net)
+        if (a, d) in cur or (c, b) in cur:
+            return None
+        cur.remove((a, b))
+        cur.remove((c, d))
+        cur.add((a, d))
+        cur.add((c, b))
+        return tuple(sorted(cur))
+
+    def add_rotation_moves(net, hot, moves, trials):
+        arcs = list(net)
+        current = set(net)
+        if len(arcs) < 3:
+            return
+
+        for _ in range(trials):
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+            old = {(a, b), (c, d), (e, f)}
+            if hot and not (old & hot) and rng.random() < 0.70:
+                continue
+
+            for new in (
+                {(a, d), (c, f), (e, b)},
+                {(a, f), (c, b), (e, d)},
+            ):
+                if len(new) != 3 or any(x == y for x, y in new):
+                    continue
+                if new & (current - old):
+                    continue
+                moves.add(tuple(sorted((current - old) | new)))
+
+    def add_kick_moves(net, moves, count, strength):
+        for _ in range(count):
+            cur = set(net)
+            for _ in range(strength):
+                arcs = list(cur)
+                if len(arcs) < 2:
+                    break
+                p, q = rng.choice(len(arcs), size=2, replace=False)
+                (a, b), (c, d) = arcs[int(p)], arcs[int(q)]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add((a, d))
+                cur.add((c, b))
+            if cur != set(net):
+                moves.add(tuple(sorted(cur)))
+
+    def add_path_relink_moves(parent, guide, moves):
+        """Take a few valid switch steps that introduce guide arcs."""
+        cur = set(parent)
+        guide_set = set(guide)
+        steps = max(1, min(3, n // 6))
+
+        for _ in range(steps):
+            missing = list(guide_set - cur)
+            if not missing:
+                break
+            rng.shuffle(missing)
+            changed = False
+
+            for a, d in missing:
+                old_out = next((edge for edge in cur if edge[0] == a), None)
+                old_in = next((edge for edge in cur if edge[1] == d), None)
+                if old_out is None or old_in is None or old_out == old_in:
+                    continue
+
+                _, b = old_out
+                c, _ = old_in
+                if c == a or a == d or c == b:
+                    continue
+                if (c, b) in cur:
+                    continue
+
+                cur.remove(old_out)
+                cur.remove(old_in)
+                cur.add((a, d))
+                cur.add((c, b))
+                moves.add(tuple(sorted(cur)))
+                changed = True
+                break
+
+            if not changed:
+                break
+
+    def generate_moves(parent, detail, stall, pop):
+        arcs = list(parent)
+        moves = set()
+
+        prices = detail.get("prices", {}) if detail else {}
+        hot = {
+            tuple(map(int, arc))
+            for arc, price in prices.items()
+            if float(price) > 0.0
+        }
+        if not hot and detail:
+            loads = detail.get("loads", {})
+            top = sorted(
+                (
+                    (float(load), tuple(map(int, arc)))
+                    for arc, load in loads.items()
+                ),
+                reverse=True,
+            )
+            hot = {arc for _, arc in top[: max(4, n // 2)]}
+
+        # Thoroughly sample 2-switches touching dual-priced or heavily loaded
+        # links. At larger n, these remain only a fraction of all pairs.
+        for p in range(len(arcs)):
+            for q in range(p + 1, len(arcs)):
+                if hot and arcs[p] not in hot and arcs[q] not in hot:
+                    continue
+                cand = switch(parent, p, q)
+                if cand is not None:
+                    moves.add(cand)
+
+        # A modest size-scaled random sample covers non-bottleneck changes.
+        random_pairs = max(55, 4 * n)
+        for _ in range(random_pairs):
+            if len(arcs) < 2:
+                break
+            p = int(rng.integers(len(arcs)))
+            q = int(rng.integers(len(arcs) - 1))
+            if q >= p:
+                q += 1
+            cand = switch(parent, p, q)
+            if cand is not None:
+                moves.add(cand)
+
+        rotation_trials = min(240, 55 + 14 * (stall // 2))
+        add_rotation_moves(parent, hot, moves, rotation_trials)
+
+        kick_count = min(16, 6 + stall // 2)
+        kick_strength = max(2, min(7, 2 + stall // 3))
+        add_kick_moves(parent, moves, kick_count, kick_strength)
+
+        # Path relinking is a small but recurring part of the move portfolio.
+        if len(pop) > 1:
+            guides = [x for x in pop if x != parent]
+            for _ in range(min(3, len(guides))):
+                guide = guides[int(rng.integers(len(guides)))]
+                if distance(parent, guide) >= 4:
+                    add_path_relink_moves(parent, guide, moves)
+
+        return [m for m in moves if m != parent and tools.is_valid(m)], hot
+
+    def score_moves(moves, parent, detail, hot, pop, batch_size):
+        fresh = [
+            net for net in moves
+            if net not in seen and not tools.is_cached(net)
+        ]
+        if not fresh:
+            return []
+
+        parent_set = set(parent)
+        loads = {}
+        prices = {}
+        if detail:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+
+        max_load = max(loads.values(), default=1.0) or 1.0
+        max_price = max(prices.values(), default=1.0) or 1.0
+        max_demand = max(1.0, float(np.max(dem)) if dem.size else 1.0)
+
+        # Per-move local pressure score: removing loaded/dual-priced links is
+        # promising, with a modest penalty for direct demand on added links.
+        pressure = []
+        for net in fresh:
+            new_set = set(net)
+            removed = parent_set - new_set
+            added = new_set - parent_set
+            value = 0.0
+            for a in removed:
+                value += (
+                    0.62 * loads.get(a, 0.0) / max_load
+                    + 0.38 * prices.get(a, 0.0) / max_price
+                )
+            for a in added:
+                value -= 0.30 * float(dem[a[0], a[1]]) / max_demand
+            pressure.append(value)
+
+        energies = np.asarray([energy(net) for net in fresh], dtype=float)
+        energy_order = np.argsort(energies)
+
+        # Predict score and uncertainty from the online ridge model. Candidates
+        # with low lower-confidence predictions exploit; high leverage explores.
+        pred_order = None
+        uncertainty_order = None
+        predictions = None
+        uncertainties = None
+        if model_beta is not None and model_cov is not None:
+            xmat = np.vstack([feature(net) for net in fresh])
+            predictions = xmat @ model_beta
+            leverage = np.einsum("ij,jk,ik->i", xmat, model_cov, xmat)
+            uncertainties = model_resid * np.sqrt(1.0 + np.maximum(leverage, 0.0))
+            lower_confidence = predictions - 0.75 * uncertainties
+            pred_order = np.argsort(lower_confidence)
+            uncertainty_order = np.argsort(-uncertainties)
+
+        pressure_order = np.argsort(-np.asarray(pressure, dtype=float))
+        selected = []
+        selected_set = set()
+
+        def add_from_order(order, quota):
+            added = 0
+            for idx in order:
+                net = fresh[int(idx)]
+                if net in selected_set:
+                    continue
+                # Encourage batch diversity, but relax the constraint when
+                # focused neighborhoods provide few sufficiently distinct moves.
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    selected_set.add(net)
+                    added += 1
+                if added >= quota:
+                    break
+
+        if pred_order is None:
+            add_from_order(energy_order, min(3, batch_size))
+            add_from_order(pressure_order, min(2, batch_size - len(selected)))
+        else:
+            add_from_order(energy_order, min(2, batch_size))
+            add_from_order(pressure_order, min(2, batch_size - len(selected)))
+            add_from_order(pred_order, min(2, batch_size - len(selected)))
+            if len(selected) < batch_size:
+                add_from_order(uncertainty_order, 1)
+
+        # Reserve capacity for candidates far from the scored archive. This is
+        # distinct from statistical uncertainty and helps explore other regions.
+        if len(selected) < batch_size:
+            novelty = []
+            for i, net in enumerate(fresh):
+                if net in selected_set:
+                    continue
+                near = min((distance(net, old) for old in pop), default=link_count)
+                novelty.append((near, i))
+            novelty.sort(reverse=True)
+            add_from_order([i for _, i in novelty], 1)
+
+        # Fill remaining slots by a rank-fusion order, avoiding over-reliance
+        # on one surrogate or proxy.
+        if len(selected) < batch_size:
+            e_rank = np.empty(len(fresh), dtype=int)
+            p_rank = np.empty(len(fresh), dtype=int)
+            e_rank[energy_order] = np.arange(len(fresh))
+            p_rank[pressure_order] = np.arange(len(fresh))
+            if pred_order is not None:
+                m_rank = np.empty(len(fresh), dtype=int)
+                u_rank = np.empty(len(fresh), dtype=int)
+                m_rank[pred_order] = np.arange(len(fresh))
+                u_rank[uncertainty_order] = np.arange(len(fresh))
+                fused = (
+                    0.28 * e_rank
+                    + 0.22 * p_rank
+                    + 0.34 * m_rank
+                    - 0.12 * u_rank
+                )
+            else:
+                fused = 0.58 * e_rank + 0.42 * p_rank
+            add_from_order(np.argsort(fused), batch_size - len(selected))
+
+        # Last-resort fill with random fresh candidates.
+        if len(selected) < batch_size:
+            tail = [net for net in fresh if net not in selected_set]
+            rng.shuffle(tail)
+            selected.extend(tail[: batch_size - len(selected)])
+
+        return selected[:batch_size]
+
+    def pressure_detail(parent):
+        try:
+            return tools.lp_detail(parent)
+        except Exception:
+            return None
+
+    batch_size = max(7, min(9, 11 - n // 5))
+    batches = 0
+    idle_rounds = 0
+
+    while tools.lp_calls_left > 0:
+        if batches % 4 == 0:
+            archive = make_archive()
+
+        parent = select_parent(archive)
+        if parent is None:
+            break
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+
+        detail = pressure_detail(parent)
+        stall = parent_stalls.get(parent, 0)
+        moves, hot = generate_moves(parent, detail, stall, archive)
+        batch = score_moves(moves, parent, detail, hot, archive, batch_size)
+
+        if not batch:
+            alternatives = [x for x in archive if x != parent]
+            if alternatives:
+                parent = alternatives[int(rng.integers(len(alternatives)))]
+                parent_visits[parent] = parent_visits.get(parent, 0) + 1
+                detail = pressure_detail(parent)
+                stall = parent_stalls.get(parent, 0)
+                moves, hot = generate_moves(parent, detail, stall, archive)
+                batch = score_moves(
+                    moves, parent, detail, hot, archive, batch_size
+                )
+
+        if not batch:
+            # Explore a stronger random kick when the local neighborhood has
+            # already been exhausted by earlier LP calls.
+            fallback = set()
+            add_kick_moves(parent, fallback, 24, max(3, min(8, n // 2)))
+            batch = [
+                net
+                for net in fallback
+                if net != parent
+                and net not in seen
+                and not tools.is_cached(net)
+                and tools.is_valid(net)
+            ][:1]
+
+        if not batch:
+            idle_rounds += 1
+            if idle_rounds > 1000:
+                break
+            continue
+
+        idle_rounds = 0
+        parent_score = seen.get(parent, float("inf"))
+        batch_best = float("inf")
+        old_best = best_score
+
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                batch_best = min(batch_best, evaluate(net))
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        if batch_best < parent_score:
+            parent_stalls[parent] = 0
+        else:
+            parent_stalls[parent] = parent_stalls.get(parent, 0) + 1
+
+        if best_score < old_best:
+            parent_stalls[parent] = 0
+
+        batches += 1
+
+    return list(best_net) if best_net is not None else []
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}",
+            Path(pool_path).resolve().parent / pool["hamiltonian_file"],
+        )
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(
+        demand,
+        lp_budget,
+        (
+            {tuple(map(int, a)): float(w) for a, w in linear.items()},
+            {
+                (tuple(map(int, a)), tuple(map(int, b))): float(w)
+                for (a, b), w in quadratic.items()
+            },
+        ),
+    )
+    candidates = [
+        [tuple(map(int, a)) for a in c["arcs"]]
+        for c in pool["candidates"]
+    ]
+    if control:
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(
+            demand.copy(), candidates, tools, np.random.default_rng(seed)
+        )
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                score = qt.route_min_congestion(demand, ret).objective
+                if score < best_score:
+                    best_score, best_arcs = score, tuple(sorted(ret))
+        except Exception:
+            pass
+
+    return {
+        "pool": pool_path,
+        "control": control,
+        "n": n,
+        "error": error,
+        "best": float(best_score),
+        "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used,
+        "seconds": time.perf_counter() - start,
+        "timed_out": timed_out,
+    }

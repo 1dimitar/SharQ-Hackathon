@@ -1,0 +1,14 @@
+{
+  "generation": 125,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive-bottleneck-search",
+  "patch_description": "The current approach can spend many LP calls on batches of nine moves selected mainly by surrogate energy. This version scores smaller batches of four, balancing surrogate ranking with moves that remove bottleneck links and with topology diversity. It seeds from fewer repaired candidates, then spends more of the budget refining the strongest regions. Parent selection adapts to quality, novelty, visit count, and recent stalls; bottleneck-focused swaps are supplemented by sampled three-link rotations and random kicks to help escape local optima.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:27:39.960270",
+  "llm_cost": 0.0040809999999999996,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,76 @@
+<NAME>
+archive_consensus_guidance
+</NAME>
+
+<DESCRIPTION>
+Use recurring edges from the best, structurally diverse LP-scored archive members as a limited proposal signal. Generate two-switches that introduce one of these consensus edges, then reserve at most one batch slot for the best such move on a minority of search rounds. This gives the search a way to combine promising features across archive regions without letting one archive member’s edges dominate the ordinary bottleneck-, energy-, and exploration-guided search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return out
+
+    def select_parent(pop):
+=======
+        return out
+
+    def consensus_edges():
+        """Find recurring edges among good archive members from distinct regions."""
+        ranked = sorted(seen, key=seen.get)
+        reps = []
+        for net in ranked:
+            if all(distance(net, old) >= 4 for old in reps):
+                reps.append(net)
+            if len(reps) >= 12:
+                break
+        counts = {}
+        for net in reps:
+            for edge in edges(net):
+                counts[edge] = counts.get(edge, 0) + 1
+        threshold = max(2, (len(reps) + 3) // 4)
+        return {edge for edge, count in counts.items() if count >= threshold}
+
+    def select_parent(pop):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Unfocused switches ensure exploration when the dual signal is incomplete.
+        for _ in range(55):
+=======
+        # Add switches that introduce recurring edges from diverse strong archive members.
+        guide = consensus_edges()
+        if guide:
+            for p in range(len(arcs)):
+                for q in range(p + 1, len(arcs)):
+                    cand = switch(net, p, q)
+                    if cand is not None and ((set(cand) - current) & guide):
+                        moves.add(cand)
+
+        # Unfocused switches ensure exploration when the dual signal is incomplete.
+        for _ in range(55):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        stalls = parent_stalls.get(parent, 0)
+        # Keep the best surrogate choices diverse, then add a less-correlated trial.
+        for _, net in records:
+=======
+        selected = []
+        stalls = parent_stalls.get(parent, 0)
+        # Occasionally reserve one LP trial for an archive-consensus edge proposal.
+        guide = consensus_edges()
+        if guide and rng.random() < 0.30:
+            parent_edges = edges(parent)
+            guided = [
+                (value, net) for value, net in records
+                if (edges(net) - parent_edges) & guide
+            ]
+            if guided:
+                selected.append(guided[0][1])
+
+        # Keep the best surrogate choices diverse, then add a less-correlated trial.
+        for _, net in records:
+>>>>>>> REPLACE
+
+</DIFF>

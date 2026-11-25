@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_selection",
+  "patch_description": "The current parent selector samples uniformly from the archive almost half the time, so it can repeatedly spend LP calls exploring the same regions while neglecting promising, under-visited networks. Track parent selection counts and weight selection by a blend of LP rank, low visit count, and structural isolation from other archive members. This retains preference for strong networks while directing more search toward underexplored regions; the existing stall counter provides an additional bonus to parents whose neighborhoods have not recently improved.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:23:29.582982",
+  "llm_cost": 0.0027140000000000003,
+  "llm_model": "gpt-6-luna"
+}

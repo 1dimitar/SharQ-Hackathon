@@ -1,0 +1,206 @@
+<NAME>
+route_load_pairs
+</NAME>
+
+<DESCRIPTION>
+This design replaces selected two-hop route rewards and reciprocal-link penalties with a sparse load-balancing proxy. It estimates edge loads by softly assigning traffic among direct, two-hop, and three-hop paths, with longer paths and busy transit nodes discounted. It then uses those estimates for modest linear load costs and positive quadratic costs between the most consequential pairs of links sharing an origin or destination. Those pair terms approximate local congestion while keeping the coupling graph compact; direct-demand rewards remain to preserve the value of serving traffic directly.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build a sparse route-load and local congestion surrogate."""
+    traffic = np.asarray(demand, dtype=float)
+    if traffic.ndim != 2 or traffic.shape[0] != traffic.shape[1]:
+        raise ValueError("demand must be a square matrix")
+
+    traffic = np.maximum(
+        np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0), 0.0
+    ).copy()
+    n = int(traffic.shape[0])
+    np.fill_diagonal(traffic, 0.0)
+
+    penalty_weight = float(min(1.50, 1.27 + 0.010 * max(0, n - 10)))
+    scale = float(traffic.max()) if traffic.size else 0.0
+    if scale <= 0.0:
+        linear = {
+            (i, j): 0.0
+            for i in range(n)
+            for j in range(n)
+            if i != j
+        }
+        return linear, {}, penalty_weight
+
+    z = traffic / scale
+    off_diagonal = ~np.eye(n, dtype=bool)
+
+    # Smooth edge attractiveness allows zero-demand links to serve as transit.
+    edge_potential = 0.08 + z
+    log_edge = np.log(edge_potential)
+
+    # A static, demand-derived transit cost avoids routing all traffic through
+    # nodes with high incident demand.
+    row_load = z.sum(axis=1)
+    col_load = z.sum(axis=0)
+    incident = np.maximum(row_load, col_load)
+    incident_mean = max(float(incident.mean()), 1e-12)
+    transit_cost = np.log1p(incident / incident_mean)
+
+    # route_load is an expected edge-use proxy, not a topology-dependent LP.
+    # For each OD pair, route mass is split among three path-length classes.
+    route_load = np.zeros((n, n), dtype=float)
+    temperature = 0.62
+    priors = np.asarray([0.54, 0.34, 0.12], dtype=float)
+    log_priors = np.log(priors)
+
+    for i in range(n):
+        for k in range(n):
+            amount = float(z[i, k])
+            if i == k or amount <= 0.0:
+                continue
+
+            # Direct option.
+            direct_score = float(log_edge[i, k])
+
+            # All valid two-hop paths.
+            mids = [j for j in range(n) if j != i and j != k]
+            two_scores = np.empty(len(mids), dtype=float)
+            for p, j in enumerate(mids):
+                two_scores[p] = (
+                    0.5 * (log_edge[i, j] + log_edge[j, k])
+                    - 0.24 * transit_cost[j]
+                    - 0.34
+                )
+
+            # All valid three-hop paths. The modest explicit hop cost and
+            # transit penalties keep long detours from dominating by count.
+            triples = []
+            three_scores_list = []
+            for j in mids:
+                for h in mids:
+                    if h == j:
+                        continue
+                    triples.append((j, h))
+                    three_scores_list.append(
+                        (log_edge[i, j] + log_edge[j, h] + log_edge[h, k]) / 3.0
+                        - 0.20 * (transit_cost[j] + transit_cost[h])
+                        - 0.72
+                    )
+            three_scores = np.asarray(three_scores_list, dtype=float)
+
+            # Normalize within each length class before comparing classes.
+            # This prevents the many longer paths from winning just because
+            # there are more of them.
+            class_log_quality = [direct_score / temperature]
+
+            def _logmeanexp(values):
+                if len(values) == 0:
+                    return -1e30
+                scaled = values / temperature
+                peak = float(np.max(scaled))
+                return peak + float(np.log(np.exp(scaled - peak).mean()))
+
+            class_log_quality.append(_logmeanexp(two_scores))
+            class_log_quality.append(_logmeanexp(three_scores))
+
+            class_logits = np.asarray(class_log_quality) + log_priors
+            peak = float(class_logits.max())
+            class_prob = np.exp(class_logits - peak)
+            class_prob /= max(float(class_prob.sum()), 1e-15)
+
+            route_load[i, k] += amount * class_prob[0]
+
+            # Conditional path probabilities within each class.
+            if len(mids):
+                scaled = two_scores / temperature
+                scaled -= float(scaled.max())
+                probs = np.exp(scaled)
+                probs /= max(float(probs.sum()), 1e-15)
+                for prob, j in zip(probs, mids):
+                    flow = amount * class_prob[1] * float(prob)
+                    route_load[i, j] += flow
+                    route_load[j, k] += flow
+
+            if len(triples):
+                scaled = three_scores / temperature
+                scaled -= float(scaled.max())
+                probs = np.exp(scaled)
+                probs /= max(float(probs.sum()), 1e-15)
+                for prob, (j, h) in zip(probs, triples):
+                    flow = amount * class_prob[2] * float(prob)
+                    route_load[i, j] += flow
+                    route_load[j, h] += flow
+                    route_load[h, k] += flow
+
+    # Direct service is valuable, but links predicted to carry much traffic
+    # also receive a small unary load cost.
+    load_scale = max(float(route_load[off_diagonal].max()), 1e-12)
+    normalized_load = route_load / load_scale
+    direct_score = 0.68 * z + 0.32 * np.sqrt(z)
+    costs = -direct_score + 0.10 * normalized_load
+
+    linear = {
+        (i, j): float(costs[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # Approximate local congestion by charging for pairs of busy selected
+    # edges that share an outgoing or incoming capacity at a node. Keep only
+    # the strongest products at each node to limit coupling density.
+    quadratic = {}
+    pair_budget = max(2, n // 3)
+    pair_strength = 0.30
+
+    def add_local_pairs(edges):
+        candidates = []
+        m = len(edges)
+        for a in range(m):
+            e1 = edges[a]
+            l1 = float(normalized_load[e1])
+            for b in range(a + 1, m):
+                e2 = edges[b]
+                product = l1 * float(normalized_load[e2])
+                if product > 1e-12:
+                    candidates.append((product, e1, e2))
+
+        if not candidates:
+            return
+        candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
+        for product, e1, e2 in candidates[:pair_budget]:
+            first, second = (e1, e2) if e1 < e2 else (e2, e1)
+            quadratic[(first, second)] = float(pair_strength * product)
+
+    for node in range(n):
+        add_local_pairs([(node, j) for j in range(n) if j != node])
+        add_local_pairs([(i, node) for i in range(n) if i != node])
+
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

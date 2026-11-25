@@ -1,0 +1,164 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build congestion-priced, per-demand-budgeted route terms."""
+    traffic = np.asarray(demand, dtype=float)
+    traffic = np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0)
+    traffic = np.maximum(traffic, 0.0).copy()
+    n = len(traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = traffic / scale
+
+    support = 0.72 * z + 0.28 * np.sqrt(z)
+    edge_log = np.log(0.14 + z)
+
+    incident = np.maximum(z.sum(axis=0), z.sum(axis=1))
+    incident_max = float(np.max(incident)) if incident.size else 0.0
+    if incident_max > 0.0:
+        base_node_pressure = incident / incident_max
+    else:
+        base_node_pressure = np.zeros(n, dtype=float)
+
+    # Cache viable two-hop alternatives and their uncongested scores.
+    # A route score combines the attractiveness of its two links with a
+    # modest hop and transit-node cost.
+    routes = []
+    nodes = np.arange(n)
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            intermediates = nodes[(nodes != i) & (nodes != k)]
+            path_base = (
+                0.42 * (edge_log[i, intermediates] + edge_log[intermediates, k])
+                - 0.34
+                - 0.14 * base_node_pressure[intermediates]
+            )
+            direct_base = 0.80 * edge_log[i, k]
+            routes.append((i, k, intermediates, path_base, direct_base))
+
+    linear = {
+        (i, j): 0.0
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    total_traffic = float(z.sum())
+    if total_traffic > 0.0 and routes:
+        edge_reference = total_traffic / max(1, n * n)
+        node_reference = total_traffic / max(1, n)
+
+        edge_price = np.zeros((n, n), dtype=float)
+        transit_price = np.zeros(n, dtype=float)
+
+        # Softly assign all OD traffic, then update link and transit prices.
+        # The prices discourage repeatedly routing through the same resources.
+        for iteration in range(4):
+            edge_load = np.zeros((n, n), dtype=float)
+            transit_load = np.zeros(n, dtype=float)
+
+            for i, k, intermediates, path_base, direct_base in routes:
+                direct_score = direct_base - edge_price[i, k]
+                path_scores = (
+                    path_base
+                    - edge_price[i, intermediates]
+                    - edge_price[intermediates, k]
+                    - transit_price[intermediates]
+                )
+                scores = np.concatenate(([direct_score], path_scores))
+                scores = (scores - float(np.max(scores))) / 0.62
+                probs = np.exp(np.clip(scores, -35.0, 0.0))
+                probs /= max(1e-15, float(probs.sum()))
+
+                amount = float(z[i, k])
+                edge_load[i, k] += amount * probs[0]
+                for q, j in enumerate(intermediates, start=1):
+                    flow = amount * probs[q]
+                    edge_load[i, j] += flow
+                    edge_load[j, k] += flow
+                    transit_load[j] += flow
+
+            if iteration < 3:
+                edge_price = 0.22 * np.log1p(edge_load / max(edge_reference, 1e-15))
+                transit_price = 0.16 * np.log1p(
+                    transit_load / max(node_reference, 1e-15)
+                )
+
+        # Project each OD's final priced portfolio onto its direct route and
+        # at most two two-hop routes. Re-normalizing over this sparse portfolio
+        # keeps alternatives from each receiving a full independent reward.
+        for i, k, intermediates, path_base, direct_base in routes:
+            path_scores = (
+                path_base
+                - edge_price[i, intermediates]
+                - edge_price[intermediates, k]
+                - transit_price[intermediates]
+            )
+            order = sorted(
+                range(len(intermediates)),
+                key=lambda q: (-float(path_scores[q]), int(intermediates[q])),
+            )
+            chosen = order[:min(2, len(order))]
+
+            scores = [float(direct_base - edge_price[i, k])]
+            scores.extend(float(path_scores[q]) for q in chosen)
+            scores = np.asarray(scores, dtype=float)
+            scores = (scores - float(np.max(scores))) / 0.62
+            probs = np.exp(np.clip(scores, -35.0, 0.0))
+            probs /= max(1e-15, float(probs.sum()))
+
+            amount_support = float(support[i, k])
+            linear[(i, k)] -= amount_support * float(probs[0])
+
+            for position, q in enumerate(chosen, start=1):
+                j = int(intermediates[q])
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                weight = -1.55 * amount_support * float(probs[position])
+                quadratic[key] = quadratic.get(key, 0.0) + weight
+
+    # A small structural discouragement for reciprocal links, relaxed when
+    # the corresponding pair has substantial mutual demand.
+    if n > 1:
+        mean_support = float(support.sum()) / (n * (n - 1))
+        reciprocal_scale = 0.25 * mean_support
+        for i in range(n):
+            for j in range(i + 1, n):
+                mutual = min(float(z[i, j]), float(z[j, i]))
+                quadratic[((i, j), (j, i))] = (
+                    reciprocal_scale * (1.0 - 0.70 * mutual)
+                )
+
+    # Degree constraints are supplied by the evaluator.
+    penalty_weight = min(1.40, 1.28 + 0.004 * max(0, n - 10))
+    return linear, quadratic, float(penalty_weight)
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,14 @@
+{
+  "generation": 88,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "recombine_and_anneal",
+  "patch_description": "This approach replaces repeated neighborhood enumeration with a small evolutionary search. It seeds a diverse population from energy-ranked repaired QAOA samples, then generates candidates by recombining two valid networks and applying random degree-preserving switches. A lightweight surrogate screen chooses which offspring deserve LP calls, while a temperature-based acceptance rule lets the population explore beyond strict improvements. A modest random-start quota hedges against QAOA pools that happen to be weak.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:13:47.556587",
+  "llm_cost": 0.0029567000000000005,
+  "llm_model": "gpt-6-luna"
+}

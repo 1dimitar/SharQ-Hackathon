@@ -1,0 +1,14 @@
+{
+  "generation": 127,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_discount",
+  "patch_description": "Increase the edge-load discount in the two-hop route quality estimate from 0.65 to 0.85. This preserves the existing path-scoring structure while more strongly favoring routes whose component links appear less loaded, a targeted test intended to improve guidance on weaker demand instances.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:04.685931",
+  "llm_cost": 0.0008078,
+  "llm_model": "gpt-6-luna"
+}

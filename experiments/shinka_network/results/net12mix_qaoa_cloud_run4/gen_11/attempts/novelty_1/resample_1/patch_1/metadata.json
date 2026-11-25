@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_balanced_indirect_rewards",
+  "patch_description": "Distribute each demand pair\u2019s two-hop reward among its possible relay nodes instead of giving every relay the same full reward. Favor relays with lower combined incoming and outgoing demand, which are plausible candidates for carrying transit traffic. This avoids accumulating a large reward simply because many two-hop paths exist, while retaining the direct-demand linear terms. The modest multiplier increase from 0.20 to 0.30 tests a stronger indirect signal without making it the dominant term.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:28:59.017257",
+  "llm_cost": 0.0010943,
+  "llm_model": "gpt-6-luna"
+}

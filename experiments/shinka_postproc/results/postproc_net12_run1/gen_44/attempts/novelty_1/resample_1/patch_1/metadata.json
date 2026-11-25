@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_guided_diverse_search",
+  "patch_description": "This crossover keeps the current program\u2019s repaired, diverse QAOA seeds and occasional recombination, while adopting the inspiration program\u2019s LP-detail-guided exchange search. It queries bottleneck details only once per parent, uses those signals and demand to shortlist swaps before calling the energy proxy, and limits each LP batch to promising moves plus a few exploratory choices. Bounded archives and lightweight random kicks aim to preserve useful diversity without the current program\u2019s costly repeated full-neighborhood generation and ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:51.875255",
+  "llm_cost": 0.0033234,
+  "llm_model": "gpt-6-luna"
+}

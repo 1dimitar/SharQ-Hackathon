@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_bottleneck_relink",
+  "patch_description": "Combines the current program\u2019s LP-bottleneck-guided proposals, diverse repaired starts, and short path relinking with the inspiration program\u2019s productivity-aware parent selection and stall tracking. Candidate moves are ranked using the pool-specific energy and LP dual prices before spending calls; a small batch preserves both diversity and occasional exploration. Degree-preserving two-switches, rotations, and multi-switch kicks provide complementary neighborhoods while the archive retains strong, structurally distinct networks.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:07:40.154520",
+  "llm_cost": 0.004408400000000001,
+  "llm_model": "gpt-6-luna"
+}

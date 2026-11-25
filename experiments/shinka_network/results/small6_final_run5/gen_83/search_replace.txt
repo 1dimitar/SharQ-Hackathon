@@ -1,0 +1,61 @@
+<NAME>
+weighted_route_debias
+</NAME>
+
+<DESCRIPTION>
+Replace the raw count of route-reward couplings incident to each link with their total reward magnitude. A link appearing in a few high-demand routes can contribute more to predicted load than one appearing in many weak routes; counting both equally can misidentify which links are overfavoured. The resulting demand-based linear correction targets links that accumulate unusually strong route support, while keeping the existing sparse QUBO structure and coupling count unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Debias only links that occur unusually often in route-reward couplings.
+    # This is a demand-based link cost, not an additional degree penalty.
+    route_frequency = np.zeros((n, n), dtype=float)
+    for (first, second), weight in quadratic.items():
+        if weight < 0.0:
+            route_frequency[first[0], first[1]] += 1.0
+            route_frequency[second[0], second[1]] += 1.0
+
+    off_diagonal = ~np.eye(n, dtype=bool)
+    active_frequency = route_frequency[off_diagonal]
+    active_frequency = active_frequency[active_frequency > 0.0]
+    if active_frequency.size:
+        frequency_cutoff = float(np.quantile(active_frequency, 0.80))
+        frequency_max = float(np.max(active_frequency))
+        if frequency_max > frequency_cutoff:
+            for i in range(n):
+                for j in range(n):
+                    count = route_frequency[i, j]
+                    if i != j and count > frequency_cutoff:
+                        excess = (count - frequency_cutoff) / (
+                            frequency_max - frequency_cutoff
+                        )
+                        linear[(i, j)] += float(0.12 * mean_direct * excess)
+=======
+    # Debias links according to the strength, not merely the number, of
+    # two-hop route rewards in which they participate. This approximates
+    # accumulated route load while avoiding extra couplings.
+    route_support = np.zeros((n, n), dtype=float)
+    for (first, second), weight in quadratic.items():
+        if weight < 0.0:
+            contribution = -float(weight)
+            route_support[first[0], first[1]] += contribution
+            route_support[second[0], second[1]] += contribution
+
+    off_diagonal = ~np.eye(n, dtype=bool)
+    active_support = route_support[off_diagonal]
+    active_support = active_support[active_support > 0.0]
+    if active_support.size:
+        support_cutoff = float(np.quantile(active_support, 0.80))
+        support_max = float(np.max(active_support))
+        if support_max > support_cutoff:
+            for i in range(n):
+                for j in range(n):
+                    support = route_support[i, j]
+                    if i != j and support > support_cutoff:
+                        excess = (support - support_cutoff) / (
+                            support_max - support_cutoff
+                        )
+                        linear[(i, j)] += float(0.12 * mean_direct * excess)
+>>>>>>> REPLACE
+</DIFF>

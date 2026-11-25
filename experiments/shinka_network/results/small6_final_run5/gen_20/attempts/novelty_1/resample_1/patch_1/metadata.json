@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_route_margin",
+  "patch_description": "Adapt the number of retained two-hop routes to how clearly the candidate ranks are separated. If the best candidate strongly dominates the runner-up, retain one fewer route; if the boundary between retained and omitted candidates is close, expand the set by up to two routes. This focuses extra couplings on ambiguous choices instead of increasing density uniformly, while preserving the existing high-demand and low-demand allowances as the starting point. The rule is deterministic and keeps the term count within the allowed bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:00:52.539009",
+  "llm_cost": 0.0022769,
+  "llm_model": "gpt-6-luna"
+}

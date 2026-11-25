@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "underexplored_archive_restarts",
+  "patch_description": "Track how often each archived network is selected as a search parent. During stagnation, preferentially restart from a less-visited non-elite archive member instead of repeatedly exploring the incumbent\u2019s basin. This directs the existing bounded move generation and surrogate/diversity batch screen toward underexplored regions, while retaining the current quality-biased parent choice during normal progress.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:12:26.900054",
+  "llm_cost": 0.0023581,
+  "llm_model": "gpt-6-luna"
+}

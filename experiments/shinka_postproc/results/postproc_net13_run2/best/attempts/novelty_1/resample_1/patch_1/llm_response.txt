@@ -1,0 +1,45 @@
+<NAME>
+consensus_switches
+</NAME>
+
+<DESCRIPTION>
+Add a small number of two-switch proposals guided by arc frequencies in the top structurally diverse archive members. Rank switches by their net gain in consensus arcs, then sample from the strongest few rather than always taking the single highest-ranked move. This supplements the existing bottleneck-focused and unrestricted proposals without letting consensus guidance dominate the neighborhood.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+=======
+        # Use a small number of switches guided by arcs shared across strong,
+        # structurally diverse archive members. Sampling among the leaders
+        # avoids collapsing every neighborhood onto the same consensus topology.
+        refs = archive()[:16]
+        if refs:
+            arc_frequency = {}
+            for ref in refs:
+                for arc in ref:
+                    arc_frequency[arc] = arc_frequency.get(arc, 0) + 1
+            guided = []
+            for p in range(len(arcs)):
+                for q in range(p + 1, len(arcs)):
+                    cand = switch(net, p, q)
+                    if cand is None:
+                        continue
+                    added = set(cand) - current
+                    removed = current - set(cand)
+                    gain = sum(arc_frequency.get(a, 0) for a in added)
+                    gain -= sum(arc_frequency.get(a, 0) for a in removed)
+                    if gain > 0:
+                        guided.append((gain, cand))
+            guided.sort(key=lambda item: item[0], reverse=True)
+            shortlist = guided[:min(16, len(guided))]
+            if shortlist:
+                order = rng.permutation(len(shortlist))
+                for idx in order[:min(8, len(shortlist))]:
+                    moves.add(shortlist[int(idx)][1])
+
+        # Add non-focused swaps so that dual degeneracy cannot trap the search.
+        for _ in range(70):
+>>>>>>> REPLACE
+</DIFF>

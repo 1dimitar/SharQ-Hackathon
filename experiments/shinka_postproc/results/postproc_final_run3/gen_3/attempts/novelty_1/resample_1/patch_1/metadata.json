@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ecmp_portfolio_screen",
+  "patch_description": "Add an independent, demand-aware screening signal: shortest-path distances and equal-cost multipath routing estimate both traffic work and link congestion without LP calls. Evaluate this proxy only on a size-dependent shortlist to keep screening inexpensive.\n\nReplace the energy-only batch selection with a portfolio of energy-ranked, routing-ranked, combined-rank, and topologically novel moves. The current tail-exploration branch never executes because the preceding loop already fills the batch; explicitly reserving two slots fixes that issue. Novelty is measured against good archived networks, encouraging exploration beyond small variations of the current elite.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:46:28.153318",
+  "llm_cost": 0.037784000000000005,
+  "llm_model": "gpt-6.1-sol"
+}

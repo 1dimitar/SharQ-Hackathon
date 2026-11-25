@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "hub_balanced_path_cover",
+  "patch_description": "This replaces the direct-link-only score with a demand-weighted two-hop path-cover surrogate. For each origin\u2013destination pair, it distributes a bounded share of credit across possible intermediate nodes, downweighting hubs with high estimated transit pressure. A pairwise coupling rewards selecting both links of a useful path, while smaller linear credits keep individual path links attractive. This should better represent traffic that must travel beyond direct links without letting the many possible two-hop paths overwhelm direct demand. The construction uses at most O(n\u00b3) quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:58:15.313274",
+  "llm_cost": 0.0024573,
+  "llm_model": "gpt-6-luna"
+}

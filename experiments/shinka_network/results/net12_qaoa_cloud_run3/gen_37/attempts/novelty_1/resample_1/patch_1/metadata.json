@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_load_balance",
+  "patch_description": "This approach replaces relay-path couplings with a bottleneck-oriented estimate of each link\u2019s direct and potential transit load. Linear terms favor links useful for carrying traffic, while positive quadratic terms discourage choosing two heavily burdened links with the same source or destination. That keeps interactions focused on endpoint congestion rather than individual two-hop routes, producing a different and more structured QUBO.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:52:31.484119",
+  "llm_cost": 0.0024249000000000002,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_profile_qubo",
+  "patch_description": "Separates demand preparation, sparse path-factor generation, and local neighbor-profile factors into small stages. Path candidates are ranked using leg balance and transit pressure, with a third route retained only when it is close to the selection boundary. Local factors score pairs of outgoing or incoming neighbors by their estimated service profiles, giving the energy a signal about complementary routing capacity as well as direct demand. All factors share one additive accumulator so overlapping terms are handled consistently and the coupling count stays bounded.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:12:15.850119",
+  "llm_cost": 0.0046446000000000005,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_diverse_switch",
+  "patch_description": "This crossover keeps the current program\u2019s repaired, diverse starts, archive, and path relinking, while adopting the inspiration program\u2019s exhaustive 2-switch neighborhood and explicit dual-priority move selection. A small number of 3-edge rotations add longer jumps; batches mix dual-ranked, surrogate-ranked, and diverse moves so the search does not rely on a single heuristic. Archive ordering and pruning are made consistent so parent selection can reliably favor strong networks while retaining alternatives.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:05:41.527434",
+  "llm_cost": 0.0038806000000000005,
+  "llm_model": "gpt-6-luna"
+}

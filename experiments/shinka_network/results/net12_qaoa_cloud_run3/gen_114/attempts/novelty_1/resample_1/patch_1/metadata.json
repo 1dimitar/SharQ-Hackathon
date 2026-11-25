@@ -1,0 +1,14 @@
+{
+  "generation": 114,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_rank_power",
+  "patch_description": "Raise the relay-pressure denominator in candidate ranking to the 1.25 power. This makes the ranking more selective against high-pressure transit nodes, favoring relays with more spare capacity when choosing the limited set of two-hop interactions. The existing reward discount and all other term weights remain unchanged, isolating the effect of pressure-aware selection.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:22:30.840172",
+  "llm_cost": 0.0008575000000000001,
+  "llm_model": "gpt-6-luna"
+}

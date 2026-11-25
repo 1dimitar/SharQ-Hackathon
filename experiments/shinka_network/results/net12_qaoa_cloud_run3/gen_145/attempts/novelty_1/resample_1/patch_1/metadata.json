@@ -1,0 +1,14 @@
+{
+  "generation": 145,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_relay_leg",
+  "patch_description": "The current affinity already includes the weak-leg safeguard, but gives the stronger relay leg only a 0.25 coefficient. Increase that coefficient modestly to 0.35 while leaving candidate selection, path weights, and pressure discounting unchanged. This lets a relay with one particularly useful leg rank somewhat better without broadly increasing relay coverage or removing the safeguard against a nearly unsupported leg.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:29:14.376722",
+  "llm_cost": 0.0009892,
+  "llm_model": "gpt-6-luna"
+}

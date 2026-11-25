@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "demand_distance_screen",
+  "patch_description": "Replace energy-only batch selection with a small, mixed shortlist ranked by both QUBO energy and demand-weighted shortest-path distance. The distance proxy is independent of the pool\u2019s Hamiltonian and costs no LP calls; combining its rank with energy should help reject moves that look good to the surrogate but make traffic routes longer. Keep energy and proxy selections mixed, and preserve some within-batch structural diversity so the new signal does not dominate the search. The proxy is computed only for a bounded shortlist, keeping its overhead adaptive in n.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:03:23.384227",
+  "llm_cost": 0.0029783,
+  "llm_model": "gpt-6-luna"
+}

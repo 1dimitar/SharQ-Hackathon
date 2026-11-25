@@ -1,0 +1,14 @@
+{
+  "generation": 137,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "sparse_pressure_routes",
+  "patch_description": "Use a modest source/target-aware adjustment to the transit-node ranking, while keeping the route set sparse: two intermediates by default and four for demands above the existing 0.68 quantile cutoff. Add one distinct, low-pressure fallback route reward per OD pair when an alternative exists. This gives the surrogate another plausible escape route without broadly rewarding every two-hop fragment; the fallback adds no direct-versus-indirect couplings, limiting term growth.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:54:53.483585",
+  "llm_cost": 0.0033274999999999997,
+  "llm_model": "gpt-6-luna"
+}

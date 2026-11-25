@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_benefit_ranking",
+  "patch_description": "Rank proposed networks partly by the directional dual benefit of changing the current parent: removing links with positive LP prices is favorable, while adding links with positive prices is unfavorable. Use rank aggregation with surrogate energy and chosen-link demand so the dual signal complements, rather than overwhelms, features on different scales. For recombinations, the same calculation uses the links removed from and added to the parent. This prioritizes moves that directly target bottlenecks before spending LP calls.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:39:08.091138",
+  "llm_cost": 0.0014764,
+  "llm_model": "gpt-6-luna"
+}

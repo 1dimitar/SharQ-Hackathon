@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_reward",
+  "patch_description": "Replace the linear direct-demand reward with a square-root transform. The current linear reward can let a few exceptionally large demands dominate link selection, even when choosing links for smaller demands would improve overall load balance. A concave reward gives those smaller demands more influence while still favoring direct links for high-demand OD pairs. This leaves the existing relay and endpoint-conflict couplings unchanged, preserving their useful structure. The transform is bounded in [0, 1], so it remains compatible with the existing term scaling.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:19:21.479273",
+  "llm_cost": 0.0006087,
+  "llm_model": "gpt-6-luna"
+}

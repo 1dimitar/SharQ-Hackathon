@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tempered_two_hop_routing",
+  "patch_description": "Add a modest reward when two selected links form a two-hop route for a demanded origin-destination pair. This gives the QUBO a signal for useful indirect connectivity, which the direct-demand baseline misses, while tempering the naive two-hop reward known to perform poorly. Dividing the reward by the square root of the number of possible intermediates limits the aggregate incentive as the network grows. The construction uses at most n(n\u22121)(n\u22122) quadratic terms and leaves degree penalties to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:15:37.570628",
+  "llm_cost": 0.0017031,
+  "llm_model": "gpt-6-luna"
+}

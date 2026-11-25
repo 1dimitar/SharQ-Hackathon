@@ -1,0 +1,123 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build QUBO cost terms from estimated service and marginal link loads."""
+    traffic = np.asarray(demand, dtype=float)
+    n = traffic.shape[0]
+
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    d = traffic / scale
+
+    # Estimate the relative pressure on using each node as a transit point.
+    incident = np.sum(d, axis=0) + np.sum(d, axis=1)
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 1e-12:
+        mean_incident = 1.0
+    node_pressure = np.maximum(0.5, incident / mean_incident)
+
+    # Directly serving an OD pair is valuable, but a link with high
+    # surrounding demand has less spare capacity for additional traffic.
+    edge_pressure = d + 0.22 * (np.sum(d, axis=1)[:, None] +
+                                 np.sum(d, axis=0)[None, :]) / max(n, 1)
+    edge_discount = 1.0 / np.sqrt(1.0 + edge_pressure)
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                # Concavity keeps moderate demands relevant; the discount
+                # approximates the opportunity cost of loading this link.
+                value = 0.78 * d[i, j] + 0.22 * np.sqrt(d[i, j])
+                linear[(i, j)] = -float(value * edge_discount[i, j])
+
+    # Estimate link loads under a simple direct-plus-two-hop routing model.
+    # Each OD's two-hop contribution is split among feasible intermediate
+    # nodes, favoring less pressured transit nodes and less loaded links.
+    estimated_load = d.copy()
+    quadratic = {}
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+
+            candidates = []
+            total = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                propensity = (
+                    edge_discount[i, j] * edge_discount[j, k]
+                    / node_pressure[j]
+                )
+                candidates.append((j, propensity))
+                total += propensity
+
+            if total <= 0.0:
+                continue
+
+            # Use only two-hop routes when they are plausible alternatives;
+            # direct service remains represented by the linear coefficient.
+            two_hop_fraction = 0.62
+            for j, propensity in candidates:
+                share = two_hop_fraction * propensity / total
+                amount = d[i, k] * share
+                estimated_load[i, j] += amount
+                estimated_load[j, k] += amount
+
+    # Reward a two-edge path for carrying its estimated share of OD traffic,
+    # while charging for the marginal congestion it adds to both links.
+    # There is one term per directed two-hop path, hence O(n^3) terms.
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                p1 = edge_discount[i, j]
+                p2 = edge_discount[j, k]
+                transit = node_pressure[j]
+
+                # This is the path's share before considering whether its
+                # constituent links are already likely to be busy.
+                raw = d[i, k] * p1 * p2 / transit
+                congestion = (
+                    estimated_load[i, j] + estimated_load[j, k]
+                )
+                benefit = 0.40 * raw / (1.0 + 0.65 * congestion)
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -float(benefit)
+
+    # Degree penalties are supplied by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,15 @@
+<NAME>
+relay_pressure_floor_065
+</NAME>
+
+<DESCRIPTION>
+Lower only the relay-pressure floor from 0.75 to 0.65. This isolates the suggested floor adjustment: low-incident nodes receive slightly more preference as two-hop relays, while the direct-link signal, path support, and edge discount remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_pressure = np.maximum(0.75, incident / max_incident)
+=======
+    node_pressure = np.maximum(0.65, incident / max_incident)
+>>>>>>> REPLACE
+</DIFF>

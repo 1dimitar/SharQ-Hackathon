@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "gateway_diversity",
+  "patch_description": "This uses a different surrogate from path-reward models: it rewards direct traffic links, then adds sparse positive couplings between links that share a source or destination when their traffic profiles are redundant. Those couplings favor networks whose two gateways at a node offer complementary service, rather than repeatedly rewarding every possible two-hop path. The interactions are limited to shared-endpoint pairs, keeping the QUBO sparse and encouraging useful local communities.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:13:45.320718",
+  "llm_cost": 0.0026847,
+  "llm_model": "gpt-6-luna"
+}

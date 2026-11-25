@@ -1,0 +1,80 @@
+<NAME>
+cut_load_reciprocity
+</NAME>
+
+<DESCRIPTION>
+Replace the uniform reciprocal-link charge with a demand-weighted two-node cut estimate. Traffic leaving or entering a node pair must cross that pair’s boundary; reciprocal links reduce the available boundary links. A second-order expansion of inverse squared boundary capacity therefore gives a pairwise penalty that emphasizes cuts carrying more traffic. Centering the associated linear terms by endpoint effects preserves their ranking contribution across valid degree-two topologies, while reusing the existing reciprocal couplings keeps the QUBO compact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # A reciprocal pair consumes two links but contributes no new
+    # non-backtracking two-hop reach. Charge a modest structural cost,
+    # discounted when both directions have substantial direct demand.
+    # This adds only n*(n-1)/2 couplings, with no three-hop fragments.
+    expansion_scale = float(np.clip((n / 12.0) ** 0.15, 0.90, 1.11))
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual_support = float(
+                np.sqrt(normalized[i, j] * normalized[j, i])
+            )
+            weight = (
+                0.16 * expansion_scale * (1.0 - 0.75 * mutual_support)
+            )
+            key = ((i, j), (j, i))
+            quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+=======
+    # Approximate two-node cut congestion. Reciprocal links reduce the
+    # boundary-link count, so the same external traffic is carried by fewer
+    # links. The quadratic coefficients are the second-order expansion of
+    # inverse squared boundary capacity around four available links.
+    row_sum = normalized.sum(axis=1)
+    col_sum = normalized.sum(axis=0)
+    incident_scale = max(
+        float(np.max(np.maximum(row_sum, col_sum)), 1e-12)
+    )
+    cut_linear = np.zeros((n, n), dtype=float)
+    cut_strength = 0.80 / 144.0
+    expansion_scale = float(np.clip((n / 12.0) ** 0.15, 0.90, 1.11))
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual_support = float(
+                np.sqrt(normalized[i, j] * normalized[j, i])
+            )
+            external = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - float(normalized[i, j] + normalized[j, i]),
+            )
+            cut_coefficient = (
+                cut_strength * (external / incident_scale) ** 2
+            )
+            cut_linear[i, j] = cut_linear[j, i] = 7.0 * cut_coefficient
+
+            key = ((i, j), (j, i))
+            structural = (
+                0.16 * expansion_scale * (1.0 - 0.75 * mutual_support)
+            )
+            quadratic[key] = quadratic.get(key, 0.0) + float(
+                structural + 13.0 * cut_coefficient
+            )
+
+    # Endpoint potentials sum to a constant over valid topologies because
+    # every node has two incoming and two outgoing links.
+    row_effect = cut_linear.sum(axis=1) / max(n - 1, 1)
+    grand_effect = float(row_effect.mean())
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                linear[(i, j)] += float(
+                    cut_linear[i, j]
+                    - row_effect[i]
+                    - row_effect[j]
+                    + grand_effect
+                )
+>>>>>>> REPLACE
+
+</DIFF>

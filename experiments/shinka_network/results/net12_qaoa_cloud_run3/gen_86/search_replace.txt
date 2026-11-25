@@ -1,0 +1,25 @@
+<NAME>
+adaptive_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Scale the baseline relay budget with network size, while reserving up to two additional candidates for high-demand pairs. This keeps small instances sparse and provides more relay alternatives for important traffic in larger networks.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Two relays per OD pair retain alternatives without creating a dense
+    # interaction graph. A third is reserved for especially important OD.
+    positive = traffic[traffic > 0.0]
+=======
+    # Scale the baseline relay budget with network size, reserving extra
+    # alternatives for especially important OD pairs.
+    relay_count = min(n - 2, max(1, n // 5))
+    positive = traffic[traffic > 0.0]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            keep = 3 if traffic[i, k] >= important_cutoff else 2
+=======
+            keep = min(n - 2, relay_count + 2) if traffic[i, k] >= important_cutoff else relay_count
+>>>>>>> REPLACE
+</DIFF>

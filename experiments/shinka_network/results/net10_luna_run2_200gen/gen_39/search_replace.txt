@@ -1,0 +1,15 @@
+<NAME>
+two_hop_strength_025
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop reward strength from 0.20 to 0.25, leaving the demand gating and both pressure discounts unchanged. This is a focused sweep of the feature identified in the feedback: a modestly stronger reward may help the best sampled topologies by making useful two-hop routes more influential, while changing no other part of the surrogate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.20
+=======
+    path_strength = 0.25
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 180,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "path_strength_050",
+  "patch_description": "Run an isolated sweep of the two-hop path strength, increasing it from 0.46 to 0.50 while leaving the direct-link reward, pressure calculation, and edge discount unchanged. This tests whether a modestly stronger preference for useful two-hop routes improves both the best and typical sampled topologies without confounding the result with other changes.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:01:13.962754",
+  "llm_cost": 0.0008653,
+  "llm_model": "gpt-6-luna"
+}

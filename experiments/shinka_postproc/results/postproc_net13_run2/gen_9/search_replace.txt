@@ -1,0 +1,45 @@
+<NAME>
+elite_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Add a short, degree-preserving path from the current parent toward a high-quality network already scored. Ordinary local moves can improve the parent, but may not connect it to a better region of the search space; the intermediate networks on this path give the LP a chance to find useful stepping stones. Each step uses a two-switch that strictly increases the number of shared links with the target, so the path makes progress and cannot cycle. The path is bounded to keep its generation cost small.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [m for m in moves if m != net and tools.is_valid(m)]
+=======
+        # Add intermediate networks on a short path toward a strong, distinct
+        # archived solution. Each two-switch must increase overlap with the target.
+        targets = [
+            x for x in sorted(seen, key=seen.get)[:12]
+            if x != net and distance(net, x) >= 6
+        ]
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+            target_edges = set(target)
+            path_net = net
+            for _ in range(8):
+                path_arcs = list(path_net)
+                path_set = set(path_net)
+                overlap = len(path_set & target_edges)
+                improving = []
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        cand = switch(path_net, p, q)
+                        if cand is not None:
+                            gain = len(set(cand) & target_edges) - overlap
+                            if gain > 0:
+                                improving.append((gain, cand))
+                if not improving:
+                    break
+                best_gain = max(g for g, _ in improving)
+                choices = [cand for gain, cand in improving if gain == best_gain]
+                path_net = choices[int(rng.integers(len(choices)))]
+                moves.add(path_net)
+
+        return [m for m in moves if m != net and tools.is_valid(m)]
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,22 @@
+<NAME>
+concave_path_reward
+</NAME>
+
+<DESCRIPTION>
+Apply a mild concave transform to normalized through-demand when setting the total two-hop reward. This lets smaller positive OD demands contribute more relative to the largest demands, while retaining demand-local path selection and the existing cap on indirect reward. Direct-link rewards and candidate-path ranking remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            # Keep the total indirect reward for this OD pair bounded relative
+            # to its direct reward; distribute only among the selected paths.
+            total_reward = min(0.30, 0.75 * traffic)
+=======
+            # A mild concave transform gives smaller positive through-demands
+            # somewhat more influence without removing demand selectivity.
+            through_value = 0.80 * traffic + 0.20 * np.sqrt(traffic)
+            # Keep the total indirect reward bounded, then distribute it among
+            # the selected paths according to their transit/support factors.
+            total_reward = min(0.30, 0.75 * through_value)
+>>>>>>> REPLACE
+</DIFF>

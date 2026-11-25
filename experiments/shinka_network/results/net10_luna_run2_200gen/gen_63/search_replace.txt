@@ -1,0 +1,41 @@
+<NAME>
+max_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Replace mean-based transit-node pressure with each node’s larger incoming or outgoing demand, normalized by the largest such value across nodes. This makes the discount respond to the busiest incident direction rather than an average that can hide a heavily loaded node. Keep the existing two-hop reward formula unchanged and use a 0.75 floor: even the busiest node remains a plausible transit point, while less-loaded nodes receive a modestly larger share of indirect-route reward.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_load = d.sum(axis=0) + d.sum(axis=1)
+    mean_load = float(np.mean(node_load))
+    if mean_load <= 0.0:
+        mean_load = 1.0
+
+    quadratic = {}
+    indirect_fraction = 0.60
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            transit_factor = 2.0 * mean_load / (
+                mean_load + float(node_load[j])
+            )
+=======
+    node_load = np.maximum(d.sum(axis=0), d.sum(axis=1))
+    max_node_load = float(np.max(node_load))
+    if max_node_load <= 0.0:
+        max_node_load = 1.0
+
+    quadratic = {}
+    indirect_fraction = 0.60
+    pressure_floor = 0.75
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            pressure = float(node_load[j]) / max_node_load
+            transit_factor = 1.0 - (1.0 - pressure_floor) * pressure
+>>>>>>> REPLACE
+</DIFF>

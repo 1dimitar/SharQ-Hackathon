@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "size_tapered_route_incentive",
+  "patch_description": "The two-hop reward terms can become a crowded signal as network size grows: many candidate routes compete for a topology with fixed degree two. Slightly tapering their strength with n may keep them informative without letting them dominate direct-link and structural signals, potentially improving both sample quality and energy-based ranking at larger sizes. Direct rewards, route selection, and cut correction remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:17:36.729907",
+  "llm_cost": 0.0028344,
+  "llm_model": "gpt-6-luna"
+}

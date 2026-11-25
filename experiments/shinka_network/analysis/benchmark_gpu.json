@@ -1,0 +1,122 @@
+[
+ {
+  "cluster": "qoro_gpu",
+  "routine": "pce",
+  "repeat": 0,
+  "instance": "network12_s0",
+  "wall_seconds": 94.02,
+  "circuits": 501,
+  "error": null,
+  "best": 315134.0,
+  "ref": 276474.0,
+  "gap_best_pct": 13.98,
+  "score": 0.809,
+  "jobs": 11,
+  "jobs_billed": 11,
+  "credits": 0.21,
+  "compute_seconds": 2.61,
+  "rate_credits_per_s": [
+   0.065
+  ]
+ },
+ {
+  "cluster": "qoro_cpu",
+  "routine": "pce",
+  "repeat": 0,
+  "instance": "network12_s0",
+  "wall_seconds": 85.2,
+  "circuits": 501,
+  "error": null,
+  "best": 309000.0,
+  "ref": 276474.0,
+  "gap_best_pct": 11.76,
+  "score": 0.8257,
+  "jobs": 11,
+  "jobs_billed": 11,
+  "credits": 0.12,
+  "compute_seconds": 2.51,
+  "rate_credits_per_s": [
+   0.045
+  ]
+ },
+ {
+  "cluster": "qoro_maestro",
+  "routine": "pce",
+  "repeat": 0,
+  "instance": "network12_s0",
+  "wall_seconds": 85.51,
+  "circuits": 501,
+  "error": null,
+  "best": 317000.0,
+  "ref": 276474.0,
+  "gap_best_pct": 14.66,
+  "score": 0.8049,
+  "jobs": 11,
+  "jobs_billed": 11,
+  "credits": 0.13,
+  "compute_seconds": 2.95,
+  "rate_credits_per_s": [
+   0.045
+  ]
+ },
+ {
+  "cluster": "qoro_gpu",
+  "routine": "qaoa_partitioned",
+  "repeat": 0,
+  "instance": "network12_s0",
+  "wall_seconds": 583.65,
+  "circuits": 6012,
+  "error": null,
+  "best": 314847.0,
+  "ref": 276474.0,
+  "gap_best_pct": 13.88,
+  "score": 0.8248,
+  "jobs": 11,
+  "jobs_billed": 11,
+  "credits": 1.66,
+  "compute_seconds": 24.91,
+  "rate_credits_per_s": [
+   0.065
+  ]
+ },
+ {
+  "cluster": "qoro_cpu",
+  "routine": "qaoa_partitioned",
+  "repeat": 0,
+  "instance": "network12_s0",
+  "wall_seconds": 301.36,
+  "circuits": 6012,
+  "error": null,
+  "best": 312400.0,
+  "ref": 276474.0,
+  "gap_best_pct": 12.99,
+  "score": 0.8332,
+  "jobs": 11,
+  "jobs_billed": 11,
+  "credits": 0.52,
+  "compute_seconds": 11.49,
+  "rate_credits_per_s": [
+   0.045
+  ]
+ },
+ {
+  "cluster": "qoro_maestro",
+  "routine": "qaoa_partitioned",
+  "repeat": 0,
+  "instance": "network12_s0",
+  "wall_seconds": 414.51,
+  "circuits": 6012,
+  "error": null,
+  "best": 318364.0,
+  "ref": 276474.0,
+  "gap_best_pct": 15.15,
+  "score": 0.8265,
+  "jobs": 11,
+  "jobs_billed": 11,
+  "credits": 0.51,
+  "compute_seconds": 11.66,
+  "rate_credits_per_s": [
+   0.045
+  ]
+ }
+]

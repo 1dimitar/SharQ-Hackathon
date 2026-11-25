@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "energy_tail_exploration",
+  "patch_description": "The current batch selector takes three surrogate-favored moves, then fills from the next few ranked moves; its shuffled tail is effectively unreachable when the batch limit is five. This can repeatedly spend LP calls on near-neighbors favored by a surrogate that is only loosely correlated with the exact routing score. Keep two strong-energy proposals, but deliberately sample the remaining slots across the rest of the energy-ranked neighborhood. This provides a low-cost form of online robustness to surrogate misranking while retaining exploitation and the existing LP budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:00:39.130832",
+  "llm_cost": 0.0014256,
+  "llm_model": "gpt-6-luna"
+}

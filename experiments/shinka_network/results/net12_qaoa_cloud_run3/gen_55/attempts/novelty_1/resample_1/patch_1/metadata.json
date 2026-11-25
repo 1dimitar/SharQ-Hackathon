@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "focused_relay_qubo",
+  "patch_description": "Uses direct-link rewards for all OD pairs, but limits two-hop interactions to the highest-demand 10% of positive OD pairs and at most two relay candidates per pair. Relay ranking favors balanced, plausible legs while discounting nodes with high incident demand. This concentrates the sparse quadratic structure on important traffic and stays well below the quadratic-term limit. A stronger evaluator-supplied degree penalty encourages valid topologies without duplicating the penalty in the QUBO terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:59.431884",
+  "llm_cost": 0.0013153000000000001,
+  "llm_model": "gpt-6-luna"
+}

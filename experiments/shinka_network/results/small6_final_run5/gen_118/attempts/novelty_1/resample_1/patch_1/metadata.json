@@ -1,0 +1,14 @@
+{
+  "generation": 118,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "soften_route_pressure_rank",
+  "patch_description": "Reduce the route-ranking pressure exponent from 0.82 to 0.75. The estimated node pressures are only an approximate proxy for transit congestion, so slightly softening their effect should avoid over-discounting useful high-pressure transit nodes and make path selection less brittle. This changes one factor only; the pressure floor and cut-congestion terms remain fixed.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:33:27.280138",
+  "llm_cost": 0.0026555,
+  "llm_model": "gpt-6-luna"
+}

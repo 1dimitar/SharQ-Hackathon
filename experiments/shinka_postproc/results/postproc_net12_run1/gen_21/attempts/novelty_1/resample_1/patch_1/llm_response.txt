@@ -1,0 +1,36 @@
+<NAME>
+dual_delta_screen
+</NAME>
+
+<DESCRIPTION>
+Rank proposed exchanges by their directional change in LP dual prices before using surrogate energy. A move that removes high-priced links and adds low-priced links is more directly aligned with relieving the current congestion bottlenecks than one that merely touches a hot link. Use demand relief as a secondary tie-breaker, then retain surrogate energy as a further screen. This is a cheap way to spend the limited LP budget on moves with a stronger local signal from the routing LP.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            fresh.sort(key=lambda m: tools.energy(m))
+=======
+            # Estimate whether each move shifts load away from expensive links.
+            # Dual relief is the primary screen; demand relief and QUBO energy
+            # break ties among moves with similar LP sensitivity.
+            prices = {
+                tuple(map(int, link)): float(price)
+                for link, price in details.get(base, {}).get("prices", {}).items()
+            }
+
+            def move_rank(move):
+                removed = set(base) - set(move)
+                added = set(move) - set(base)
+                dual_relief = (
+                    sum(prices.get(link, 0.0) for link in removed)
+                    - sum(prices.get(link, 0.0) for link in added)
+                )
+                demand_relief = (
+                    sum(float(demand[i, j]) for i, j in removed)
+                    - sum(float(demand[i, j]) for i, j in added)
+                )
+                return (-dual_relief, -demand_relief, tools.energy(move))
+
+            fresh.sort(key=move_rank)
+>>>>>>> REPLACE
+</DIFF>

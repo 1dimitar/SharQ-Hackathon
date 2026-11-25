@@ -1,0 +1,14 @@
+{
+  "generation": 88,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_indirect_budget",
+  "patch_description": "Cap the total two-hop reward for each OD pair relative to the existing direct-link reward. The path scores still determine how that budget is distributed among intermediates, preserving path-specific signals, but indirect routes can no longer collectively outweigh direct service. The existing traffic-based budget remains as an upper bound, so small-demand pairs retain their prior reward when the direct-signal cap is not more restrictive.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:48:46.719071",
+  "llm_cost": 0.0012499,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 70,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_guided_evolution",
+  "patch_description": "This replaces repeated neighborhood descent with a compact evolutionary search. It seeds a diverse population from repaired QAOA samples, then alternates dual-guided link switches with recombination: a child inherits links from two strong but structurally distinct networks and uses the free repair tool to restore degree constraints. Candidate moves are screened using energy and bottleneck prices, while a small exploration quota prevents the surrogate from dictating every LP call. The population retains both strong and diverse networks so search can move between basins.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:04:34.560815",
+  "llm_cost": 0.0028589,
+  "llm_model": "gpt-6-luna"
+}

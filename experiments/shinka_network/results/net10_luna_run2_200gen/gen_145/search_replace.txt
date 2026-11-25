@@ -1,0 +1,29 @@
+<NAME>
+concave_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Give moderate-demand direct links more influence by using the suggested 0.75 linear / 0.25 square-root blend. This retains the strong preference for high-demand direct links while making useful mid-demand links more competitive, which may improve typical sampled topologies and reduce the median gap. Keep the existing two-hop route discounts unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Favor direct service of high-demand OD pairs.
+    linear = {
+        (i, j): -float(traffic[i, j]) / scale
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+=======
+    # Favor direct service of high-demand OD pairs, while giving moderate
+    # demands more influence to improve the quality of typical samples.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                value = float(traffic[i, j]) / scale
+                linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

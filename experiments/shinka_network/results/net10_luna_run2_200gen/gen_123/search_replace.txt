@@ -1,0 +1,27 @@
+<NAME>
+max_normalized_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Change only the relay-pressure normalization, keeping route scoring and all other terms fixed. Normalize incident demand by its maximum rather than its mean, and use a 0.55 floor. This makes the pressure scale consistent across demand matrices and gives quieter nodes a measured preference as relays without allowing extremely low-demand nodes to dominate route selection. Comparing this isolated change against the current mean-based, 0.75-floor version will show whether the altered relay preference helps both the best and typical sampled topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+
+    # A floor avoids treating low-traffic nodes as implausible transit hubs.
+    pressure = np.maximum(0.75, incident / mean_incident)
+=======
+    max_incident = float(np.max(incident)) if n else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+
+    # Normalize relay pressure consistently across instances while retaining
+    # a floor so very quiet nodes are not overwhelmingly favored as hubs.
+    pressure = np.maximum(0.55, incident / max_incident)
+>>>>>>> REPLACE
+
+</DIFF>

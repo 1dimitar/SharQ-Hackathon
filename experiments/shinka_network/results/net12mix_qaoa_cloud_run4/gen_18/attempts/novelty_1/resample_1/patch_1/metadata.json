@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_relay_bonus",
+  "patch_description": "The current relay bonus spreads each demand pair\u2019s credit across every possible intermediate node, making individual two-hop couplings very weak and creating many interactions. Instead, select the two most promising relays for each demand pair, favoring links with strong existing rewards and mildly favoring nodes with lower traffic exposure as potential transit nodes. Split a bounded bonus between those relays. This makes useful relay interactions more salient to the QUBO and reduces the number of quadratic terms, while retaining the existing direct-link and endpoint rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:13:43.465221",
+  "llm_cost": 0.0010669,
+  "llm_model": "gpt-6-luna"
+}

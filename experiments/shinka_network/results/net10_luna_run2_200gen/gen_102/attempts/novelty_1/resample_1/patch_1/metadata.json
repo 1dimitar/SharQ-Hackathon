@@ -1,0 +1,14 @@
+{
+  "generation": 102,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_path_reward",
+  "patch_description": "Apply a mild concave transform to normalized through-demand when setting the total two-hop reward. This lets smaller positive OD demands contribute more relative to the largest demands, while retaining demand-local path selection and the existing cap on indirect reward. Direct-link rewards and candidate-path ranking remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:10.358447",
+  "llm_cost": 0.0008782000000000001,
+  "llm_model": "gpt-6-luna"
+}

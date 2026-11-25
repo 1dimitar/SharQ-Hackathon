@@ -1,0 +1,164 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _prepare_demand(demand):
+    """Return sanitized traffic and normalized node-level statistics."""
+    traffic = np.asarray(demand, dtype=float)
+    traffic = np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0)
+    traffic = np.maximum(traffic, 0.0).copy()
+    n = int(traffic.shape[0])
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = traffic / scale
+
+    rows = np.sum(z, axis=1)
+    cols = np.sum(z, axis=0)
+    incident = rows + cols
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+
+    # A floor avoids treating low-traffic nodes as implausible transit hubs.
+    pressure = np.maximum(0.75, incident / mean_incident)
+
+    return z, rows, cols, pressure
+
+
+def _direct_costs(z, rows, cols):
+    """Value direct service and endpoint capacity for each possible link."""
+    n = int(z.shape[0])
+    endpoint_scale = max(
+        float(np.max(rows)) if n else 0.0,
+        float(np.max(cols)) if n else 0.0,
+        1.0,
+    )
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(z[i, j])
+            endpoint = (float(rows[i]) + float(cols[j])) / (2.0 * endpoint_scale)
+            value = 0.78 * direct + 0.14 * np.sqrt(direct) + 0.08 * endpoint
+            linear[(i, j)] = -float(value)
+    return linear
+
+
+def _diversity_costs(z):
+    """Penalize pairs of links that offer highly redundant neighbor profiles."""
+    n = int(z.shape[0])
+    row_norm = np.sqrt(np.sum(z * z, axis=1))
+    col_norm = np.sqrt(np.sum(z * z, axis=0))
+    row_profile = np.divide(
+        z, row_norm[:, None], out=np.zeros_like(z),
+        where=row_norm[:, None] > 0.0,
+    )
+    col_profile = np.divide(
+        z, col_norm[None, :], out=np.zeros_like(z),
+        where=col_norm[None, :] > 0.0,
+    )
+
+    quadratic = {}
+    strength = 0.065
+    for node in range(n):
+        neighbors = [v for v in range(n) if v != node]
+        for a, j in enumerate(neighbors):
+            for k in neighbors[a + 1:]:
+                sim_out = float(np.dot(row_profile[j], row_profile[k]))
+                if sim_out > 1e-10:
+                    quadratic[((node, j), (node, k))] = strength * sim_out
+
+                sim_in = float(np.dot(col_profile[j], col_profile[k]))
+                if sim_in > 1e-10:
+                    quadratic[((j, node), (k, node))] = strength * sim_in
+    return quadratic
+
+
+def _route_costs(z, pressure, direct_reward, limit=3):
+    """Allocate indirect-route value over the strongest supported intermediates."""
+    n = int(z.shape[0])
+    quadratic = {}
+
+    for source in range(n):
+        for target in range(n):
+            demand_value = float(z[source, target])
+            if source == target or demand_value <= 0.0:
+                continue
+
+            candidates = []
+            for middle in range(n):
+                if middle == source or middle == target:
+                    continue
+
+                first = float(z[source, middle])
+                second = float(z[middle, target])
+                support = np.sqrt(first * second)
+
+                # Prefer demand-supported routes, but do not wholly eliminate
+                # alternatives whose component links have little direct demand.
+                support_factor = 0.16 + 0.84 * support / (1.0 + support)
+                transit_factor = 1.0 / (float(pressure[middle]) ** 0.7)
+                congestion_factor = 1.0 / np.sqrt(
+                    (1.0 + 0.45 * first) * (1.0 + 0.45 * second)
+                )
+                score = support_factor * transit_factor * congestion_factor
+                candidates.append((score, middle))
+
+            if not candidates:
+                continue
+
+            candidates.sort(reverse=True)
+            chosen = candidates[:limit]
+            denominator = sum(score for score, _ in chosen)
+            if denominator <= 0.0:
+                continue
+
+            budget = min(
+                0.52 * demand_value,
+                0.50 * abs(float(direct_reward[(source, target)])),
+            )
+            for score, middle in chosen:
+                weight = -budget * score / denominator
+                key = ((source, middle), (middle, target))
+                quadratic[key] = float(weight)
+
+    return quadratic
+
+
+def surrogate_terms(demand):
+    """Build direct, diversity, and sparse route terms for the QUBO."""
+    z, rows, cols, pressure = _prepare_demand(demand)
+    linear = _direct_costs(z, rows, cols)
+
+    # Merge independently generated interaction families into one map.
+    quadratic = _diversity_costs(z)
+    quadratic.update(_route_costs(z, pressure, linear))
+
+    # Degree constraints are supplied by the evaluator.
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

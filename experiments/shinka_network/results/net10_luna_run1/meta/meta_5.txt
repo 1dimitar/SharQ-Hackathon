@@ -1,0 +1,74 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Direct-Demand Linear QUBO Surrogate**
+- **Implementation**: Assigns each directed link a linear weight equal to negative demand normalized by the matrix maximum; includes no quadratic terms and sets the degree-penalty weight to 1.0. The evaluator handles rescaling and adds the degree penalty.
+- **Performance**: Combined score was 0.80, with a 12.76% mean best-solution gap, 40.37% mean median gap, 100% mean feasibility rate, and zero quadratic terms.
+- **Feedback**: All cases produced 64 distinct topologies, with best gaps ranging from 10.7% to 15.9%; `network10_s3` was worst and had 98% validity before repair. The simple, fast surrogate passed validation, but its gaps—especially the median gaps—show room to improve topology quality.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Demand-Normalized Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand by its maximum, then builds directed-link linear rewards from direct traffic and endpoint traffic shares, plus two-hop quadratic rewards scaled by transit-node profiles. Coefficients are jointly normalized, and the evaluator supplies a fixed degree-penalty weight of 2.0.
+- **Performance**: Combined score was 0.80, with mean best gap 12.84%, median gap 38.92%, 100% feasibility, and 480 quadratic terms.
+- **Feedback**: All four network10 cases produced valid samples before repair and 64 distinct topologies each, but best-solution gaps ranged from 10.2% to 15.3%; network10_s2 was weakest. The much larger median gaps suggest the surrogate finds some competitive solutions but is less effective at ranking typical samples.
+**Program Identifier:** Generation 1 - Patch Name balanced_twohop - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Assigns negative normalized demand weights to directed links and adds negative quadratic rewards for consecutive two-hop links, scaled by \(0.18/\sqrt{\max(1,n-2)}\). It sets the degree-penalty weight to 1 and builds 480 quadratic terms for each 10-node instance.
+- **Performance**: Combined score was 0.80, with a 12.92% mean best-solution gap, 39.09% mean median gap, and 100% mean feasible rate.
+- **Feedback**: The approach ran in under 0.01 seconds and produced 64 distinct topologies per instance, with 98–100% of samples valid before repair. Best-solution gaps ranged from 9.3% to 16.4%, indicating the demand-based surrogate finds feasible candidates but remains notably above the reference, especially on `network10_s1`.
+**Program Identifier:** Generation 2 - Patch Name tempered_two_hop_routing - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Assigns each directed link a negative linear weight proportional to its normalized direct demand. Adds negative quadratic bonuses for two-hop routes, spreading each demand’s bonus across possible intermediaries and discounting nodes with higher combined incoming and outgoing load; sets the degree-penalty weight to 1.0.
+- **Performance**: Combined score was 0.80, with mean best and median gaps of 13.54% and 38.94%, a 100% feasible rate, and 480 quadratic terms.
+- **Feedback**: All four network10 evaluations produced 64 distinct topologies and were built in under 0.01 seconds. Best gaps ranged from 11.9% to 15.3% (largest on s1), while median gaps of 36.5%–42.6% show that solution quality varied across samples despite consistently valid outputs.
+**Program Identifier:** Generation 3 - Patch Name capacity_aware_paths - Correct Program: True
+
+**Program Name: Demand-Normalized Directed-Link Surrogate QUBO**
+- **Implementation**: Clips negative demands, zeroes the diagonal, and scales the matrix by its peak. It rewards direct traffic and busy endpoints, adds shared-endpoint congestion and reciprocal-link terms, and returns a degree-penalty weight of 1.5.
+- **Performance**: Combined score was 0.79, with 100% feasibility and 739 quadratic terms; mean best and median gaps were 15.66% and 41.05%, respectively.
+- **Feedback**: All four cases produced 64 distinct topologies and built terms in under 0.01 seconds. Best gaps ranged from 10.0% to 19.4%, while the larger median gaps indicate weaker typical solutions despite consistently feasible samples.
+**Program Identifier:** Generation 4 - Patch Name balanced_link_surrogate - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **Sparse, demand-conditioned two-hop rewards are the strongest demonstrated pattern, but their advantage is modest.** The current best, **Demand-Normalized Surrogate QUBO** (Generation 1), combines direct-demand rewards with endpoint shares and two-hop rewards; it scored **0.80**, with **12.84% mean best gap**, **38.92% median gap**, and **100% feasibility**. Its best gap was **10.2% on s1**, and its 480 quadratic terms are consistent with rewarding valid two-link paths rather than adding arbitrary pair interactions.
+- **A restrained balance of direct and indirect traffic signals can work across cases.** The current best uses a direct-link coefficient of `-0.72`, smaller endpoint-share terms of `-0.08`, and two-hop rewards scaled by `-0.30` with endpoint and transit profiles. It produced best gaps between **10.2% and 15.3%** across all four cases, though it did not improve on the simpler Generation 0 program’s aggregate best gap.
+- **Fast construction and full feasibility are consistent strengths across the evaluated surrogates.** The current best built in under **0.01 seconds**, generated **64 distinct topologies per case**, and had **100% valid samples before repair**. Several alternatives achieved the same feasibility and diversity, so these are robust properties rather than unique sources of its score.
+
+## Ineffective Approaches
+- **Adding quadratic terms did not reliably improve best-solution quality over the linear baseline.** Generation 0’s **Direct-Demand Linear QUBO Surrogate** scored **0.80** with a **12.76% mean best gap** and no quadratic terms—slightly better than the current best’s **12.84%**. Generation 2’s quadratic two-hop variant had a **12.92%** mean best gap, and Generation 3’s capacity-aware variant had **13.54%**.
+- **More elaborate link-interaction terms performed worse in aggregate.** Generation 4’s **Demand-Normalized Directed-Link Surrogate QUBO**, with shared-endpoint congestion and reciprocal-link terms and **739 quadratic terms**, scored **0.79** and had the worst mean best gap (**15.66%**) and median gap (**41.05%**). Its best-case gap was 10.0%, but the range extended to **19.4%**, indicating inconsistent gains.
+- **Median quality remains a weakness even for the best-scoring QUBO.** The current best’s **38.92% mean median gap** is far larger than its **12.84% mean best gap**. The other richer demand-based approaches show the same pattern: Generation 2 had a **39.09%** median gap, and Generation 3 had **38.94%**, so competitive top samples do not imply consistently good typical samples.
+- **Two-hop scoring and load-aware adjustments have not shown a reliable aggregate benefit.** Generation 3’s path spreading and transit-load discounting yielded a **13.54%** mean best gap; Generation 4’s congestion and reciprocal terms were worse still. The results do not establish that these terms improve over direct-demand weighting.
+
+## Implementation Insights
+- **The current best normalizes nonnegative demand by its maximum and zeros the diagonal implicitly by only constructing links with `i != j`.** This keeps coefficients independent of traffic units and excludes self-links. It then jointly scales linear and quadratic coefficients by their largest absolute value; despite this normalization, its evaluator result remains comparable to other programs at **0.80**.
+- **The current best’s two-hop term is explicitly tied to paths `i → j → k`.** It rewards consecutive directed links only when the corresponding demand `d[i,k]` is positive, with a transit-node profile and an endpoint-scale discount. This creates **480 quadratic terms** for the 10-node cases and avoids adding rewards for unsupported origin-destination pairs.
+- **The current best returns a penalty weight of 2.0, while other successful variants use different penalty settings.** Generation 0 and Generation 2 used **1.0**; Generation 3 also used **1.0**; Generation 4 used **1.5**. All reached **100% mean feasibility**, so these results do not show a clear feasibility advantage from the current best’s setting.
+- **The more complex Generation 4 implementation broadened interactions rather than limiting them to demand-supported paths.** Its **739 quadratic terms** exceeded the 480 used by the current best and other two-hop programs, while its score and gaps worsened. This is evidence that term count alone is not a useful proxy for surrogate quality.
+
+## Performance Analysis
+- **All five programs scored either 0.80 or 0.79, so aggregate score differences are small.** The current best is tied at **0.80**, but its **12.84% mean best gap** is slightly worse than Generation 0’s **12.76%**. The summaries therefore do not show a best-gap improvement from adding the current best’s two-hop model.
+- **The current best is better than several alternatives, but not uniformly best on gap metrics.** Its **12.84% best gap** is below Generation 2 (**12.92%**), Generation 3 (**13.54%**), and Generation 4 (**15.66%**), while Generation 0 is marginally better. Its **38.92% median gap** is also close to Generation 2 (**39.09%**) and Generation 3 (**38.94%**), but worse than Generation 1’s own best-case gap does not imply consistently strong samples.
+- **Case-level performance is uneven.** The current best’s strongest result was **s1 at +10.2%**, while **s2 was worst at +15.3%**. Generation 2’s feedback instead identifies **s1** as its worst case (up to **16.4%**), illustrating that the relative difficulty of cases can shift with the surrogate.
+- **Feasibility and diversity do not explain the gap differences.** Every program averaged **100% feasibility** and produced **64 distinct topologies per case**; the current best also had 100% validity before repair. Differences in reported solution gaps therefore occur despite similarly strong feasibility and sample diversity.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Tune the balance between direct-link and two-hop rewards with a small, structured sweep.** Keep the current demand-supported path construction, but test direct coefficients near `-0.72` and two-hop coefficients near `-0.30` (for example, direct `-0.80`/`-0.65` and two-hop `-0.20`/`-0.40`). The linear-only baseline slightly beat this program on mean best gap, so the key test is whether a weaker two-hop reward preserves its benefits without diluting direct-demand signal.
+
+2. **Compare the current endpoint/transit scaling against a simpler two-hop reward.** Retain only paths `i → j → k` with positive `d[i,k]`, but test `-α * d[i,k]` without the profile multipliers, then compare with versions using only transit scaling or only endpoint scaling. The current program’s 480 demand-supported interactions are a stronger starting point than broad link interactions, while earlier two-hop and load-aware variants did not establish that the extra scaling helps.
+
+3. **Replace maximum-based demand normalization with a robust alternative.** Test clipping normalized demand at a high percentile, or dividing by the mean of positive demands, while still zeroing negative demand and excluding self-links. This can reduce the influence of a single large entry and may improve cases such as `s2`, where the current model has its largest gap, without changing which paths are considered demand-supported.
+
+4. **Make the endpoint-share linear correction independently tunable or removable.** Compare the current `-0.08 * (row_share[i] + col_share[j])` against a smaller coefficient and zero, while leaving direct demand and two-hop terms unchanged. Since the linear-only baseline was marginally better on mean best gap and the current program already normalizes endpoint shares, this isolates whether the node-traffic correction adds useful signal or weakens direct-link prioritization.
+
+5. **Test a more targeted transit profile while keeping the interaction set sparse.** For each supported path, scale its reward using a normalized measure of the intermediate node’s ability to connect the path endpoints—for example, combine its inbound traffic toward `j` with outbound traffic from `j`, rather than using the current total row/column shares. Avoid adding shared-endpoint or reciprocal-link interactions: the broader 739-term variant performed worse, whereas demand-conditioned paths preserve the current program’s strongest demonstrated structure.

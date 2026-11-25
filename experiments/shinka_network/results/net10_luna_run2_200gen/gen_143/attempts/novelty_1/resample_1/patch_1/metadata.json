@@ -1,0 +1,14 @@
+{
+  "generation": 143,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_indirect_support",
+  "patch_description": "The current two-hop reward for an OD pair is repeated across every possible intermediate node. Even with pressure discounts, its aggregate can therefore outweigh the reward for serving that OD pair directly, making indirect routes too influential in the low-energy region. Keep the existing route-quality estimates, but rescale each OD pair\u2019s two-hop terms together so their total absolute reward is at most 60% of that pair\u2019s direct-link reward. This preserves preferences among candidate relays while limiting the incentive to accumulate many indirect-route terms; it should help prevent indirect rewards from distorting both the best and typical sampled topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:53.373361",
+  "llm_cost": 0.0012014,
+  "llm_model": "gpt-6-luna"
+}

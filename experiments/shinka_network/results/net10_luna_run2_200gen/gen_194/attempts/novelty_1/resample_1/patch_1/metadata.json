@@ -1,0 +1,14 @@
+{
+  "generation": 194,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_aggregate_path_rewards",
+  "patch_description": "For each OD pair, the current code can reward up to \\(n-2\\) alternative two-hop paths independently. Their combined influence may overwhelm the direct-link preference even when each individual path reward is modest. Accumulate the candidate two-hop rewards for that OD pair, then proportionally scale them when their total magnitude exceeds 0.75 times the direct-link reward. This retains the relative ranking of relay choices while limiting their aggregate influence.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:03:03.998134",
+  "llm_cost": 0.0011020000000000001,
+  "llm_model": "gpt-6-luna"
+}

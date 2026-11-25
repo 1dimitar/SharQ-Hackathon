@@ -1,0 +1,30 @@
+<NAME>
+concave_direct_demand
+</NAME>
+
+<DESCRIPTION>
+Use a mild square-root transform for direct-demand rewards while retaining most of their linear signal. This gives moderate-demand direct links more influence, which may help the typical sampled topology, while preserving the preference for links serving the largest demands. The change is limited to the direct-demand component; endpoint and two-hop terms remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): -(
+            0.9 * float(demand[i, j]) / scale
+            + 0.1 * float(endpoint[i, j]) / endpoint_scale
+        )
+        for i in range(n) for j in range(n) if i != j
+    }
+=======
+    linear = {
+        (i, j): -(
+            0.9 * (
+                0.8 * float(demand[i, j]) / scale
+                + 0.2 * np.sqrt(max(0.0, float(demand[i, j]) / scale))
+            )
+            + 0.1 * float(endpoint[i, j]) / endpoint_scale
+        )
+        for i in range(n) for j in range(n) if i != j
+    }
+>>>>>>> REPLACE
+</DIFF>

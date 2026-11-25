@@ -1,0 +1,14 @@
+{
+  "generation": 138,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_service_diversity",
+  "patch_description": "Add demand-aware neighbor-diversity couplings. Two outgoing neighbors are redundant when they both serve the same destinations needed by their source; two incoming neighbors are redundant when they both collect traffic from the same origins needed by their destination. Penalizing this overlap encourages complementary neighbors rather than merely accumulating attractive two-hop paths.\n\nCenter each node\u2019s overlap scores before sparsification: the common component is constant on valid degree-two topologies and carries no ranking information. Retain only the n//2 strongest deviations per node and direction, adding at most n\u00b2 couplings. A modest coefficient preserves the existing direct, route, cut, and penalty terms. This targets typical-sample quality and exchange rankings without substantially enlarging the coupling graph.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:56:36.550716",
+  "llm_cost": 0.057242,
+  "llm_model": "gpt-6.1-sol"
+}

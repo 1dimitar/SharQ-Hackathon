@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "dual_guided_screening",
+  "patch_description": "Use the LP\u2019s link prices to rank proposed moves by whether they remove expensive links and add less expensive ones, while retaining surrogate energy as a tie-breaker. Positive dual prices identify links currently contributing to the congestion bound, so this gives the LP batch a more directly relevant signal than energy alone. The existing diversity selection and batch limit remain unchanged, preserving exploration and the fixed LP budget.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:37:38.561007",
+  "llm_cost": 0.0010376,
+  "llm_model": "gpt-6-luna"
+}

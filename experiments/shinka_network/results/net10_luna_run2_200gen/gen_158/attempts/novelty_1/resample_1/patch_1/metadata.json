@@ -1,0 +1,14 @@
+{
+  "generation": 158,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_route_affinity",
+  "patch_description": "This design combines a bounded two-hop routing signal with a separate route-diversity signal. Rather than rewarding every two-hop route equally, it distributes each OD pair\u2019s indirect reward among candidate intermediates, favoring nodes whose traffic profile makes them plausible relays and discounting heavily loaded relays. It also adds modest positive interactions between links that provide similar outgoing or incoming service, encouraging the two degree-constrained choices at a node to cover different traffic patterns. The relay-pressure floor is set to 0.85, as suggested; pairwise diversity terms are kept modest so they complement rather than overwhelm the direct and indirect demand signals.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:38.946246",
+  "llm_cost": 0.0015732,
+  "llm_model": "gpt-6-luna"
+}

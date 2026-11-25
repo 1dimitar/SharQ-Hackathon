@@ -1,0 +1,131 @@
+<NAME>
+archive_matching
+</NAME>
+
+<DESCRIPTION>
+Add a bounded archive-guided matching operator. Every sixth search round, it builds a candidate from two randomized bipartite matchings: each matching gives every source one outgoing link and every destination one incoming link. A backtracking assignment excludes self-loops and duplicate links, so the combined network is valid by construction. Destination choices are biased toward links shared by strong LP-scored archive members. The candidate joins the existing move pool and is screened alongside other proposals, keeping this exploratory operator bounded rather than replacing the established search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        for _ in range(2 + int(rng.integers(5))):
+            nxt = two_switch(tuple(sorted(cur)), rng)
+            if nxt is not None:
+                cur = set(nxt)
+        return tuple(sorted(cur)) if cur != set(net) else None
+
+    rounds = 0
+=======
+        for _ in range(2 + int(rng.integers(5))):
+            nxt = two_switch(tuple(sorted(cur)), rng)
+            if nxt is not None:
+                cur = set(nxt)
+        return tuple(sorted(cur)) if cur != set(net) else None
+
+    def matching_candidate():
+        """Build two edge-disjoint randomized matchings biased by strong archive links."""
+        strong = sorted(seen, key=seen.get)[:16]
+        if not strong:
+            return None
+        frequency = {}
+        for member in strong:
+            for edge in member:
+                frequency[edge] = frequency.get(edge, 0) + 1
+
+        edges = set()
+
+        def assign_matching():
+            assigned = {}
+            used_destinations = set()
+
+            def search():
+                if len(assigned) == n:
+                    return True
+
+                choices_by_source = []
+                for source in range(n):
+                    if source in assigned:
+                        continue
+                    options = [
+                        dest for dest in range(n)
+                        if dest != source
+                        and dest not in used_destinations
+                        and (source, dest) not in edges
+                    ]
+                    if not options:
+                        return False
+                    choices_by_source.append((len(options), source, options))
+
+                min_count = min(item[0] for item in choices_by_source)
+                tied = [item for item in choices_by_source if item[0] == min_count]
+                _, source, options = tied[int(rng.integers(len(tied)))]
+
+                # Exponential-race ordering favors links occurring often in the archive.
+                options.sort(
+                    key=lambda dest: rng.random() / (1.0 + 3.0 * frequency.get((source, dest), 0))
+                )
+                for dest in options:
+                    assigned[source] = dest
+                    used_destinations.add(dest)
+                    edges.add((source, dest))
+                    if search():
+                        return True
+                    edges.remove((source, dest))
+                    used_destinations.remove(dest)
+                    del assigned[source]
+                return False
+
+            return assigned if search() else None
+
+        for _ in range(2):
+            if assign_matching() is None:
+                return None
+        result = tuple(sorted(edges))
+        return result if len(result) == 2 * n else None
+
+    rounds = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(36):
+            kind = int(rng.choice(3, p=probs))
+            net = proposal(parent, kind, hot)
+            if net is None or net == parent or net in seen:
+                continue
+            try:
+                if not tools.is_valid(net) or tools.is_cached(net):
+                    continue
+            except Exception:
+                continue
+            moves[net] = kind
+            kinds[net] = kind
+
+        if not moves:
+=======
+        for _ in range(36):
+            kind = int(rng.choice(3, p=probs))
+            net = proposal(parent, kind, hot)
+            if net is None or net == parent or net in seen:
+                continue
+            try:
+                if not tools.is_valid(net) or tools.is_cached(net):
+                    continue
+            except Exception:
+                continue
+            moves[net] = kind
+            kinds[net] = kind
+
+        # Reserve a small share of trials for archive-guided matching exploration.
+        if rounds % 6 == 0:
+            net = matching_candidate()
+            if net is not None and net != parent and net not in seen:
+                try:
+                    if tools.is_valid(net) and not tools.is_cached(net):
+                        moves[net] = 2
+                except Exception:
+                    pass
+
+        if not moves:
+>>>>>>> REPLACE
+
+</DIFF>

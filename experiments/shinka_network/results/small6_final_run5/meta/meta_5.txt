@@ -1,0 +1,74 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative, non-self demand and assigns negative linear weights using a demand/square-root blend. For each positive-demand pair, it selects a small set of two-hop routes by pressure-adjusted affinity, adds a low-pressure alternative, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score is 0.89 (raw 0.83, post-processed 0.96); mean best and median gaps are 11.66% and 32.42%, with 91% feasibility and 383 quadratic terms on average.
+- **Feedback**: The surrogate builds quickly and produces consistently strong post-processed results, reducing the mean gap to 4.38%. Before repair, median gaps remain around 29–37%, and the largest best-sample gap is 16.8% for network14_s0, so its strongest contribution is as a head start for the fixed post-processor.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link linear rewards using a blend of normalized demand and its square root. For each positive-demand pair, it selects a few two-hop routes by affinity and node pressure, adds pressure-discounted route bonuses, and partially offsets overlap with direct links; the penalty weight is fixed at 1.25.
+- **Performance**: Combined score was 0.89 (raw score 0.83; post-processor score 0.96), with 99% mean feasibility, 11.96% best-sample gap, 31.09% median gap, and 4.47% post-processed gap.
+- **Feedback**: The surrogate builds quickly and reliably, yielding 64 distinct topologies per case, but unprocessed best gaps vary from 6.5% to 16.4% and median gaps remain around 27–35%. The fixed post-processor substantially improves solutions, reducing reported gaps to 2.16–7.38%.
+**Program Identifier:** Generation 1 - Patch Name direct_route_correction - Correct Program: True
+
+**Program Name: Pressure-Discounted Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns negative linear weights using a blend of normalized traffic and its square root. It builds sparse two-hop quadratic terms by ranking candidate intermediates using edge affinity and node pressure, adds a pressure-discounted alternative and reciprocal-link terms, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.89 (raw 0.82, post-processed 0.96), with 91% mean feasibility, 11.41% mean best gap, and 33.22% mean median gap; construction was typically near-instant.
+- **Feedback**: Across networks 10–16, the best pre-repair gaps ranged from 6.8% to 14.7%, while the fixed post-processor reduced mean gap to 4.20%; the largest gap was network13_s0. Validity was generally high (80–97%), but median gaps around 31–39% indicate sampled solutions were substantially weaker than the best ones.
+**Program Identifier:** Generation 2 - Patch Name mutual_link_bonus - Correct Program: True
+
+**Program Name: Sparse Congestion-Aware Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards from normalized direct traffic plus a modest transit estimate, then adds sparse negative quadratic couplings for the top two or three congestion-aware two-hop routes per positive-demand pair. Uses demand-dependent support, rank and congestion discounts, and a separate degree-penalty weight of 1.15.
+- **Performance**: Combined score was 0.86 (raw 0.79, post-processed 0.94), with 100% feasible samples, 252.5 mean quadratic terms, and mean post-processing gap of 6.32%.
+- **Feedback**: All instances produced 64 distinct topologies, and the fixed post-processor substantially reduced gaps—from a 17.16% mean best-sample gap to 6.32%. Sample quality weakened modestly with larger networks; the largest best-sample gap was 22.9% on network13_s1, while post-processing reached the reference on network10_s2.
+**Program Identifier:** Generation 3 - Patch Name congestion_aware_paths - Correct Program: True
+
+**Program Name: Demand-Aware Sparse Two-Hop QUBO**
+- **Implementation**: Builds negative linear rewards for demand-weighted direct links and sparse negative quadratic couplings for promising two-hop routes, selected using endpoint affinity and transit-pressure scores. Adds weak positive direct-link redundancy interactions, sanitizes and normalizes demand, and uses a fixed penalty weight of 1.15.
+- **Performance**: Combined score was 0.90 (raw 0.83, post-processing 0.96), with 94% mean feasibility, 660 mean quadratic terms, and mean post-processor gap of 4.04%.
+- **Feedback**: Before repair, best gaps ranged from 7.1% to 15.5%, with median gaps around 23–35%; the fixed post-processor reduced gaps to 1.83–5.69%. Results were consistent across network sizes, though sample-quality scores weakened slightly for larger instances.
+**Program Identifier:** Generation 4 - Patch Name balanced-path-qubo - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **Demand-aware sparse two-hop structure is the strongest overall pattern.** The current best, **Demand-Aware Sparse Two-Hop QUBO** (Generation 4), scores **0.90** overall (**0.83 raw, 0.96 post-processed**), narrowly exceeding the earlier pressure-discounted programs at **0.89**. It combines demand-weighted direct-link rewards with sparse route couplings, endpoint affinity, and transit-pressure ranking.
+- **Balancing direct-link rewards with indirect-route incentives works better than relying on route selection alone.** Generation 4 uses demand-dependent support for two-hop routes and reduces their reward when direct demand is already strong. Its weak positive interactions between a direct link and the route’s legs model redundancy. It achieves a **4.04% mean post-processor gap**, compared with **6.32%** for Generation 3’s Sparse Congestion-Aware Two-Hop QUBO.
+- **Pressure discounting and alternative routes consistently provide a strong post-processing head start.** Generations 0–2 scored **0.89** and had post-processor gaps around **4.20–4.47%**. The current best retains pressure-aware route ranking while adding demand-dependent support and redundancy interactions; its post-processor gap is **4.04%**.
+- **Sparse route couplings can preserve good results while keeping construction cheap.** The current best builds in roughly **0.00–0.01s** for nearly all cases (one reported 0.18s), and produces **64 distinct topologies per case**. Its average of **660 quadratic terms** is higher than Generation 3’s 252.5, but it remains far below exhaustive pairwise route enumeration.
+
+## Ineffective Approaches
+- **A fixed, small set of route couplings can leave the raw sample quality weak.** Even the current best has an **11.19% mean best-sample gap** and a **30.39% mean median gap**. Its per-instance best gaps range from **7.1% to 15.5%**, with the largest at **network15_s1**. The sampled topologies are therefore much less effective before repair than after it.
+- **Adding congestion awareness alone did not improve the overall score.** Generation 3’s congestion-aware selection, demand-dependent support, and degree penalty produced **0.86** combined score and a **6.32% post-processing gap**, below Generation 4’s **0.90** and **4.04%**. Its lower coupling count (252.5 versus 660) coincided with weaker post-processed results.
+- **A fixed penalty and otherwise strong surrogate terms do not eliminate feasibility variation.** The pressure-discounted programs used a fixed penalty of **1.25** and reported feasibility as low as **91%** in some summaries. Generation 4’s fixed **1.15** penalty reached **94% mean feasibility**, but still ranged from **88%** on network13_s1 to 100% on several cases; penalty choice alone does not guarantee uniformly valid samples.
+
+## Implementation Insights
+- **Generation 4’s input sanitization makes the scoring logic robust:** it replaces NaN and infinite values, clips negative demand, and zeros the diagonal before computing normalized traffic. It then uses a max-demand scale, row/column shares, and incident pressure to derive stable affinity and congestion features.
+- **Route ranking combines endpoint affinity with pressure discounts.** For each positive-demand pair, Generation 4 scores candidate intermediates using row-share and column-share affinities plus normalized edge evidence, discounted by node pressure. It keeps two routes for smaller demands and three for demands above the positive-demand 68th percentile.
+- **Direct and indirect terms are explicitly balanced.** The direct score blends normalized demand, its square root, and endpoint-share affinity. Two-hop support is demand-weighted but reduced for strong direct demand; route couplings are negative rewards, while weak positive direct-to-leg interactions encode redundancy. This richer structure is associated with the best post-processing gap among the evaluated programs.
+- **The post-processor is a major contributor to final quality across programs.** For Generation 4, mean gap falls from **11.19% best-sample** to **4.04% post-processed**; individual examples include network10_s2 improving from **8.4% to 1.83%** and network13_s0 from **10.1% to 2.85%**. This mirrors earlier pressure-discounted results, where post-processing reduced gaps to roughly 2.16–7.38%.
+
+## Performance Analysis
+- **Generation 4 is the best evaluated program by combined score:** **0.90**, versus **0.89** for Generations 0–2 and **0.86** for Generation 3. Its raw score (**0.83**) matches the strongest reported raw score, while its post-processed score (**0.96**) matches the top reported value.
+- **Its clearest advantage is post-processed quality, not pre-repair sample quality.** Generation 4’s **4.04%** mean post-processing gap improves on the pressure-discounted programs’ approximately **4.20–4.47%** and Generation 3’s **6.32%**. Its mean best gap (**11.19%**) is also strong relative to prior pressure-discounted summaries around **11.4–12.0%**, but its median remains poor at **30.39%**.
+- **Performance weakens somewhat at larger network sizes.** The sample-quality component is strongest at n=10 (**0.855**) and lower at n=16 (**0.821**); mean best gaps are especially high for network15_s1 (**15.5%**) and network16_s1 (**15.4%**). Despite this, post-processing remains comparatively stable, with individual gaps from **1.83% to 5.69%**.
+- **More couplings correlate with better repair results here, but not automatically with better raw sampling.** Generation 4 averages **660** quadratic terms and outperforms Generation 3’s **252.5** terms on combined score and post-processing gap. Yet its median gap remains **30.39%**, confirming that coupling count and post-repair performance do not translate directly into uniformly strong sampled topologies.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Adaptively vary the number of candidate routes per demand pair.** The current program keeps two or three intermediates using a global demand percentile, and its sparse two-hop structure is associated with the best post-processed gap. Try selecting route count from both demand strength and the score margin between ranked candidates—for example, retain extra routes when the top candidates are close, but keep fewer when one route clearly dominates.
+
+2. **Improve transit-pressure estimates with route-specific load.** Preserve the successful pressure discount, but estimate how much traffic a node would receive as an intermediate from the selected routes, then discount candidates that are already heavily loaded by those routes. This could make route rankings more informative than pressure based only on total generated or received demand, while keeping the coupling graph sparse.
+
+3. **Tune direct-versus-indirect balance by endpoint affinity.** The current demand-aware support and redundancy interactions improve on route-only and congestion-only approaches. Test making the indirect reward and direct-to-leg redundancy terms depend on how strongly the endpoints already share traffic with the candidate’s two legs, so routes with strong evidence receive more support while weakly evidenced alternatives contribute less.
+
+4. **Add a small, targeted set of three-hop alternatives for difficult pairs.** Two-hop routes are the proven foundation, so retain them and add three-hop route couplings only for pairs with weak top-ranked two-hop options or very high demand. Rank these alternatives using the same endpoint-affinity and pressure-discount logic, and cap their number to avoid the cost and dilution of exhaustive route enumeration.
+
+5. **Address the raw-sample weakness with targeted feasibility-aware penalties.** Best-sample gaps remain substantial and feasibility varies by instance, despite strong post-processing results. Try scaling the constraint penalty modestly with network size or estimated variable degree, or applying a larger penalty only to variables involved in many selected route couplings; compare feasibility and raw quality to avoid overwhelming the useful demand and route rewards.

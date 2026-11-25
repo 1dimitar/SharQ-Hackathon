@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "adaptive_neighborhood_effort",
+  "patch_description": "Adapt the number of random kicks and sampled rotations to recent search progress. When an LP batch improves the incumbent, reduce these broader exploration proposals and spend more effort on the focused two-switch neighborhood. During stagnation, increase them up to a fixed cap to encourage escaping the current basin. This preserves a minimum exploration quota, bounds proposal-generation work, and uses actual LP improvement rather than surrogate scores to guide the allocation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:06:57.441757",
+  "llm_cost": 0.0019472,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,94 @@
+<NAME>
+capped_route_support
+</NAME>
+
+<DESCRIPTION>
+The current two-hop reward is assigned independently across every possible intermediate, so its aggregate influence for an OD pair can overwhelm the direct-link signal. Collect the candidate two-hop weights per OD pair, then proportionally scale them when their total magnitude exceeds 0.75 of that pair’s direct-link reward. This preserves the relative preference among intermediates while restraining indirect-route rewards that might otherwise distort topology choices.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reward two-hop paths according to the OD traffic they could carry.
+    # The concave path support preserves some influence for smaller demands.
+    quadratic = {}
+    path_strength = 0.46
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            raw_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+            relative_quality = raw_support / normalized_demand
+            relative_quality = min(1.4, max(0.8, relative_quality))
+            path_support = normalized_demand * relative_quality
+
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+=======
+    # Reward two-hop paths according to the OD traffic they could carry.
+    # Cap their aggregate reward per OD pair to keep direct service influential.
+    quadratic = {}
+    path_strength = 0.46
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_demand = float(traffic[i, k])
+            if through_demand <= 0.0:
+                continue
+
+            normalized_demand = through_demand / scale
+            raw_support = (
+                0.70 * normalized_demand
+                + 0.30 * np.sqrt(normalized_demand)
+            )
+            relative_quality = raw_support / normalized_demand
+            relative_quality = min(1.4, max(0.8, relative_quality))
+            path_support = normalized_demand * relative_quality
+
+            candidates = []
+            total_magnitude = 0.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                edge_pressure = (
+                    float(traffic[i, j]) + float(traffic[j, k])
+                ) / scale
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                candidates.append((key, weight))
+                total_magnitude += abs(weight)
+
+            cap = 0.75 * abs(linear[(i, k)])
+            factor = min(1.0, cap / total_magnitude) if total_magnitude > 0.0 else 1.0
+            for key, weight in candidates:
+                quadratic[key] = weight * factor
+>>>>>>> REPLACE
+
+</DIFF>

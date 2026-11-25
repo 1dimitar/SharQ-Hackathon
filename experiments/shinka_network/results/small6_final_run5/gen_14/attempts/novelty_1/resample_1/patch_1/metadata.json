@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route-pressure-qubo",
+  "patch_description": "The current approach combines direct-demand rewards, selected two-hop rewards, reciprocal-link penalties, and a modest degree-constraint penalty weight. This version keeps those compact structural features, but estimates transit pressure from candidate routes rather than using incident demand alone: it repeatedly assigns demand softly among direct and two-hop options, then discounts paths through nodes that attract too much transit. It uses at most three two-hop terms per OD pair, with fewer terms for weaker demands, and moderates the reciprocal penalty so useful high-mutual-demand links are less discouraged. These are heuristic changes intended to improve both sample quality and energy rankings; their effect should be checked against the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:56:25.899557",
+  "llm_cost": 0.0026525,
+  "llm_model": "gpt-6-luna"
+}

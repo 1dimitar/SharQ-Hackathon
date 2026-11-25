@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_stagnation_rotations",
+  "patch_description": "This version focuses ordinary search on two-switches that touch dual-priced bottleneck links, ranking them by estimated dual relief and surrogate energy before spending LP calls. It scores a diversified subset of repaired starts, then tracks unsuccessful batches per parent. After repeated failures it selectively adds three-link rotations centered on that parent\u2019s highest-price links, increasing their frequency and focus as stagnation continues; successful progress resets the escalation. An elite archive provides varied restart parents, while cached and already-scored networks are skipped.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:45:05.356090",
+  "llm_cost": 0.0028103,
+  "llm_model": "gpt-6-luna"
+}

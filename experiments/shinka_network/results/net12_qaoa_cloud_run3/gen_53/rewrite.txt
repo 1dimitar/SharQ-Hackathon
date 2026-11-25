@@ -1,0 +1,122 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    matrix = np.asarray(demand, dtype=float)
+    n = len(matrix)
+
+    traffic = np.maximum(matrix, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    maximum = float(np.max(traffic)) if traffic.size else 0.0
+    if maximum <= 0.0:
+        maximum = 1.0
+    t = traffic / maximum
+
+    outgoing = np.sum(t, axis=1)
+    incoming = np.sum(t, axis=0)
+    peak_out = max(float(np.max(outgoing)), 1.0e-12)
+    peak_in = max(float(np.max(incoming)), 1.0e-12)
+    out_pressure = outgoing / peak_out
+    in_pressure = incoming / peak_in
+
+    # Direct links serve their own OD flow. Source/destination pressure
+    # provides a modest incentive for useful entry and exit capacity.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(t[i, j])
+            utility = (
+                0.68 * direct
+                + 0.16 * np.sqrt(direct)
+                + 0.08 * out_pressure[i] * direct
+                + 0.08 * in_pressure[j] * direct
+            )
+            linear[(i, j)] = -float(utility)
+
+    quadratic = {}
+
+    # Reciprocal links can serve traffic efficiently in both directions,
+    # but are unattractive when the reverse flow is negligible.
+    for i in range(n):
+        for j in range(i + 1, n):
+            a = float(t[i, j])
+            b = float(t[j, i])
+            if a + b <= 0.0:
+                continue
+            balance = 2.0 * min(a, b) / (a + b)
+            pair_value = 0.12 * balance * np.sqrt(a * b)
+            if pair_value > 0.0:
+                quadratic[((i, j), (j, i))] = -pair_value
+
+    # Sparse path terms: identify one capacity-conscious relay per OD pair.
+    # The score favors relays with available aggregate in/out capacity and
+    # legs that can plausibly carry the OD demand.
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            d = float(t[i, k])
+            if d <= 0.0:
+                continue
+
+            best_j = -1
+            best_score = -1.0
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first = float(t[i, j])
+                second = float(t[j, k])
+                bottleneck = min(first, second)
+                # Relay headroom reduces the appeal of already busy nodes.
+                pressure = 0.25 + 0.5 * out_pressure[j] + 0.5 * in_pressure[j]
+                score = (0.15 + bottleneck) / pressure
+                if score > best_score:
+                    best_score = score
+                    best_j = j
+
+            if best_j < 0:
+                continue
+            j = best_j
+            a = float(t[i, j])
+            b = float(t[j, k])
+
+            # Reward only credible paths, and discount paths when the direct
+            # link already captures most of the OD demand.
+            path_quality = min(a, b)
+            if path_quality <= 0.0:
+                continue
+            direct_discount = 1.0 / (1.0 + 2.0 * d)
+            relay_pressure = 0.5 + 0.5 * out_pressure[j] + 0.5 * in_pressure[j]
+            reward = 0.10 * np.sqrt(d * path_quality) * direct_discount / relay_pressure
+
+            e1, e2 = (i, j), (j, k)
+            key = (e1, e2) if e1 < e2 else (e2, e1)
+            quadratic[key] = quadratic.get(key, 0.0) - float(reward)
+
+    # Evaluator adds the degree penalties separately.
+    return linear, quadratic, 1.25
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reduce_indirect_scale",
+  "patch_description": "The indirect reward currently spreads each OD pair\u2019s fixed reward across nearly every possible relay, creating a dense interaction graph of about 840 terms. That broad signal may be too weakly selective to justify its influence relative to direct-demand rewards. Reduce its scale from 0.15 to 0.10 while preserving the existing allocation and coupling structure; this tests whether a more conservative indirect signal improves the sampled topologies without adding terms or changing the degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:23:06.759886",
+  "llm_cost": 0.0009927,
+  "llm_model": "gpt-6-luna"
+}

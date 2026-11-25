@@ -1,0 +1,32 @@
+<NAME>
+robust_demand_clipping
+</NAME>
+
+<DESCRIPTION>
+Replace maximum-based normalization with a robust 90th-percentile scale. Negative demand and self-links are excluded, and values above the percentile are clipped. This prevents a single unusually large demand from dominating the linear rewards, while retaining the relative ranking of demand-supported links below the clipping threshold. The existing degree penalty remains unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+=======
+    t = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = t.shape[0]
+    np.fill_diagonal(t, 0.0)
+
+    positive = t[t > 0.0]
+    if positive.size:
+        scale = float(np.percentile(positive, 90.0))
+        if scale <= 0.0:
+            scale = float(positive.max())
+        t = np.minimum(t, scale) / scale
+
+    linear = {(i, j): -float(t[i, j]) for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+>>>>>>> REPLACE
+</DIFF>

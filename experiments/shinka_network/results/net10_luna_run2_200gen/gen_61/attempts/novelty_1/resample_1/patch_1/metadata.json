@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "nonlinear_edge_pressure",
+  "patch_description": "Discount two-hop rewards when either component link already has substantial direct demand. Using a smooth nonlinear denominator reduces the incentive to route more traffic through links likely to be busy, while retaining the existing transit-capacity weighting and per-OD sharing. This tests a stronger congestion-aware signal without changing the term structure or exceeding the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:25.029968",
+  "llm_cost": 0.0010060000000000002,
+  "llm_model": "gpt-6-luna"
+}

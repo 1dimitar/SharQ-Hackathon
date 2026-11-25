@@ -1,0 +1,17 @@
+<NAME>
+stronger_twohop_support
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop path reward from 0.46 to 0.56 while leaving the demand-dependent path support and pressure discount unchanged. Direct-link rewards remain in place, but stronger support for useful two-hop routes should help the QUBO represent traffic that cannot be served directly under the degree constraints. This is a targeted test supported by prior results in which a 0.56 path strength outperformed 0.46, though the surrounding path formula differed.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    path_strength = 0.46
+=======
+    quadratic = {}
+    path_strength = 0.56
+>>>>>>> REPLACE
+</DIFF>

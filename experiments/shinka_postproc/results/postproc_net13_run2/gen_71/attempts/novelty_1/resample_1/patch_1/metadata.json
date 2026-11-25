@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_dual_archive",
+  "patch_description": "Reorganizes the search around a bounded score-and-diversity archive, with separate proposal and batch-selection stages. It seeds that archive from repaired candidates, then uses LP bottleneck links to guide switches and rotations while reserving a few proposals for consensus edges and exploration. Each batch mixes surrogate-promising moves with novel moves, and parent selection adapts to search history to reduce repeated work.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:34:32.838684",
+  "llm_cost": 0.0047043,
+  "llm_model": "gpt-6-luna"
+}

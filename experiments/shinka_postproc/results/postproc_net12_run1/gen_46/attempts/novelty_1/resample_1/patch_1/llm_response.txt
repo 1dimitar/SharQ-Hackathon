@@ -1,0 +1,74 @@
+<NAME>
+stagnation_archive_kicks
+</NAME>
+
+<DESCRIPTION>
+Add a bounded kick when the global best has not improved for 12 search iterations. The kick starts from a strong but non-elite archive member, preserving the best solutions while exploring a different basin. Its size increases gradually across repeated stalls and resets after an improvement, so exploration escalates without turning every iteration into a large random perturbation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    refresh_archive()
+    iteration = 0
+=======
+    refresh_archive()
+    iteration = 0
+    global_stall = 0
+    kick_stage = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if evaluated:
+            trials, wins, gain = parent_stats.get(parent, (0, 0, 0.0))
+            improvement = max(0.0, before - best_score)
+            parent_stats[parent] = (
+                trials + evaluated,
+                wins + int(improvement > 0.0),
+                gain + improvement / max(1.0, before),
+            )
+            rotation_stalls[parent] = (
+                0 if improvement > 0.0 else rotation_stalls.get(parent, 0) + 1
+            )
+        refresh_archive()
+        iteration += 1
+=======
+        if evaluated:
+            trials, wins, gain = parent_stats.get(parent, (0, 0, 0.0))
+            improvement = max(0.0, before - best_score)
+            parent_stats[parent] = (
+                trials + evaluated,
+                wins + int(improvement > 0.0),
+                gain + improvement / max(1.0, before),
+            )
+            rotation_stalls[parent] = (
+                0 if improvement > 0.0 else rotation_stalls.get(parent, 0) + 1
+            )
+
+        if best_score < before:
+            global_stall = 0
+            kick_stage = 0
+        else:
+            global_stall += 1
+
+        # On sustained stagnation, perturb a strong non-elite archive member.
+        # Escalate kick size gradually while leaving the elite/archive intact.
+        if global_stall >= 12 and tools.lp_calls_left > 0:
+            refresh_archive()
+            ranked = sorted(archive, key=lambda net: scores[net])
+            donors = ranked[3:10] if len(ranked) > 3 else ranked[1:]
+            if donors:
+                donor = donors[int(rng.integers(len(donors)))]
+                kick_stage = min(kick_stage + 1, 5)
+                kicked = random_kick(donor, 2 + kick_stage)
+                if (kicked != donor and tools.is_valid(kicked)
+                        and kicked not in scores and not tools.is_cached(kicked)):
+                    record(kicked)
+                    if best_score < before:
+                        kick_stage = 0
+            global_stall = 0
+
+        refresh_archive()
+        iteration += 1
+>>>>>>> REPLACE
+
+</DIFF>

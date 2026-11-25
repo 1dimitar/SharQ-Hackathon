@@ -1,0 +1,14 @@
+{
+  "generation": 88,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_route_balance",
+  "patch_description": "This version keeps the direct-demand reward compact and replaces the current collection of route, neighbor-profile, and reciprocal factors with a sparse set of demand-supported two-hop interactions. It ranks routes using endpoint affinity and transit pressure, chooses the third route using a demand quantile that is independent of route-strength scaling, and gives lower-ranked alternatives progressively smaller rewards. The route-strength factor increases mildly with network size to reduce the loss of predictor signal on larger instances. The evaluator still supplies all degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:09:44.059971",
+  "llm_cost": 0.0034486,
+  "llm_model": "gpt-6-luna"
+}

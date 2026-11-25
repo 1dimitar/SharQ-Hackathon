@@ -1,0 +1,81 @@
+<NAME>
+adaptive_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Replace the mostly fixed elite-versus-stall parent choice with progress- and exploration-aware selection. Track how often each archived network is selected and how often its neighborhood produces an improvement. Weight parents by a blend of score rank, under-selection, structural isolation, and demonstrated search progress. This retains pressure toward strong networks while giving under-explored regions a chance to produce useful moves.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_score = float("inf")
+    stalls = {}
+
+    def canon(arcs):
+=======
+    best_score = float("inf")
+    stalls = {}
+    parent_visits = {}
+    parent_gains = {}
+
+    def canon(arcs):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        # Most iterations exploit strong solutions; some explore less-used regions.
+        if rng.random() < 0.62:
+            return pop[int(rng.integers(min(7, len(pop))))]
+        weights = [1.0 / (1.0 + stalls.get(net, 0)) for net in pop]
+        total = sum(weights)
+        pick = float(rng.random()) * total
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+=======
+    def select_parent(pop):
+        # Balance quality, structural isolation, past productivity, and exploration.
+        if len(pop) == 1:
+            parent = pop[0]
+        else:
+            weights = []
+            for rank, net in enumerate(pop):
+                novelty = min(
+                    (distance(net, other) for other in pop if other != net),
+                    default=0,
+                ) / max(1, 2 * n)
+                underexplored = 1.0 / ((1.0 + parent_visits.get(net, 0)) ** 0.45)
+                productive = 1.0 + min(1.0, 0.35 * parent_gains.get(net, 0))
+                quality = 1.0 / (1.0 + 0.10 * rank)
+                isolation = 0.75 + 0.5 * novelty
+                weights.append(
+                    quality * isolation * productive * underexplored
+                    / (1.0 + 0.08 * stalls.get(net, 0))
+                )
+            pick = float(rng.random()) * sum(weights)
+            parent = pop[-1]
+            for net, weight in zip(pop, weights):
+                pick -= weight
+                if pick <= 0:
+                    parent = net
+                    break
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        return parent
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if min((scored.get(net, float("inf")) for net in batch), default=float("inf")) < old_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+=======
+        if min((scored.get(net, float("inf")) for net in batch), default=float("inf")) < old_score:
+            stalls[parent] = 0
+            parent_gains[parent] = parent_gains.get(parent, 0) + 1
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+>>>>>>> REPLACE
+
+</DIFF>

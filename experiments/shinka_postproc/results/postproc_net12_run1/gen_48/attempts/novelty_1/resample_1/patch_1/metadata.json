@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stagnation_guided_rotations",
+  "patch_description": "Increase three-edge rotation diversity only after repeated unsuccessful batches, using `kick_size` as the existing stagnation signal. In this stronger phase, most sampled rotations include a priced bottleneck edge, while the other two edges remain exploratory. When an improvement resets `kick_size`, rotation generation returns to its normal level. This targets the recommended escape move without spending extra LP calls or changing the search during productive periods.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:54:11.012940",
+  "llm_cost": 0.0021669000000000002,
+  "llm_model": "gpt-6-luna"
+}

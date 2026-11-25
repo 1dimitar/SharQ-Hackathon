@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "second_pass_congestion",
+  "patch_description": "Estimate transit-node usage from each OD pair\u2019s two initially strongest candidate routes, then make a bounded second-pass adjustment to route rankings and pressure discounts. This discourages routes through nodes that the initial route model already predicts will be busy, while keeping the adjustment modest so it does not override demand affinity. The existing route-selection and QUBO expansion remain intact.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:16:38.219679",
+  "llm_cost": 0.0037901000000000002,
+  "llm_model": "gpt-6-luna"
+}

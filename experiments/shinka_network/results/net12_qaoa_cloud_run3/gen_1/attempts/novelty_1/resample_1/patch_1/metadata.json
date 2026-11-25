@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_degree_enforcement",
+  "patch_description": "The reported feasible rate is only 17%, so many sampled low-energy assignments rely on repair rather than already satisfying the degree constraints. Increase the evaluator\u2019s degree-penalty weight from 1 to 4. Since the cost terms are rescaled to have maximum absolute weight 1, this makes degree violations substantially more expensive while leaving the energy of every valid topology unchanged. That should encourage the sampler to produce more valid candidates and give local polishing better starting topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:20:21.187532",
+  "llm_cost": 0.0009454999999999999,
+  "llm_model": "gpt-6-luna"
+}

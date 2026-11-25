@@ -1,0 +1,17 @@
+<NAME>
+size_scaled_degree_penalty
+</NAME>
+
+<DESCRIPTION>
+Increase the externally applied degree penalty modestly with network size. The current program’s pre-repair feasibility falls as low as 80% at n=16, while the QUBO’s interaction structure grows with n. A gradual increase from 1.25 to 1.53 by n=24 should discourage invalid low-energy samples without changing the ranking of valid topologies, since every valid topology has zero degree penalty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, 1.25
+=======
+    penalty_weight = 1.25 + 0.02 * max(0, n - 10)
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

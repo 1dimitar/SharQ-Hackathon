@@ -1,0 +1,21 @@
+<NAME>
+endpoint_pressure_85_15
+</NAME>
+
+<DESCRIPTION>
+Increase the endpoint-pressure share from 10% to 15%, while keeping direct demand dominant at 85%. This tests the recommended nearby mixture: endpoint pressure may help choose links useful to high-throughput sources and destinations, improving typical topologies, while the strong direct-demand component remains the main signal. The two components stay normalized as before; the quadratic terms and degree penalty are unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            linear[(i, j)] = -(
+                0.90 * float(demand[i, j]) / dmax
+                + 0.10 * endpoint_pressure
+            )
+=======
+            linear[(i, j)] = -(
+                0.85 * float(demand[i, j]) / dmax
+                + 0.15 * endpoint_pressure
+            )
+>>>>>>> REPLACE
+</DIFF>

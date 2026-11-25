@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_pressure_mix",
+  "patch_description": "Blend the direct-demand reward with a small endpoint-pressure reward. Direct demand remains the dominant signal, while the secondary component favors links leaving nodes with substantial outgoing traffic and entering nodes with substantial incoming traffic. Normalize each component independently before mixing so the 90/10 ratio is meaningful across demand scales. This changes only the linear terms; it preserves the existing two-hop terms and degree-penalty setup.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:39:50.906029",
+  "llm_cost": 0.00062,
+  "llm_model": "gpt-6-luna"
+}

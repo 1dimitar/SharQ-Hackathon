@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_relief_screening",
+  "patch_description": "Use the LP\u2019s dual prices when choosing which generated moves receive LP calls. The move generator already focuses on bottleneck links, but the current screen then ranks candidates only by QUBO energy and can discard those moves. This change reserves part of each batch for diverse moves that remove positively priced links, ranking those candidates by bottleneck relief and then surrogate energy. The rest of the batch still favors surrogate energy, preserving exploration when dual guidance is misleading.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:12:31.056408",
+  "llm_cost": 0.0031952,
+  "llm_model": "gpt-6-luna"
+}

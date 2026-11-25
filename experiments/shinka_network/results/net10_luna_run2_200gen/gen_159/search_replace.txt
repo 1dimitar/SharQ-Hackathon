@@ -1,0 +1,16 @@
+<NAME>
+relay_pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Raise the relay-pressure floor from 0.65 to 0.85, leaving all other path calculations unchanged. This tests whether the current discount penalizes low-incident-demand relays too strongly: a higher floor makes paths through those nodes less favored relative to paths through busy nodes, while reducing the spread in relay discounts. The change is a focused comparison of the suggested floor values.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    node_pressure = np.maximum(0.65, incident / max_incident)
+=======
+    node_pressure = np.maximum(0.85, incident / max_incident)
+>>>>>>> REPLACE
+
+</DIFF>

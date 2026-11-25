@@ -1,0 +1,14 @@
+{
+  "generation": 106,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "underexplored_parent_selection",
+  "patch_description": "The current parent weighting adjusts for productivity, but repeatedly selected parents can still retain substantial probability through the elite/uniform baseline. Strengthen explicit underexploration by multiplying that baseline by a visit-count bonus that decays with use, while retaining the existing productivity adjustment. This preserves preference for good and productive archive members but directs more searches toward archive members that have received little attention, which can help escape repeatedly explored local regions.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:10:07.688609",
+  "llm_cost": 0.0027477,
+  "llm_model": "gpt-6-luna"
+}

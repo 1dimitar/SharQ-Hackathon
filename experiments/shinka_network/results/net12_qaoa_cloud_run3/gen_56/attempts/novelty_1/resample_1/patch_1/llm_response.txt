@@ -1,0 +1,15 @@
+<NAME>
+concentrate_extra_relays
+</NAME>
+
+<DESCRIPTION>
+Reserve the two extra affinity-ranked relays for the top 10% of demands rather than the top 25%. This concentrates interactions on the most consequential OD pairs while retaining the pressure-discounted alternative for every positive demand.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+=======
+    cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+>>>>>>> REPLACE
+</DIFF>

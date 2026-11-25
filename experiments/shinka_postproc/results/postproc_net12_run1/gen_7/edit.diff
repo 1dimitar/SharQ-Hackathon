@@ -1,0 +1,153 @@
+--- a/original.py
++++ b/original.py
+@@ -1,131 +1,147 @@
+ """Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import json
+ import time
+ 
+ import numpy as np
+ 
+ # EVOLVE-BLOCK-START
+ import math
+ 
+ 
+ def improve(demand, candidates, tools, rng):
+     """Turn raw QAOA candidates into the best valid network you can find.
+ 
+     Args:
+         demand: (n, n) int array, demand[i, j] = traffic from node i to node j.
+         candidates: list of raw QAOA solutions, best QUBO energy first. Each is a list of links
+             (i, j); most break the degree rules (2 out, 2 in per node) and need correcting.
+         tools: the only way to reach the routing LP (see the task description):
+             tools.lp(arcs) / tools.lp_detail(arcs)  - budgeted, 1 call per new valid network
+             tools.repair(arcs), tools.is_valid(arcs), tools.energy(arcs), tools.is_cached(arcs)
+             tools.lp_calls_left, tools.n
+         rng: numpy Generator; use it for all randomness.
+ 
+     Returns:
+         The best valid network found, as a list of links. The LP budget raising
+         BudgetExhausted is fine: the evaluator then uses the best network the LP has scored.
+ 
+     Baseline: repair every candidate, 2-exchange descent from the best few, then iterated
+     local search with random kicks until the LP budget is spent.
+     """
+     pool = {}
+     for cand in candidates:
+         net = tuple(sorted(tools.repair(cand)))
+         if net not in pool:
+             pool[net] = tools.lp(net)
+     ranked = sorted(pool, key=pool.get)
+     best_net, best = ranked[0], pool[ranked[0]]
+ 
+     def swaps(net):
+         arcs = list(net)
+-        pairs = [(p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))]
+-        rng.shuffle(pairs)
+         cur = set(net)
+-        for p, q in pairs:
++        try:
++            prices = tools.lp_detail(net).get("prices", {})
++            priced = {tuple(a) for a, price in prices.items() if price > 0}
++        except Exception:
++            priced = set()
++
++        # Try exchanges that remove a positive-price link first, then retain
++        # the complete neighborhood as a fallback.
++        urgent, other = [], []
++        for p in range(len(arcs)):
++            for q in range(p + 1, len(arcs)):
++                pair = (p, q)
++                if arcs[p] in priced or arcs[q] in priced:
++                    urgent.append(pair)
++                else:
++                    other.append(pair)
++        rng.shuffle(urgent)
++        rng.shuffle(other)
++        for p, q in urgent + other:
+             (a, b), (c, d) = arcs[p], arcs[q]
+             if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                 continue
+             yield tuple(sorted((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+ 
+     def descend(net, score):
+         improved = True
+         while improved:
+             improved = False
+             for cand in swaps(net):
+                 s = tools.lp(cand)
+                 if s < score:
+                     net, score, improved = cand, s, True
+                     break
+         return net, score
+ 
+     for start in ranked[:5]:
+         net, score = descend(start, pool[start])
+         if score < best:
+             best_net, best = net, score
+ 
+     while True:
+         net = best_net
+         for _ in range(2 + int(rng.integers(3))):
+             net = next(swaps(net), net)
+         net, score = descend(net, tools.lp(net))
+         if score < best:
+             best_net, best = net, score
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+     """Fixed entry point called by the evaluator: one run on one candidate pool."""
+     import signal
+ 
+     import oracle
+     from hamiltonian import surrogate_terms
+ 
+     pool = json.load(open(pool_path))
+     import qoblib_tools as qt
+ 
+     n = int(pool["instance"][-2:])
+     demand = qt.load_network_demand(n)
+     linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+     tools = oracle.Tools(demand, lp_budget, (
+         {tuple(map(int, a)): float(w) for a, w in linear.items()},
+         {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+     ))
+     candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+     if control:  # same number of random valid networks instead of QAOA output
+         crng = np.random.default_rng(10_000 + seed)
+         candidates = [qt.random_topology(n, crng) for _ in candidates]
+     def _timeout(signum, frame):
+         raise oracle.RunTimeout()
+ 
+     start = time.perf_counter()
+     returned, error, timed_out = None, None, False
+     signal.signal(signal.SIGALRM, _timeout)
+     signal.alarm(int(time_limit))
+     try:
+         returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+     except oracle.BudgetExhausted:
+         pass
+     except oracle.RunTimeout:
+         timed_out = True
+     except Exception as exc:  # noqa: BLE001
+         error = f"{type(exc).__name__}: {exc}"
+     finally:
+         signal.alarm(0)
+     best_score, best_arcs = tools.certified_best()
+     if returned is not None:
+         try:
+             ret = [tuple(map(int, a)) for a in returned]
+             if qt.is_valid_topology(n, ret):
+                 s = qt.route_min_congestion(demand, ret).objective
+                 if s < best_score:
+                     best_score, best_arcs = s, tuple(sorted(ret))
+         except Exception:  # noqa: BLE001
+             pass
+     return {
+         "pool": pool_path, "control": control, "n": n, "error": error,
+         "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+         "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+     }

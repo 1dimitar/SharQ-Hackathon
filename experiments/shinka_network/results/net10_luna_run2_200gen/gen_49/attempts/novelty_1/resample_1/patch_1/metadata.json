@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "pressure_discounted_paths",
+  "patch_description": "Strengthen the two-hop signal while discounting paths through heavily loaded transit nodes and paths whose edges already have substantial direct demand. Keep the positive-demand OD gate so zero-demand pairs do not generate quadratic terms. This favors short paths that can plausibly serve meaningful traffic without concentrating too much load on busy nodes or edges; the coefficient is increased from 0.06 to 0.15 to make the path signal more influential alongside direct-link rewards.",
+  "error_msg": "SEARCH text not found in editable regions\n\nLooking for 22-line block starting with: '# A weak two-hop reward encourages links that jointly provide a short'\n\nFull search pattern:\n```\n# A weak two-hop reward encourages links that jointly provide a short\n    # route for traffic not captured by either link's own demand.\n    row_load = np.asarray(demand, dtype=float).sum(axis=1)\n    col_load = np.asarray(demand, dtype=float).sum(axis=0)\n    node_load = row_load + col_load\n    typical_load = float(node_load.mean()) or 1.0\n    quadratic = {}\n    for i in range(n):\n        for j in range(n):\n            if i == j:\n                continue\n            for k in range(n):\n                if k == i or k == j:\n                    continue\n                traffic = float(demand[i, k])\n                if traffic <= 0.0:\n                    continue\n                # Discount busy transit nodes to avoid overloading their\n                # limited incoming and outgoing capacity.\n                congestion = 1.0 + float(node_load[j]) / typical_load\n                weight = -0.06 * (traffic / scale) / congestion\n                quadratic[((i, j), (j, k))] = weight\n```\n\nFound similar code block at line 33 (\u2713 editable):\n\nDifferences between search pattern and actual code:\n```diff\n-  # A weak two-hop reward encourages links that jointly provide a short\n-      # route for traffic not captured by either link's own demand.\n+      # A weak two-hop reward encourages links that jointly provide a short\n+      # route for traffic not captured by either link's own direct demand.\n```\n\nEditable regions where you can make changes:\n  Region 1 (lines 5-60):\n    import numpy as np\n    \n    \n    ... (46 more lines)\n    \n        penalty_weight = 1.0\n        return linear, quadratic, penalty_weight\n\nQuick fixes:\n\u2022 Check indentation - search text must match exactly including spaces/tabs\n\u2022 Look for typos in the search text\n\u2022 Try searching for just the first line instead of the full block",
+  "timestamp": "2026-11-21T16:44:07.154013",
+  "llm_cost": 0.0010429,
+  "llm_model": "gpt-6-luna"
+}

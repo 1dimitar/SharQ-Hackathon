@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_metric_screen",
+  "patch_description": "Replace the link-pressure heuristic with a routing-dual lower bound. Treat the parent\u2019s nonnegative dual prices as link lengths and compute their directed shortest-path metric d. For any proposed network E, sum(demand * d) / sum(d[u,v] for (u,v) in E) is a valid congestion lower bound. Unlike removal pressure, this accounts for whether newly added links actually shortcut expensive routes.\n\nUse the bound to deprioritize moves that cannot improve the parent, while retaining them as possible stepping stones. Reserve only a small part of each batch for optimistic dual-ranked local moves; energy remains the main ranking signal.\n\nAlso fix the currently unreachable exploration reserve: explicitly leave slots for candidates structurally distant from the archive and the already-selected batch. Increase this reserve modestly when the parent stalls. All calculations are free of LP calls and scale with network size.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:25:28.047863",
+  "llm_cost": 0.110478,
+  "llm_model": "gpt-6.1-sol"
+}

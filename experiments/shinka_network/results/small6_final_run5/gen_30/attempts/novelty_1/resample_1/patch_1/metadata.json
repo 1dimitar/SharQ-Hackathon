@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_compact",
+  "patch_description": "Combines the compact two-hop route selection and estimated transit pressure from the strongest inspiration program with the reciprocal-link reward used by the current program. The direct-link weights remain unchanged. Route terms are accumulated canonically, and the transit estimate discourages overusing attractive but already busy intermediate nodes. It omits broader direct-versus-route couplings to keep the QUBO compact.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:12:10.584256",
+  "llm_cost": 0.0037792,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "adaptive_parent_productivity",
+  "patch_description": "Adapt parent selection to each archive member\u2019s search history. Keep the existing 70% preference for the elite portion of the archive, but weight choices toward underexplored parents and those that have produced improvements, while gradually reducing attention to repeatedly stalled parents. Record successful batches as well as visits so selection can respond to actual LP-search productivity rather than relying on rank alone.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:56:16.678975",
+  "llm_cost": 0.0030830000000000002,
+  "llm_model": "gpt-6-luna"
+}

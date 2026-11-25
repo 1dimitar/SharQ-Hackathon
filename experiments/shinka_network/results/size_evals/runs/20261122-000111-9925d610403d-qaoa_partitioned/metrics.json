@@ -1,0 +1,1491 @@
+{
+    "combined_score": 0.8113166617831512,
+    "public": {
+        "sum_score": 8.113166617831512,
+        "num_instances": 10,
+        "score_network12_s0": 0.8356559708819284,
+        "score_network12_s1": 0.8460706542771788,
+        "score_network13_s0": 0.8432031764768797,
+        "score_network13_s1": 0.8047721368238665,
+        "score_network14_s0": 0.7710279117593298,
+        "score_network14_s1": 0.8009805112418512,
+        "score_network15_s0": 0.8250871223519687,
+        "score_network15_s1": 0.7976061712423695,
+        "score_network16_s0": 0.8136882403021932,
+        "score_network16_s1": 0.7750747224739465,
+        "gap_best_pct_network12_s0": 12.343294487004197,
+        "gap_best_pct_network12_s1": 11.493304976236463,
+        "gap_best_pct_network13_s0": 13.265917104650393,
+        "gap_best_pct_network13_s1": 17.804204643736288,
+        "gap_best_pct_network14_s0": 21.270158645956894,
+        "gap_best_pct_network14_s1": 16.314039132475067,
+        "gap_best_pct_network15_s0": 15.76401434464907,
+        "gap_best_pct_network15_s1": 18.639954701108195,
+        "gap_best_pct_network16_s0": 19.149652683534878,
+        "gap_best_pct_network16_s1": 20.630899604933806,
+        "mean_gap_best_pct": 16.667544032428527,
+        "mean_gap_median_pct": 30.942960461616952,
+        "mean_feasible_rate": 0.011,
+        "mean_quadratic_terms": 1458.2,
+        "routine": "qaoa_partitioned",
+        "backend": "cloud"
+    },
+    "private": {
+        "circuits": 108216,
+        "quantum_seconds": 8508.892699584001,
+        "sampling_wall_seconds": 3349.855335,
+        "parallel": 3,
+        "build_seconds": 0.009756541971000843,
+        "network12_s0": {
+            "score": 0.8356559708819284,
+            "best": 310600.0,
+            "median": 353917.0,
+            "ref": 276474.0,
+            "gap_best_pct": 12.343294487004197,
+            "gap_median_pct": 28.010952205270655,
+            "feasible_rate": 0.04,
+            "num_samples": 100,
+            "distinct": 78,
+            "num_quadratic": 880,
+            "circuits": 6012,
+            "quantum_seconds": 748.5368747920002,
+            "started_s": 0.0004249580088071525,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    6
+                ],
+                [
+                    0,
+                    8
+                ],
+                [
+                    1,
+                    6
+                ],
+                [
+                    1,
+                    7
+                ],
+                [
+                    2,
+                    4
+                ],
+                [
+                    2,
+                    10
+                ],
+                [
+                    3,
+                    5
+                ],
+                [
+                    3,
+                    11
+                ],
+                [
+                    4,
+                    3
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    6,
+                    9
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    7,
+                    11
+                ],
+                [
+                    8,
+                    1
+                ],
+                [
+                    8,
+                    2
+                ],
+                [
+                    9,
+                    3
+                ],
+                [
+                    9,
+                    7
+                ],
+                [
+                    10,
+                    0
+                ],
+                [
+                    10,
+                    1
+                ],
+                [
+                    11,
+                    2
+                ],
+                [
+                    11,
+                    8
+                ]
+            ]
+        },
+        "network12_s1": {
+            "score": 0.8460706542771788,
+            "best": 308250.0,
+            "median": 347667.0,
+            "ref": 276474.0,
+            "gap_best_pct": 11.493304976236463,
+            "gap_median_pct": 25.75034180429263,
+            "feasible_rate": 0.0,
+            "num_samples": 100,
+            "distinct": 85,
+            "num_quadratic": 880,
+            "circuits": 6012,
+            "quantum_seconds": 774.417604458009,
+            "started_s": 0.0007203749992186204,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    3
+                ],
+                [
+                    0,
+                    6
+                ],
+                [
+                    1,
+                    8
+                ],
+                [
+                    1,
+                    10
+                ],
+                [
+                    2,
+                    5
+                ],
+                [
+                    2,
+                    7
+                ],
+                [
+                    3,
+                    4
+                ],
+                [
+                    3,
+                    7
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    4,
+                    6
+                ],
+                [
+                    5,
+                    3
+                ],
+                [
+                    5,
+                    11
+                ],
+                [
+                    6,
+                    8
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    7,
+                    9
+                ],
+                [
+                    8,
+                    2
+                ],
+                [
+                    8,
+                    11
+                ],
+                [
+                    9,
+                    1
+                ],
+                [
+                    9,
+                    2
+                ],
+                [
+                    10,
+                    0
+                ],
+                [
+                    10,
+                    9
+                ],
+                [
+                    11,
+                    0
+                ],
+                [
+                    11,
+                    1
+                ]
+            ]
+        },
+        "network13_s0": {
+            "score": 0.8432031764768797,
+            "best": 340500.0,
+            "median": 374125.0,
+            "ref": 300620.0,
+            "gap_best_pct": 13.265917104650393,
+            "gap_median_pct": 24.45113432240038,
+            "feasible_rate": 0.01,
+            "num_samples": 100,
+            "distinct": 90,
+            "num_quadratic": 1111,
+            "circuits": 6513,
+            "quantum_seconds": 784.4063852089894,
+            "started_s": 0.001245333012775518,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    6
+                ],
+                [
+                    0,
+                    8
+                ],
+                [
+                    1,
+                    7
+                ],
+                [
+                    1,
+                    12
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    2,
+                    10
+                ],
+                [
+                    3,
+                    6
+                ],
+                [
+                    3,
+                    7
+                ],
+                [
+                    4,
+                    3
+                ],
+                [
+                    4,
+                    11
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    3
+                ],
+                [
+                    6,
+                    2
+                ],
+                [
+                    6,
+                    12
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    7,
+                    10
+                ],
+                [
+                    8,
+                    4
+                ],
+                [
+                    8,
+                    9
+                ],
+                [
+                    9,
+                    1
+                ],
+                [
+                    9,
+                    2
+                ],
+                [
+                    10,
+                    0
+                ],
+                [
+                    10,
+                    1
+                ],
+                [
+                    11,
+                    5
+                ],
+                [
+                    11,
+                    9
+                ],
+                [
+                    12,
+                    5
+                ],
+                [
+                    12,
+                    11
+                ]
+            ]
+        },
+        "network13_s1": {
+            "score": 0.8047721368238665,
+            "best": 354143.0,
+            "median": 395200.0,
+            "ref": 300620.0,
+            "gap_best_pct": 17.804204643736288,
+            "gap_median_pct": 31.461645931741078,
+            "feasible_rate": 0.04,
+            "num_samples": 100,
+            "distinct": 83,
+            "num_quadratic": 1111,
+            "circuits": 6513,
+            "quantum_seconds": 845.8829904999875,
+            "started_s": 749.1279292500112,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    2
+                ],
+                [
+                    0,
+                    3
+                ],
+                [
+                    1,
+                    8
+                ],
+                [
+                    1,
+                    12
+                ],
+                [
+                    2,
+                    1
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    3,
+                    5
+                ],
+                [
+                    3,
+                    6
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    4,
+                    10
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    6,
+                    7
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    2
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    8,
+                    4
+                ],
+                [
+                    8,
+                    9
+                ],
+                [
+                    9,
+                    3
+                ],
+                [
+                    9,
+                    7
+                ],
+                [
+                    10,
+                    11
+                ],
+                [
+                    10,
+                    12
+                ],
+                [
+                    11,
+                    1
+                ],
+                [
+                    11,
+                    6
+                ],
+                [
+                    12,
+                    0
+                ],
+                [
+                    12,
+                    11
+                ]
+            ]
+        },
+        "network14_s0": {
+            "score": 0.7710279117593298,
+            "best": 416067.0,
+            "median": 478208.5,
+            "ref": 343091.0,
+            "gap_best_pct": 21.270158645956894,
+            "gap_median_pct": 39.38240874869932,
+            "feasible_rate": 0.0,
+            "num_samples": 100,
+            "distinct": 78,
+            "num_quadratic": 1404,
+            "circuits": 10521,
+            "quantum_seconds": 866.0112733749993,
+            "started_s": 775.0388108750049,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    8
+                ],
+                [
+                    0,
+                    12
+                ],
+                [
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    4
+                ],
+                [
+                    2,
+                    0
+                ],
+                [
+                    2,
+                    6
+                ],
+                [
+                    3,
+                    1
+                ],
+                [
+                    3,
+                    13
+                ],
+                [
+                    4,
+                    2
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    5,
+                    13
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    6,
+                    11
+                ],
+                [
+                    7,
+                    3
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    8,
+                    5
+                ],
+                [
+                    8,
+                    7
+                ],
+                [
+                    9,
+                    2
+                ],
+                [
+                    9,
+                    10
+                ],
+                [
+                    10,
+                    1
+                ],
+                [
+                    10,
+                    12
+                ],
+                [
+                    11,
+                    7
+                ],
+                [
+                    11,
+                    8
+                ],
+                [
+                    12,
+                    3
+                ],
+                [
+                    12,
+                    9
+                ],
+                [
+                    13,
+                    6
+                ],
+                [
+                    13,
+                    11
+                ]
+            ]
+        },
+        "network14_s1": {
+            "score": 0.8009805112418512,
+            "best": 399063.0,
+            "median": 462250.0,
+            "ref": 343091.0,
+            "gap_best_pct": 16.314039132475067,
+            "gap_median_pct": 34.73101888420273,
+            "feasible_rate": 0.0,
+            "num_samples": 100,
+            "distinct": 100,
+            "num_quadratic": 1404,
+            "circuits": 10521,
+            "quantum_seconds": 876.1090669590048,
+            "started_s": 785.0771293330035,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    7
+                ],
+                [
+                    1,
+                    2
+                ],
+                [
+                    1,
+                    11
+                ],
+                [
+                    2,
+                    0
+                ],
+                [
+                    2,
+                    5
+                ],
+                [
+                    3,
+                    4
+                ],
+                [
+                    3,
+                    13
+                ],
+                [
+                    4,
+                    10
+                ],
+                [
+                    4,
+                    13
+                ],
+                [
+                    5,
+                    3
+                ],
+                [
+                    5,
+                    12
+                ],
+                [
+                    6,
+                    7
+                ],
+                [
+                    6,
+                    12
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    7,
+                    9
+                ],
+                [
+                    8,
+                    0
+                ],
+                [
+                    8,
+                    9
+                ],
+                [
+                    9,
+                    2
+                ],
+                [
+                    9,
+                    3
+                ],
+                [
+                    10,
+                    5
+                ],
+                [
+                    10,
+                    11
+                ],
+                [
+                    11,
+                    6
+                ],
+                [
+                    11,
+                    8
+                ],
+                [
+                    12,
+                    8
+                ],
+                [
+                    12,
+                    10
+                ],
+                [
+                    13,
+                    1
+                ],
+                [
+                    13,
+                    6
+                ]
+            ]
+        },
+        "network15_s0": {
+            "score": 0.8250871223519687,
+            "best": 429334.0,
+            "median": 471636.0,
+            "ref": 370870.0,
+            "gap_best_pct": 15.76401434464907,
+            "gap_median_pct": 27.170167444117887,
+            "feasible_rate": 0.0,
+            "num_samples": 100,
+            "distinct": 88,
+            "num_quadratic": 1768,
+            "circuits": 15030,
+            "quantum_seconds": 910.8007044589904,
+            "started_s": 1596.9964215830114,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    3
+                ],
+                [
+                    0,
+                    4
+                ],
+                [
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    10
+                ],
+                [
+                    2,
+                    7
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    3,
+                    0
+                ],
+                [
+                    3,
+                    2
+                ],
+                [
+                    4,
+                    6
+                ],
+                [
+                    4,
+                    9
+                ],
+                [
+                    5,
+                    6
+                ],
+                [
+                    5,
+                    13
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    6,
+                    11
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    7,
+                    13
+                ],
+                [
+                    8,
+                    5
+                ],
+                [
+                    8,
+                    14
+                ],
+                [
+                    9,
+                    2
+                ],
+                [
+                    9,
+                    5
+                ],
+                [
+                    10,
+                    7
+                ],
+                [
+                    10,
+                    14
+                ],
+                [
+                    11,
+                    1
+                ],
+                [
+                    11,
+                    9
+                ],
+                [
+                    12,
+                    8
+                ],
+                [
+                    12,
+                    11
+                ],
+                [
+                    13,
+                    3
+                ],
+                [
+                    13,
+                    12
+                ],
+                [
+                    14,
+                    1
+                ],
+                [
+                    14,
+                    12
+                ]
+            ]
+        },
+        "network15_s1": {
+            "score": 0.7976061712423695,
+            "best": 440000.0,
+            "median": 492964.5,
+            "ref": 370870.0,
+            "gap_best_pct": 18.639954701108195,
+            "gap_median_pct": 32.92110443012377,
+            "feasible_rate": 0.02,
+            "num_samples": 100,
+            "distinct": 93,
+            "num_quadratic": 1768,
+            "circuits": 15030,
+            "quantum_seconds": 832.4035111249977,
+            "started_s": 1642.8953130420123,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    5
+                ],
+                [
+                    0,
+                    12
+                ],
+                [
+                    1,
+                    4
+                ],
+                [
+                    1,
+                    12
+                ],
+                [
+                    2,
+                    6
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    3,
+                    0
+                ],
+                [
+                    3,
+                    14
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    4,
+                    7
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    5,
+                    14
+                ],
+                [
+                    6,
+                    0
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    2
+                ],
+                [
+                    7,
+                    3
+                ],
+                [
+                    8,
+                    6
+                ],
+                [
+                    8,
+                    11
+                ],
+                [
+                    9,
+                    1
+                ],
+                [
+                    9,
+                    8
+                ],
+                [
+                    10,
+                    7
+                ],
+                [
+                    10,
+                    9
+                ],
+                [
+                    11,
+                    3
+                ],
+                [
+                    11,
+                    13
+                ],
+                [
+                    12,
+                    4
+                ],
+                [
+                    12,
+                    11
+                ],
+                [
+                    13,
+                    1
+                ],
+                [
+                    13,
+                    2
+                ],
+                [
+                    14,
+                    10
+                ],
+                [
+                    14,
+                    13
+                ]
+            ]
+        },
+        "network16_s0": {
+            "score": 0.8136882403021932,
+            "best": 474106.0,
+            "median": 504898.0,
+            "ref": 397908.0,
+            "gap_best_pct": 19.149652683534878,
+            "gap_median_pct": 26.88812489319139,
+            "feasible_rate": 0.0,
+            "num_samples": 100,
+            "distinct": 57,
+            "num_quadratic": 2128,
+            "circuits": 16032,
+            "quantum_seconds": 1002.7946910410101,
+            "started_s": 1662.7342706670024,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    2
+                ],
+                [
+                    0,
+                    4
+                ],
+                [
+                    1,
+                    8
+                ],
+                [
+                    1,
+                    12
+                ],
+                [
+                    2,
+                    3
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    3,
+                    1
+                ],
+                [
+                    3,
+                    13
+                ],
+                [
+                    4,
+                    3
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    11
+                ],
+                [
+                    6,
+                    9
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    4
+                ],
+                [
+                    7,
+                    6
+                ],
+                [
+                    8,
+                    0
+                ],
+                [
+                    8,
+                    15
+                ],
+                [
+                    9,
+                    14
+                ],
+                [
+                    9,
+                    15
+                ],
+                [
+                    10,
+                    2
+                ],
+                [
+                    10,
+                    14
+                ],
+                [
+                    11,
+                    1
+                ],
+                [
+                    11,
+                    7
+                ],
+                [
+                    12,
+                    10
+                ],
+                [
+                    12,
+                    11
+                ],
+                [
+                    13,
+                    5
+                ],
+                [
+                    13,
+                    9
+                ],
+                [
+                    14,
+                    7
+                ],
+                [
+                    14,
+                    12
+                ],
+                [
+                    15,
+                    6
+                ],
+                [
+                    15,
+                    13
+                ]
+            ]
+        },
+        "network16_s1": {
+            "score": 0.7750747224739465,
+            "best": 480000.0,
+            "median": 551750.0,
+            "ref": 397908.0,
+            "gap_best_pct": 20.630899604933806,
+            "gap_median_pct": 38.66270595212964,
+            "feasible_rate": 0.0,
+            "num_samples": 100,
+            "distinct": 58,
+            "num_quadratic": 2128,
+            "circuits": 16032,
+            "quantum_seconds": 867.5295976660127,
+            "started_s": 2479.4468972920004,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    10
+                ],
+                [
+                    0,
+                    14
+                ],
+                [
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    12
+                ],
+                [
+                    2,
+                    1
+                ],
+                [
+                    2,
+                    4
+                ],
+                [
+                    3,
+                    2
+                ],
+                [
+                    3,
+                    13
+                ],
+                [
+                    4,
+                    3
+                ],
+                [
+                    4,
+                    6
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    5,
+                    11
+                ],
+                [
+                    6,
+                    8
+                ],
+                [
+                    6,
+                    9
+                ],
+                [
+                    7,
+                    5
+                ],
+                [
+                    7,
+                    6
+                ],
+                [
+                    8,
+                    0
+                ],
+                [
+                    8,
+                    4
+                ],
+                [
+                    9,
+                    12
+                ],
+                [
+                    9,
+                    15
+                ],
+                [
+                    10,
+                    1
+                ],
+                [
+                    10,
+                    14
+                ],
+                [
+                    11,
+                    7
+                ],
+                [
+                    11,
+                    15
+                ],
+                [
+                    12,
+                    10
+                ],
+                [
+                    12,
+                    11
+                ],
+                [
+                    13,
+                    2
+                ],
+                [
+                    13,
+                    7
+                ],
+                [
+                    14,
+                    3
+                ],
+                [
+                    14,
+                    5
+                ],
+                [
+                    15,
+                    8
+                ],
+                [
+                    15,
+                    13
+                ]
+            ]
+        }
+    },
+    "text_feedback": "network12_s0: score 0.836, best 310600 vs reference 276474 (gap +12.3%), median gap +28.0%, 4% of 100 qaoa_partitioned solutions valid before repair, 78 distinct topologies, 880 quadratic terms, 6012 circuits\nnetwork12_s1: score 0.846, best 308250 vs reference 276474 (gap +11.5%), median gap +25.8%, 0% of 100 qaoa_partitioned solutions valid before repair, 85 distinct topologies, 880 quadratic terms, 6012 circuits\nnetwork13_s0: score 0.843, best 340500 vs reference 300620 (gap +13.3%), median gap +24.5%, 1% of 100 qaoa_partitioned solutions valid before repair, 90 distinct topologies, 1111 quadratic terms, 6513 circuits\nnetwork13_s1: score 0.805, best 354143 vs reference 300620 (gap +17.8%), median gap +31.5%, 4% of 100 qaoa_partitioned solutions valid before repair, 83 distinct topologies, 1111 quadratic terms, 6513 circuits\nnetwork14_s0: score 0.771, best 416067 vs reference 343091 (gap +21.3%), median gap +39.4%, 0% of 100 qaoa_partitioned solutions valid before repair, 78 distinct topologies, 1404 quadratic terms, 10521 circuits\nnetwork14_s1: score 0.801, best 399063 vs reference 343091 (gap +16.3%), median gap +34.7%, 0% of 100 qaoa_partitioned solutions valid before repair, 100 distinct topologies, 1404 quadratic terms, 10521 circuits\nnetwork15_s0: score 0.825, best 429334 vs reference 370870 (gap +15.8%), median gap +27.2%, 0% of 100 qaoa_partitioned solutions valid before repair, 88 distinct topologies, 1768 quadratic terms, 15030 circuits\nnetwork15_s1: score 0.798, best 440000 vs reference 370870 (gap +18.6%), median gap +32.9%, 2% of 100 qaoa_partitioned solutions valid before repair, 93 distinct topologies, 1768 quadratic terms, 15030 circuits\nnetwork16_s0: score 0.814, best 474106 vs reference 397908 (gap +19.1%), median gap +26.9%, 0% of 100 qaoa_partitioned solutions valid before repair, 57 distinct topologies, 2128 quadratic terms, 16032 circuits\nnetwork16_s1: score 0.775, best 480000 vs reference 397908 (gap +20.6%), median gap +38.7%, 0% of 100 qaoa_partitioned solutions valid before repair, 58 distinct topologies, 2128 quadratic terms, 16032 circuits\nLargest gap: network14_s0 (+21.3%)."
+}

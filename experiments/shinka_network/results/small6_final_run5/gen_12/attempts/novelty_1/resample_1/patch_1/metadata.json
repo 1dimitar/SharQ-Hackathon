@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "size_scaled_degree_penalty",
+  "patch_description": "Increase the externally applied degree penalty modestly with network size. The current program\u2019s pre-repair feasibility falls as low as 80% at n=16, while the QUBO\u2019s interaction structure grows with n. A gradual increase from 1.25 to 1.53 by n=24 should discourage invalid low-energy samples without changing the ranking of valid topologies, since every valid topology has zero degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:54:08.942239",
+  "llm_cost": 0.0021190000000000002,
+  "llm_model": "gpt-6-luna"
+}

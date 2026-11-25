@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "leg_support_gate",
+  "patch_description": "Dampen two-hop rewards when either constituent link has little independent traffic support. The bounded gate uses both normalized leg demands, ranging from 0.45 for unsupported legs to 1.0 for maximally supported ones. This preserves the existing endpoint-demand reward, route selection, and pressure discount while making the energy less likely to favor routes that depend on weak links. Apply the same gate to the selected routes and the low-pressure fallback so both types of path reward remain consistent.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:32:14.817819",
+  "llm_cost": 0.0024747000000000003,
+  "llm_model": "gpt-6-luna"
+}

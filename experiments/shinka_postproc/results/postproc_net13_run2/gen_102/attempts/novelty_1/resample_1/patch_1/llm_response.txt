@@ -1,0 +1,56 @@
+<NAME>
+adaptive_operator_batches
+</NAME>
+
+<DESCRIPTION>
+The current operator adaptation only chooses at most one move from each operator per batch; any remaining LP slots go to the globally best energy-ranked moves. With the default batch size of three, this gives the operator success statistics little influence over LP-call allocation. Increase the default batch modestly and use the smoothed operator rates to choose each batch slot, while retaining surrogate-ranked candidate ordering within each operator. This lets operators that have recently produced improvements receive more evaluations, but the additive floor and Beta smoothing preserve exploration. The existing fallback still ensures a full batch when operator-specific candidates run out.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=3):
+=======
+    def screen_batch(moves, parent, batch_size=8):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        operator_order = list(operator_stats)
+        while len(selected) < min(batch_size, len(operator_order)):
+            active = [op for op in operator_order if available.get(op)]
+            if not active:
+                break
+            weights = []
+            for op in active:
+                successes, failures = operator_stats[op]
+                weights.append(0.15 + successes / (successes + failures))
+            pick = float(rng.random()) * sum(weights)
+            chosen_op = active[-1]
+            for op, weight in zip(active, weights):
+                pick -= weight
+                if pick <= 0:
+                    chosen_op = op
+                    break
+            # Candidate lists inherit surrogate ordering from `ranked`.
+            selected.append(available[chosen_op].pop(0))
+=======
+        operator_order = list(operator_stats)
+        while len(selected) < min(batch_size, len(fresh)):
+            active = [op for op in operator_order if available.get(op)]
+            if not active:
+                break
+            weights = []
+            for op in active:
+                successes, failures = operator_stats[op]
+                # Smoothed success probability plus a small exploration floor.
+                weights.append(0.15 + successes / (successes + failures))
+            pick = float(rng.random()) * sum(weights)
+            chosen_op = active[-1]
+            for op, weight in zip(active, weights):
+                pick -= weight
+                if pick <= 0:
+                    chosen_op = op
+                    break
+            # Candidate lists inherit surrogate ordering from `ranked`.
+            selected.append(available[chosen_op].pop(0))
+>>>>>>> REPLACE
+</DIFF>

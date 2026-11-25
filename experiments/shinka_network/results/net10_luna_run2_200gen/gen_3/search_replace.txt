@@ -1,0 +1,55 @@
+<NAME>
+two_hop_synergy
+</NAME>
+
+<DESCRIPTION>
+Keep direct-demand rewards as the dominant signal, while adding a modest reward when two selected links form a two-hop route for a demand pair. This gives the QUBO some awareness of traffic that can be served indirectly without letting the two-hop approximation overwhelm the baseline that already performs well. A small endpoint-throughput contribution also favors links connected to nodes with substantial traffic. The quadratic-term count is at most \(n(n-1)(n-2)\), within the stated limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    dmax = float(np.max(demand)) or 1.0
+    row = np.sum(demand, axis=1)
+    col = np.sum(demand, axis=0)
+    node_scale = float(max(np.max(row), np.max(col))) or 1.0
+
+    # Preserve the strong direct-demand signal, with a small preference for
+    # links incident to high-throughput sources and destinations.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            endpoint_pressure = (float(row[i]) + float(col[j])) / (2.0 * node_scale)
+            linear[(i, j)] = -(
+                0.90 * float(demand[i, j]) / dmax
+                + 0.10 * endpoint_pressure
+            )
+
+    # A selected pair i->j, j->k can serve i->k traffic in two hops.
+    # Keep this synergy deliberately weaker than the direct-link reward.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic > 0.0:
+                    quadratic[((i, j), (j, k))] = -0.12 * traffic / dmax
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

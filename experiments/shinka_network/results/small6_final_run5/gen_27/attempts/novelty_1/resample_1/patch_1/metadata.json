@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "remove_fragmentary_threehop_rewards",
+  "patch_description": "Remove the three-hop Taylor expansion. A three-link route is not represented faithfully by pairwise terms: rewarding each pair of its links can favor incomplete path fragments, and the current expansion gives those fragments substantial reward. The prior version without this block performed better (0.8922 versus 0.8881), while keeping the more selective two-hop terms. This change restores that simpler model and reduces unnecessary couplings.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:08:42.204394",
+  "llm_cost": 0.0028750000000000004,
+  "llm_model": "gpt-6-luna"
+}

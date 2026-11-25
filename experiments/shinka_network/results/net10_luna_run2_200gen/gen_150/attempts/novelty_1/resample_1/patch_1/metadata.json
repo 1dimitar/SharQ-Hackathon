@@ -1,0 +1,14 @@
+{
+  "generation": 150,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped-route-support",
+  "patch_description": "The current approach gives each two-hop route an independent reward, so the combined reward for one OD pair can grow with the number of available transit nodes. This version instead allocates route rewards proportionally to their attractiveness and scales them together only when their total exceeds 0.75 of that pair\u2019s direct-link reward. It uses moderate node- and edge-pressure discounts, preserves a small concave component in direct rewards, and raises the degree-penalty weight from 1.0 to 2.0 to encourage more valid samples before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:02.432092",
+  "llm_cost": 0.0019560000000000003,
+  "llm_model": "gpt-6-luna"
+}

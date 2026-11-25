@@ -1,0 +1,38 @@
+<NAME>
+endpoint_pressure_routes
+</NAME>
+
+<DESCRIPTION>
+Boundedly upweight two-hop route rewards for demands whose source and destination have high aggregate traffic pressure. Those endpoints are likely to need more effective routing capacity, while the existing transit-pressure discount still discourages overloading busy intermediate nodes. The factor is clipped to avoid letting a few high-pressure endpoints dominate, and it adds no couplings or changes to the route-candidate count.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            demand_score = 0.68 * z[i, k] ** 0.74 + 0.32 * np.sqrt(z[i, k])
+            # A strong direct demand is already represented in the linear
+            # score, so reduce (but do not remove) its indirect-path reward.
+            indirect_factor = 1.0 - 0.32 * np.sqrt(z[i, k])
+            support = float(demand_score * indirect_factor)
+
+            candidates = []
+=======
+            demand_score = 0.68 * z[i, k] ** 0.74 + 0.32 * np.sqrt(z[i, k])
+            # A strong direct demand is already represented in the linear
+            # score, so reduce (but do not remove) its indirect-path reward.
+            indirect_factor = 1.0 - 0.32 * np.sqrt(z[i, k])
+            support = float(demand_score * indirect_factor)
+
+            # Endpoints with high aggregate traffic need more routing
+            # capacity. Apply a modest bounded boost to their route terms.
+            mean_pressure = max(float(np.mean(pressure)), 1e-12)
+            endpoint_factor = float(np.clip(
+                np.sqrt(pressure[i] * pressure[k]) / mean_pressure,
+                0.88,
+                1.12,
+            ))
+            support *= endpoint_factor
+
+            candidates = []
+>>>>>>> REPLACE
+
+</DIFF>

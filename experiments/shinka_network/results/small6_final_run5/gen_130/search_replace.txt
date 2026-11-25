@@ -1,0 +1,130 @@
+<NAME>
+sparse_neighbor_service
+</NAME>
+
+<DESCRIPTION>
+Add sparse outgoing and incoming neighbor-service factors. For each node, estimate how well each possible neighbor can serve destinations (or origins) using a balanced demand-affinity profile. Score each neighbor pair for coverage and load balance, then decompose that score into link-level linear preferences and a sparse residual interaction. This targets the competition between the two links available at each node, rather than simply rewarding more two-hop paths. The pair budget is set independently of factor strength, at about n/3 per node and direction, keeping the added coupling count modest while also providing energy differences useful for ranking valid topologies and exchanges.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # A two-node set has 4-x_ij-x_ji boundary links in each direction.
+=======
+    # Sparse degree-two neighbor-service factors: estimate how well each
+    # possible pair of neighbors covers this node's destinations/origins.
+    service_affinity = direct_score.copy() + 0.08
+    np.fill_diagonal(service_affinity, 0.0)
+    profiles = service_affinity.copy()
+    for _ in range(24):
+        profiles /= np.maximum(
+            profiles.sum(axis=1, keepdims=True), 1e-15
+        )
+        profiles /= np.maximum(
+            profiles.sum(axis=0, keepdims=True), 1e-15
+        )
+    profiles = np.eye(n) + 2.0 * profiles + 1.4 * (profiles @ profiles)
+    mean_direct = float(direct_score.sum()) / max(1, n * (n - 1))
+    base_strength = (
+        0.24 * mean_direct
+        * max(0.75, float(np.log2(max(n, 2)) / np.log2(10.0)))
+    )
+    pair_budget = max(2, n // 3)
+
+    if n >= 4 and mean_direct > 0.0:
+        for reverse in (False, True):
+            service = profiles.T if reverse else profiles
+            traffic_view = z.T if reverse else z
+            totals = traffic_view.sum(axis=1)
+            mean_total = float(totals.mean())
+
+            if mean_total <= 1e-15:
+                continue
+
+            for node in range(n):
+                total = float(totals[node])
+                if total <= 1e-15:
+                    continue
+
+                neighbors = [a for a in range(n) if a != node]
+                m = len(neighbors)
+                left, right = np.triu_indices(m, 1)
+                weights = traffic_view[node] / total
+                neighbor_service = service[neighbors, :]
+                first_service = neighbor_service[left]
+                second_service = neighbor_service[right]
+                combined = np.maximum(
+                    first_service + second_service, 1e-12
+                )
+
+                coverage_cost = -np.log(combined) @ weights
+                load_difference = np.abs(
+                    ((first_service - second_service) / combined) @ weights
+                )
+                costs = coverage_cost + 0.55 * load_difference
+                grand_mean = float(costs.mean())
+                spread = float(np.sqrt(np.mean((costs - grand_mean) ** 2)))
+                if spread <= 1e-12:
+                    continue
+
+                dense_cost = np.zeros((m, m), dtype=float)
+                dense_cost[left, right] = costs
+                dense_cost[right, left] = costs
+                row_mean = dense_cost.sum(axis=1) / (m - 1)
+                main_effect = (
+                    (m - 1.0) / (m - 2.0)
+                ) * (row_mean - grand_mean)
+                residual = (
+                    costs
+                    - grand_mean
+                    - main_effect[left]
+                    - main_effect[right]
+                )
+
+                importance = float(np.clip(
+                    total / mean_total, 0.65, 1.50
+                ))
+                strength = (
+                    base_strength * importance / max(0.06, spread)
+                )
+
+                def service_link(neighbor):
+                    return (
+                        (neighbor, node) if reverse
+                        else (node, neighbor)
+                    )
+
+                for position, neighbor in enumerate(neighbors):
+                    linear[service_link(neighbor)] += (
+                        strength * float(main_effect[position])
+                    )
+
+                residual_rms = float(
+                    np.sqrt(np.mean(residual * residual))
+                )
+                if residual_rms <= 1e-12:
+                    continue
+
+                ranked = sorted(
+                    range(len(residual)),
+                    key=lambda q: (
+                        -abs(float(residual[q])),
+                        int(left[q]),
+                        int(right[q]),
+                    ),
+                )
+                for q in ranked[:pair_budget]:
+                    value = float(residual[q])
+                    if abs(value) < residual_rms:
+                        break
+                    a = neighbors[int(left[q])]
+                    b = neighbors[int(right[q])]
+                    add_pair(
+                        service_link(a),
+                        service_link(b),
+                        strength * value,
+                    )
+
+    # A two-node set has 4-x_ij-x_ji boundary links in each direction.
+>>>>>>> REPLACE
+
+</DIFF>

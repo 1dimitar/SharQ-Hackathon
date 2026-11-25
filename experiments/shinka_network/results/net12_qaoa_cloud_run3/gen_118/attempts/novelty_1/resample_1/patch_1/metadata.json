@@ -1,0 +1,14 @@
+{
+  "generation": 118,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "selective_relay_balance",
+  "patch_description": "Uses concave direct-link rewards and selectively ranked two-hop supports. Relay ranking now depends on both path legs, so a relay is favored when it plausibly serves the OD pair rather than merely because it is lightly loaded. A modestly stronger relay coefficient tests the suggested adjustment while limiting the number of couplings. Relay pressure discounts busy nodes, and the degree penalty remains external as required.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:23:24.205755",
+  "llm_cost": 0.0012767,
+  "llm_model": "gpt-6-luna"
+}

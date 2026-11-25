@@ -1,0 +1,297 @@
+<NAME>
+recombine_repair
+</NAME>
+
+<DESCRIPTION>
+Rather than spending most LP calls on neighborhoods around individual networks, this approach uses an evolutionary archive: it recombines links from distinct high-quality parents, repairs each offspring, and evaluates a small, diverse, surrogate-ranked batch. Degree-preserving mutations add variation, while elitist replacement and occasional restarts preserve both strong solutions and alternative topologies. This explores combinations of good substructures that ordinary local descent may not reach.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Classical post-processing of QAOA output for QOBLIB 08."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+import math
+
+
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    scores = {}
+    population = []
+    best_net = None
+    best_score = float("inf")
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in scores:
+            try:
+                scores[net] = tools.lp(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    raise
+                scores[net] = float("inf")
+        value = scores[net]
+        if value < best_score:
+            best_net, best_score = net, value
+        return value
+
+    def add(net):
+        net = canon(net)
+        if net not in scores or not math.isfinite(scores[net]):
+            return
+        if net not in population:
+            population.append(net)
+        # Keep elite solutions while allowing topology diversity.
+        population.sort(key=lambda x: scores[x])
+        kept = population[:8]
+        for x in population[8:]:
+            if len(kept) >= 28:
+                break
+            if all(len(set(x) ^ set(y)) >= 4 for y in kept):
+                kept.append(x)
+        for x in population:
+            if len(kept) >= 36:
+                break
+            if x not in kept:
+                kept.append(x)
+        population[:] = kept
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+    if not repaired:
+        try:
+            repaired.add(canon(tools.repair([])))
+        except Exception:
+            return []
+
+    # Use low-energy repairs as a first set, but include distinct alternatives.
+    ordered = sorted(repaired, key=energy)
+    seeds = []
+    for net in ordered:
+        if all(len(set(net) ^ set(x)) >= 4 for x in seeds):
+            seeds.append(net)
+        if len(seeds) >= 20:
+            break
+    for net in ordered:
+        if len(seeds) >= 32:
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+            add(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if not population:
+        return list(seeds[0])
+
+    def mutate(net, count):
+        cur = set(net)
+        for _ in range(count):
+            arcs = list(cur)
+            if len(arcs) < 2:
+                break
+            p, q = rng.choice(len(arcs), size=2, replace=False)
+            a, b = arcs[int(p)]
+            c, d = arcs[int(q)]
+            if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                continue
+            cur.remove((a, b))
+            cur.remove((c, d))
+            cur.add((a, d))
+            cur.add((c, b))
+        out = canon(cur)
+        return out if tools.is_valid(out) else net
+
+    def crossover(a, b):
+        # Select links from both parents; repair restores exact in/out degrees.
+        sa, sb = set(a), set(b)
+        common = sa & sb
+        only = list((sa | sb) - common)
+        rng.shuffle(only)
+        take = int(rng.integers(max(1, len(only) // 3), max(2, 2 * len(only) // 3 + 1)))
+        raw = list(common) + only[:take]
+        try:
+            child = canon(tools.repair(raw))
+            return child if tools.is_valid(child) else None
+        except Exception:
+            return None
+
+    generation = 0
+    while tools.lp_calls_left > 0:
+        generation += 1
+        ranked = sorted(population, key=lambda x: scores[x])
+        proposals = set()
+
+        # Build offspring from distinct parents, with occasional mutation-only
+        # children to keep exploration independent of repair behavior.
+        attempts = 60
+        for _ in range(attempts):
+            if len(ranked) > 1 and rng.random() < 0.78:
+                i = int(rng.integers(min(12, len(ranked))))
+                j = int(rng.integers(len(ranked) - 1))
+                if j >= i:
+                    j += 1
+                child = crossover(ranked[i], ranked[j])
+                if child is not None and rng.random() < 0.65:
+                    child = mutate(child, 1 + int(rng.integers(4)))
+            else:
+                parent = ranked[int(rng.integers(min(16, len(ranked))))]
+                child = mutate(parent, 2 + int(rng.integers(6)))
+            if child is not None and child not in scores and not tools.is_cached(child):
+                proposals.add(child)
+
+        if not proposals:
+            # Fresh repaired QAOA variants can seed a new region.
+            for net in ordered:
+                if net not in scores:
+                    proposals.add(net)
+                    break
+        if not proposals:
+            parent = ranked[int(rng.integers(len(ranked)))]
+            child = mutate(parent, 6 + int(rng.integers(8)))
+            if child != parent and child not in scores and not tools.is_cached(child):
+                proposals.add(child)
+        if not proposals:
+            break
+
+        # Screen offspring without LP calls, preserving some diversity in the batch.
+        base = ranked[0]
+        ranked_props = sorted(proposals, key=lambda x: energy(x))
+        batch = []
+        for child in ranked_props:
+            if all(len(set(child) ^ set(old)) >= 2 for old in batch):
+                batch.append(child)
+            if len(batch) >= 7:
+                break
+        for child in ranked_props:
+            if len(batch) >= 10:
+                break
+            if child not in batch:
+                batch.append(child)
+        tail = [x for x in ranked_props if x not in batch]
+        if tail and len(batch) < 12:
+            batch.extend(tail[i] for i in rng.choice(
+                len(tail), size=min(12 - len(batch), len(tail)), replace=False
+            ))
+
+        for child in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(child)
+                add(child)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+
+        # Periodically refresh the population with lightly mutated elites,
+        # preventing premature convergence to one family of networks.
+        if generation % 12 == 0:
+            for parent in ranked[:4]:
+                if tools.lp_calls_left <= 0:
+                    break
+                child = mutate(parent, 3 + int(rng.integers(5)))
+                if child not in scores and not tools.is_cached(child):
+                    try:
+                        evaluate(child)
+                        add(child)
+                    except Exception as exc:
+                        if type(exc).__name__ == "BudgetExhausted":
+                            break
+
+    return list(best_net) if best_net is not None else []
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import signal
+
+    import oracle
+    from hamiltonian import surrogate_terms
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w)
+         for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]]
+                  for c in pool["candidates"]]
+    if control:
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score),
+        "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used,
+        "seconds": time.perf_counter() - start,
+        "timed_out": timed_out,
+    }
+```
+</CODE>

@@ -1,0 +1,195 @@
+{
+    "combined_score": 0.7738068684438939,
+    "public": {
+        "sum_score": 0.7738068684438939,
+        "num_instances": 1,
+        "score_network17_s0": 0.7738068684438939,
+        "gap_best_pct_network17_s0": 24.586956521739122,
+        "mean_gap_best_pct": 24.586956521739122,
+        "mean_gap_median_pct": 34.23512585812356,
+        "mean_feasible_rate": 0.15,
+        "mean_quadratic_terms": 610.0,
+        "routine": "qaoa_partitioned",
+        "backend": "cloud"
+    },
+    "private": {
+        "circuits": 16533,
+        "quantum_seconds": 1083.0820393750037,
+        "sampling_wall_seconds": 1088.4510150409915,
+        "parallel": 1,
+        "build_seconds": 0.006194208006490953,
+        "network17_s0": {
+            "score": 0.7738068684438939,
+            "best": 544445.0,
+            "median": 586607.5,
+            "ref": 437000.0,
+            "gap_best_pct": 24.586956521739122,
+            "gap_median_pct": 34.23512585812356,
+            "feasible_rate": 0.15,
+            "num_samples": 100,
+            "distinct": 41,
+            "num_quadratic": 610,
+            "circuits": 16533,
+            "quantum_seconds": 1083.0820393750037,
+            "started_s": 0.00011516599624883384,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    4
+                ],
+                [
+                    1,
+                    5
+                ],
+                [
+                    1,
+                    6
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    2,
+                    15
+                ],
+                [
+                    3,
+                    2
+                ],
+                [
+                    3,
+                    16
+                ],
+                [
+                    4,
+                    3
+                ],
+                [
+                    4,
+                    6
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    6,
+                    9
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    0
+                ],
+                [
+                    7,
+                    2
+                ],
+                [
+                    8,
+                    4
+                ],
+                [
+                    8,
+                    7
+                ],
+                [
+                    9,
+                    11
+                ],
+                [
+                    9,
+                    14
+                ],
+                [
+                    10,
+                    12
+                ],
+                [
+                    10,
+                    15
+                ],
+                [
+                    11,
+                    5
+                ],
+                [
+                    11,
+                    7
+                ],
+                [
+                    12,
+                    1
+                ],
+                [
+                    12,
+                    13
+                ],
+                [
+                    13,
+                    11
+                ],
+                [
+                    13,
+                    16
+                ],
+                [
+                    14,
+                    10
+                ],
+                [
+                    14,
+                    13
+                ],
+                [
+                    15,
+                    3
+                ],
+                [
+                    15,
+                    12
+                ],
+                [
+                    16,
+                    8
+                ],
+                [
+                    16,
+                    14
+                ]
+            ]
+        }
+    },
+    "text_feedback": "network17_s0: score 0.774, best 544445 vs reference 437000 (gap +24.6%), median gap +34.2%, 15% of 100 qaoa_partitioned solutions valid before repair, 41 distinct topologies, 610 quadratic terms, 16533 circuits\nLargest gap: network17_s0 (+24.6%)."
+}

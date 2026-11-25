@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "max_pressure_discount",
+  "patch_description": "Replace mean-based transit-node pressure with each node\u2019s larger incoming or outgoing demand, normalized by the largest such value across nodes. This makes the discount respond to the busiest incident direction rather than an average that can hide a heavily loaded node. Keep the existing two-hop reward formula unchanged and use a 0.75 floor: even the busiest node remains a plausible transit point, while less-loaded nodes receive a modestly larger share of indirect-route reward.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:45:41.112057",
+  "llm_cost": 0.0009992,
+  "llm_model": "gpt-6-luna"
+}

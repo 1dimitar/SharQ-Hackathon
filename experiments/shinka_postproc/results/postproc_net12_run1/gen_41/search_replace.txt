@@ -1,0 +1,93 @@
+<NAME>
+stall_escalated_rotations
+</NAME>
+
+<DESCRIPTION>
+The current search samples the same fixed number of targeted rotations for every parent, even when a parent has repeatedly failed to produce an improvement. Track consecutive unproductive batches per parent and escalate the number of rotation triples only for stalled parents. Reserve some batch slots for the best-ranked rotation proposals at high stall levels, so escalation actually spends LP calls on those moves rather than letting them be crowded out by switches. Reset the stall count when the parent’s batch finds a new incumbent. This directs more exploratory effort toward difficult basins while preserving the usual switch-heavy search elsewhere.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Per-parent search feedback: evaluated candidates, incumbent improvements,
+    # and cumulative improvement magnitude.
+    parent_stats = {}
+=======
+    # Per-parent search feedback: evaluated candidates, incumbent improvements,
+    # and cumulative improvement magnitude.
+    parent_stats = {}
+    rotation_stalls = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for p, q, r in triples[:rotation_triples]:
+=======
+        for p, q, r in triples[:limit]:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def make_rotations(net, hot):
+=======
+    def make_rotations(net, hot, limit):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        proposals = make_switches(parent)
+        proposals.update(make_rotations(parent, hot))
+=======
+        stalls = rotation_stalls.get(parent, 0)
+        # Escalate rotation sampling only after this parent has repeatedly
+        # failed; cap the expansion at the full set of eligible triples.
+        rotation_limit = min(
+            len(arcs) * (len(arcs) - 1) * (len(arcs) - 2) // 6,
+            rotation_triples * (1 + min(stalls, 5)),
+        )
+        rotation_proposals = make_rotations(parent, hot, rotation_limit)
+        proposals = make_switches(parent)
+        proposals.update(rotation_proposals)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        take([x[0] for x in dual_order], 2)
+        take([x[0] for x in energy_order], 2)
+        take(blended, batch_size - len(chosen) - 1)
+=======
+        take([x[0] for x in dual_order], 2)
+        take([x[0] for x in energy_order], 2)
+        if stalls >= 3:
+            # At a stalled parent, ensure some evaluated proposals come from
+            # its escalated rotation neighborhood.
+            rotation_order = sorted(
+                (net for net in rotation_proposals if net in proposals),
+                key=lambda net: (
+                    0.45 * dual_rank[net]
+                    + 0.40 * energy_rank[net]
+                    + 0.15 * demand_rank[net]
+                ),
+            )
+            take(rotation_order, min(3, batch_size - len(chosen)))
+        take(blended, batch_size - len(chosen) - 1)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if evaluated:
+            trials, wins, gain = parent_stats.get(parent, (0, 0, 0.0))
+            improvement = max(0.0, before - best_score)
+            parent_stats[parent] = (
+                trials + evaluated,
+                wins + int(improvement > 0.0),
+                gain + improvement / max(1.0, before),
+            )
+=======
+        if evaluated:
+            trials, wins, gain = parent_stats.get(parent, (0, 0, 0.0))
+            improvement = max(0.0, before - best_score)
+            parent_stats[parent] = (
+                trials + evaluated,
+                wins + int(improvement > 0.0),
+                gain + improvement / max(1.0, before),
+            )
+            rotation_stalls[parent] = (
+                0 if improvement > 0.0 else rotation_stalls.get(parent, 0) + 1
+            )
+>>>>>>> REPLACE
+</DIFF>

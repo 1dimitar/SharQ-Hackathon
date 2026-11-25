@@ -1,0 +1,40 @@
+<NAME>
+selective_relay_budget
+</NAME>
+
+<DESCRIPTION>
+Reduce the default relay count to `max(1, n // 5)` and retain up to two extra relays for OD pairs in the top 20% of positive demands. This tests a sparser interaction graph while preserving additional routing options for the most important traffic. The cutoff is computed from normalized demand, and zero-demand matrices safely receive no extra relays.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Limit the number of competing relay interactions per OD pair.
+    relay_budget = min(n - 2, max(2, int(math.sqrt(n))))
+
+    quadratic = {}
+=======
+    # Use a smaller base relay budget, with extra options reserved for
+    # the highest-demand OD pairs.
+    relay_budget = min(n - 2, max(1, n // 5))
+    positive_od = normalized[normalized > 0.0]
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.80))
+        if positive_od.size else float("inf")
+    )
+    extra_relays = min(2, max(0, n - 2 - relay_budget))
+
+    quadratic = {}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for _, j, pressure in candidates[:relay_budget]:
+=======
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            pair_relay_budget = relay_budget
+            if value >= high_demand_cutoff:
+                pair_relay_budget = min(n - 2, relay_budget + extra_relays)
+
+            for _, j, pressure in candidates[:pair_relay_budget]:
+>>>>>>> REPLACE
+
+</DIFF>

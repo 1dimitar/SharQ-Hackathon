@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "targeted_branch_diversity",
+  "patch_description": "Replace the broad penalty on every pair of links sharing a node with a sparse penalty on only the most redundant branch pairs. Two branches are redundant when their demand-weighted traffic profiles are similar, so selecting both is less likely to provide useful routing alternatives. This makes the congestion proxy more specific to the demand matrix, reduces unnecessary couplings, and may improve both QUBO sampling and energy-based ranking of link exchanges. The replacement adds at most three pairs per node in each direction.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:14:17.775832",
+  "llm_cost": 0.0031521,
+  "llm_model": "gpt-6-luna"
+}

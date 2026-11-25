@@ -1,0 +1,250 @@
+<NAME>
+adaptive_move_effort
+</NAME>
+
+<DESCRIPTION>
+Track the LP improvement rate of focused switches, sampled random switches, rotations, and kicks. Allocate the neighborhood screening batch adaptively using a smoothed success rate plus an exploration bonus, while reserving at least one screening slot for each available move type. This lets productive move types receive more LP evaluations without permanently starving less-tested types; kick frequency also responds to its observed returns.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def make_moves(net, hot, limit=100):
+        arcs = list(net)
+        cur = set(net)
+        moves = set()
+
+        # Complete two-arc exchange neighborhood, prioritizing changes to hot links.
+        pairlist = []
+        for p in range(len(arcs)):
+            a, b = arcs[p]
+            for q in range(p + 1, len(arcs)):
+                c, d = arcs[q]
+                if (arcs[p] not in hot and arcs[q] not in hot) and hot:
+                    continue
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                pairlist.append(canon((cur - {(a, b), (c, d)}) | {(a, d), (c, b)}))
+        moves.update(pairlist)
+
+        # Targeted cyclic destination reassignment, including paths through non-hot arcs.
+        if len(arcs) >= 3:
+            for _ in range(100):
+                ix = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ix)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                new = {(a, d), (c, f), (e, b)}
+                if any(x == y for x, y in new) or len(new) != 3:
+                    continue
+                if new & (cur - old):
+                    continue
+                moves.add(canon((cur - old) | new))
+        return [m for m in moves if tools.is_valid(m)]
+
+    iteration = 0
+=======
+    # Per-neighborhood success and evaluation counts guide screening effort.
+    move_stats = {
+        name: [0, 0] for name in ("focused", "random", "rotation", "kick")
+    }
+
+    def make_moves(net, hot):
+        arcs = list(net)
+        cur = set(net)
+        moves = {"focused": set(), "random": set(), "rotation": set()}
+
+        # Exhaustively enumerate bottleneck-involving switches.
+        for p in range(len(arcs)):
+            a, b = arcs[p]
+            for q in range(p + 1, len(arcs)):
+                c, d = arcs[q]
+                involves_hot = arcs[p] in hot or arcs[q] in hot
+                if hot and not involves_hot:
+                    continue
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                move = canon((cur - {(a, b), (c, d)}) | {(a, d), (c, b)})
+                moves["focused" if hot else "random"].add(move)
+
+        # Sample non-focused switches so their proposal effort is controllable.
+        nonhot_pairs = [
+            (p, q) for p in range(len(arcs)) for q in range(p + 1, len(arcs))
+            if not hot or (arcs[p] not in hot and arcs[q] not in hot)
+        ]
+        if nonhot_pairs:
+            trials = min(len(nonhot_pairs), 40 + 40 * move_stats["random"][0]
+                         // max(1, move_stats["random"][1]))
+            ids = rng.choice(len(nonhot_pairs), size=trials, replace=False)
+            for idx in ids:
+                p, q = nonhot_pairs[int(idx)]
+                a, b = arcs[p]
+                c, d = arcs[q]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                moves["random"].add(
+                    canon((cur - {(a, b), (c, d)}) | {(a, d), (c, b)})
+                )
+
+        # Give rotations more proposals when their recent LP yield is high.
+        rot_success, rot_trials = move_stats["rotation"]
+        rot_trials_count = min(
+            240, max(30, int(100 * (0.5 + 2.0 * (rot_success + 1)
+                                      / (rot_trials + 4))))
+        )
+        if len(arcs) >= 3:
+            for _ in range(rot_trials_count):
+                ix = rng.choice(len(arcs), size=3, replace=False)
+                (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ix)
+                old = {(a, b), (c, d), (e, f)}
+                if hot and not (old & hot):
+                    continue
+                new = {(a, d), (c, f), (e, b)}
+                if any(x == y for x, y in new) or len(new) != 3:
+                    continue
+                if new & (cur - old):
+                    continue
+                moves["rotation"].add(canon((cur - old) | new))
+
+        return {
+            name: [m for m in group if tools.is_valid(m)]
+            for name, group in moves.items()
+        }
+
+    iteration = 0
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        moves = make_moves(base, hot)
+        fresh = [m for m in moves if m not in scored and not tools.is_cached(m)]
+        if not fresh and hot:
+            moves = make_moves(base, set())
+            fresh = [m for m in moves if m not in scored and not tools.is_cached(m)]
+        if fresh:
+            # Build a competitive shortlist, then avoid spending the LP batch on
+            # near-duplicate topologies. Energy rank still matters, but diversity
+            # helps explore distinct network structures.
+            fresh.sort(key=lambda m: tools.energy(m))
+            shortlist = fresh[:min(48, len(fresh))]
+            batch = []
+            ranks = {m: i for i, m in enumerate(shortlist)}
+            while shortlist and len(batch) < 8:
+                if not batch:
+                    chosen = shortlist[0]
+                else:
+                    chosen = max(
+                        shortlist,
+                        key=lambda m: (
+                            min(len(set(m).symmetric_difference(set(old)))
+                                for old in batch) - 0.20 * ranks[m]
+                        ),
+                    )
+                batch.append(chosen)
+                shortlist.remove(chosen)
+
+            selected = set(batch)
+            tail = [m for m in fresh if m not in selected]
+            if tail:
+                count = min(3, len(tail))
+                batch.extend(tail[int(i)] for i in rng.choice(len(tail), size=count, replace=False))
+            for cand in batch:
+                if tools.lp_calls_left <= 0:
+                    break
+                try:
+                    evaluate(cand)
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+                if scored[cand] < scored[best]:
+                    best = cand
+=======
+        move_groups = make_moves(base, hot)
+        fresh_groups = {
+            name: [m for m in group if m not in scored and not tools.is_cached(m)]
+            for name, group in move_groups.items()
+        }
+        if not any(fresh_groups.values()) and hot:
+            move_groups = make_moves(base, set())
+            fresh_groups = {
+                name: [m for m in group if m not in scored and not tools.is_cached(m)]
+                for name, group in move_groups.items()
+            }
+
+        if any(fresh_groups.values()):
+            for group in fresh_groups.values():
+                group.sort(key=lambda m: tools.energy(m))
+
+            # Reserve exploration for each available type, then allocate remaining
+            # LP evaluations by smoothed success rate with an exploration bonus.
+            batch = []
+            batch_type = {}
+            for name in ("focused", "random", "rotation"):
+                if fresh_groups[name]:
+                    cand = fresh_groups[name].pop(0)
+                    batch.append(cand)
+                    batch_type[cand] = name
+
+            while len(batch) < 14:
+                available = [name for name, group in fresh_groups.items() if group]
+                if not available:
+                    break
+                total_trials = sum(move_stats[name][1] for name in available) + 1
+                def priority(name):
+                    wins, trials = move_stats[name]
+                    return ((wins + 1) / (trials + 4)
+                            + 0.25 * np.sqrt(np.log(total_trials + 1) / (trials + 1)))
+                name = max(available, key=priority)
+                cand = fresh_groups[name].pop(0)
+                batch.append(cand)
+                batch_type[cand] = name
+
+            base_score = scored.get(base, scored[best])
+            for cand in batch:
+                if tools.lp_calls_left <= 0:
+                    break
+                move_type = batch_type[cand]
+                try:
+                    value = evaluate(cand)
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+                else:
+                    move_stats[move_type][1] += 1
+                    if value < base_score:
+                        move_stats[move_type][0] += 1
+                    if value < scored[best]:
+                        best = cand
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if iteration % 3 == 0 and tools.lp_calls_left > 0:
+            kick = set(best)
+=======
+        kick_wins, kick_trials = move_stats["kick"]
+        kick_probability = min(0.55, 0.18 + 1.2 * (kick_wins + 1) / (kick_trials + 4))
+        if rng.random() < kick_probability and tools.lp_calls_left > 0:
+            kick = set(best)
+            kick_base_score = scored[best]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            if tools.is_valid(kn) and kn not in scored and not tools.is_cached(kn):
+                try:
+                    evaluate(kn)
+                    if scored[kn] < scored[best]:
+                        best = kn
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+=======
+            if tools.is_valid(kn) and kn not in scored and not tools.is_cached(kn):
+                try:
+                    evaluate(kn)
+                    move_stats["kick"][1] += 1
+                    if scored[kn] < kick_base_score:
+                        move_stats["kick"][0] += 1
+                    if scored[kn] < scored[best]:
+                        best = kn
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        break
+>>>>>>> REPLACE
+
+</DIFF>

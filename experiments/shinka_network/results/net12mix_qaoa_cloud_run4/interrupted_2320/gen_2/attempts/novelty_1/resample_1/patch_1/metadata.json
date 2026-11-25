@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "balanced_path_surrogate",
+  "patch_description": "Separates demand normalization, node-capacity estimation, and term assembly. Direct traffic remains the main linear signal, while a restrained two-hop synergy rewards links that can jointly serve otherwise indirect demand. Pair terms are limited to composable paths, keeping the interaction graph sparse and within the term budget.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-11-21T23:02:44.714645",
+  "llm_cost": 0.0008648,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,47 @@
+<NAME>
+targeted_relay_support
+</NAME>
+
+<DESCRIPTION>
+Keep the existing relay budget for ordinary OD pairs, but allow one additional relay for only the highest-demand decile. This concentrates the extra path interactions on consequential traffic instead of broadly densifying the QUBO. The base candidate count is unchanged, and even with the additions the number of generated terms remains bounded by the OD-pair and relay loops. Raise the evaluator-supplied degree penalty from 1.5 to 5.0 as a separate, small adjustment to encourage more valid samples before repair.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+
+    for i in range(n):
+=======
+    quadratic = {}
+    relay_count = min(n - 2, max(2, n // 4))
+    path_strength = 0.28
+    positive_od = traffic[~np.eye(n, dtype=bool)]
+    positive_od = positive_od[positive_od > 0.0]
+    high_demand_cutoff = (
+        float(np.quantile(positive_od, 0.90)) if positive_od.size else float("inf")
+    )
+
+    for i in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for rank, j in candidates[:relay_count]:
+=======
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            # Spend one extra relay only on OD pairs in the top demand decile.
+            od_relay_count = relay_count + int(od >= high_demand_cutoff)
+            od_relay_count = min(n - 2, od_relay_count)
+            for rank, j in candidates[:od_relay_count]:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.5
+=======
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 5.0
+>>>>>>> REPLACE
+</DIFF>

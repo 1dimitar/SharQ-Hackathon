@@ -1,0 +1,35 @@
+<NAME>
+moderate_concave_paths
+</NAME>
+
+<DESCRIPTION>
+The current two-hop rewards are strong enough to reduce the fraction of samples that already satisfy the degree constraints (82%, versus 98–99% for earlier, milder settings). Reduce their overall strength so they are less likely to overwhelm the evaluator’s degree penalty. Within that smaller contribution, use a mild concave transform of through-demand: it preserves the preference for useful high-volume paths while allowing moderate-demand paths to influence the topology. This is a targeted test of the suggested demand-dependent adjustment, with the lower strength intended to retain feasible samples.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.62
+=======
+    path_strength = 0.32
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            normalized_demand = through_demand / scale
+            for j in range(n):
+=======
+            normalized_demand = through_demand / scale
+            path_support = (
+                0.8 * normalized_demand
+                + 0.2 * np.sqrt(normalized_demand)
+            )
+            for j in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    -path_strength * normalized_demand
+                    / (float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure))
+=======
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.75 * edge_pressure))
+>>>>>>> REPLACE
+</DIFF>

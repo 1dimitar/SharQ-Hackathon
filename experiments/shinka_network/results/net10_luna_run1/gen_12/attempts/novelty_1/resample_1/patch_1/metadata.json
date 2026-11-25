@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_demand_clipping",
+  "patch_description": "Replace maximum-based normalization with a robust 90th-percentile scale. Negative demand and self-links are excluded, and values above the percentile are clipped. This prevents a single unusually large demand from dominating the linear rewards, while retaining the relative ranking of demand-supported links below the clipping threshold. The existing degree penalty remains unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:31.099150",
+  "llm_cost": 0.0008034,
+  "llm_model": "gpt-6-luna"
+}

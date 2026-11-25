@@ -1,0 +1,75 @@
+<NAME>
+bottleneck_screening
+</NAME>
+
+<DESCRIPTION>
+The neighborhood generator already focuses many proposals on links with positive LP dual prices, but the current batch screening then ranks moves only by surrogate energy. This edit carries the bottleneck signal into batch selection: reserve up to three LP evaluations for diverse, surrogate-promising proposals that alter active bottleneck links, then fill the remaining batch using the existing energy ranking. It keeps the surrogate useful for screening while ensuring that useful bottleneck-focused moves are not crowded out by proposals that look better only under the approximate Hamiltonian.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        base_e = energy(parent)
+        ranked = sorted(
+            ((energy(net) - base_e, net) for net in fresh),
+            key=lambda item: item[0],
+        )
+
+        # A close cluster of leading surrogate scores is weak evidence for
+=======
+        base_e = energy(parent)
+        ranked = sorted(
+            ((energy(net) - base_e, net) for net in fresh),
+            key=lambda item: item[0],
+        )
+
+        # Reserve some evaluations for moves that alter links with positive
+        # LP dual prices; surrogate energy alone can miss congestion relief.
+        try:
+            detail = tools.lp_detail(parent)
+        except Exception:
+            detail = None
+        hot = {
+            tuple(map(int, link))
+            for link, price in (detail.get("prices", {}) if detail else {}).items()
+            if price > 0
+        }
+        focused = []
+        if hot:
+            parent_edges = set(parent)
+            for delta, net in ranked:
+                changed_hot = len((parent_edges ^ set(net)) & hot)
+                if changed_hot:
+                    focused.append((delta, -changed_hot, net))
+            focused.sort(key=lambda item: (item[0], item[1]))
+
+        # A close cluster of leading surrogate scores is weak evidence for
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+=======
+        selected = []
+        # Give bottleneck-changing proposals a small guaranteed share while
+        # retaining diversity and ranking those proposals by surrogate energy.
+        for _, _, net in focused:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(3, batch_size):
+                break
+
+        # Fill the initial batch with good-energy moves that are not all tiny
+        # variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+>>>>>>> REPLACE
+
+</DIFF>

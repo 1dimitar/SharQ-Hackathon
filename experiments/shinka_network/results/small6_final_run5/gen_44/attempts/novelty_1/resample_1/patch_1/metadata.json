@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_frequency_debias",
+  "patch_description": "Add a small, demand-dependent cost to links that appear unusually often in the selected two-hop route rewards. Such links can attract many routes in the surrogate and become bottlenecks; this local adjustment nudges both sampling and energy-based ranking toward alternatives. The penalty is capped relative to the existing mean direct-link score and applies only to the most frequently coupled active links. It does not change or duplicate the evaluator\u2019s degree penalty.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:24:32.588275",
+  "llm_cost": 0.0032246,
+  "llm_model": "gpt-6-luna"
+}

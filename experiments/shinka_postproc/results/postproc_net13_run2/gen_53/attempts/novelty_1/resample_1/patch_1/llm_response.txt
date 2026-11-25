@@ -1,0 +1,92 @@
+<NAME>
+novelty_slot
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP evaluation in each batch for a structurally novel network. The current batch selector fills all nine slots with surrogate-ranked moves before its tail-exploration code can run, so it effectively lacks a dedicated novelty evaluation. This change keeps up to eight slots for energy-favored proposals, then uses the final slot for the fresh proposal whose nearest archive member is farthest away, breaking ties by surrogate energy. That gives occasional exploration of distinct topologies without sacrificing most exploitation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=9):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=9):
+        """Favor good surrogate moves but reserve one slot for archive novelty."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = sorted(
+            ((energy(net) - base_e, net) for net in fresh),
+            key=lambda item: item[0],
+        )
+
+        # Preserve most of the batch for promising moves, spreading the
+        # initial picks across distinct topologies.
+        quality_limit = max(0, batch_size - 1)
+        selected = []
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, quality_limit):
+                break
+
+        for _, net in ranked:
+            if len(selected) >= quality_limit:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Spend the reserved call on a candidate far from every scored
+        # archive member; use surrogate energy only to break novelty ties.
+        remaining = [net for _, net in ranked if net not in selected]
+        if remaining and len(selected) < batch_size:
+            refs = archive()
+            def novelty(net):
+                return min((distance(net, old) for old in refs), default=len(net))
+            novel = max(remaining, key=lambda net: (novelty(net), -energy(net)))
+            selected.append(novel)
+
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "entropy_priced_routes",
+  "patch_description": "Instead of rewarding several two-hop paths independently, this design treats them as competing routing options for each origin-destination pair. It repeatedly estimates a soft traffic split and raises prices on links and transit nodes with higher estimated load. The final sparse QUBO keeps the direct option and the two best-priced two-hop alternatives; their rewards share a per-demand budget, limiting the double-counting that can make broad path rewards misleading. A modest reciprocal-link cost is retained as a structural tie-breaker.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:44:33.631893",
+  "llm_cost": 0.0076409,
+  "llm_model": "gpt-6-luna"
+}

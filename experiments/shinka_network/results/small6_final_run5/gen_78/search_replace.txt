@@ -1,0 +1,137 @@
+<NAME>
+retained_route_competition
+</NAME>
+
+<DESCRIPTION>
+Replace the three-hop approximation, which reduced both scoring components, with a bounded transit-competition discount on existing two-hop rewards.
+
+Split each OD pair’s demand among its retained routes in proportion to their reward magnitudes, then accumulate the offered transit load at each intermediate node. Reduce rewards through above-average-load intermediates by at most 20%. This addresses competition created by the selected routes themselves, beyond the existing endpoint-demand pressure estimate. Normalizing by mean transit load keeps the correction size-independent. No new couplings or degree penalties are introduced, and the structural penalties remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # At most six other nodes fit within a degree-two, two-hop expansion.
+    long_hop_share = max(0.0, (n - 7.0) / max(1, n - 1))
+    if long_hop_share > 0.0 and positive.size:
+        # Approximate degree-two link probabilities, accounting for both
+        # competition among outgoing links and competition among incoming links.
+        affinity = 0.75 * normalized + 0.25 * roots
+        row_total = affinity.sum(axis=1)
+        col_total = affinity.sum(axis=0)
+        link_prior = np.minimum(
+            0.90,
+            2.0 * affinity / np.sqrt(np.maximum(
+                row_total[:, None] * col_total[None, :], 1e-15
+            )),
+        )
+        pressure_product = node_pressure[:, None] * node_pressure[None, :]
+        three_kernel = normalized / (pressure_product ** 1.125)
+        two_discount = node_pressure ** 0.75
+
+        for i in range(n):
+            for k in range(n):
+                if (
+                    i == k
+                    or traffic[i, k] <= 0.0
+                    or traffic[i, k] < cutoff
+                ):
+                    continue
+
+                two_quality = (
+                    np.sqrt(normalized[i] * normalized[:, k])
+                    / two_discount
+                )
+                two_quality.sort()
+                best_two = float(two_quality[-1])
+                second_two = float(two_quality[-2])
+                if best_two >= 0.55 and second_two < 0.94 * best_two:
+                    continue
+
+                # Rows and columns are the two intermediate nodes.
+                # A zero-demand leg makes the complete route's score zero.
+                quality = np.cbrt(
+                    normalized[i, :, None]
+                    * three_kernel
+                    * normalized[:, k][None, :]
+                )
+                quality[[i, k], :] = 0.0
+                quality[:, [i, k]] = 0.0
+                a, b = divmod(int(np.argmax(quality)), n)
+                if float(quality[a, b]) < max(0.50, 1.08 * best_two):
+                    continue
+
+                support = float(
+                    0.70 * normalized[i, k] + 0.30 * roots[i, k]
+                )
+                leg_sum = float(
+                    normalized[i, a]
+                    + normalized[a, b]
+                    + normalized[b, k]
+                )
+                weight = (
+                    0.24 * long_hop_share * support
+                    / (float(pressure_product[a, b]) * (1.0 + 0.5 * leg_sum))
+                )
+
+                first, bridge, last = (i, a), (a, b), (b, k)
+                p_first = float(link_prior[i, a])
+                p_last = float(link_prior[b, k])
+
+                # For route bits x,y,z, use
+                # -w*y*(p_last*x + p_first*z - p_first*p_last).
+                # This matches completion's value and first derivatives
+                # at the endpoint priors without coupling disconnected stubs.
+                linear[bridge] += float(weight * p_first * p_last)
+                for left, right, missing_prior in (
+                    (first, bridge, p_last),
+                    (bridge, last, p_first),
+                ):
+                    key = (
+                        (left, right) if left < right else (right, left)
+                    )
+                    quadratic[key] = float(
+                        quadratic.get(key, 0.0) - weight * missing_prior
+                    )
+=======
+    # Estimate competition among the routes actually retained. An OD
+    # pair contributes its demand once, not once per candidate route.
+    route_records = []
+    od_strength = {}
+    for key, coefficient in quadratic.items():
+        if coefficient >= 0.0:
+            continue
+        first, second = key
+        if first[1] == second[0]:
+            i, j, k = first[0], first[1], second[1]
+        elif second[1] == first[0]:
+            i, j, k = second[0], second[1], first[1]
+        else:
+            continue
+        if i == k:
+            continue
+
+        strength = -float(coefficient)
+        route_records.append((key, i, j, k, strength))
+        od = (i, k)
+        od_strength[od] = od_strength.get(od, 0.0) + strength
+
+    transit_usage = np.zeros(n, dtype=float)
+    for key, i, j, k, strength in route_records:
+        transit_usage[j] += (
+            float(normalized[i, k])
+            * strength / od_strength[(i, k)]
+        )
+
+    typical_usage = float(transit_usage.mean()) if n else 0.0
+    if typical_usage > 1e-15:
+        # Relative usage is invariant to demand units and scales naturally
+        # with n. Keep the correction mild: never remove more than 20%
+        # of a reward, and never amplify underused-node rewards.
+        relative_usage = transit_usage / typical_usage
+        transit_discount = np.maximum(
+            0.80, np.maximum(1.0, relative_usage) ** -0.25
+        )
+        for key, i, j, k, strength in route_records:
+            quadratic[key] *= float(transit_discount[j])
+>>>>>>> REPLACE
+</DIFF>

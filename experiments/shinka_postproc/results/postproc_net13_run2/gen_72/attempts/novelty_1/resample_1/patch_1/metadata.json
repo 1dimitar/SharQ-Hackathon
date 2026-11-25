@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "guided_diverse_search",
+  "patch_description": "Combines the current program\u2019s LP-detail-guided two-switch and rotation search with the inspiration program\u2019s productivity-weighted parent selection and archive-guided moves. It keeps a diverse set of LP-scored networks, screens proposals by surrogate energy before spending LP calls, and reserves some batch capacity for structurally novel moves. The fixed wrapper and `improve(demand, candidates, tools, rng)` interface are unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:35:37.103213",
+  "llm_cost": 0.004643,
+  "llm_model": "gpt-6-luna"
+}

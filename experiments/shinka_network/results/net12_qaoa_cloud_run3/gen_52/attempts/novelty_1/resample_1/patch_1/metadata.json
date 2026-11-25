@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_ranking",
+  "patch_description": "Rank candidate two-hop relays by the strength of their weaker leg, with a smaller contribution from the stronger leg. This favors paths whose two links both have useful demand support rather than paths with one dominant leg. Preserve the existing node- and edge-pressure discounts, and limit each OD pair to a deterministic relay budget; this keeps the interaction graph sparse while focusing quadratic rewards on the most promising paths.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:40.366404",
+  "llm_cost": 0.0014743,
+  "llm_model": "gpt-6-luna"
+}

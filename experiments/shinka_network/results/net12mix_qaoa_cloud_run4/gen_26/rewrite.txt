@@ -1,0 +1,118 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link rewards and traffic-sensitive endpoint conflicts."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n == 0:
+        return {}, {}, 1.0
+
+    # Sanitize and normalize demand so coefficient scales are stable.
+    t = np.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0)
+    t = np.maximum(t, 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+
+    max_demand = float(np.max(t)) if t.size else 0.0
+    if max_demand > 0.0:
+        d = t / max_demand
+    else:
+        d = t
+
+    row = np.sum(d, axis=1)
+    col = np.sum(d, axis=0)
+
+    max_row = float(np.max(row)) if row.size else 0.0
+    max_col = float(np.max(col)) if col.size else 0.0
+    row_norm = row / max_row if max_row > 0.0 else np.zeros(n)
+    col_norm = col / max_col if max_col > 0.0 else np.zeros(n)
+
+    # Concave pressure scores retain distinctions among busy nodes without
+    # making a single extreme row or column dominate all other coefficients.
+    row_pressure = np.sqrt(np.clip(row_norm, 0.0, 1.0))
+    col_pressure = np.sqrt(np.clip(col_norm, 0.0, 1.0))
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(d[i, j])
+            endpoint = 0.5 * (float(row_pressure[i]) +
+                              float(col_pressure[j]))
+            linear[(i, j)] = -(0.90 * direct + 0.10 * endpoint)
+
+    # Adapt conflict strength mildly to traffic imbalance. Pairwise pressure
+    # remains bounded, with a small floor so low-volume endpoints are not
+    # entirely disconnected from the interaction graph.
+    combined = np.concatenate((row_norm, col_norm))
+    mean_pressure = float(np.mean(combined)) if combined.size else 0.0
+    if mean_pressure > 1e-12:
+        cv = float(np.std(combined)) / mean_pressure
+    else:
+        cv = 0.0
+    imbalance = min(1.0, max(0.0, cv / 1.5))
+    conflict_scale = 0.135 + 0.030 * imbalance
+    floor = 0.10
+
+    quadratic = {}
+
+    # Two outgoing links from one sender share its traffic burden. Penalize
+    # pairs whose destinations are themselves high-inflow nodes, with the
+    # sender's normalized row load modulating the penalty.
+    for i in range(n):
+        shared_pressure = floor + (1.0 - floor) * float(row_norm[i])
+        shared_factor = 0.65 + 0.35 * shared_pressure
+        dests = [j for j in range(n) if j != i]
+        for a in range(len(dests)):
+            j = dests[a]
+            pj = floor + (1.0 - floor) * float(col_norm[j])
+            for b in range(a + 1, len(dests)):
+                k = dests[b]
+                pk = floor + (1.0 - floor) * float(col_norm[k])
+                exposure = np.sqrt(pj * pk)
+                key = ((i, j), (i, k))
+                quadratic[key] = conflict_scale * shared_factor * float(exposure)
+
+    # Two incoming links at one receiver can concentrate traffic from busy
+    # origins. The receiver's column load scales the conflict.
+    for j in range(n):
+        shared_pressure = floor + (1.0 - floor) * float(col_norm[j])
+        shared_factor = 0.65 + 0.35 * shared_pressure
+        origins = [i for i in range(n) if i != j]
+        for a in range(len(origins)):
+            i = origins[a]
+            pi = floor + (1.0 - floor) * float(row_norm[i])
+            for b in range(a + 1, len(origins)):
+                k = origins[b]
+                pk = floor + (1.0 - floor) * float(row_norm[k])
+                exposure = np.sqrt(pi * pk)
+                key = ((i, j), (k, j))
+                quadratic[key] = conflict_scale * shared_factor * float(exposure)
+
+    # Kept separate from the objective terms; the evaluator applies the
+    # squared in/out degree deviations using this weight.
+    penalty_weight = 3.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

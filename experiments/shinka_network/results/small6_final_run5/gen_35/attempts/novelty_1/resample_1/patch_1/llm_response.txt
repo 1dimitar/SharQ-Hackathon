@@ -1,0 +1,23 @@
+<NAME>
+weak_leg_discount
+</NAME>
+
+<DESCRIPTION>
+Discount each selected two-hop route when its weaker leg has little demand support. The bounded factor is based on the smaller normalized demand of the two legs, so a route with one weak leg receives less reward even if the other leg is strong; well-supported routes retain the existing reward. This leaves candidate selection, sparse coupling count, path-affinity weighting, and transit-pressure discount unchanged, while reducing the influence of poorly supported shortcuts on both sampling and energy-based ranking.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                route_scale = (
+                    support * rank_factor * affinity_factor
+                    / (pressure[j] ** 0.35)
+                )
+=======
+                weak_leg_support = min(z[i, j], z[j, k])
+                leg_support_factor = 0.45 + 0.55 * np.sqrt(weak_leg_support)
+                route_scale = (
+                    support * rank_factor * affinity_factor * leg_support_factor
+                    / (pressure[j] ** 0.35)
+                )
+>>>>>>> REPLACE
+</DIFF>

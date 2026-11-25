@@ -1,0 +1,14 @@
+{
+  "generation": 102,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "share_aware_bilateral_routes",
+  "patch_description": "Rank two-hop routes by support from both legs, rather than their summed demand alone. A harmonic-mean component discounts candidates favored by one heavy leg and one nearly useless leg. Modulate this component using clipped row/column demand shares, so each leg\u2019s importance reflects competition for its endpoints\u2019 two available links.\n\nThe absolute harmonic mean remains the limiting factor: small demands cannot become strong route support merely because their endpoints are quiet. Retain some summed-demand affinity and the existing low-pressure fallback to allow transit links with little direct traffic. This changes route selection without increasing coupling counts or altering the successful neighbor factors, reward scale, or degree penalty. The share normalization scales with network size.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:20:33.406620",
+  "llm_cost": 0.06406,
+  "llm_model": "gpt-6.1-sol"
+}

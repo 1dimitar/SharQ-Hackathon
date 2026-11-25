@@ -1,0 +1,16 @@
+<NAME>
+reduce_indirect_scale
+</NAME>
+
+<DESCRIPTION>
+The indirect reward currently spreads each OD pair’s fixed reward across nearly every possible relay, creating a dense interaction graph of about 840 terms. That broad signal may be too weakly selective to justify its influence relative to direct-demand rewards. Reduce its scale from 0.15 to 0.10 while preserving the existing allocation and coupling structure; this tests whether a more conservative indirect signal improves the sampled topologies without adding terms or changing the degree penalty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = 0.15 * (float(demand[i, k]) / scale) * allocation / total
+=======
+                weight = 0.10 * (float(demand[i, k]) / scale) * allocation / total
+>>>>>>> REPLACE
+
+</DIFF>

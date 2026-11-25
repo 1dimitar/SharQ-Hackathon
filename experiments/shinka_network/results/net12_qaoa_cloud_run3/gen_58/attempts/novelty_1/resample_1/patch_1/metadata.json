@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_ranking",
+  "patch_description": "Rank relay candidates by the usefulness of both legs, using `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)`. This favors relays with two serviceable legs over those whose apparent value comes from only one strong leg. The ranking retains the existing relay-pressure and edge-pressure discounts, and leaves the relay budget and path-reward formula unchanged, so the change targets which paths are selected without increasing QUBO density.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:13.382437",
+  "llm_cost": 0.0012873,
+  "llm_model": "gpt-6-luna"
+}

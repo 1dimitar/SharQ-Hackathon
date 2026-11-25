@@ -1,0 +1,142 @@
+<NAME>
+operator_stall_adaptation
+</NAME>
+
+<DESCRIPTION>
+Track whether each move operator produces an improvement for a given parent, rather than using the parent’s overall stall count to guide neighborhood effort. Increase random-switch, rotation, and archive-recombination sampling independently when that operator has repeatedly failed to improve the parent; reset its counter when one of its evaluated moves does improve it. This lets the search spend more proposals on underexplored or promising alternatives without letting one operator’s failures inflate effort for every neighborhood type. Trial counts are capped to keep proposal generation bounded.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    stalls = {}
+    best_net = None
+=======
+    stalls = {}
+    operator_stalls = {}
+    proposal_sources = {}
+    best_net = None
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def propose(parent, detail):
+        """Generate bottleneck-focused switches, rotations, and archive-guided moves."""
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+=======
+    def propose(parent, detail):
+        """Generate bottleneck-focused switches, rotations, and archive-guided moves."""
+        arcs = list(parent)
+        current = set(parent)
+        moves = set()
+        proposal_sources.clear()
+
+        def record(move, operator):
+            moves.add(move)
+            proposal_sources.setdefault(move, set()).add(operator)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                move = two_switch(parent, p, q)
+                if move is not None:
+                    moves.add(move)
+
+        # Unrestricted samples retain paths out of regions poorly described by prices.
+        for _ in range(80):
+=======
+                move = two_switch(parent, p, q)
+                if move is not None:
+                    record(move, "focused_switch")
+
+        # Unrestricted samples retain paths out of regions poorly described by prices.
+        random_switch_stalls = operator_stalls.get((parent, "random_switch"), 0)
+        random_switch_trials = min(240, 40 * (1 + random_switch_stalls // 3))
+        for _ in range(random_switch_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            move = two_switch(parent, p, q)
+            if move is not None:
+                moves.add(move)
+
+        # Three-link rotations can cross barriers that single switches cannot.
+        if len(arcs) >= 3:
+            for _ in range(90):
+=======
+            move = two_switch(parent, p, q)
+            if move is not None:
+                record(move, "random_switch")
+
+        # Three-link rotations can cross barriers that single switches cannot.
+        if len(arcs) >= 3:
+            rotation_stalls = operator_stalls.get((parent, "rotation"), 0)
+            rotation_trials = min(360, 45 * (1 + rotation_stalls // 3))
+            for _ in range(rotation_trials):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    if new & (current - old):
+                        continue
+                    moves.add(tuple(sorted((current - old) | new)))
+
+        # Recombine destination assignments supported by good archived networks.
+=======
+                    if new & (current - old):
+                        continue
+                    record(tuple(sorted((current - old) | new)), "rotation")
+
+        # Recombine destination assignments supported by good archived networks.
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        for _ in range(12):
+            k = 3 + int(rng.integers(4))
+=======
+        recombination_stalls = operator_stalls.get((parent, "recombination"), 0)
+        recombination_trials = min(48, 6 * (1 + recombination_stalls // 3))
+        for _ in range(recombination_trials):
+            k = 3 + int(rng.integers(4))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            if best_assignment is not None:
+                moves.add(tuple(sorted(remainder | best_assignment)))
+
+        return [
+=======
+            if best_assignment is not None:
+                record(tuple(sorted(remainder | best_assignment)), "recombination")
+
+        return [
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        if best_score < previous_best:
+=======
+        for operator in ("focused_switch", "random_switch", "rotation", "recombination"):
+            operator_moves = [
+                net for net in batch
+                if operator in proposal_sources.get(net, ())
+            ]
+            if not operator_moves:
+                continue
+            key = (parent, operator)
+            if min((scores.get(net, float("inf")) for net in operator_moves),
+                   default=float("inf")) < parent_score:
+                operator_stalls[key] = 0
+            else:
+                operator_stalls[key] = operator_stalls.get(key, 0) + 1
+
+        if batch_best < parent_score:
+            stalls[parent] = 0
+        else:
+            stalls[parent] = stalls.get(parent, 0) + 1
+
+        if best_score < previous_best:
+>>>>>>> REPLACE
+</DIFF>

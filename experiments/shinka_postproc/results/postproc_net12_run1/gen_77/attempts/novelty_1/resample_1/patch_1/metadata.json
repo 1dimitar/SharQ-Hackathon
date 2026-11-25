@@ -1,0 +1,14 @@
+{
+  "generation": 77,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_neighborhood_diversity",
+  "patch_description": "The current neighborhood screen always spends its first nine LP evaluations on the same energy-first ordering. When those moves are topologically similar, that can waste evaluations exploring nearly identical changes. Measure pairwise topology distance among the 40 best surrogate-ranked moves and adapt the initial batch: use more far-apart representatives when the pool is clustered, and retain more energy-ranked moves when it is already diverse. Keep the existing dual-guided and random reservations afterward, so this changes only the energy/diversity portion of screening.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:07:06.435439",
+  "llm_cost": 0.0023027000000000004,
+  "llm_model": "gpt-6-luna"
+}

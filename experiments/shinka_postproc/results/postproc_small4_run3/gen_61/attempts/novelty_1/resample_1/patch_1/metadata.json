@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "hybrid_relink_screen",
+  "patch_description": "This version keeps the current program\u2019s demand-based routing features and online LP-score model, while making the search portfolio more explicit: it combines bottleneck-focused and random 2-exchanges, 3-link rotations, short perturbation walks, and direct steps toward another archive network. Initial starts and LP batches are selected for a mix of predicted quality and structural diversity, rather than relying on one ranking signal. The implementation remains size-adaptive and uses only the supplied tools for LP scoring.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:46:00.079398",
+  "llm_cost": 0.007247099999999999,
+  "llm_model": "gpt-6-luna"
+}

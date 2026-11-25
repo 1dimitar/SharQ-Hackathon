@@ -1,0 +1,32 @@
+<NAME>
+bounded_path_support
+</NAME>
+
+<DESCRIPTION>
+Scale each eligible two-hop reward by a bounded measure of support from its two component edges. Paths whose edges both carry substantial direct demand receive a modestly stronger incentive, while the positive multiplier floor preserves the existing incentive for paths with lightly loaded edges. The current positive-through-demand gate and transit-pressure discount remain unchanged, and this adds no quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                transit_discount = 0.65 + 0.70 * float(transit_factor[j])
+                weight = (
+                    -indirect_fraction
+                    * demand_fraction
+                    * share
+                    * transit_discount
+                )
+=======
+                transit_discount = 0.65 + 0.70 * float(transit_factor[j])
+                edge_support = np.sqrt(
+                    float(normalized[i, j]) * float(normalized[j, k])
+                )
+                support_multiplier = 0.75 + 0.50 * edge_support
+                weight = (
+                    -indirect_fraction
+                    * demand_fraction
+                    * share
+                    * transit_discount
+                    * support_multiplier
+                )
+>>>>>>> REPLACE
+</DIFF>

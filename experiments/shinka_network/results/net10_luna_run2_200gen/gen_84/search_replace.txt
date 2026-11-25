@@ -1,0 +1,81 @@
+<NAME>
+capped_path_budget
+</NAME>
+
+<DESCRIPTION>
+The current quadratic loop gives every candidate two-hop path an independent reward, so an OD pair with many possible intermediates can accumulate a large reward and dominate the direct-link signal. This edit caps the total indirect reward for each OD pair at a modest fraction of that pair’s demand-based signal, then allocates that budget among paths according to component-link support and transit pressure. It retains path-specific guidance while preventing aggregate two-hop incentives from overwhelming direct demand.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Reward useful two-hop alternatives, while discounting paths whose links
+    # are already likely to be loaded by their own direct traffic.
+    quadratic = {}
+    path_strength = 0.56
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                through_demand = float(demand[i, k])
+                if through_demand <= 0.0:
+                    continue
+                edge_pressure = (
+                    float(demand[i, j]) + float(demand[j, k])
+                ) / scale
+                through_fraction = through_demand / scale
+                through_signal = (
+                    0.8 * through_fraction + 0.2 * np.sqrt(through_fraction)
+                )
+                weight = (
+                    -path_strength * through_signal
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+                quadratic[((i, j), (j, k))] = weight
+=======
+    # Allocate a capped two-hop reward per OD pair. Candidate paths with
+    # stronger component-link support receive a larger share, while pressure
+    # discourages concentrating transit through already busy nodes.
+    quadratic = {}
+    indirect_cap = 0.45
+    for i in range(n):
+        for k in range(n):
+            if i == k:
+                continue
+            through_fraction = float(demand[i, k]) / scale
+            if through_fraction <= 0.0:
+                continue
+            through_signal = (
+                0.8 * through_fraction + 0.2 * np.sqrt(through_fraction)
+            )
+            mids = []
+            evidence = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                edge_pressure = (
+                    float(demand[i, j]) + float(demand[j, k])
+                ) / scale
+                component_support = np.sqrt(
+                    max(0.0, float(demand[i, j]) / scale)
+                    * max(0.0, float(demand[j, k]) / scale)
+                )
+                path_evidence = (
+                    (0.20 + 0.80 * component_support)
+                    / (node_pressure[j] * (1.0 + 0.75 * edge_pressure))
+                )
+                mids.append(j)
+                evidence.append(path_evidence)
+
+            total_evidence = float(sum(evidence))
+            if total_evidence <= 0.0:
+                continue
+            budget = indirect_cap * through_signal
+            for j, path_evidence in zip(mids, evidence):
+                weight = -budget * path_evidence / total_evidence
+                quadratic[((i, j), (j, k))] = weight
+>>>>>>> REPLACE
+
+</DIFF>

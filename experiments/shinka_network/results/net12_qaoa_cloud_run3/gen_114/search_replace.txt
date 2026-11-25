@@ -1,0 +1,15 @@
+<NAME>
+pressure_rank_power
+</NAME>
+
+<DESCRIPTION>
+Raise the relay-pressure denominator in candidate ranking to the 1.25 power. This makes the ranking more selective against high-pressure transit nodes, favoring relays with more spare capacity when choosing the limited set of two-hop interactions. The existing reward discount and all other term weights remain unchanged, isolating the effect of pressure-aware selection.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                rank = affinity / (0.75 + relay_pressure)
+=======
+                rank = affinity / ((0.75 + relay_pressure) ** 1.25)
+>>>>>>> REPLACE
+</DIFF>

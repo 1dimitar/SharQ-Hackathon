@@ -1,0 +1,122 @@
+--- a/original.py
++++ b/original.py
+@@ -1,48 +1,102 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
++    """Build approximate link and two-hop routing costs for a directed topology."""
++    t = np.asarray(demand, dtype=float)
++    n = int(t.shape[0])
+ 
+-    Args:
+-        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+-            (zero diagonal).
++    if n < 2:
++        return {}, {}, 7.5
+ 
+-    Returns:
+-        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+-            (x_ij = 1 if the directed link i -> j is built), i != j.
+-        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+-        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+-            after rescaling these terms so the largest |weight| is 1.
++    # Demand normalization makes the coefficients stable across instances.
++    t = np.maximum(t, 0.0)
++    max_demand = float(np.max(t)) if t.size else 0.0
++    if max_demand > 0.0:
++        d = t / max_demand
++    else:
++        d = np.zeros_like(t)
+ 
+-    Lower energy must mean a better topology. Baseline: reward each link by the demand
+-    it carries directly.
+-    """
+-    n = len(demand)
+-    scale = float(demand.max()) or 1.0
+-    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
++    row = np.sum(t, axis=1)
++    col = np.sum(t, axis=0)
++    max_row = float(np.max(row)) if row.size else 0.0
++    max_col = float(np.max(col)) if col.size else 0.0
++    row_n = row / max_row if max_row > 0.0 else np.zeros(n)
++    col_n = col / max_col if max_col > 0.0 else np.zeros(n)
++
++    # A weak prior favors links that connect traffic-generating nodes to
++    # traffic-receiving nodes, which can make them useful as relay links.
++    relay = np.sqrt(np.outer(row_n, col_n))
++    relay_max = float(np.max(relay)) if relay.size else 0.0
++    if relay_max > 0.0:
++        relay /= relay_max
++
++    linear = {}
++    direct_weight = 0.88
++    relay_weight = 0.12
++    for i in range(n):
++        for j in range(n):
++            if i == j:
++                continue
++            utility = direct_weight * d[i, j] + relay_weight * relay[i, j]
++            linear[(i, j)] = -float(utility)
++
++    # Prefer two-hop paths for substantial OD demand, while reducing the
++    # incentive to route through nodes carrying unusually high aggregate
++    # source and destination traffic.
++    pressure = row + col
++    mean_pressure = float(np.mean(pressure)) if pressure.size else 0.0
++    if mean_pressure > 0.0:
++        relative_pressure = pressure / mean_pressure
++        capacity = 1.0 / np.sqrt(0.35 + 0.65 * relative_pressure)
++        cap_max = float(np.max(capacity))
++        if cap_max > 0.0:
++            capacity /= cap_max
++    else:
++        capacity = np.ones(n, dtype=float)
++
++    path_weight = min(0.32, 0.24 * np.sqrt(12.0 / max(float(n), 5.0)))
+     quadratic = {}
+-    penalty_weight = 1.0
++    for i in range(n):
++        for j in range(n):
++            if j == i:
++                continue
++            for k in range(n):
++                if k == i or k == j:
++                    continue
++                od = float(d[i, k])
++                if od <= 0.0:
++                    continue
++                a = (i, j)
++                b = (j, k)
++                # Canonicalize keys so the returned QUBO is unambiguous.
++                key = (a, b) if a < b else (b, a)
++                quadratic[key] = quadratic.get(key, 0.0) - (
++                    path_weight * od * float(capacity[j])
++                )
++
++    # The evaluator adds this degree penalty separately.
++    penalty_weight = 7.5
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

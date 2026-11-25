@@ -1,0 +1,14 @@
+{
+  "generation": 87,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_operator_feedback",
+  "patch_description": "Adapt which move structures receive LP calls using their confirmed improvement rates. Classify proposals by the number of changed links (two-switch, three-link rotation, or larger move), then maintain a smoothed success estimate for each class. Batch selection gives stronger representation to move classes that have actually improved their parent, while retaining a floor for every class so under-sampled operators continue to be explored. This makes the expensive LP budget respond to observed network-quality improvements rather than relying on a fixed mix of proposals.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:47:51.525990",
+  "llm_cost": 0.0030035,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,23 @@
+correct: True | error: None
+combined_score: 0.8951113816446361
+network10_s0: best 227900 vs reference 210800 (gap +8.1%), median gap +27.2%, 98% of samples valid before repair, 64 distinct topologies, 355 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 214667 (gap +1.83%)
+network10_s1: best 231334 vs reference 210800 (gap +9.7%), median gap +24.6%, 98% of samples valid before repair, 64 distinct topologies, 355 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 216300 (gap +2.61%)
+network10_s2: best 235500 vs reference 210800 (gap +11.7%), median gap +32.4%, 100% of samples valid before repair, 64 distinct topologies, 355 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 214000 (gap +1.52%)
+network12_s0: best 305000 vs reference 276474 (gap +10.3%), median gap +34.0%, 95% of samples valid before repair, 64 distinct topologies, 519 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 284895 (gap +3.05%)
+network12_s1: best 319600 vs reference 276474 (gap +15.6%), median gap +35.7%, 97% of samples valid before repair, 64 distinct topologies, 519 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 284867 (gap +3.04%)
+network12_s2: best 309667 vs reference 276474 (gap +12.0%), median gap +29.2%, 95% of samples valid before repair, 64 distinct topologies, 519 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 282637 (gap +2.23%)
+network13_s0: best 349286 vs reference 300620 (gap +16.2%), median gap +34.8%, 95% of samples valid before repair, 64 distinct topologies, 600 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 317934 (gap +5.76%)
+network13_s1: best 333858 vs reference 300620 (gap +11.1%), median gap +30.7%, 95% of samples valid before repair, 64 distinct topologies, 600 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 315167 (gap +4.84%)
+network13_s2: best 335750 vs reference 300620 (gap +11.7%), median gap +33.2%, 92% of samples valid before repair, 64 distinct topologies, 600 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 316800 (gap +5.38%)
+network14_s0: best 393000 vs reference 343091 (gap +14.5%), median gap +30.9%, 91% of samples valid before repair, 64 distinct topologies, 716 quadratic terms, built in 0.12s | after the fixed post-processor (500 LP calls): 360500 (gap +5.07%)
+network14_s1: best 397667 vs reference 343091 (gap +15.9%), median gap +28.8%, 92% of samples valid before repair, 64 distinct topologies, 716 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 351000 (gap +2.31%)
+network14_s2: best 386000 vs reference 343091 (gap +12.5%), median gap +30.4%, 91% of samples valid before repair, 64 distinct topologies, 716 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 354223 (gap +3.24%)
+network15_s0: best 420819 vs reference 370870 (gap +13.5%), median gap +31.7%, 94% of samples valid before repair, 64 distinct topologies, 835 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 381250 (gap +2.80%)
+network15_s1: best 412167 vs reference 370870 (gap +11.1%), median gap +26.9%, 97% of samples valid before repair, 64 distinct topologies, 835 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 390847 (gap +5.39%)
+network15_s2: best 408167 vs reference 370870 (gap +10.1%), median gap +28.8%, 92% of samples valid before repair, 64 distinct topologies, 835 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 395167 (gap +6.55%)
+network16_s0: best 440177 vs reference 397908 (gap +10.6%), median gap +32.4%, 92% of samples valid before repair, 64 distinct topologies, 936 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 421167 (gap +5.85%)
+network16_s1: best 441400 vs reference 397908 (gap +10.9%), median gap +32.0%, 88% of samples valid before repair, 64 distinct topologies, 936 quadratic terms, built in 0.01s | after the fixed post-processor (500 LP calls): 419429 (gap +5.41%)
+network16_s2: best 446408 vs reference 397908 (gap +12.2%), median gap +33.0%, 94% of samples valid before repair, 64 distinct topologies, 936 quadratic terms, built in 0.00s | after the fixed post-processor (500 LP calls): 416847 (gap +4.76%)
+Largest gap: network13_s0 (+16.2%).
+Per size (sample-quality part / head-start part): n=10 0.846 / 0.981, n=12 0.820 / 0.973, n=13 0.819 / 0.949, n=14 0.822 / 0.966, n=15 0.836 / 0.953, n=16 0.827 / 0.949
+Sample-quality part 0.8283, head-start part 0.9619; score = their mean = 0.8951.

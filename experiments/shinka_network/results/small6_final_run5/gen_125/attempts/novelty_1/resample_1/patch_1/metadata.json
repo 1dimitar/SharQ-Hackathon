@@ -1,0 +1,14 @@
+{
+  "generation": 125,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "flow_profile_qubo",
+  "patch_description": "Reorganizes the surrogate into staged demand profiling, sparse route construction, and structural corrections. A soft estimate of two-hop route use informs both route couplings and a small linear bonus for useful transit links; bounded neighbor-overlap and cut terms provide additional load-balance signals. Couplings are aggregated by a single helper, and the route and overlap budgets keep the model compact as n grows.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:39:52.615812",
+  "llm_cost": 0.0053238,
+  "llm_model": "gpt-6-luna"
+}

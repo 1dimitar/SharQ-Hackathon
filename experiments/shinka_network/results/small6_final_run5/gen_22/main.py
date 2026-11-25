@@ -1,0 +1,254 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def _add_pair(quadratic, first, second, weight):
+    if first == second:
+        return
+    key = (first, second) if first < second else (second, first)
+    quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+
+def _coverage_expansion(traffic, transition):
+    """
+    Expand a diminishing-returns neighbor-coverage objective.
+
+    Returns a linear coefficient array and one curvature matrix per source.
+    Coordinates within a curvature matrix are candidate outgoing neighbors.
+    """
+    n = len(traffic)
+    eye = np.eye(n)
+
+    # A neighbor provides immediate delivery plus opportunities two and three
+    # hops away. The identity term makes direct delivery especially valuable.
+    reach = eye + 0.52 * transition + 0.25 * (transition @ transition)
+
+    reference = 2.0 * transition
+    coverage = reference @ reach
+    floor = 0.16 + 0.12 * traffic.mean(axis=1)
+    coverage = coverage + floor[:, None]
+
+    linear = np.zeros((n, n), dtype=float)
+    curvature = []
+
+    for i in range(n):
+        weights = traffic[i].copy()
+        weights[i] = 0.0
+
+        inverse = 1.0 / np.maximum(coverage[i], 1e-10)
+        gradient = -(reach @ (weights * inverse))
+        hessian = (
+            reach * (weights * inverse * inverse)[None, :]
+        ) @ reach.T
+
+        # x_j^2 = x_j for binary variables.
+        linear[i] = (
+            gradient
+            - hessian @ reference[i]
+            + 0.5 * np.diag(hessian)
+        )
+        linear[i, i] = 0.0
+        curvature.append(hessian)
+
+    return linear, curvature
+
+
+def surrogate_terms(demand):
+    """Build direct, multi-hop coverage, and sparse route-completion terms."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = len(traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    peak = float(traffic.max()) if traffic.size else 0.0
+    z = traffic / (peak if peak > 0.0 else 1.0)
+    root = np.sqrt(z)
+
+    linear = {
+        (i, j): -float(0.75 * z[i, j] + 0.25 * root[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    if peak <= 0.0:
+        return linear, quadratic, 1.40
+
+    # Sinkhorn balancing supplies a deterministic fractional routing prior.
+    # A positive background prevents sparse demands from isolating nodes.
+    prior = 0.16 + 0.64 * z + 0.20 * root
+    np.fill_diagonal(prior, 0.0)
+    for _ in range(48):
+        prior /= np.maximum(prior.sum(axis=1, keepdims=True), 1e-12)
+        prior /= np.maximum(prior.sum(axis=0, keepdims=True), 1e-12)
+    prior /= np.maximum(prior.sum(axis=1, keepdims=True), 1e-12)
+
+    # Estimate transit pressure using a discounted multi-hop walk.
+    # This is a small dense matrix inverse, not a routing optimization.
+    alpha = 0.67
+    resolvent = np.linalg.solve(
+        np.eye(n) - alpha * prior, np.eye(n)
+    )
+    propagated = resolvent.T @ z @ resolvent.T
+    edge_load = prior * propagated
+
+    incident = np.maximum(z.sum(axis=0), z.sum(axis=1))
+    node_load = np.maximum(edge_load.sum(axis=0), edge_load.sum(axis=1))
+    incident /= max(float(incident.max()), 1e-12)
+    node_load /= max(float(node_load.max()), 1e-12)
+    pressure = np.maximum(0.65, 0.70 * incident + 0.30 * node_load)
+
+    # Build both outgoing-neighbor and incoming-neighbor portfolio models.
+    out_linear, out_hessians = _coverage_expansion(z, prior)
+    reverse_prior = prior.T.copy()
+    reverse_prior /= np.maximum(
+        reverse_prior.sum(axis=1, keepdims=True), 1e-12
+    )
+    in_linear, in_hessians = _coverage_expansion(z.T, reverse_prior)
+    coverage_linear = out_linear + in_linear.T
+
+    # Row/column potentials are constant on feasible topologies. Removing them
+    # exposes the useful part of the linear predictor before setting its scale.
+    mask = ~np.eye(n, dtype=bool)
+    for _ in range(3):
+        row_mean = coverage_linear.sum(axis=1) / (n - 1)
+        coverage_linear -= row_mean[:, None] * mask
+        col_mean = coverage_linear.sum(axis=0) / (n - 1)
+        coverage_linear -= col_mean[None, :] * mask
+        np.fill_diagonal(coverage_linear, 0.0)
+
+    linear_scale = float(np.max(np.abs(coverage_linear[mask])))
+    coverage_weight = 0.22 / max(linear_scale, 1e-12)
+
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                linear[(i, j)] += float(
+                    coverage_weight * coverage_linear[i, j]
+                )
+
+    # Under degree two, a node has exactly one selected unordered neighbor pair.
+    # Subtracting a common curvature coefficient therefore changes only a
+    # constant on valid networks, while reducing unnecessary QUBO magnitude.
+    for incoming, hessians in ((False, out_hessians), (True, in_hessians)):
+        for i, hessian in enumerate(hessians):
+            neighbors = [j for j in range(n) if j != i]
+            pairs = [
+                (j, k)
+                for position, j in enumerate(neighbors)
+                for k in neighbors[position + 1:]
+            ]
+            if not pairs:
+                continue
+
+            center = float(np.mean([hessian[j, k] for j, k in pairs]))
+            for j, k in pairs:
+                weight = coverage_weight * (float(hessian[j, k]) - center)
+                if abs(weight) < 1e-7:
+                    continue
+                if incoming:
+                    first, second = (j, i), (k, i)
+                else:
+                    first, second = (i, j), (i, k)
+                _add_pair(quadratic, first, second, weight)
+
+    # Residual demand gives direct-heavy OD pairs somewhat less duplicated
+    # route credit. The propagated component makes route ranking sensitive to
+    # traffic beyond the two endpoints.
+    propagated_scale = max(float(propagated.max()), 1e-12)
+    long_range = propagated / propagated_scale
+    load_scale = max(float(edge_load.max()), 1e-12)
+    relative_load = edge_load / load_scale
+
+    positive = z[z > 0.0]
+    heavy_cutoff = float(np.quantile(positive, 0.75))
+
+    for i in range(n):
+        for k in range(n):
+            amount = float(z[i, k])
+            if i == k or amount <= 0.0:
+                continue
+
+            support = (
+                0.68 * amount + 0.24 * float(root[i, k])
+                + 0.08 * float(long_range[i, k])
+            )
+            support *= 1.0 - 0.10 * float(prior[i, k])
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                affinity = float(z[i, j] + z[j, k])
+                downstream = float(long_range[i, j] + long_range[j, k])
+                route_load = float(
+                    relative_load[i, j] + relative_load[j, k]
+                )
+                discount = (
+                    float(pressure[j])
+                    * (1.0 + 0.45 * affinity)
+                    * (1.0 + 0.12 * route_load)
+                )
+                rank = (
+                    0.25 + affinity + 0.16 * downstream
+                ) / (float(pressure[j]) ** 0.75)
+                rank /= 1.0 + 0.14 * route_load
+                candidates.append((rank, j, discount))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = min(
+                len(candidates),
+                4 if amount >= heavy_cutoff else 3,
+            )
+
+            # Keep a fixed sparse budget rather than adding every near-tie.
+            chosen = candidates[:keep]
+            selected = {item[1] for item in chosen}
+            for position, (_, j, discount) in enumerate(chosen):
+                weight = (
+                    -0.44 * support
+                    * (1.0 + 0.07 * (keep - position))
+                    / discount
+                )
+                _add_pair(
+                    quadratic, (i, j), (j, k), weight
+                )
+
+            # One capacity-oriented alternative avoids forcing every route
+            # through the high-affinity core.
+            alternatives = [
+                item for item in candidates if item[1] not in selected
+            ]
+            if alternatives:
+                _, j, discount = min(
+                    alternatives, key=lambda item: (item[2], item[1])
+                )
+                _add_pair(
+                    quadratic, (i, j), (j, k),
+                    -0.25 * support / discount,
+                )
+
+    # No degree penalties are included here.
+    return linear, quadratic, 1.40
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

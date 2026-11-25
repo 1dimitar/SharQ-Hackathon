@@ -1,0 +1,318 @@
+"""Starting program of post-processing run 2 (network13): run 1's best program (gen 49, combined
+score 0.9901 on network12), copied from results/postproc_net12_run1/best/main.py. Only the fixed
+wrapper below the EVOLVE block changed (tools.energy uses each pool's own Hamiltonian).
+"""
+
+"""Classical post-processing of QAOA output for QOBLIB 08. ShinkaEvolve edits the EVOLVE block."""
+
+import json
+import time
+
+import numpy as np
+
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    n = tools.n
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    population = []
+    candidate_nets = []
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def distance(a, b):
+        return len(set(a) ^ set(b))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+        if score < best_score:
+            best_score, best_net = score, net
+        return score
+
+    def add_population(net):
+        if net not in population:
+            population.append(net)
+
+    # Repair all samples freely. Keep the original samples as recombination
+    # material, as well as their repaired valid topologies.
+    repaired = set()
+    for cand in candidates:
+        try:
+            raw = canon(cand)
+            candidate_nets.append(raw)
+            net = canon(tools.repair(raw))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            pass
+
+    if not repaired:
+        try:
+            net = canon(tools.repair([]))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            return []
+
+    ordered = sorted(repaired, key=energy)
+    # Seed from both surrogate quality and structural diversity.
+    seeds = []
+    for net in ordered:
+        if all(distance(net, old) >= 4 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= 36:
+            break
+    for net in ordered:
+        if len(seeds) >= 55:
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    for net in seeds:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+            add_population(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+
+    if not seen:
+        return list(seeds[0]) if seeds else []
+
+    def refresh_population():
+        nonlocal population
+        ranked = sorted(seen, key=seen.get)
+        keep = []
+        # Preserve distant strong solutions, then fill with quality elites.
+        for net in ranked:
+            if all(distance(net, old) >= 6 for old in keep):
+                keep.append(net)
+            if len(keep) >= 22:
+                break
+        for net in ranked:
+            if len(keep) >= 48:
+                break
+            if net not in keep:
+                keep.append(net)
+        population = keep
+
+    def parent():
+        # Tournament selection with a substantial diversity-biased component.
+        if len(population) == 1:
+            return population[0]
+        if rng.random() < 0.65:
+            ids = rng.choice(len(population), size=min(4, len(population)), replace=False)
+            return min((population[int(i)] for i in ids), key=lambda x: seen.get(x, float("inf")))
+        return population[int(rng.integers(len(population)))]
+
+    def crossover(a, b):
+        sa, sb = set(a), set(b)
+        # Favor common edges, then sample from the symmetric difference.
+        common = list(sa & sb)
+        other = list(sa ^ sb)
+        rng.shuffle(other)
+        take = max(0, 2 * n - len(common))
+        merged = common + other[:take]
+        try:
+            child = canon(tools.repair(merged))
+            if tools.is_valid(child):
+                return child
+        except Exception:
+            pass
+        return None
+
+    def mutate(net, steps=2):
+        cur = set(net)
+        for _ in range(steps):
+            arcs = list(cur)
+            if len(arcs) < 2:
+                break
+            # Try several random two-switches; each preserves all in/out degrees.
+            for _ in range(10):
+                i, j = map(int, rng.choice(len(arcs), size=2, replace=False))
+                a, b = arcs[i]
+                c, d = arcs[j]
+                x, y = (a, d), (c, b)
+                if a == d or c == b or x in cur or y in cur:
+                    continue
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add(x)
+                cur.add(y)
+                break
+        out = tuple(sorted(cur))
+        return out if tools.is_valid(out) else None
+
+    # Also retain repaired versions of some raw candidates as recombination
+    # donors, without spending LP calls on every donor immediately.
+    donors = list(repaired)
+    rng.shuffle(donors)
+    candidate_nets = donors[:]
+
+    refresh_population()
+    iterations = 0
+    while tools.lp_calls_left > 0:
+        iterations += 1
+        if iterations % 25 == 0:
+            refresh_population()
+        if not population:
+            break
+
+        proposals = []
+        local_seen = set()
+        batch_target = min(5, tools.lp_calls_left)
+
+        for _ in range(45):
+            p1 = parent()
+            if rng.random() < 0.72 and len(population) > 1:
+                # Prefer a distant recombination partner to create genuinely
+                # different intermediates rather than cloning a near-neighbor.
+                choices = [x for x in population if x != p1]
+                p2 = max(choices, key=lambda x: distance(p1, x)) if rng.random() < 0.5 else choices[int(rng.integers(len(choices)))]
+            elif candidate_nets:
+                p2 = candidate_nets[int(rng.integers(len(candidate_nets)))]
+            else:
+                p2 = parent()
+
+            child = crossover(p1, p2)
+            if child is None or child == p1 or child in local_seen:
+                child = mutate(p1, 1 + int(rng.integers(4)))
+            if child is None or child == p1 or child in local_seen:
+                continue
+            if child in seen or tools.is_cached(child):
+                continue
+            try:
+                if not tools.is_valid(child):
+                    continue
+            except Exception:
+                continue
+            local_seen.add(child)
+            proposals.append(child)
+
+        if not proposals:
+            # Restart offspring from a random repaired donor with a larger
+            # degree-preserving perturbation.
+            for _ in range(30):
+                base = donors[int(rng.integers(len(donors)))] if donors else parent()
+                child = mutate(base, 3 + int(rng.integers(5)))
+                if child is not None and child not in seen and child not in local_seen and not tools.is_cached(child):
+                    local_seen.add(child)
+                    proposals.append(child)
+                    if len(proposals) >= batch_target:
+                        break
+
+        if not proposals:
+            break
+
+        # Evaluate a quality-biased, but deliberately diverse, subset.
+        proposals.sort(key=lambda x: energy(x))
+        chosen = []
+        for net in proposals:
+            if all(distance(net, old) >= 2 for old in chosen):
+                chosen.append(net)
+            if len(chosen) >= batch_target:
+                break
+        for net in proposals:
+            if len(chosen) >= batch_target:
+                break
+            if net not in chosen:
+                chosen.append(net)
+
+        for net in chosen:
+            if tools.lp_calls_left <= 0:
+                break
+            try:
+                evaluate(net)
+            except Exception as exc:
+                if type(exc).__name__ == "BudgetExhausted":
+                    return list(best_net) if best_net is not None else []
+                continue
+
+        # Let newly successful offspring influence subsequent recombination.
+        for net in chosen:
+            if net in seen and net not in population:
+                population.append(net)
+        if len(population) > 90:
+            refresh_population()
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+
+
+def run_postproc(pool_path, lp_budget, seed, control=False, time_limit=150):
+    """Fixed entry point called by the evaluator: one run on one candidate pool."""
+    import importlib.util
+    import signal
+    from pathlib import Path
+
+    import oracle
+
+    pool = json.load(open(pool_path))
+    import qoblib_tools as qt
+
+    if "hamiltonian_file" in pool:  # the Hamiltonian that sampled this pool (make_pools.py --tag)
+        spec = importlib.util.spec_from_file_location(
+            f"hamiltonian_{pool['hamiltonian_tag']}", Path(pool_path).resolve().parent / pool["hamiltonian_file"])
+        ham = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ham)
+        surrogate_terms = ham.surrogate_terms
+    else:  # older pools: the frozen run 3 gen 28 Hamiltonian
+        from hamiltonian import surrogate_terms
+
+    n = int(pool["instance"][-2:])
+    demand = qt.load_network_demand(n)
+    linear, quadratic, _ = surrogate_terms(np.array(demand, dtype=float))
+    tools = oracle.Tools(demand, lp_budget, (
+        {tuple(map(int, a)): float(w) for a, w in linear.items()},
+        {(tuple(map(int, a)), tuple(map(int, b))): float(w) for (a, b), w in quadratic.items()},
+    ))
+    candidates = [[tuple(map(int, a)) for a in c["arcs"]] for c in pool["candidates"]]
+    if control:  # same number of random valid networks instead of QAOA output
+        crng = np.random.default_rng(10_000 + seed)
+        candidates = [qt.random_topology(n, crng) for _ in candidates]
+    def _timeout(signum, frame):
+        raise oracle.RunTimeout()
+
+    start = time.perf_counter()
+    returned, error, timed_out = None, None, False
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(int(time_limit))
+    try:
+        returned = improve(demand.copy(), candidates, tools, np.random.default_rng(seed))
+    except oracle.BudgetExhausted:
+        pass
+    except oracle.RunTimeout:
+        timed_out = True
+    except Exception as exc:  # noqa: BLE001
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        signal.alarm(0)
+    best_score, best_arcs = tools.certified_best()
+    if returned is not None:
+        try:
+            ret = [tuple(map(int, a)) for a in returned]
+            if qt.is_valid_topology(n, ret):
+                s = qt.route_min_congestion(demand, ret).objective
+                if s < best_score:
+                    best_score, best_arcs = s, tuple(sorted(ret))
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "pool": pool_path, "control": control, "n": n, "error": error,
+        "best": float(best_score), "arcs": [list(a) for a in best_arcs] if best_arcs else None,
+        "lp_calls": tools.lp_calls_used, "seconds": time.perf_counter() - start, "timed_out": timed_out,
+    }

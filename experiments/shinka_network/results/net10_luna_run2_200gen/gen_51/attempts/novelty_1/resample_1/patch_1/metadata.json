@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_congestion_paths",
+  "patch_description": "This design keeps the direct-demand signal simple, but adds a different kind of quadratic term: a congestion proxy for pairs of selected links that both leave the same node or both enter the same node. Such pairs are especially undesirable when their direct traffic is already substantial and the shared endpoint has high incident demand. To avoid rewarding every possible two-hop route equally, it adds small, pressure-discounted rewards only for the two most plausible intermediate nodes per OD pair. This combines endpoint load balancing with a deliberately sparse path signal, staying within the quadratic-term limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:44:15.963007",
+  "llm_cost": 0.0015885,
+  "llm_model": "gpt-6-luna"
+}

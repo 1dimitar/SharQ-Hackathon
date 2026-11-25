@@ -1,0 +1,16 @@
+<NAME>
+increase_path_strength
+</NAME>
+
+<DESCRIPTION>
+Raise the two-hop reward from 0.25 to 0.56, following the recommended sweep around the strongest observed setting. The current pressure discount remains unchanged, so this isolates the effect of giving useful indirect routes a larger share of the surrogate’s cost signal. This may help the QUBO favor topologies that serve high-demand pairs without a direct link, while retaining the existing direct-link rewards.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    path_strength = 0.25
+=======
+    path_strength = 0.56
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_relief_slot",
+  "patch_description": "Reserve one LP batch slot for a move that deletes the greatest total dual price among the parent\u2019s arcs. The move generator already creates switches and rotations involving bottleneck arcs, but the existing batch screening can still discard them in favor of energy- or routing-ranked moves. This gives bottleneck relief an explicit, bounded role in move selection while leaving the rest of the batch available to the existing mixed portfolio. If no positive dual prices are available, link loads provide a fallback pressure signal.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:35:49.389261",
+  "llm_cost": 0.0032419000000000003,
+  "llm_model": "gpt-6-luna"
+}

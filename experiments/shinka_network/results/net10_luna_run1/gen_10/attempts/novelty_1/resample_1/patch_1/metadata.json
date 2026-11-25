@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "transit_fit",
+  "patch_description": "This replaces the direct-demand-plus-generic-path-reward model with a demand-conditioned transit-fit model. For each origin\u2013destination pair, it scores candidate two-hop routes according to how strongly the intermediate node is connected to that particular origin and destination, rather than using a broad node-traffic statistic. It also retains a modest direct-link preference and discounts transit choices at nodes with high aggregate traffic. The resulting interactions remain restricted to two-hop paths, keeping the term count within the limit while aiming to make useful routes more prominent in both the best and typical low-energy samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:22.924467",
+  "llm_cost": 0.0010722000000000001,
+  "llm_model": "gpt-6-luna"
+}

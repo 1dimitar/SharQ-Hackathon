@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "random_seed_hedge",
+  "patch_description": "Reserve a small number of initial LP evaluations for genuinely random valid networks before scoring the repaired QAOA candidates. Each network is formed from two distinct derangements, giving every node exactly two incoming and two outgoing links with no self-loops. This hedges against seed pools where QAOA repairs miss a strong region of the network space, while keeping the random-start budget small so the QAOA starts remain the main source of search quality.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:57:38.356050",
+  "llm_cost": 0.0022805,
+  "llm_model": "gpt-6-luna"
+}

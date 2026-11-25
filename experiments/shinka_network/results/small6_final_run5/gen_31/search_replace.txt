@@ -1,0 +1,66 @@
+<NAME>
+sparse_neighbor_coverage_diversity
+</NAME>
+
+<DESCRIPTION>
+Add a sparse diminishing-returns correction for two-hop coverage. Existing negative path couplings can reward choosing two outgoing neighbors that both reach the same heavy destinations, while leaving other destinations poorly served. The analogous problem occurs for incoming neighbors.
+
+For each node, measure the demand-weighted overlap of each neighbor pair’s traffic profiles. Penalize only the strongest overlaps, keeping at most n//2 pairs per direction per node. Normalize against the best individual coverage at that node so the correction remains comparable across sizes and traffic scales.
+
+This complements rather than replaces the path rewards: individual useful routes remain attractive, but redundant combinations become slightly less attractive. It adds at most n² couplings and targets typical-sample quality and exchange ranking without introducing degree penalties.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    penalty_weight = min(1.45, 1.30 + 0.008 * max(0, n - 10))
+    return linear, quadratic, float(penalty_weight)
+=======
+    # Two useful neighbors need not provide two distinct useful routes.
+    # Penalize the strongest demand-weighted coverage overlaps, rather
+    # than rewarding every supported two-hop path independently.
+    diversity_scale = 0.45 * mean_direct * depth_scale
+    pair_budget = max(1, n // 2)
+
+    if diversity_scale > 0.0:
+        for reverse in (False, True):
+            # Outgoing: neighbor a can forward traffic to destination k.
+            # Incoming: predecessor a can collect traffic from source k.
+            profiles = normalized.T if reverse else normalized
+            for v in range(n):
+                weights = normalized[:, v] if reverse else normalized[v, :]
+                total = float(weights.sum())
+                if total <= 0.0:
+                    continue
+                weights = weights / total
+                coverage = profiles @ weights
+                neighbors = [a for a in range(n) if a != v]
+                best_coverage = max(float(coverage[a]) for a in neighbors)
+                if best_coverage <= 1e-15:
+                    continue
+
+                overlaps = []
+                for position, a in enumerate(neighbors):
+                    for b in neighbors[position + 1:]:
+                        overlap = float(
+                            np.dot(np.minimum(profiles[a], profiles[b]), weights)
+                        ) / best_coverage
+                        if overlap > 0.35:
+                            overlaps.append((overlap, a, b))
+
+                overlaps.sort(reverse=True)
+                for overlap, a, b in overlaps[:pair_budget]:
+                    first = (a, v) if reverse else (v, a)
+                    second = (b, v) if reverse else (v, b)
+                    key = (
+                        (first, second)
+                        if first < second
+                        else (second, first)
+                    )
+                    quadratic[key] = quadratic.get(key, 0.0) + float(
+                        diversity_scale * overlap
+                    )
+
+    penalty_weight = min(1.45, 1.30 + 0.008 * max(0, n - 10))
+    return linear, quadratic, float(penalty_weight)
+>>>>>>> REPLACE
+</DIFF>

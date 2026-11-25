@@ -1,0 +1,90 @@
+<NAME>
+sparse_service_diversity
+</NAME>
+
+<DESCRIPTION>
+Add demand-aware neighbor-diversity couplings. Two outgoing neighbors are redundant when they both serve the same destinations needed by their source; two incoming neighbors are redundant when they both collect traffic from the same origins needed by their destination. Penalizing this overlap encourages complementary neighbors rather than merely accumulating attractive two-hop paths.
+
+Center each node’s overlap scores before sparsification: the common component is constant on valid degree-two topologies and carries no ranking information. Retain only the n//2 strongest deviations per node and direction, adding at most n² couplings. A modest coefficient preserves the existing direct, route, cut, and penalty terms. This targets typical-sample quality and exchange rankings without substantially enlarging the coupling graph.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): float(costs[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # Degree penalties are supplied solely by the evaluator.
+=======
+    # Complementary neighbors provide broader service than two neighbors
+    # whose useful destination/origin profiles strongly overlap.
+    # Normalize profiles so service diversity is not just node popularity.
+    outgoing_service = np.sqrt(
+        z / np.maximum(z.max(axis=1, keepdims=True), 1e-12)
+    )
+    incoming_service = np.sqrt(
+        z.T / np.maximum(z.T.max(axis=1, keepdims=True), 1e-12)
+    )
+    service_budget = max(1, n // 2)
+    service_strength = 0.24 * mean_direct * size_factor
+
+    for center in range(n):
+        neighbors = [j for j in range(n) if j != center]
+        for incoming_direction in (False, True):
+            if incoming_direction:
+                demand_profile = z[:, center]
+                service = incoming_service
+            else:
+                demand_profile = z[center, :]
+                service = outgoing_service
+
+            total = float(demand_profile.sum())
+            if total <= 0.0:
+                continue
+
+            # A weighted Gram matrix measures shared useful service.
+            overlap = (
+                (service * demand_profile[None, :]) @ service.T
+            ) / total
+            candidates = [
+                (float(overlap[j, k]), j, k)
+                for position, j in enumerate(neighbors)
+                for k in neighbors[position + 1:]
+            ]
+            if not candidates:
+                continue
+
+            # Every valid topology selects exactly one neighbor pair per
+            # direction, so this common offset has no ranking information.
+            common = sum(value for value, _, _ in candidates) / len(candidates)
+            candidates.sort(
+                key=lambda item: (-abs(item[0] - common), item[1], item[2])
+            )
+            for value, j, k in candidates[:service_budget]:
+                weight = service_strength * (value - common)
+                if abs(weight) <= 1e-12:
+                    continue
+                if incoming_direction:
+                    first, second = (j, center), (k, center)
+                else:
+                    first, second = (center, j), (center, k)
+                key = (
+                    (first, second)
+                    if first < second
+                    else (second, first)
+                )
+                quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    linear = {
+        (i, j): float(costs[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # Degree penalties are supplied solely by the evaluator.
+>>>>>>> REPLACE
+</DIFF>

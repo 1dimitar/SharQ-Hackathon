@@ -1,0 +1,86 @@
+<NAME>
+protected_archive_relink
+</NAME>
+
+<DESCRIPTION>
+Every sixth search round, reserve one LP evaluation for a legal two-switch step toward a randomly selected, distant archive member. Unlike ordinary moves, this relinking candidate is evaluated before surrogate-ranked local proposals, so it cannot be crowded out by them. Shuffling the distant targets gives varied archive members an opportunity to contribute rather than repeatedly favoring only the highest-ranked few. The relinking step is accepted as a proposal only when it increases overlap with its target; all moves preserve the network’s degree constraints.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Multi-switch kick: preserve all degrees and make several valid exchanges.
+        for _ in range(2 + int(rng.integers(5))):
+            nxt = two_switch(tuple(sorted(cur)), rng)
+            if nxt is not None:
+                cur = set(nxt)
+        return tuple(sorted(cur)) if cur != set(net) else None
+
+    rounds = 0
+=======
+        # Multi-switch kick: preserve all degrees and make several valid exchanges.
+        for _ in range(2 + int(rng.integers(5))):
+            nxt = two_switch(tuple(sorted(cur)), rng)
+            if nxt is not None:
+                cur = set(nxt)
+        return tuple(sorted(cur)) if cur != set(net) else None
+
+    def relink_step(source, target):
+        """Return a legal two-switch that moves source closer to target."""
+        cur = set(source)
+        target_edges = set(target)
+        arcs = list(source)
+        current_overlap = len(cur & target_edges)
+        best_gain = 0
+        best_moves = []
+        for i in range(len(arcs)):
+            a, b = arcs[i]
+            for j in range(i + 1, len(arcs)):
+                c, d = arcs[j]
+                if a == d or c == b or (a, d) in cur or (c, b) in cur:
+                    continue
+                nxt = cur.copy()
+                nxt.remove((a, b))
+                nxt.remove((c, d))
+                nxt.add((a, d))
+                nxt.add((c, b))
+                gain = len(nxt & target_edges) - current_overlap
+                if gain > best_gain:
+                    best_gain = gain
+                    best_moves = [tuple(sorted(nxt))]
+                elif gain == best_gain and gain > 0:
+                    best_moves.append(tuple(sorted(nxt)))
+        if best_moves:
+            return best_moves[int(rng.integers(len(best_moves)))]
+        return None
+
+    rounds = 0
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        except Exception:
+            hot = set()
+
+        # Adaptive operator probabilities, with a floor for exploration.
+=======
+        except Exception:
+            hot = set()
+
+        # Protect an occasional LP slot for a step toward a varied, distant elite.
+        if rounds % 6 == 0 and tools.lp_calls_left > 0:
+            distant = [net for net in pop if net != parent and dist(net, parent) >= 8]
+            if not distant:
+                distant = [net for net in pop if net != parent and dist(net, parent) >= 4]
+            rng.shuffle(distant)
+            for target in distant:
+                bridge = relink_step(parent, target)
+                if bridge is None or bridge in seen or tools.is_cached(bridge):
+                    continue
+                try:
+                    evaluate(bridge)
+                except Exception as exc:
+                    if type(exc).__name__ == "BudgetExhausted":
+                        return list(best_net) if best_net is not None else []
+                break
+
+        # Adaptive operator probabilities, with a floor for exploration.
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_tempered_walks",
+  "patch_description": "The prior programs spend much of their budget evaluating batches of surrogate-ranked neighbors from archived networks. This design instead uses several short, independently seeded annealing walks, with occasional transitions between walks. It retains repaired QAOA samples as starting points, but allocates LP calls to individual degree-preserving proposals so each walk can respond immediately to the true congestion score. Bottleneck links bias proposal generation; surrogate energy and structural distance help diversify proposals and starting points without treating the surrogate as a replacement for LP evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:44:56.584271",
+  "llm_cost": 0.0034625999999999997,
+  "llm_model": "gpt-6-luna"
+}

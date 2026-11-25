@@ -1,0 +1,96 @@
+<NAME>
+stagnation_kicks
+</NAME>
+
+<DESCRIPTION>
+When the search stalls, diversify a rarely used non-elite archive parent with a small, bounded set of multi-switch kicks. Each kick preferentially changes a dual-priced link, but falls back to unrestricted degree-preserving switches when needed. The kicked networks join the ordinary screened neighborhood, with up to two guaranteed evaluation slots so energy ranking cannot discard all of them. This adds a targeted route into less-explored regions without unbounded retries or a large increase in LP usage.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return result
+
+    iteration = 0
+=======
+        return result
+
+    def kick_variants(net, hot, count=4):
+        """Create a few bounded, degree-preserving kicks from an archive parent."""
+        base = set(net)
+        variants = set()
+        for _ in range(count):
+            cur = set(base)
+            steps = int(rng.integers(2, 5))
+            for _step in range(steps):
+                arcs = list(cur)
+                focused = []
+                unrestricted = []
+                for i in range(len(arcs)):
+                    a, b = arcs[i]
+                    for j in range(i + 1, len(arcs)):
+                        c, d = arcs[j]
+                        if a == c:
+                            continue
+                        x, y = (a, d), (c, b)
+                        if (x[0] == x[1] or y[0] == y[1] or x == y
+                                or x in cur or y in cur):
+                            continue
+                        move = (arcs[i], arcs[j], x, y)
+                        unrestricted.append(move)
+                        if arcs[i] in hot or arcs[j] in hot:
+                            focused.append(move)
+                choices = focused if focused else unrestricted
+                if not choices:
+                    break
+                old1, old2, x, y = choices[int(rng.integers(len(choices)))]
+                cur.remove(old1)
+                cur.remove(old2)
+                cur.add(x)
+                cur.add(y)
+            candidate = tuple(sorted(cur))
+            if candidate != net and tools.is_valid(candidate):
+                variants.add(candidate)
+        return variants
+
+    iteration = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        fresh = [
+            net for net in neighborhood
+            if net not in scores and not tools.is_cached(net)
+        ]
+
+        if not fresh and len(archive) > 1:
+=======
+        fresh = [
+            net for net in neighborhood
+            if net not in scores and not tools.is_cached(net)
+        ]
+
+        kick_pool = set()
+        if stagnation >= 8 and len(archive) > 2 and rng.random() < 0.70:
+            kick_pool = {
+                net for net in kick_variants(source, focus)
+                if net not in scores and not tools.is_cached(net)
+            }
+            fresh.extend(kick_pool)
+
+        if not fresh and len(archive) > 1:
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        selected = fresh[:9]
+
+        prices = {}
+=======
+        selected = fresh[:9]
+        selected_set = set(selected)
+        selected.extend(
+            net for net in sorted(kick_pool, key=tools.energy)
+            if net not in selected_set and len(selected) < 9
+        )
+
+        prices = {}
+>>>>>>> REPLACE
+</DIFF>

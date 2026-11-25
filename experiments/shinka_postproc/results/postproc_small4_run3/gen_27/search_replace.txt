@@ -1,0 +1,124 @@
+<NAME>
+uncertainty_reserved_screen
+</NAME>
+
+<DESCRIPTION>
+Augment the existing ridge predictor with inexpensive uncertainty estimates from its regularized inverse Gram matrix. Reserve one LP trial for a competitive proposal with a favorable lower confidence bound, rather than allocating every remaining trial to predicted mean quality.
+
+Keep the existing learned-quality, energy, routing, novelty, and random allocations. Increase batch capacity only when necessary to accommodate the uncertainty trial without crowding those allocations out. Cap uncertainty at the observed residual scale and restrict acquisition to the better-predicted half of the shortlist, reducing the risk of chasing poorly supported outliers. This adds no routing computations or LP calls beyond the fixed total budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def predictions(X):
+        """Regularized within-run calibration; no cross-instance fitted constants."""
+        if len(training_y) < max(3 * n, 36):
+            return None
+        A = np.asarray(training_x)
+        y = np.asarray(training_y)
+        mean = A.mean(axis=0)
+        sd = np.maximum(A.std(axis=0), 1e-8)
+        Z = np.clip((A - mean) / sd, -12.0, 12.0)
+        target_mean = float(y.mean())
+        ridge = 8.0 * np.eye(A.shape[1])
+        try:
+            coef = np.linalg.solve(
+                Z.T @ Z + ridge, Z.T @ (y - target_mean)
+            )
+        except np.linalg.LinAlgError:
+            return None
+        return target_mean + np.clip((X - mean) / sd, -12.0, 12.0) @ coef
+=======
+    def predictions(X):
+        """Return calibrated means and bounded epistemic uncertainties."""
+        if len(training_y) < max(3 * n, 36):
+            return None, None
+        A = np.asarray(training_x)
+        y = np.asarray(training_y)
+        mean = A.mean(axis=0)
+        sd = np.maximum(A.std(axis=0), 1e-8)
+        Z = np.clip((A - mean) / sd, -12.0, 12.0)
+        target_mean = float(y.mean())
+        identity = np.eye(A.shape[1])
+        gram = Z.T @ Z + 8.0 * identity
+        try:
+            # One small solve supplies both the original ridge coefficients
+            # and the covariance geometry needed for uncertainty estimates.
+            solution = np.linalg.solve(
+                gram,
+                np.column_stack((Z.T @ (y - target_mean), identity)),
+            )
+        except np.linalg.LinAlgError:
+            return None, None
+        coef = solution[:, 0]
+        inverse = solution[:, 1:]
+        W = np.clip((X - mean) / sd, -12.0, 12.0)
+        predicted = target_mean + W @ coef
+        residual = y - target_mean - Z @ coef
+        variance = float(residual @ residual) / max(
+            1, len(y) - A.shape[1] - 1
+        )
+        leverage = np.einsum("ij,jk,ik->i", W, inverse, W)
+        # Include uncertainty in the intercept, but do not let extrapolation
+        # claim more than one residual standard deviation of optimism.
+        leverage = np.clip(leverage + 1.0 / len(y), 0.0, 1.0)
+        uncertainty = np.sqrt(max(0.0, variance) * leverage)
+        return predicted, uncertainty
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        X = routing_features(shortlist)
+        learned = predictions(X)
+        proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+=======
+        X = routing_features(shortlist)
+        learned, uncertainty = predictions(X)
+        proxy = X[:, 1] + 0.10 * X[:, 3] + X[:, 8]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        batch_size = max(8, n // 2)
+        batch_ids = []
+        batch_sets = []
+=======
+        batch_size = max(8, n // 2)
+        quality_quota = max(2, batch_size // 3)
+        if uncertainty is not None:
+            # Preserve both quality quotas plus routing, novelty, and random
+            # trials while guaranteeing room for one uncertainty acquisition.
+            batch_size = max(batch_size, 2 * quality_quota + 4)
+        batch_ids = []
+        batch_sets = []
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        take_from(lorder, max(2, batch_size // 3))
+        take_from(eorder, max(2, batch_size // 3))
+        take_from(porder, 1)
+=======
+        take_from(lorder, quality_quota)
+        take_from(eorder, quality_quota)
+        take_from(porder, 1)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if len(batch_ids) < batch_size:
+            take_from(rng.permutation(len(shortlist)), 1)
+        if len(batch_ids) < batch_size:
+            take_from(lorder, batch_size - len(batch_ids), diverse=False)
+=======
+        if len(batch_ids) < batch_size:
+            take_from(rng.permutation(len(shortlist)), 1)
+
+        if uncertainty is not None and len(batch_ids) < batch_size:
+            # Explore plausible improvements, not merely extreme feature
+            # outliers. The other portfolio allocations remain untouched.
+            competitive = learned <= np.median(learned)
+            acquisition = learned - uncertainty
+            uncertainty_order = [
+                int(i)
+                for i in np.argsort(acquisition, kind="stable")
+                if competitive[int(i)]
+            ]
+            take_from(uncertainty_order, 1)
+
+        if len(batch_ids) < batch_size:
+            take_from(lorder, batch_size - len(batch_ids), diverse=False)
+>>>>>>> REPLACE
+</DIFF>

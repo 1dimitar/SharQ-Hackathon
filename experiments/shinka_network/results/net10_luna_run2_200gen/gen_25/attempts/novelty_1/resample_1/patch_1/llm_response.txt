@@ -1,0 +1,39 @@
+<NAME>
+supported_path_reward
+</NAME>
+
+<DESCRIPTION>
+For each two-hop path, retain the current discount for edge pressure, but multiply its reward by a bounded support factor derived from the normalized direct demands on both route edges. The nonzero floor keeps potentially useful paths available even when one edge has little direct demand; the increasing factor favors paths whose component links are already supported by traffic. This changes weights only for the existing two-hop terms and adds no quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    # Discount indirect value when either chosen route edge
+                    # already carries substantial direct demand.
+                    edge_pressure = (
+                        float(demand[i, j]) + float(demand[j, k])
+                    ) / dmax
+                    quadratic[((i, j), (j, k))] = (
+                        -0.12 * traffic / dmax / (1.0 + 0.25 * edge_pressure)
+                    )
+=======
+                    # Discount indirect value when either chosen route edge
+                    # already carries substantial direct demand, while giving
+                    # extra credit to paths whose two component links are
+                    # independently supported by direct traffic.
+                    edge_pressure = (
+                        float(demand[i, j]) + float(demand[j, k])
+                    ) / dmax
+                    support = np.sqrt(
+                        (float(demand[i, j]) / dmax)
+                        * (float(demand[j, k]) / dmax)
+                    )
+                    support_multiplier = 0.30 + 0.70 * support
+                    quadratic[((i, j), (j, k))] = (
+                        -0.12 * traffic / dmax
+                        * support_multiplier
+                        / (1.0 + 0.25 * edge_pressure)
+                    )
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "demand_aware_path_synergy",
+  "patch_description": "Keep the baseline reward for direct demand, and add two restrained quadratic signals: a small reward when two selected links form a two-hop route for a demanded OD pair, and a reciprocal-link reward proportional to the weaker of the two directional demands. The two-hop coefficient is deliberately modest so that merely creating path motifs does not dominate direct-link value, as happened with the naive larger reward. Both signals use only demand data, and the number of terms is O(n\u00b3), within the limit. The degree penalty remains external, so its weight is unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:53.534366",
+  "llm_cost": 0.0017306,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_load_balance",
+  "patch_description": "This approach replaces the broad two-hop path-credit construction with a sparse endpoint-load model. It gives direct links a concave reward, then adds positive pairwise couplings between links that compete for the same source\u2019s outgoing capacity or the same destination\u2019s incoming capacity. Those couplings discourage choosing two links that each attract a large share of the same node\u2019s traffic, while keeping interactions local to endpoint groups. This creates a different, more structured QUBO with at most \\(n(n-1)(n-2)\\) quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:45:34.315621",
+  "llm_cost": 0.0014865,
+  "llm_model": "gpt-6-luna"
+}

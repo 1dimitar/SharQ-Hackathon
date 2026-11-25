@@ -1,0 +1,327 @@
+"""Deterministic all-hop response surrogate for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear costs, sparse quadratic costs, and degree-penalty weight."""
+    traffic = np.asarray(demand, dtype=float).copy()
+    traffic = np.nan_to_num(
+        traffic, nan=0.0, posinf=0.0, neginf=0.0
+    )
+    np.maximum(traffic, 0.0, out=traffic)
+    np.fill_diagonal(traffic, 0.0)
+    n = len(traffic)
+
+    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+    m = len(links)
+    penalty_weight = 1.45
+
+    maximum = float(traffic.max()) if traffic.size else 0.0
+    if maximum <= 0.0:
+        return {link: 0.0 for link in links}, {}, penalty_weight
+
+    t = traffic / maximum
+    direct = np.power(t, 0.82)
+
+    source = np.array([i for i, j in links], dtype=int)
+    target = np.array([j for i, j in links], dtype=int)
+    link_id = np.full((n, n), -1, dtype=int)
+    link_id[source, target] = np.arange(m)
+
+    # A bounded entropy model provides fractional link occupancies with
+    # approximately two incoming and outgoing links at every node.
+    logits = (
+        np.log(2.0 / max(n - 3, 1))
+        + 2.2 * (direct - float(direct[source, target].mean()))
+    )
+    row_bias = np.zeros(n)
+    col_bias = np.zeros(n)
+
+    def probabilities():
+        z = logits + row_bias[:, None] + col_bias[None, :]
+        result = 1.0 / (1.0 + np.exp(-np.clip(z, -35.0, 35.0)))
+        np.fill_diagonal(result, 0.0)
+        return result
+
+    for _ in range(60):
+        p_matrix = probabilities()
+        variance = np.sum(p_matrix * (1.0 - p_matrix), axis=1)
+        row_bias += np.clip(
+            (2.0 - p_matrix.sum(axis=1)) / np.maximum(variance, 1e-12),
+            -1.5,
+            1.5,
+        )
+
+        p_matrix = probabilities()
+        variance = np.sum(p_matrix * (1.0 - p_matrix), axis=0)
+        col_bias += np.clip(
+            (2.0 - p_matrix.sum(axis=0)) / np.maximum(variance, 1e-12),
+            -1.5,
+            1.5,
+        )
+
+    p_matrix = probabilities()
+    p = p_matrix[source, target]
+
+    # Discounted walks include all hop lengths. The discount grows slowly
+    # with network size rather than allowing long walks to dominate.
+    typical_hops = max(2.0, float(np.log2(n)))
+    discount = typical_hops / (typical_hops + 1.0)
+    c = 0.5 * discount
+    resolvent = np.linalg.inv(np.eye(n) - c * p_matrix)
+    inverse_entries = 1.0 / np.maximum(resolvent.ravel(), 1e-14)
+
+    # Slightly emphasize large demands without discarding smaller demands.
+    od_weight = (t * (0.75 + 0.25 * t)).ravel()
+
+    # For edge e=(i,j), changing its occupancy is a rank-one matrix update:
+    # R_new = R + factor * R[:,i] R[j,:].
+    left = resolvent[:, source].T
+    right = resolvent[target, :]
+    response = (
+        left[:, :, None] * right[:, None, :]
+    ).reshape(m, n * n)
+    response *= inverse_entries[None, :]
+    reverse_entry = resolvent[target, source]
+
+    def weighted_log_change(ratio):
+        np.maximum(ratio, 1e-14, out=ratio)
+        np.log(ratio, out=ratio)
+        ratio *= od_weight[None, :]
+        return -np.sum(ratio, axis=1)
+
+    single_values = []
+    for state in (0.0, 1.0):
+        delta = c * (state - p)
+        factor = delta / (1.0 - delta * reverse_entry)
+        ratio = 1.0 + factor[:, None] * response
+        single_values.append(weighted_log_change(ratio))
+
+    binary_marginal = single_values[1] - single_values[0]
+
+    # Candidate interactions share a node. There are fewer than 2*n^3:
+    # outgoing branches, incoming branches, directed chains, reciprocals.
+    first_ids = []
+    second_ids = []
+    groups = []
+    centers = []
+
+    def append_pair(a, b, group, center):
+        a, b = int(a), int(b)
+        if b < a:
+            a, b = b, a
+        first_ids.append(a)
+        second_ids.append(b)
+        groups.append(group)
+        centers.append(center)
+
+    for v in range(n):
+        others = [u for u in range(n) if u != v]
+        for position, j in enumerate(others):
+            for k in others[position + 1:]:
+                append_pair(link_id[v, j], link_id[v, k], 0, v)
+                append_pair(link_id[j, v], link_id[k, v], 1, v)
+
+        for i in others:
+            for k in others:
+                if i != k:
+                    append_pair(link_id[i, v], link_id[v, k], 2, v)
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            append_pair(link_id[i, j], link_id[j, i], 3, i)
+
+    first_ids = np.asarray(first_ids, dtype=int)
+    second_ids = np.asarray(second_ids, dtype=int)
+    groups = np.asarray(groups, dtype=np.int8)
+    centers = np.asarray(centers, dtype=int)
+    count = len(first_ids)
+    pair_cost = np.zeros(count)
+
+    # Exact two-variable binary differences, evaluated by rank-two
+    # Woodbury updates. Batching avoids a large n^5 temporary array.
+    for start in range(0, count, 256):
+        stop = min(start + 256, count)
+        a = first_ids[start:stop]
+        b = second_ids[start:stop]
+
+        i, j = source[a], target[a]
+        k, l = source[b], target[b]
+
+        r11 = resolvent[j, i]
+        r22 = resolvent[l, k]
+        r12 = resolvent[j, k]
+        r21 = resolvent[l, i]
+
+        cross12 = (
+            left[a, :, None] * right[b, None, :]
+        ).reshape(len(a), n * n)
+        cross21 = (
+            left[b, :, None] * right[a, None, :]
+        ).reshape(len(a), n * n)
+        cross12 *= inverse_entries[None, :]
+        cross21 *= inverse_entries[None, :]
+
+        result = np.zeros(len(a))
+        for state_a, state_b, sign in (
+            (0.0, 0.0, 1.0),
+            (0.0, 1.0, -1.0),
+            (1.0, 0.0, -1.0),
+            (1.0, 1.0, 1.0),
+        ):
+            da = c * (state_a - p[a])
+            db = c * (state_b - p[b])
+
+            determinant = (
+                (1.0 - da * r11) * (1.0 - db * r22)
+                - da * db * r12 * r21
+            )
+            determinant = np.maximum(determinant, 1e-12)
+
+            w11 = da * (1.0 - db * r22) / determinant
+            w22 = db * (1.0 - da * r11) / determinant
+            w12 = da * db * r12 / determinant
+            w21 = da * db * r21 / determinant
+
+            ratio = (
+                1.0
+                + w11[:, None] * response[a]
+                + w22[:, None] * response[b]
+                + w12[:, None] * cross12
+                + w21[:, None] * cross21
+            )
+            result += sign * weighted_log_change(ratio)
+
+        pair_cost[start:stop] = result
+
+    # Match the single-link binary response at the fractional background.
+    route_linear = binary_marginal.copy()
+    np.add.at(route_linear, first_ids, -pair_cost * p[second_ids])
+    np.add.at(route_linear, second_ids, -pair_cost * p[first_ids])
+
+    # Remove components that are constants on valid degree-two networks.
+    # This removes uninformative couplings, not extra degree penalties.
+    for group in (0, 1):
+        for v in range(n):
+            selected = (groups == group) & (centers == v)
+            if np.any(selected):
+                pair_cost[selected] -= float(pair_cost[selected].mean())
+
+    chains = groups == 2
+    reciprocals = groups == 3
+    if np.any(chains):
+        chain_offset = float(pair_cost[chains].mean())
+        pair_cost[chains] -= chain_offset
+        # Number of non-returning two-hop walks + 2*reciprocals = 4*n.
+        pair_cost[reciprocals] -= 2.0 * chain_offset
+
+    # Retain strong complementary and competing interactions per link.
+    # Equal-score ties are retained, avoiding node-label tie-breaking.
+    variance = p * (1.0 - p)
+    importance = np.abs(pair_cost) * np.sqrt(
+        variance[first_ids] * variance[second_ids]
+    )
+    tolerance = 1e-12 * max(1.0, float(np.max(np.abs(pair_cost))))
+    adjacency = [[] for _ in range(m)]
+    for position, (a, b) in enumerate(zip(first_ids, second_ids)):
+        adjacency[int(a)].append(position)
+        adjacency[int(b)].append(position)
+
+    keep = reciprocals & (np.abs(pair_cost) > tolerance)
+    for positions in adjacency:
+        positions = np.asarray(positions, dtype=int)
+        for negative, limit in ((True, 4), (False, 2)):
+            if negative:
+                candidates = positions[pair_cost[positions] < -tolerance]
+            else:
+                candidates = positions[pair_cost[positions] > tolerance]
+            if candidates.size <= limit:
+                keep[candidates] = True
+            elif candidates.size:
+                scores = importance[candidates]
+                threshold = np.partition(scores, -limit)[-limit]
+                keep[candidates[scores >= threshold * (1.0 - 1e-12)]] = True
+
+    # Replace omitted interactions by their background field, preserving
+    # their first-order influence instead of simply deleting that influence.
+    dropped = ~keep
+    np.add.at(
+        route_linear,
+        first_ids[dropped],
+        pair_cost[dropped] * p[second_ids[dropped]],
+    )
+    np.add.at(
+        route_linear,
+        second_ids[dropped],
+        pair_cost[dropped] * p[first_ids[dropped]],
+    )
+
+    # Row/column link potentials are constant on valid topologies.
+    # Project them away for stable coefficient scales and annealing fields.
+    incidence = np.zeros((2 * n, m))
+    incidence[source, np.arange(m)] = 1.0
+    incidence[n + target, np.arange(m)] = 1.0
+    gram_inverse = np.linalg.pinv(incidence @ incidence.T)
+
+    def remove_degree_gauge(values):
+        return values - incidence.T @ (
+            gram_inverse @ (incidence @ values)
+        )
+
+    direct_vector = -direct[source, target]
+    direct_tangent = remove_degree_gauge(direct_vector)
+    marginal_tangent = remove_degree_gauge(binary_marginal)
+
+    direct_size = max(
+        float(np.sqrt(np.mean(direct_tangent ** 2))),
+        0.10 * float(np.mean(np.abs(direct_vector))),
+        1e-12,
+    )
+    route_size = max(
+        float(np.sqrt(np.mean(marginal_tangent ** 2))),
+        0.10 * float(np.mean(np.abs(binary_marginal))),
+        1e-12,
+    )
+    route_scale = direct_size / route_size
+
+    blend = 0.65
+    final_linear = remove_degree_gauge(
+        (1.0 - blend) * direct_vector
+        + blend * route_scale * route_linear
+    )
+    final_pair = blend * route_scale * pair_cost
+
+    linear = {
+        link: float(final_linear[position])
+        for position, link in enumerate(links)
+    }
+    quadratic = {}
+    for position in np.flatnonzero(keep):
+        weight = float(final_pair[position])
+        if abs(weight) > 1e-14:
+            a = links[int(first_ids[position])]
+            b = links[int(second_ids[position])]
+            quadratic[(a, b)] = weight
+
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

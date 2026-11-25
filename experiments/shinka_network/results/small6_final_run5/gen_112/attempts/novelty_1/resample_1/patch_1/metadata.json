@@ -1,0 +1,14 @@
+{
+  "generation": 112,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bilateral_route_compiler",
+  "patch_description": "Separates demand normalization, direct-link scoring, sparse route compilation, and cut-based load balancing into small stages. Route candidates blend endpoint-share evidence with demand on both legs, using a harmonic mean so a weak leg limits support. The compiler keeps only a few promising routes per demand and uses a small direct-versus-indirect interaction, keeping the QUBO compact while retaining useful ranking signals.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:28:53.814144",
+  "llm_cost": 0.0053364,
+  "llm_model": "gpt-6-luna"
+}

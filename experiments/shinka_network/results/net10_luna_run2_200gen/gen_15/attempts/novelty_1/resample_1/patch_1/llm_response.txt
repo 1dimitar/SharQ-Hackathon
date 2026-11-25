@@ -1,0 +1,31 @@
+<NAME>
+endpoint_pressure_mix
+</NAME>
+
+<DESCRIPTION>
+Add a modest endpoint-activity signal to the direct-demand reward, using a 90/10 mix. Nodes with high total outgoing or incoming traffic are likely to need useful links even when a particular OD pair has modest direct demand. Keeping direct demand dominant makes this a conservative adjustment; the existing two-hop terms remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+=======
+    row_load = np.asarray(demand, dtype=float).sum(axis=1)
+    col_load = np.asarray(demand, dtype=float).sum(axis=0)
+    endpoint_scale = float(max(row_load.max(), col_load.max())) or 1.0
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                endpoint_pressure = (
+                    float(row_load[i]) + float(col_load[j])
+                ) / (2.0 * endpoint_scale)
+                linear[(i, j)] = -(
+                    0.90 * float(demand[i, j]) / scale
+                    + 0.10 * endpoint_pressure
+                )
+>>>>>>> REPLACE
+</DIFF>

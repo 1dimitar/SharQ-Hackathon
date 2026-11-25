@@ -1,0 +1,15 @@
+<NAME>
+moderate_twohop_strength
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward strength from 0.52 to 0.40. Two-hop terms help represent indirect service, but rewarding many possible paths can make the typical sampled topology less focused on high-value direct links. A more moderate strength tests whether preserving the direct-link signal improves the median topology while retaining useful two-hop guidance. This is a controlled single-parameter change; compare it against the current 0.52 setting.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                benefit = 0.52 * raw / (1.0 + 0.65 * congestion)
+=======
+                benefit = 0.40 * raw / (1.0 + 0.65 * congestion)
+>>>>>>> REPLACE
+</DIFF>

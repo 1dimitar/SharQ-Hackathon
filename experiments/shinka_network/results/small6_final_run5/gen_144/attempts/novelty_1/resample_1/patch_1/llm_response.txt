@@ -1,0 +1,15 @@
+<NAME>
+large_n_route_taper
+</NAME>
+
+<DESCRIPTION>
+Reduce the influence of sparse two-hop rewards as network size grows. At larger n, each OD pair has more possible intermediates, so rewarding only its top few routes is a less reliable guide and can overstate the value of particular transit links. A slightly steeper taper leaves direct-demand and cut-congestion signals relatively more influential, which may improve energy rankings for the larger instances where the current post-processor has the largest gaps. This changes only route scaling; it leaves the small-instance behavior unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    route_size_factor = max(0.82, 1.0 - 0.025 * max(0, n - 12))
+=======
+    route_size_factor = max(0.78, 1.0 - 0.035 * max(0, n - 12))
+>>>>>>> REPLACE
+</DIFF>

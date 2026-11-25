@@ -1,0 +1,46 @@
+<NAME>
+bounded_path_support
+</NAME>
+
+<DESCRIPTION>
+Keep the positive-demand gate for two-hop paths, but modulate each path reward by a bounded support multiplier based on the normalized demands of both constituent links. The multiplier has a nonzero floor, so a useful path is never suppressed, while paths whose edges already have stronger direct-demand support receive a modestly larger reward. This adds a selective signal without letting the multiplier overwhelm the existing traffic and transit-congestion terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            congestion = 1.0 + float(node_load[j]) / typical_load
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+                weight = -0.12 * (traffic / scale) / congestion
+                quadratic[((i, j), (j, k))] = weight
+=======
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            congestion = 1.0 + float(node_load[j]) / typical_load
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                traffic = float(demand[i, k])
+                if traffic <= 0.0:
+                    continue
+                # Give a bounded boost to paths whose two links both have
+                # direct-demand support, while retaining a nonzero floor.
+                edge_a = max(0.0, float(demand[i, j]) / scale)
+                edge_b = max(0.0, float(demand[j, k]) / scale)
+                support = 0.75 + 0.50 * np.sqrt(edge_a * edge_b)
+                weight = -0.12 * (traffic / scale) * support / congestion
+                quadratic[((i, j), (j, k))] = weight
+>>>>>>> REPLACE
+</DIFF>

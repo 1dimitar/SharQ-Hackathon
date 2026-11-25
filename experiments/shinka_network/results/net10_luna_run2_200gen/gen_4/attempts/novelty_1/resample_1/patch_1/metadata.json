@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "discounted_two_hop_support",
+  "patch_description": "Add a deliberately weak reward for two-hop routes, alongside the existing direct-demand reward. A selected path i \u2192 j \u2192 k can help serve demand[i, k] when a direct link is unavailable; scaling this contribution to 0.12 avoids letting the abundance of possible two-hop paths overwhelm the direct-link signal. The node-throughput factor discounts paths through nodes with high total incident demand, which are more likely to be congested transit points. Degree constraints remain the evaluator\u2019s responsibility.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:40.574216",
+  "llm_cost": 0.0007310999999999999,
+  "llm_model": "gpt-6-luna"
+}

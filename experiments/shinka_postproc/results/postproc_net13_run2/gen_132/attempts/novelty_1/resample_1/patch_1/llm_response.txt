@@ -1,0 +1,48 @@
+<NAME>
+archive_novelty_density
+</NAME>
+
+<DESCRIPTION>
+Select parents using both LP quality and how underexplored their archive region is. The current uniform draw across most of the archive can spend many LP calls around clusters of similar networks. This replacement gives better-ranked networks more weight while favoring representatives that are structurally distant from other archive members and have fewer nearby evaluated networks. The exploration term is bounded, so it supplements rather than overwhelms quality-based search.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Favor strong archive members in structurally underexplored regions."""
+        if not pop:
+            return best_net
+
+        weights = []
+        for rank, net in enumerate(pop):
+            others = [distance(net, other) for other in pop if other != net]
+            nearest = min(others, default=26)
+            novelty = min(1.0, nearest / 26.0)
+
+            # Penalize crowded neighborhoods in the full evaluated archive,
+            # not merely the bounded parent population.
+            nearby = sum(
+                1 for other in seen
+                if other != net and distance(net, other) <= 8
+            )
+            sparsity = 1.0 / math.sqrt(1.0 + nearby)
+            quality = 1.0 / (1.0 + 0.05 * rank)
+            weights.append(quality * (0.45 + novelty) * (0.5 + sparsity))
+
+        pick = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+>>>>>>> REPLACE
+
+</DIFF>

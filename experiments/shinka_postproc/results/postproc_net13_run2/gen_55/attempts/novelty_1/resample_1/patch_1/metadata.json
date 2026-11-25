@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regularized_topology_eda",
+  "patch_description": "Replace repeated neighborhood descent with an estimation-of-distribution search. It learns which links occur in strong evaluated networks, combines that signal with a mild demand-based prior and LP bottleneck feedback, then samples new valid networks directly as unions of two disjoint derangements. A small share of candidates are multi-switch mutations of elite networks to preserve useful structure while still exploring beyond their immediate neighborhoods. This gives the LP budget a broader set of topologies to evaluate than repeatedly searching around a small set of parents.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:21:16.330949",
+  "llm_cost": 0.0038076,
+  "llm_model": "gpt-6-luna"
+}

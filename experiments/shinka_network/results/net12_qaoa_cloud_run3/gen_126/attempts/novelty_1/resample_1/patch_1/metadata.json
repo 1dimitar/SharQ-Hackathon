@@ -1,0 +1,14 @@
+{
+  "generation": 126,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "scale_relay_rewards",
+  "patch_description": "Scale the two-hop reward by OD demand tier while leaving direct-link rewards, relay candidates, and relay budgets unchanged. OD pairs at or above the existing 80th-percentile cutoff receive a 1.1 multiplier; other positive-demand pairs receive 0.9. This modestly emphasizes relay paths for the largest flows without increasing the number of quadratic terms, testing whether stronger support for high-impact traffic improves the low-energy topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:32:35.757827",
+  "llm_cost": 0.0009051,
+  "llm_model": "gpt-6-luna"
+}

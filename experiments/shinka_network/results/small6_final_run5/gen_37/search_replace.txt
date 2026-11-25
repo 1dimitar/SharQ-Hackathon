@@ -1,0 +1,39 @@
+<NAME>
+selective_route_load_regularizer
+</NAME>
+
+<DESCRIPTION>
+Add a small linear cost to links that appear in the most distinct two-hop route couplings. Such links are attractive to many candidate paths, so they may become overloaded transit choices even when the degree constraints are satisfied. Applying the adjustment only above the 75th-percentile coupling count, and capping it relative to the mean direct-link reward, keeps the bias targeted and avoids broadly weakening useful direct-link rewards. The existing quadratic terms and external degree penalty remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                quadratic[key] = float(-0.30 * support / discount)
+
+    # Preserve the successful sparse structural penalty.
+=======
+                quadratic[key] = float(-0.30 * support / discount)
+
+    # Slightly discourage links that participate in unusually many distinct
+    # route interactions, limiting the risk of concentrating transit load.
+    interaction_count = {}
+    for first, second in quadratic:
+        interaction_count[first] = interaction_count.get(first, 0) + 1
+        interaction_count[second] = interaction_count.get(second, 0) + 1
+
+    if interaction_count:
+        counts = np.asarray(list(interaction_count.values()), dtype=float)
+        cutoff_count = float(np.quantile(counts, 0.75))
+        max_count = float(counts.max())
+        mean_direct = -float(sum(linear.values())) / max(1, n * (n - 1))
+        count_range = max_count - cutoff_count
+        if count_range > 0.0 and mean_direct > 0.0:
+            for link, count in interaction_count.items():
+                if count > cutoff_count:
+                    excess = (count - cutoff_count) / count_range
+                    linear[link] += 0.025 * mean_direct * float(excess)
+
+    # Preserve the successful sparse structural penalty.
+>>>>>>> REPLACE
+
+</DIFF>

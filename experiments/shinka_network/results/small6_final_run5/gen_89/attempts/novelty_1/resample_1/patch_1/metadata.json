@@ -1,0 +1,14 @@
+{
+  "generation": 89,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ambiguous_third_route",
+  "patch_description": "Limit each demand to its two best two-hop routes by default. For demands above the existing 68th-percentile cutoff, add a third route only when its rank is within 8% of the second route\u2019s rank. This targets genuinely ambiguous routing choices while dropping the unconditional low-pressure fallback and many weaker couplings, keeping the model more compact and reducing rewards for poorly supported routes.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:10:48.197417",
+  "llm_cost": 0.0026505,
+  "llm_model": "gpt-6-luna"
+}

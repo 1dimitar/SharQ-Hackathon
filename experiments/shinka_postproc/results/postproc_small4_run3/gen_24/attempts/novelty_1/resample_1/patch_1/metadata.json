@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "uncertainty-guided-archive",
+  "patch_description": "The current approach uses a fixed 30 repaired starts, a 32-network archive, and batches of nine moves selected mainly by energy. This version scales the start and archive sizes with n and uses batches of max(8, n//2). It retains energy, dual-pressure, and structural-diversity screening, while adding a small ridge model trained on networks already scored by the LP. The model uses energy and demand-based link features to rank plausible moves; one batch slot is reserved for a competitive move with high model uncertainty. Periodic refitting and a capped training set keep this extra screening inexpensive.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:48:31.854069",
+  "llm_cost": 0.0046518,
+  "llm_model": "gpt-6-luna"
+}

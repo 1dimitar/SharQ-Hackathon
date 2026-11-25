@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_indirect_reward",
+  "patch_description": "Increase the total two-hop reward budget from 0.62 to 0.68 while leaving direct-link rewards and the pressure discount unchanged. This tests the suggested stronger path-reward setting in isolation: it gives the QUBO a little more incentive to select links that combine into useful indirect routes, without changing how candidate intermediates are ranked. The per-OD budget is still distributed across intermediates, so this does not add quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:11.831350",
+  "llm_cost": 0.0008569000000000001,
+  "llm_model": "gpt-6-luna"
+}

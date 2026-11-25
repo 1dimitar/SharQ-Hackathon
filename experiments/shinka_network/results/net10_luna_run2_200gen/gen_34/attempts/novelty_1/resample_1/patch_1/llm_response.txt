@@ -1,0 +1,15 @@
+<NAME>
+moderate_two_hop_reward
+</NAME>
+
+<DESCRIPTION>
+Reduce the two-hop reward strength from 0.36 to 0.25 while keeping the demand gating, intermediate sharing, and transit discount unchanged. The current reward may overvalue indirect routes relative to direct links; this targeted adjustment tests a more moderate balance without changing other features.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    indirect_fraction = 0.36
+=======
+    indirect_fraction = 0.25
+>>>>>>> REPLACE
+</DIFF>

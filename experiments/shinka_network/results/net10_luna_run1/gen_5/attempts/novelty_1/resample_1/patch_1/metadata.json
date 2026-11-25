@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced-path-qubo",
+  "patch_description": "The current approach uses only a linear reward for direct demand and has no pairwise terms. This version keeps direct demand as the main signal, but slightly tempers its largest values and adds a small normalized transit-centrality signal. It adds modest rewards for two-link routes and for pairs of useful links sharing a source or destination, plus a mild penalty for low-value reciprocal links. These terms provide routing and link-selection context without letting two-hop rewards dominate. The resulting quadratic-term count is below the \\(4n^3\\) limit; the degree penalty is set to 1.5.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:15:57.806286",
+  "llm_cost": 0.0027383999999999998,
+  "llm_model": "gpt-6-luna"
+}

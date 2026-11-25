@@ -1,0 +1,41 @@
+<NAME>
+directional_swap_order
+</NAME>
+
+<DESCRIPTION>
+Rank exchanges by the priced load removed from the network, then discount moves that add links with high direct demand. This gives bottleneck-focused descent a directional estimate of both sides of a swap, while retaining the existing randomized tie order. The estimate is only used to order LP evaluations; the LP still decides whether a move improves the network.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        detail = tools.lp_detail(net)
+        prices = detail.get("prices", {})
+        hot = {tuple(link) for link, price in prices.items() if price > 0}
+        pairs.sort(
+            key=lambda pq: -int(arcs[pq[0]] in hot) - int(arcs[pq[1]] in hot)
+        )
+=======
+        detail = tools.lp_detail(net)
+        prices = {tuple(link): float(price)
+                  for link, price in detail.get("prices", {}).items()}
+        loads = {tuple(link): float(load)
+                 for link, load in detail.get("loads", {}).items()}
+        positive_prices = [price for price in prices.values() if price > 0]
+        mean_price = (sum(positive_prices) / len(positive_prices)
+                      if positive_prices else 0.0)
+
+        def directional_value(pq):
+            (a, b), (c, d) = arcs[pq[0]], arcs[pq[1]]
+            removed = sum(
+                max(0.0, prices.get(link, 0.0))
+                * max(0.0, loads.get(link, 0.0))
+                for link in ((a, b), (c, d))
+            )
+            added_demand = max(0.0, float(demand[a, d])) + max(
+                0.0, float(demand[c, b])
+            )
+            return removed - mean_price * added_demand
+
+        pairs.sort(key=lambda pq: -directional_value(pq))
+>>>>>>> REPLACE
+</DIFF>

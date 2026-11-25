@@ -1,0 +1,108 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear and quadratic surrogate terms for directed links."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+
+    # Ignore non-finite and negative entries; scale the demand features to [0, 1].
+    t = np.where(np.isfinite(t), np.maximum(t, 0.0), 0.0)
+    np.fill_diagonal(t, 0.0)
+    max_demand = float(t.max()) if t.size else 0.0
+    if max_demand > 0.0:
+        d = np.power(t / max_demand, 0.85)
+    else:
+        d = np.zeros_like(t)
+
+    # Direct traffic gives a useful baseline preference for building a link.
+    direct_weight = 0.90
+    linear = {
+        (i, j): -direct_weight * float(d[i, j])
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    quadratic = {}
+
+    def add_pair(a, b, value):
+        """Accumulate a symmetric QUBO interaction using a canonical key."""
+        if a == b or value == 0.0:
+            return
+        key = (a, b) if a < b else (b, a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    # Positive couplings approximate congestion when two selected links carry
+    # substantial direct traffic from/to the same node.
+    congestion_weight = 0.20
+    for i in range(n):
+        links = [(i, j) for j in range(n) if j != i]
+        for p in range(len(links)):
+            a = links[p]
+            for q in range(p + 1, len(links)):
+                b = links[q]
+                load_a, load_b = d[a[0], a[1]], d[b[0], b[1]]
+                add_pair(a, b, congestion_weight * float(load_a * load_b))
+
+    for j in range(n):
+        links = [(i, j) for i in range(n) if i != j]
+        for p in range(len(links)):
+            a = links[p]
+            for q in range(p + 1, len(links)):
+                b = links[q]
+                load_a, load_b = d[a[0], a[1]], d[b[0], b[1]]
+                add_pair(a, b, congestion_weight * float(load_a * load_b))
+
+    # Estimate the value of a two-hop route i -> j -> k. Dividing by a mild
+    # network-size factor limits repeated rewards for the same OD pair, while
+    # the node factor discourages concentrating transit through busy nodes.
+    throughput = d.sum(axis=0) + d.sum(axis=1)
+    mean_throughput = float(throughput.mean()) if n else 0.0
+    path_weight = 0.32
+    size_factor = max(1.0, float(n - 2)) ** 0.25
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                activity = (
+                    float(throughput[j]) / mean_throughput
+                    if mean_throughput > 1e-12 else 0.0
+                )
+                transit_factor = 1.0 / np.sqrt(1.0 + 0.35 * activity)
+                reward = (
+                    path_weight * float(d[i, k]) * float(transit_factor)
+                    / size_factor
+                )
+                add_pair((i, j), (j, k), -reward)
+
+    # Remove any exact cancellations and return only actual interactions.
+    quadratic = {key: value for key, value in quadratic.items() if value != 0.0}
+
+    # Encourage degree feasibility; the evaluator supplies the degree penalty.
+    penalty_weight = 4.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

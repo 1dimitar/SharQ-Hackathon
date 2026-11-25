@@ -1,0 +1,14 @@
+{
+  "generation": 70,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reserve_novel_move",
+  "patch_description": "The current batch selector is dominated by surrogate-ranked proposals, so it can repeatedly spend LP calls in familiar parts of the topology space. Reserve one batch slot for the shortlisted proposal whose nearest-archive symmetric difference is greatest. This preserves the existing surrogate and diversity selection while ensuring that each batch tests a structurally novel option; if the most novel proposal is already selected, the batch is unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:33:32.737369",
+  "llm_cost": 0.002615,
+  "llm_model": "gpt-6-luna"
+}

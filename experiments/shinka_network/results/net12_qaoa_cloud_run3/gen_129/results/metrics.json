@@ -1,0 +1,279 @@
+{
+    "combined_score": 0.8145448829551707,
+    "public": {
+        "sum_score": 1.6290897659103414,
+        "num_instances": 2,
+        "score_network12_s0": 0.8145978774365791,
+        "score_network12_s1": 0.8144918884737622,
+        "gap_best_pct_network12_s0": 14.577862656162965,
+        "gap_best_pct_network12_s1": 16.24962925989424,
+        "mean_gap_best_pct": 15.413745958028603,
+        "mean_gap_median_pct": 31.139546575808218,
+        "mean_feasible_rate": 0.20500000000000002,
+        "mean_quadratic_terms": 188.0,
+        "routine": "qaoa_partitioned",
+        "backend": "cloud"
+    },
+    "private": {
+        "circuits": 12024,
+        "quantum_seconds": 726.6294003750008,
+        "sampling_wall_seconds": 727.8830242080003,
+        "parallel": 1,
+        "build_seconds": 0.0022963750088820234,
+        "network12_s0": {
+            "score": 0.8145978774365791,
+            "best": 316778.0,
+            "median": 365500.0,
+            "ref": 276474.0,
+            "gap_best_pct": 14.577862656162965,
+            "gap_median_pct": 32.20049624919523,
+            "feasible_rate": 0.14,
+            "num_samples": 100,
+            "distinct": 93,
+            "num_quadratic": 188,
+            "circuits": 6012,
+            "quantum_seconds": 306.600651834,
+            "started_s": 0.0001242910002474673,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    6
+                ],
+                [
+                    1,
+                    7
+                ],
+                [
+                    1,
+                    10
+                ],
+                [
+                    2,
+                    4
+                ],
+                [
+                    2,
+                    7
+                ],
+                [
+                    3,
+                    1
+                ],
+                [
+                    3,
+                    5
+                ],
+                [
+                    4,
+                    6
+                ],
+                [
+                    4,
+                    11
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    8
+                ],
+                [
+                    6,
+                    9
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    3
+                ],
+                [
+                    7,
+                    8
+                ],
+                [
+                    8,
+                    2
+                ],
+                [
+                    8,
+                    9
+                ],
+                [
+                    9,
+                    3
+                ],
+                [
+                    9,
+                    4
+                ],
+                [
+                    10,
+                    0
+                ],
+                [
+                    10,
+                    11
+                ],
+                [
+                    11,
+                    2
+                ],
+                [
+                    11,
+                    5
+                ]
+            ]
+        },
+        "network12_s1": {
+            "score": 0.8144918884737622,
+            "best": 321400.0,
+            "median": 359633.5,
+            "ref": 276474.0,
+            "gap_best_pct": 16.24962925989424,
+            "gap_median_pct": 30.078596902421207,
+            "feasible_rate": 0.27,
+            "num_samples": 100,
+            "distinct": 80,
+            "num_quadratic": 188,
+            "circuits": 6012,
+            "quantum_seconds": 420.0287485410008,
+            "started_s": 307.2811128750036,
+            "nodes": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+            ],
+            "best_arcs": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    6
+                ],
+                [
+                    1,
+                    6
+                ],
+                [
+                    1,
+                    9
+                ],
+                [
+                    2,
+                    4
+                ],
+                [
+                    2,
+                    7
+                ],
+                [
+                    3,
+                    5
+                ],
+                [
+                    3,
+                    7
+                ],
+                [
+                    4,
+                    5
+                ],
+                [
+                    4,
+                    11
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    9
+                ],
+                [
+                    6,
+                    3
+                ],
+                [
+                    6,
+                    10
+                ],
+                [
+                    7,
+                    8
+                ],
+                [
+                    7,
+                    10
+                ],
+                [
+                    8,
+                    2
+                ],
+                [
+                    8,
+                    4
+                ],
+                [
+                    9,
+                    3
+                ],
+                [
+                    9,
+                    8
+                ],
+                [
+                    10,
+                    0
+                ],
+                [
+                    10,
+                    11
+                ],
+                [
+                    11,
+                    1
+                ],
+                [
+                    11,
+                    2
+                ]
+            ]
+        }
+    },
+    "text_feedback": "network12_s0: score 0.815, best 316778 vs reference 276474 (gap +14.6%), median gap +32.2%, 14% of 100 qaoa_partitioned solutions valid before repair, 93 distinct topologies, 188 quadratic terms, 6012 circuits\nnetwork12_s1: score 0.814, best 321400 vs reference 276474 (gap +16.2%), median gap +30.1%, 27% of 100 qaoa_partitioned solutions valid before repair, 80 distinct topologies, 188 quadratic terms, 6012 circuits\nLargest gap: network12_s1 (+16.2%)."
+}

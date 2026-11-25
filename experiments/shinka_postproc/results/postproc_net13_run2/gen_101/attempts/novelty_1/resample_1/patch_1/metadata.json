@@ -1,0 +1,14 @@
+{
+  "generation": 101,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_bottleneck_search",
+  "patch_description": "Combines the current program\u2019s compact archive and bottleneck-focused neighborhoods with the inspiration program\u2019s productivity-aware parent selection and stall-adaptive exploration. It uses smaller LP batches to reserve calls for more search rounds, screens moves by surrogate energy while retaining some exploration, and limits path relinking to stalled parents to control runtime.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:07:49.141381",
+  "llm_cost": 0.004854600000000001,
+  "llm_model": "gpt-6-luna"
+}

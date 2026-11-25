@@ -1,0 +1,14 @@
+{
+  "generation": 90,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_selection",
+  "patch_description": "Select a fixed small set of relays per OD pair using balanced-leg affinity, rather than spreading a path reward across every possible relay. The affinity `min(a, b) + 0.25 * max(a, b)` favors relays whose two legs both have useful demand, while pressure discounts still discourage congested transit nodes. Scaling each OD\u2019s reward by the selected relays\u2019 mean affinity avoids giving strong reward to paths with weak legs; keeping the total reward bounded and limiting relay counts also reduces interaction density.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:42:23.443856",
+  "llm_cost": 0.0014416,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_rotation_sampling",
+  "patch_description": "Track whether evaluated 2-switches or 3-link rotations improve the incumbent, then adapt the number of sampled rotations while keeping a minimum rotation mix. Rotations can escape basins that are difficult to reach through a single switch, but spending many proposals on them is wasteful when they have not helped. This change uses observed LP outcomes\u2014not just proposal counts\u2014to adjust their sampling rate, while retaining the existing switch search and batch ranking. Improvement is measured against the incumbent before each batch so that the reward is attributed correctly.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:16:36.763274",
+  "llm_cost": 0.0021755,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,47 @@
+<NAME>
+dual_benefit_ranking
+</NAME>
+
+<DESCRIPTION>
+Rank proposed networks partly by the directional dual benefit of changing the current parent: removing links with positive LP prices is favorable, while adding links with positive prices is unfavorable. Use rank aggregation with surrogate energy and chosen-link demand so the dual signal complements, rather than overwhelms, features on different scales. For recombinations, the same calculation uses the links removed from and added to the parent. This prioritizes moves that directly target bottlenecks before spending LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Free surrogate ranking. LP evaluates only the most promising batch;
+        # occasional random picks protect against energy mis-ranking.
+        ordered = sorted(unique, key=lambda net: (
+            tools.energy(net), proxy(net), rng.random()
+        ))
+=======
+        # Rank moves by directional dual relief as well as the free surrogates.
+        # Positive benefit means the move removes more priced capacity than it adds.
+        parent_set = set(parent)
+        price_map = {tuple(k): float(v) for k, v in prices.items()}
+        features = []
+        for net in unique:
+            net_set = set(net)
+            removed = parent_set - net_set
+            added = net_set - parent_set
+            dual_benefit = (sum(price_map.get(a, 0.0) for a in removed) -
+                            sum(price_map.get(a, 0.0) for a in added))
+            features.append((net, dual_benefit, float(tools.energy(net)),
+                             proxy(net), rng.random()))
+
+        # Aggregate ranks rather than mixing dual prices, energy, and demand
+        # directly, since their numerical scales are unrelated.
+        dual_order = sorted(features, key=lambda x: x[1], reverse=True)
+        energy_order = sorted(features, key=lambda x: x[2])
+        demand_order = sorted(features, key=lambda x: x[3])
+        dual_rank = {x[0]: i for i, x in enumerate(dual_order)}
+        energy_rank = {x[0]: i for i, x in enumerate(energy_order)}
+        demand_rank = {x[0]: i for i, x in enumerate(demand_order)}
+        jitter = {x[0]: x[4] for x in features}
+        ordered = sorted(unique, key=lambda net: (
+            0.40 * dual_rank[net] +
+            0.40 * energy_rank[net] +
+            0.20 * demand_rank[net] +
+            0.15 * jitter[net]
+        ))
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "demand_weighted_branch_diversity",
+  "patch_description": "Add a compact positive-coupling correction for redundant outgoing and incoming branches. Two successors with similar demand-weighted destination profiles offer overlapping routing options; similarly, two predecessors with similar origin profiles provide little inbound diversity. The existing negative path rewards do not distinguish complementary branches from redundant ones.\n\nUse weighted profile inner products to identify redundancy, including each branch endpoint itself as directly reachable. Retain only the three strongest overlaps per node and direction, adding at most 6n couplings. Normalize locally and cap the correction at 0.24 so it supplements rather than replaces the established direct-link and two-hop rewards. This targets typical-sample quality and exchange ranking without introducing incomplete three-hop rewards or degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:11:48.671937",
+  "llm_cost": 0.046302,
+  "llm_model": "gpt-6.1-sol"
+}

@@ -1,0 +1,105 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build cost terms favoring useful, complementary directed links."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+
+    # Normalize demand to make the construction insensitive to its units.
+    scale = float(np.max(np.abs(t))) or 1.0
+    d = np.maximum(t, 0.0) / scale
+
+    row = np.sum(d, axis=1)
+    col = np.sum(d, axis=0)
+    row_scale = float(np.max(row)) or 1.0
+    col_scale = float(np.max(col)) or 1.0
+    rn = row / row_scale
+    cn = col / col_scale
+
+    # Reward direct traffic and provide a weaker signal for connecting
+    # traffic-generating nodes to attractive destination regions.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = d[i, j]
+            endpoint_access = 0.5 * (rn[i] + cn[j])
+            linear[(i, j)] = -(0.80 * direct + 0.20 * endpoint_access)
+
+    # Similarity of destination demand profiles: links from the same source
+    # to destinations with similar incoming traffic patterns are redundant.
+    # Similarly, links into the same destination from sources with similar
+    # outgoing patterns tend to provide redundant access.
+    quadratic = {}
+    profile_eps = 1e-12
+    row_norm = np.sqrt(np.sum(d * d, axis=1)) + profile_eps
+    col_norm = np.sqrt(np.sum(d * d, axis=0)) + profile_eps
+
+    # Scale redundancy costs modestly so direct demand remains the primary
+    # signal. Every pair is considered at most once.
+    redundancy_scale = 0.12
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            for k in range(j + 1, n):
+                if k == i:
+                    continue
+
+                # Outgoing alternatives from i: compare the destination
+                # demand columns, excluding the common source row.
+                a = d[:, j].copy()
+                b = d[:, k].copy()
+                a[i] = 0.0
+                b[i] = 0.0
+                sim_out = float(np.dot(a, b) / (col_norm[j] * col_norm[k] + profile_eps))
+                if sim_out > 0.0:
+                    quadratic[((i, j), (i, k))] = redundancy_scale * sim_out
+
+    for j in range(n):
+        for i in range(n):
+            if i == j:
+                continue
+            for k in range(i + 1, n):
+                if k == j:
+                    continue
+
+                # Incoming alternatives to j: compare the source demand
+                # rows, excluding the common destination column.
+                a = d[i, :].copy()
+                b = d[k, :].copy()
+                a[j] = 0.0
+                b[j] = 0.0
+                sim_in = float(np.dot(a, b) / (row_norm[i] * row_norm[k] + profile_eps))
+                if sim_in > 0.0:
+                    key = ((i, j), (k, j))
+                    quadratic[key] = quadratic.get(key, 0.0) + redundancy_scale * sim_in
+
+    # The evaluator separately supplies degree penalties. A moderate value
+    # retains feasible samples while allowing the cost terms to guide search.
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

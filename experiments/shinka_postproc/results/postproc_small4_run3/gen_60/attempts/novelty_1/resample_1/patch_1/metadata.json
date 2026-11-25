@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_kick_exploration",
+  "patch_description": "Increase multi-switch exploration gradually when the search has stalled, using both parent-specific stalls and time since the last global improvement. The increase is capped by instance size and remains modest; it is slightly stronger on smaller instances, where the search has relatively fewer possible link pairs. Because `since_best` resets after an improvement, the search naturally shifts back toward smaller perturbations when progress resumes. This adds diverse proposals without increasing the LP batch size.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:42:55.385156",
+  "llm_cost": 0.003383,
+  "llm_model": "gpt-6-luna"
+}

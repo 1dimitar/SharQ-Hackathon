@@ -1,0 +1,50 @@
+<NAME>
+archive_relink
+</NAME>
+
+<DESCRIPTION>
+Add path-relinking moves that take a single switch toward another high-quality archived topology. For each selected target, the search looks for target links absent from the current parent and tries to install them with a degree-preserving two-switch. This explores connections between promising regions that random neighborhoods may miss, while preserving validity and leaving the existing LP batch screening in place.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        moves = make_moves(parent, hot, kick_size)
+        fresh = [
+            m for m in moves
+=======
+        moves = set(make_moves(parent, hot, kick_size))
+
+        # Path-relink toward other strong archive members by installing one
+        # of their missing links with a degree-preserving two-switch.
+        parent_edges = set(parent)
+        targets = [net for net in archive if net != parent]
+        if targets:
+            rng.shuffle(targets)
+            for target in targets[:4]:
+                missing = [edge for edge in target if edge not in parent_edges]
+                rng.shuffle(missing)
+                for a, b in missing[:12]:
+                    for x in range(n):
+                        if (a, x) not in parent_edges:
+                            continue
+                        for y in range(n):
+                            if (y, b) not in parent_edges:
+                                continue
+                            old = {(a, x), (y, b)}
+                            new = {(a, b), (y, x)}
+                            if len(old) != 2 or len(new) != 2:
+                                continue
+                            if any(u == v for u, v in new):
+                                continue
+                            if new & (parent_edges - old):
+                                continue
+                            proposal = canon((parent_edges - old) | new)
+                            if proposal != parent:
+                                moves.add(proposal)
+        moves = [m for m in moves if tools.is_valid(m)]
+
+        fresh = [
+            m for m in moves
+>>>>>>> REPLACE
+
+</DIFF>

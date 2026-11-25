@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "surrogate_guided_population",
+  "patch_description": "Replaces single-incumbent iterated local search with a diverse population and surrogate-guided neighborhood search. It keeps several distinct, well-scoring networks, generates valid 2-switches and crossovers between population members, and ranks unseen networks using the free QUBO energy plus a cheap demand-based proxy before spending LP calls. LP results update the population and bottleneck prices focus later moves on links most likely to matter. This aims to spend the limited LP budget across several promising search basins rather than repeatedly exploring one incumbent\u2019s neighborhood.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:36:33.075987",
+  "llm_cost": 0.0017225,
+  "llm_model": "gpt-6-luna"
+}

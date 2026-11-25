@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive-bottleneck-search",
+  "patch_description": "The current program spends substantial time recombining and generating large proposal sets, while its energy-and-diversity ranking can favor moves that do not relieve LP bottlenecks. This version limits initial LP evaluation to 24 diverse repairs, keeps a compact elite archive, and ranks local moves using both link prices/loads and demand before consulting energy. It alternates two-edge switches with three-edge rotations, increasing the rotation share after repeated unproductive batches and resetting it after an improvement. Small batches and bounded proposal generation reduce overhead while preserving exploratory moves.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:52:56.163045",
+  "llm_cost": 0.0024105000000000003,
+  "llm_model": "gpt-6-luna"
+}

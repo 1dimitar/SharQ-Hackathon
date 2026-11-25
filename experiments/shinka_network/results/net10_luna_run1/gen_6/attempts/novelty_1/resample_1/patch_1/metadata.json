@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "discounted_twohop_routing",
+  "patch_description": "Keep the baseline reward for direct traffic, and add a modest quadratic reward when two selected links form a two-hop route. Unlike an undiscounted two-hop reward, scale each path term by a small factor and discount paths through nodes with high aggregate demand. This limits over-rewarding indirect routes and discourages concentrating transit potential at already busy nodes. The number of quadratic terms is at most \\(n(n-1)(n-2)\\), within the stated limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:00.882564",
+  "llm_cost": 0.0016886,
+  "llm_model": "gpt-6-luna"
+}

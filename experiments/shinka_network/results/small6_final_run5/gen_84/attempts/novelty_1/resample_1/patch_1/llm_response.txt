@@ -1,0 +1,46 @@
+<NAME>
+scaled_route_flex
+</NAME>
+
+<DESCRIPTION>
+Apply a modest, bounded increase to two-hop route rewards as network size grows, so route information does not weaken relative to direct-link terms at larger n. Also lower the heavy-demand quantile from 0.75 to 0.68, allowing more demands to use the larger candidate set. Both changes are confined to route factors; the scale is capped to avoid letting them dominate the QUBO, and the resulting coupling count remains well below the limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        self.heavy_cutoff = (
+            float(np.quantile(positive, 0.75))
+            if positive.size else 0.0
+        )
+=======
+        self.heavy_cutoff = (
+            float(np.quantile(positive, 0.68))
+            if positive.size else 0.0
+        )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    pressure = model.pressure
+    pressure_rank = pressure ** 0.75
+
+    for source in range(n):
+=======
+    pressure = model.pressure
+    pressure_rank = pressure ** 0.75
+    route_size_factor = float(np.clip(np.sqrt(n / 12.0), 0.90, 1.15))
+
+    for source in range(n):
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    -0.46 * support * rank_factor / discount,
+=======
+                    -0.46 * route_size_factor * support * rank_factor / discount,
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+                    -0.30 * support / discount,
+=======
+                    -0.30 * route_size_factor * support / discount,
+>>>>>>> REPLACE
+</DIFF>

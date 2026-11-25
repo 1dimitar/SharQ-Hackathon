@@ -1,0 +1,14 @@
+{
+  "generation": 81,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dualwalker",
+  "patch_description": "The current program can spend a large share of its LP budget scoring oversized batches, while its operator adaptation mainly rewards whether a proposal beats its immediate parent. This version uses batches of at most two, so feedback can guide more search steps. It adds a simulated-annealing walker alongside a quality- and diversity-ranked archive, and adapts operator probabilities from smoothed LP-confirmed success rates. Candidate moves are screened using surrogate-energy and bottleneck-dual rankings, with randomized selection among the leaders to retain exploration. The initial LP-scored seed set is reduced to 22 to leave more budget for iterative search.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:43:17.550191",
+  "llm_cost": 0.004921099999999999,
+  "llm_model": "gpt-6-luna"
+}

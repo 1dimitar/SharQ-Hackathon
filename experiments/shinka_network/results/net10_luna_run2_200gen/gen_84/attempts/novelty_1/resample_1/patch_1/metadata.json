@@ -1,0 +1,14 @@
+{
+  "generation": 84,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_path_budget",
+  "patch_description": "The current quadratic loop gives every candidate two-hop path an independent reward, so an OD pair with many possible intermediates can accumulate a large reward and dominate the direct-link signal. This edit caps the total indirect reward for each OD pair at a modest fraction of that pair\u2019s demand-based signal, then allocates that budget among paths according to component-link support and transit pressure. It retains path-specific guidance while preventing aggregate two-hop incentives from overwhelming direct demand.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:48:30.116996",
+  "llm_cost": 0.0011562,
+  "llm_model": "gpt-6-luna"
+}

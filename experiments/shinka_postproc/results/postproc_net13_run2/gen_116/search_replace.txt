@@ -1,0 +1,59 @@
+<NAME>
+elite_path_relinking
+</NAME>
+
+<DESCRIPTION>
+Explicitly path-relink a parent toward another high-quality archived network. Each step attempts a degree-preserving two-switch that adds one of the target network’s missing links, recording intermediate networks as proposals. This can combine useful structure from two strong solutions and traverse regions that random switches may rarely reach. The number of steps is bounded, and all proposals still pass through the existing validity check and LP-budgeted batch selection.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+=======
+        # Path-relink toward another strong archived solution. Each switch
+        # adopts a target link while preserving both in- and out-degrees.
+        targets = [net for net in sorted(scores, key=scores.get)[:24]
+                   if net != parent]
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+            state = set(parent)
+            desired = list(set(target) - state)
+            for _ in range(min(6, len(desired))):
+                rng.shuffle(desired)
+                changed = False
+                for a, d in desired:
+                    if (a, d) in state:
+                        continue
+                    outgoing = [edge for edge in state if edge[0] == a]
+                    incoming = [edge for edge in state if edge[1] == d]
+                    pairs = [(left, right) for left in outgoing
+                             for right in incoming if left != right]
+                    rng.shuffle(pairs)
+                    for (u, b), (c, v) in pairs:
+                        if u != a or v != d or c == b or (c, b) in state:
+                            continue
+                        state.remove((a, b))
+                        state.remove((c, d))
+                        state.add((a, d))
+                        state.add((c, b))
+                        moves.add(tuple(sorted(state)))
+                        changed = True
+                        break
+                    if changed:
+                        break
+                if not changed:
+                    break
+
+        return [
+            net for net in moves
+            if net != parent
+            and net not in scores
+            and tools.is_valid(net)
+        ]
+>>>>>>> REPLACE
+</DIFF>

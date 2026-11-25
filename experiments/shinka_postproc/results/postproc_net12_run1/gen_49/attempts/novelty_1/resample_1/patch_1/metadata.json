@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "stagnation_rotations",
+  "patch_description": "Increase the number of sampled three-link rotations only for parents whose recent neighborhoods have failed to improve them. The current search samples a fixed 70 rotations regardless of whether a parent is productive or stalled; adaptive escalation spends more exploration effort where the two-switch neighborhood is insufficient, while keeping productive-parent iterations inexpensive. Rotations remain restricted to involve hot links and are still screened before LP evaluation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:54:38.114332",
+  "llm_cost": 0.0022676000000000003,
+  "llm_model": "gpt-6-luna"
+}

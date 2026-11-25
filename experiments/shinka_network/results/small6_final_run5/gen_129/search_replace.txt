@@ -1,0 +1,118 @@
+<NAME>
+pressure_normalized_cut
+</NAME>
+
+<DESCRIPTION>
+Increase the cut correction from 0.80/144 to 0.90/144 while reallocating it toward pairs of higher-pressure nodes. Normalize the pressure multipliers by their load-weighted mean, so the overall correction remains tied to the estimated cut load rather than growing simply because of the reallocation. The existing offset removal is retained, preserving the correction’s intended behavior on valid degree-two topologies.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # A two-node set has 4-x_ij-x_ji boundary links in each direction.
+    # For binary x,y:
+    # 1/(4-x-y)^2 = 1/16 + 7*(x+y)/144 + 13*x*y/144.
+    cut_linear = np.zeros((n, n), dtype=float)
+    cut_strength = 0.80 / 144.0
+    incident_scale = max(max_incident, 1e-12)
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal_demand = float(z[i, j] + z[j, i])
+            external_demand = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal_demand,
+            )
+            squared_load = (external_demand / incident_scale) ** 2
+            if squared_load <= 0.0:
+                continue
+
+            coefficient = cut_strength * squared_load
+            cut_linear[i, j] = cut_linear[j, i] = (
+                7.0 * coefficient
+            )
+            add_pair(
+                (i, j), (j, i), 13.0 * coefficient
+            )
+
+    # These offsets are constant over valid degree-two topologies.
+    # Removing them reduces unnecessary constraint/objective competition.
+    if n > 1:
+        node_offset = cut_linear.sum(axis=1) / (n - 1)
+        edge_offset = float(cut_linear.sum()) / (n * (n - 1))
+        for i, j in linear:
+            linear[(i, j)] += float(
+                cut_linear[i, j]
+                - node_offset[i]
+                - node_offset[j]
+                + edge_offset
+            )
+=======
+    # A two-node set has 4-x_ij-x_ji boundary links in each direction.
+    # For binary x,y:
+    # 1/(4-x-y)^2 = 1/16 + 7*(x+y)/144 + 13*x*y/144.
+    cut_linear = np.zeros((n, n), dtype=float)
+    incident_scale = max(max_incident, 1e-12)
+    cut_pairs = []
+    load_sum = 0.0
+    weighted_factor_sum = 0.0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal_demand = float(z[i, j] + z[j, i])
+            external_demand = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal_demand,
+            )
+            squared_load = (external_demand / incident_scale) ** 2
+            if squared_load <= 0.0:
+                continue
+
+            endpoint_pressure = 0.5 * (
+                float(pressure[i]) + float(pressure[j])
+            )
+            relative_pressure = float(np.clip(
+                (endpoint_pressure - 0.48) / 0.72, 0.0, 1.0
+            ))
+            factor = 0.8 + 0.4 * relative_pressure
+            cut_pairs.append((i, j, squared_load, factor))
+            load_sum += squared_load
+            weighted_factor_sum += squared_load * factor
+
+    if load_sum > 1e-15:
+        mean_factor = weighted_factor_sum / load_sum
+        cut_strength = 0.90 / 144.0
+
+        for i, j, squared_load, factor in cut_pairs:
+            coefficient = (
+                cut_strength
+                * squared_load
+                * factor
+                / max(mean_factor, 1e-12)
+            )
+            cut_linear[i, j] = cut_linear[j, i] = (
+                7.0 * coefficient
+            )
+            add_pair(
+                (i, j), (j, i), 13.0 * coefficient
+            )
+
+    # These offsets are constant over valid degree-two topologies.
+    # Removing them reduces unnecessary constraint/objective competition.
+    if n > 1:
+        node_offset = cut_linear.sum(axis=1) / (n - 1)
+        edge_offset = float(cut_linear.sum()) / (n * (n - 1))
+        for i, j in linear:
+            linear[(i, j)] += float(
+                cut_linear[i, j]
+                - node_offset[i]
+                - node_offset[j]
+                + edge_offset
+            )
+>>>>>>> REPLACE
+</DIFF>

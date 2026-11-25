@@ -1,0 +1,53 @@
+<NAME>
+congestion_aware_paths
+</NAME>
+
+<DESCRIPTION>
+Keep the direct-demand reward, and add a modest reward for selected two-hop paths. Unlike a uniform two-hop reward, discount paths through nodes with high total traffic, which are more likely to become transit bottlenecks. The path couplings also give the interaction graph useful structure while remaining within the quadratic-term limit. Increase the degree penalty so invalid degree patterns are less attractive during QUBO sampling.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Approximate useful short routes, but discount intermediates that already
+    # have substantial traffic and are therefore more likely to be bottlenecks.
+    row_load = np.asarray(demand, dtype=float).sum(axis=1)
+    col_load = np.asarray(demand, dtype=float).sum(axis=0)
+    mean_node_load = float(np.mean(row_load + col_load)) or 1.0
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                path_demand = float(demand[i, k])
+                if path_demand <= 0.0:
+                    continue
+                intermediate_load = float(row_load[j] + col_load[j])
+                congestion_discount = 1.0 / (
+                    1.0 + intermediate_load / (2.0 * mean_node_load)
+                )
+                links = tuple(sorted(((i, j), (j, k))))
+                quadratic[links] = quadratic.get(links, 0.0) - (
+                    0.18 * path_demand / scale * congestion_discount
+                )
+
+    penalty_weight = 3.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

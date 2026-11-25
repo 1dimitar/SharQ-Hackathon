@@ -1,0 +1,62 @@
+<NAME>
+archive_aggregate_novelty
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP evaluation in each batch for a move that is structurally novel relative to several leading archive members. The current batch selection fills all available slots with quality-ranked moves, so its tail-exploration step usually has no effect. This change keeps up to `batch_size - 1` quality-selected moves, then uses the remaining slot for the shortlist candidate with the greatest summed distance from the leading archive members; surrogate rank breaks ties. This adds archive-wide exploration without replacing the batch’s main quality bias.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        # Keep all but one slot for the best surrogate-ranked proposals.
+        quality_limit = max(1, batch_size - 1)
+        for _, net in ranked:
+            if len(selected) >= quality_limit:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Spend the reserved slot on archive-wide novelty, not just distance
+        # from the current batch. The archive is LP-quality-ranked and diverse.
+        references = archive()[:8]
+        if not references:
+            references = [parent]
+        ref_sets = [set(net) for net in references]
+        rank_index = {net: i for i, (_, net) in enumerate(ranked)}
+        shortlist_nets = [net for _, net in shortlist]
+        novelty_pool = [net for net in shortlist_nets if net not in selected]
+        if novelty_pool and len(selected) < batch_size:
+            novel = max(
+                novelty_pool,
+                key=lambda net: (
+                    sum(distance(net, ref) for ref in ref_sets),
+                    -rank_index[net],
+                ),
+            )
+            selected.append(novel)
+
+        # If the shortlist was too small to fill the batch, use remaining
+        # quality-ranked proposals rather than leaving LP budget unused.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

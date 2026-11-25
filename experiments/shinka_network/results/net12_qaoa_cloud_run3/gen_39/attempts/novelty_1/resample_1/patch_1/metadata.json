@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "targeted_relay_support",
+  "patch_description": "Keep the existing relay budget for ordinary OD pairs, but allow one additional relay for only the highest-demand decile. This concentrates the extra path interactions on consequential traffic instead of broadly densifying the QUBO. The base candidate count is unchanged, and even with the additions the number of generated terms remains bounded by the OD-pair and relay loops. Raise the evaluator-supplied degree penalty from 1.5 to 5.0 as a separate, small adjustment to encourage more valid samples before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:53:07.112888",
+  "llm_cost": 0.001002,
+  "llm_model": "gpt-6-luna"
+}

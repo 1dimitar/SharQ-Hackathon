@@ -1,0 +1,43 @@
+<NAME>
+pressure_rank_125
+</NAME>
+
+<DESCRIPTION>
+Rank relay candidates with a stronger pressure sensitivity, using exponent 1.25, while retaining the existing 0.75 pressure discount in the quadratic reward itself. This isolates the effect of choosing less congested relays without changing the overall coupling scale or reward formula. It is a focused test of the suggested ranking adjustment and leaves the existing edge-overlap discount intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                quality = affinity / (
+                    (0.70 + float(pressure[j])) ** pressure_alpha
+                    * edge_discount
+                )
+                candidates.append((quality, j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            for quality, j in candidates[:relay_budget]:
+                if quality <= 0.0:
+                    continue
+
+                weight = -path_strength * support * quality
+=======
+                quality = affinity / (
+                    (0.70 + float(pressure[j])) ** pressure_alpha
+                    * edge_discount
+                )
+                # Rank relays more strongly against congestion, but preserve
+                # the original pressure discount in the actual QUBO reward.
+                rank_quality = affinity / (
+                    (0.75 + float(pressure[j])) ** 1.25
+                    * edge_discount
+                )
+                candidates.append((rank_quality, quality, j))
+
+            candidates.sort(key=lambda item: (-item[0], item[2]))
+            for rank_quality, quality, j in candidates[:relay_budget]:
+                if quality <= 0.0:
+                    continue
+
+                weight = -path_strength * support * quality
+>>>>>>> REPLACE
+</DIFF>

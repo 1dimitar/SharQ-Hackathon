@@ -1,0 +1,340 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build sparse demand, transit-pressure, and small-cut surrogate costs."""
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    n = len(traffic)
+    np.fill_diagonal(traffic, 0.0)
+
+    off_diagonal = ~np.eye(n, dtype=bool)
+    penalty_weight = float(
+        min(1.50, 1.27 + 0.010 * max(0, n - 10))
+    )
+
+    scale = float(traffic.max()) if traffic.size else 0.0
+    if scale <= 0.0:
+        linear = {
+            (i, j): 0.0
+            for i in range(n)
+            for j in range(n)
+            if i != j
+        }
+        return linear, {}, penalty_weight
+
+    z = traffic / scale
+    root = np.sqrt(z)
+    direct_score = 0.68 * z + 0.32 * root
+    costs = -direct_score.copy()
+    mean_direct = float(direct_score[off_diagonal].mean())
+
+    outgoing = z.sum(axis=1)
+    incoming = z.sum(axis=0)
+    incident = np.maximum(outgoing, incoming)
+    incident_scale = max(float(incident.max()), 1e-12)
+    base_pressure = np.maximum(0.60, incident / incident_scale)
+
+    # Axes are (source, intermediate, destination). These tensors are
+    # small even at n=24 and replace per-route Python pressure updates.
+    edge_affinity = z[:, :, None] + z[None, :, :]
+    affinity = (
+        0.22
+        + edge_affinity
+        + 0.12 * np.sqrt(z[:, :, None] * z[None, :, :])
+    )
+    valid_paths = (
+        off_diagonal[:, :, None]
+        & off_diagonal[None, :, :]
+        & off_diagonal[:, None, :]
+    )
+
+    temperature = 0.42
+    log_affinity = np.log(affinity)
+    log_edge_discount = np.log1p(0.18 * edge_affinity)
+    direct_utility = np.log(0.30 + 1.15 * z) / temperature
+    transit = np.zeros(n, dtype=float)
+
+    # Damped mean-field routing pressure, including a direct-route option.
+    # Normalized traffic makes these updates invariant to demand units.
+    for iteration in range(3):
+        pressure = np.maximum(
+            1.0,
+            0.72 * base_pressure / 0.60
+            + 0.28 * (1.0 + transit / (incident + 1.0)),
+        )
+        utilities = (
+            log_affinity
+            - (0.72 + 0.08 * iteration)
+            * np.log(pressure)[None, :, None]
+            - log_edge_discount
+        ) / temperature
+        utilities = np.where(valid_paths, utilities, -np.inf)
+
+        maximum = np.maximum(
+            utilities.max(axis=1), direct_utility
+        )
+        route_mass = np.exp(np.clip(
+            utilities - maximum[:, None, :], -30.0, 0.0
+        ))
+        route_mass = np.where(valid_paths, route_mass, 0.0)
+        direct_mass = np.exp(np.clip(
+            direct_utility - maximum, -30.0, 0.0
+        ))
+        denominator = route_mass.sum(axis=1) + direct_mass
+        probabilities = route_mass / denominator[:, None, :]
+        updated = (probabilities * z[:, None, :]).sum(axis=(0, 2))
+        transit = 0.45 * transit + 0.55 * updated
+
+    transit_reference = max(1.0, float(incident.mean()))
+    route_pressure = 1.0 + transit / transit_reference
+    node_pressure = np.maximum(
+        0.60,
+        0.62 * incident / incident_scale
+        + 0.38 * route_pressure / float(route_pressure.max()),
+    )
+
+    ranks = (
+        affinity
+        / node_pressure[None, :, None] ** 0.82
+        / (1.0 + 0.10 * edge_affinity)
+    )
+    ranks = np.where(valid_paths, ranks, -np.inf)
+
+    # Stable sorting gives deterministic node-index tie breaking.
+    ordering = np.argsort(-ranks, axis=1, kind="stable")
+    positive = z[z > 0.0]
+    heavy_cutoff = float(np.quantile(positive, 0.72))
+    demand_support = 0.66 * z + 0.34 * root
+
+    # A mild bounded taper retains the useful path signal while limiting
+    # its aggregate attraction on larger instances.
+    size_factor = float(np.clip((12.0 / n) ** 0.15, 0.88, 1.0))
+    route_strength = 0.39 * size_factor
+    pressure_discount = node_pressure ** 0.55
+
+    quadratic = {}
+    route_frequency = np.zeros((n, n), dtype=float)
+    route_support = np.zeros((n, n), dtype=float)
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            candidates = ordering[i, :, k]
+            base_keep = min(
+                n - 2, 3 if z[i, k] >= heavy_cutoff else 2
+            )
+            keep = base_keep
+
+            # Add only one near-tied alternative, with discounted credit.
+            # At most four path couplings are emitted for any OD pair.
+            if keep < n - 2:
+                boundary = float(ranks[i, int(candidates[keep - 1]), k])
+                following = float(ranks[i, int(candidates[keep]), k])
+                relative_gap = (
+                    (boundary - following) / max(boundary, 1e-12)
+                )
+                if relative_gap < 0.12:
+                    keep += 1
+
+            support = float(demand_support[i, k])
+            for position in range(keep):
+                j = int(candidates[position])
+                if position < base_keep:
+                    rank_boost = (
+                        1.0 + 0.055 * (base_keep - position - 1)
+                    )
+                else:
+                    rank_boost = 0.72
+
+                magnitude = float(
+                    route_strength
+                    * support
+                    * rank_boost
+                    / pressure_discount[j]
+                    / (1.0 + 0.08 * edge_affinity[i, j, k])
+                )
+                first, second = (i, j), (j, k)
+                key = (
+                    (first, second)
+                    if first < second
+                    else (second, first)
+                )
+                quadratic[key] = -magnitude
+
+                route_frequency[i, j] += 1.0
+                route_frequency[j, k] += 1.0
+                route_support[i, j] += magnitude
+                route_support[j, k] += magnitude
+
+    # Two-node cut congestion. On a valid topology the boundary has
+    # 4 - x_ij - x_ji links in each direction. The exact binary quadratic
+    # representation of 1 / (4 - x_ij - x_ji)^2 has nonconstant
+    # coefficients 7/144 (linear) and 13/144 (reciprocal).
+    internal = z + z.T
+    external_cut = np.maximum(
+        0.0,
+        np.maximum(
+            outgoing[:, None] + outgoing[None, :],
+            incoming[:, None] + incoming[None, :],
+        ) - internal,
+    )
+
+    total_incident = outgoing + incoming
+    vulnerability = 0.5 * (
+        np.maximum(total_incident[:, None] - internal, 0.0)
+        / np.maximum(total_incident[:, None], 1e-12)
+        + np.maximum(total_incident[None, :] - internal, 0.0)
+        / np.maximum(total_incident[None, :], 1e-12)
+    )
+    cut_factor = 0.80 + 0.40 * np.clip(vulnerability, 0.0, 1.0)
+    factor_mean = max(
+        float(cut_factor[off_diagonal].mean()), 1e-12
+    )
+    cut_coefficient = (
+        (0.80 / 144.0)
+        * (external_cut / incident_scale) ** 2
+        * cut_factor
+        / factor_mean
+    )
+    np.fill_diagonal(cut_coefficient, 0.0)
+    cut_linear = 7.0 * cut_coefficient
+
+    # These node potentials change energy only by a constant on valid
+    # degree-two topologies; removing them avoids unnecessary degree bias.
+    node_offset = cut_linear.sum(axis=1) / max(1, n - 1)
+    edge_offset = float(cut_linear[off_diagonal].mean())
+    costs += (
+        cut_linear
+        - node_offset[:, None]
+        - node_offset[None, :]
+        + edge_offset
+    )
+
+    size_scale = max(
+        0.80, float(np.log2(max(n, 2)) / np.log2(12.0))
+    )
+    reciprocal_scale = 0.43 * mean_direct * size_scale
+
+    # Reuse reciprocal couplings for the cut correction: no new
+    # interaction pattern is needed.
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual = min(float(z[i, j]), float(z[j, i]))
+            quadratic[((i, j), (j, i))] = float(
+                reciprocal_scale * (1.0 - 0.62 * mutual)
+                + 13.0 * cut_coefficient[i, j]
+            )
+
+    # Frequency proved useful for typical samples; weighted support adds
+    # demand sensitivity. Correct only their upper tails, without adding
+    # dense link-conflict couplings.
+    for exposure, fraction in (
+        (route_frequency, 0.75),
+        (route_support, 0.25),
+    ):
+        active = exposure[off_diagonal & (exposure > 0.0)]
+        if not active.size:
+            continue
+
+        threshold = float(np.quantile(active, 0.80))
+        maximum = float(active.max())
+        if maximum > threshold:
+            excess = np.clip(
+                (exposure - threshold) / (maximum - threshold),
+                0.0,
+                1.0,
+            )
+            costs += 0.12 * mean_direct * fraction * excess
+
+    # Complementary neighbors provide broader service than two neighbors
+    # whose useful destination/origin profiles strongly overlap.
+    # Normalize profiles so service diversity is not just node popularity.
+    outgoing_service = np.sqrt(
+        z / np.maximum(z.max(axis=1, keepdims=True), 1e-12)
+    )
+    incoming_service = np.sqrt(
+        z.T / np.maximum(z.T.max(axis=1, keepdims=True), 1e-12)
+    )
+    service_budget = max(1, n // 2)
+    service_strength = 0.24 * mean_direct * size_factor
+
+    for center in range(n):
+        neighbors = [j for j in range(n) if j != center]
+        for incoming_direction in (False, True):
+            if incoming_direction:
+                demand_profile = z[:, center]
+                service = incoming_service
+            else:
+                demand_profile = z[center, :]
+                service = outgoing_service
+
+            total = float(demand_profile.sum())
+            if total <= 0.0:
+                continue
+
+            # A weighted Gram matrix measures shared useful service.
+            overlap = (
+                (service * demand_profile[None, :]) @ service.T
+            ) / total
+            candidates = [
+                (float(overlap[j, k]), j, k)
+                for position, j in enumerate(neighbors)
+                for k in neighbors[position + 1:]
+            ]
+            if not candidates:
+                continue
+
+            # Every valid topology selects exactly one neighbor pair per
+            # direction, so this common offset has no ranking information.
+            common = sum(value for value, _, _ in candidates) / len(candidates)
+            candidates.sort(
+                key=lambda item: (-abs(item[0] - common), item[1], item[2])
+            )
+            for value, j, k in candidates[:service_budget]:
+                weight = service_strength * (value - common)
+                if abs(weight) <= 1e-12:
+                    continue
+                if incoming_direction:
+                    first, second = (j, center), (k, center)
+                else:
+                    first, second = (center, j), (center, k)
+                key = (
+                    (first, second)
+                    if first < second
+                    else (second, first)
+                )
+                quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    linear = {
+        (i, j): float(costs[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    # Degree penalties are supplied solely by the evaluator.
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

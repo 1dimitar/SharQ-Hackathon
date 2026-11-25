@@ -1,0 +1,25 @@
+<NAME>
+mean_pressure_floor
+</NAME>
+
+<DESCRIPTION>
+Normalize relay pressure by mean incident demand rather than the maximum, with a 0.75 floor. Maximum-based normalization compresses pressure differences because the busiest node is fixed at 1 while many other nodes hit the floor. Mean normalization makes the discount reflect how busy a relay is relative to the network overall; the higher floor limits excessive preference for quiet nodes. This changes only the route discount, leaving the existing path-quality formula and term count intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    incident = np.sum(t, axis=0) + np.sum(t, axis=1)
+    max_incident = float(np.max(incident))
+    if max_incident > 0.0:
+        node_pressure = np.maximum(0.65, incident / max_incident)
+    else:
+        node_pressure = np.ones(n, dtype=float)
+=======
+    incident = np.sum(t, axis=0) + np.sum(t, axis=1)
+    mean_incident = float(np.mean(incident))
+    if mean_incident > 0.0:
+        node_pressure = np.maximum(0.75, incident / mean_incident)
+    else:
+        node_pressure = np.ones(n, dtype=float)
+>>>>>>> REPLACE
+</DIFF>

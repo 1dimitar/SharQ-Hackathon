@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_frontier_search",
+  "patch_description": "Reorganizes the search around a bounded, topology-diverse frontier. Repaired candidates seed the frontier; each iteration expands one frontier network using bottleneck-focused swaps and degree-preserving rotations. Surrogate energy and topology distance screen each batch before LP evaluation, while adaptive parent selection favors both strong networks and underexplored regions. Cached or previously scored networks are excluded to conserve LP calls.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:42:43.474134",
+  "llm_cost": 0.0016824,
+  "llm_model": "gpt-6-luna"
+}

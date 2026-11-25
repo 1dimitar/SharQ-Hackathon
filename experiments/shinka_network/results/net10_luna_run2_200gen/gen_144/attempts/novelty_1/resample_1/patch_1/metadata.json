@@ -1,0 +1,14 @@
+{
+  "generation": 144,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stronger_edge_discount",
+  "patch_description": "Increase the edge-pressure discount from 0.5 to 0.85 while leaving the node-pressure factor and all other terms unchanged. Two-hop path rewards will be reduced more when either constituent link already has substantial direct demand, discouraging the QUBO from concentrating traffic on links likely to be busy. This isolates the recommended stronger-discount variant without changing the term count or adding computation.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:57:11.894168",
+  "llm_cost": 0.0009115,
+  "llm_model": "gpt-6-luna"
+}

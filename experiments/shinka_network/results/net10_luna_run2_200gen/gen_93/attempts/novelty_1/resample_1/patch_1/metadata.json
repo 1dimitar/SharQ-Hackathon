@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This version keeps the direct-demand linear reward and combines the better-performing two-hop weighting from the prior implementations: transit nodes are discounted by incident traffic, and paths are further discounted when their constituent links already carry demand. It also sanitizes the demand matrix without modifying the caller\u2019s input. The quadratic construction is bounded by the number of valid two-hop paths, which is at most \\(n(n-1)(n-2)\\).",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:24.687033",
+  "llm_cost": 0.0012228,
+  "llm_model": "gpt-6-luna"
+}

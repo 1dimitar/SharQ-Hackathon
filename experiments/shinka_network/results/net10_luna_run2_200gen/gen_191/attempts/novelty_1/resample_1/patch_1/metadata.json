@@ -1,0 +1,14 @@
+{
+  "generation": 191,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This crossover keeps the current implementation\u2019s concave direct-link reward and the stronger, demand-sensitive two-hop support used by the better-performing variants. It adopts the inspiration program\u2019s stronger path coefficient and its discount for component links with direct demand, while using a concave, capped path-support adjustment so moderate-demand OD pairs can still influence transit choices. Transit-node pressure discourages overusing busy intermediates. The quadratic terms remain limited to two-link paths, and degree penalties are left to the evaluator.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:02:25.007639",
+  "llm_cost": 0.001324,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,143 @@
+<NAME>
+pressure_balanced_paths
+</NAME>
+
+<DESCRIPTION>
+This version retains direct-demand rewards while distributing a bounded two-hop reward across candidate routes. Transit-node pressure is normalized by the maximum incident demand, with a floor of 0.65, so busy nodes are discounted without making lightly loaded nodes’ pressure unstable. It also mildly rewards reciprocal links when traffic is substantial in both directions. The path terms are limited to two-hop paths, keeping the quadratic term count within the stated bound.
+</DESCRIPTION>
+
+<CODE>
+```python
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic surrogate costs from a demand matrix."""
+    d = np.asarray(demand, dtype=float)
+    if d.ndim != 2 or d.shape[0] != d.shape[1]:
+        raise ValueError("demand must be a square matrix")
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0)
+    n = int(d.shape[0])
+
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    dn = d / scale
+
+    rows = np.sum(dn, axis=1)
+    cols = np.sum(dn, axis=0)
+    incident = rows + cols
+
+    # Direct links carry their own traffic; endpoint volume is a modest
+    # tie-breaker that favors links joining important origins and destinations.
+    endpoint = rows[:, None] + cols[None, :]
+    endpoint_max = float(np.max(endpoint)) if endpoint.size else 0.0
+    if endpoint_max > 0.0:
+        endpoint = endpoint / endpoint_max
+    else:
+        endpoint = np.zeros_like(endpoint)
+
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(dn[i, j])
+            # Concavity preserves a useful signal for moderate demands.
+            value = 0.84 * (0.76 * direct + 0.24 * np.sqrt(direct))
+            value += 0.16 * float(endpoint[i, j])
+            linear[(i, j)] = -float(value)
+
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident > 0.0:
+        relative_pressure = incident / max_incident
+    else:
+        relative_pressure = np.zeros(n, dtype=float)
+
+    # Pressure is capped below to avoid excessive concentration of indirect
+    # rewards on a small number of apparently idle nodes.
+    node_capacity = 1.0 / np.sqrt(np.maximum(0.65, relative_pressure))
+
+    quadratic = {}
+
+    # For each OD pair, share a limited reward across its possible two-hop
+    # routes. Normalize per pair so adding many candidate intermediates does
+    # not multiply the incentive.
+    indirect_budget = 0.64
+    uniform_mix = 0.28
+    for i in range(n):
+        for k in range(n):
+            od = float(dn[i, k])
+            if i == k or od <= 0.0:
+                continue
+
+            mids = []
+            evidence = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                a = float(dn[i, j])
+                b = float(dn[j, k])
+                support = np.sqrt(a * b)
+
+                # Demand support provides useful routing evidence, while the
+                # floor keeps alternative transit routes available.
+                support_score = 0.16 + 0.84 * support
+                edge_pressure = a + b
+                pressure_discount = 1.0 + 0.65 * edge_pressure
+                score = support_score * float(node_capacity[j]) / pressure_discount
+                mids.append(j)
+                evidence.append(score)
+
+            if not mids:
+                continue
+
+            evidence = np.asarray(evidence, dtype=float)
+            total = float(np.sum(evidence))
+            if total > 0.0:
+                shares = evidence / total
+            else:
+                shares = np.full(len(mids), 1.0 / len(mids), dtype=float)
+
+            shares = (1.0 - uniform_mix) * shares + uniform_mix / len(mids)
+            budget = indirect_budget * od
+            for j, share in zip(mids, shares):
+                weight = -budget * float(share)
+                if weight != 0.0:
+                    quadratic[((i, j), (j, k))] = weight
+
+    # Reciprocal links can efficiently serve strong traffic in both directions.
+    # This is deliberately modest so it does not encourage low-value 2-cycles.
+    reciprocal_strength = 0.10
+    for i in range(n):
+        for j in range(i + 1, n):
+            mutual = min(float(dn[i, j]), float(dn[j, i]))
+            if mutual > 0.0:
+                quadratic[((i, j), (j, i))] = -reciprocal_strength * mutual
+
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }
+```
+</CODE>

@@ -1,0 +1,14 @@
+{
+  "generation": 74,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_two_hop_budget",
+  "patch_description": "Cap the aggregate two-hop reward for each origin\u2013destination pair at `indirect_fraction * demand[i, k] / scale`. The current per-intermediate reward is divided by four, reflecting the maximum number of such paths in a valid degree-two topology, but summing over all candidate intermediates can exceed that budget. Rescale an OD pair\u2019s existing candidate rewards only when their sum exceeds the cap. This retains the current transit preference and supported-path structure while preventing many possible intermediates from collectively overwhelming the direct-link signal; it does not add quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:19.003056",
+  "llm_cost": 0.0013028,
+  "llm_model": "gpt-6-luna"
+}

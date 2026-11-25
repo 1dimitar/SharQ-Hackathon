@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "archivekick",
+  "patch_description": "The current search uses an annealing state and a small archive, but its periodic reset can repeatedly revisit elite networks, and its fixed move batch may spend calls on surrogate-ranked neighbors without enough deliberate basin changes. This version keeps a diverse, bounded archive and triggers a kick from a non-elite member after 45 iterations without improvement. Kick sizes grow from 2 to 6 switches as stagnation continues, then reset on an incumbent improvement.\n\nIt seeds LP evaluations from a diversified subset of the best-energy repairs, searches bottleneck-focused 2-switches plus sampled 3-cycles, and uses batches of 8 surrogate-ranked moves with up to 3 exploratory moves. The archive has 16 entries, and selection balances score and structural diversity. All LP use is budget-checked; cached or already-scored networks are skipped.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:43:33.646584",
+  "llm_cost": 0.0027452,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,109 @@
+<NAME>
+archive_relative_screening
+</NAME>
+
+<DESCRIPTION>
+Rank fresh moves using three signals: energy improvement over the parent, absolute surrogate energy, and distance from the best LP-scored archive networks. Combining ranks rather than raw values avoids relying on the surrogate’s scale. The archive-distance term modestly favors candidates that explore a different region, while the existing diversity filter and batch limit remain in place.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, batch_size=3):
+        """Use surrogate ranking and topology distance to select an LP batch."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = []
+        for net in fresh:
+            ranked.append((energy(net) - base_e, net))
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+    def screen_batch(moves, parent, batch_size=3):
+        """Rank moves by parent-relative and absolute surrogate quality plus archive novelty."""
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        # The best LP-scored networks provide a reference beyond the current parent.
+        elite = sorted(seen, key=seen.get)[:8]
+        if not elite:
+            elite = [parent]
+
+        records = []
+        for net in fresh:
+            e = energy(net)
+            novelty = min(distance(net, old) for old in elite)
+            records.append((net, e - base_e, e, novelty))
+
+        # Rank each signal independently so differing surrogate scales do not dominate.
+        delta_rank = {
+            rec[0]: i for i, rec in enumerate(sorted(records, key=lambda x: x[1]))
+        }
+        energy_rank = {
+            rec[0]: i for i, rec in enumerate(sorted(records, key=lambda x: x[2]))
+        }
+        novelty_rank = {
+            rec[0]: i for i, rec in enumerate(
+                sorted(records, key=lambda x: x[3], reverse=True)
+            )
+        }
+        denom = max(1, len(records) - 1)
+        ranked = sorted(
+            records,
+            key=lambda rec: (
+                0.45 * delta_rank[rec[0]] / denom
+                + 0.40 * energy_rank[rec[0]] / denom
+                + 0.15 * novelty_rank[rec[0]] / denom
+            ),
+        )
+
+        selected = []
+        # Prefer good composite-ranked moves while retaining topological variety.
+        for net, _, _, _ in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill any remaining slots with the best composite-ranked moves.
+        for net, _, _, _ in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

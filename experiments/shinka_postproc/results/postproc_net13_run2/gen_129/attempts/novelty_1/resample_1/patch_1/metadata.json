@@ -1,0 +1,14 @@
+{
+  "generation": 129,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diverse_parent_selection",
+  "patch_description": "Replace uniform sampling from the full archive with a two-part parent policy: most selections still come from the top six, while the rest favor archive members that are structurally distant from the elite, under-selected, or stalled. Bounded novelty and history multipliers preserve quality bias while steering search toward underexplored regions, as suggested by the performance feedback.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:32:24.036895",
+  "llm_cost": 0.0030678,
+  "llm_model": "gpt-6-luna"
+}

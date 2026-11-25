@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "pressure_floor",
+  "patch_description": "Use the maximum node load as the pressure normalizer and floor the inverse-pressure discount at 0.80. The current mean-based formula can strongly suppress paths through busy nodes, even though those nodes may be necessary to connect high-demand pairs. Maximum normalization makes the discount reflect relative pressure across the network, while the floor prevents it from overwhelming the two-hop demand reward. This is a targeted test of node-pressure scaling; all other terms remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:20.043152",
+  "llm_cost": 0.0010686,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 141,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cap_aggregate_twohop",
+  "patch_description": "The current quadratic reward is assigned independently for every eligible intermediate node. As n grows, the aggregate reward for routing one OD pair indirectly can therefore become much larger than the reward for its direct link, biasing the QUBO toward path support rather than useful direct connections. Keep the existing transit-pressure preferences, but scale all candidate two-hop rewards for each OD pair together so their total magnitude is at most 65% of that pair\u2019s direct-link reward. This preserves relative preferences between intermediates while limiting indirect terms\u2019 influence on both the best and typical sampled topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:36.684995",
+  "llm_cost": 0.0010335000000000001,
+  "llm_model": "gpt-6-luna"
+}

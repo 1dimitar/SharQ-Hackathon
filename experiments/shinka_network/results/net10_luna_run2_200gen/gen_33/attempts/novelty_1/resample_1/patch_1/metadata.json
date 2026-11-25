@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "edge_pressure_discount",
+  "patch_description": "Discount indirect-path rewards when either constituent edge already has substantial direct demand. This is a focused test of edge-aware routing pressure: paths using heavily demanded links are less attractive as alternatives, while low-pressure links retain more incentive to support transit. Use a conservative coefficient of 0.25 so the adjustment refines, rather than overwhelms, the existing transit-node discount.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:42:01.964710",
+  "llm_cost": 0.0008964000000000001,
+  "llm_model": "gpt-6-luna"
+}

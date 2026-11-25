@@ -1,0 +1,33 @@
+<NAME>
+reserve_novel_move
+</NAME>
+
+<DESCRIPTION>
+The current batch selector is dominated by surrogate-ranked proposals, so it can repeatedly spend LP calls in familiar parts of the topology space. Reserve one batch slot for the shortlisted proposal whose nearest-archive symmetric difference is greatest. This preserves the existing surrogate and diversity selection while ensuring that each batch tests a structurally novel option; if the most novel proposal is already selected, the batch is unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        selected.extend(net for _, net in rest[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        selected.extend(net for _, net in rest[:batch_size - len(selected)])
+
+        # Reserve one slot for the most novel shortlisted proposal. This gives
+        # the LP a chance to discover a new region even when its surrogate rank
+        # is weaker than the leading moves.
+        if shortlist:
+            novel = max(
+                (net for _, net in shortlist),
+                key=lambda net: novelty[net],
+            )
+            if novel not in selected:
+                if len(selected) >= batch_size:
+                    selected[-1] = novel
+                else:
+                    selected.append(novel)
+
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 147,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "endpoint_aware_route_ranking",
+  "patch_description": "Make transit-node pressure matter slightly more when routing demands between heavily loaded endpoints. The bounded exponent changes which candidate transit nodes rank highest without changing the default two-route selection or the conditional third-route rule. This keeps the route set sparse while making selected indirect paths more sensitive to likely endpoint congestion, which should help both annealing and the post-processor\u2019s move ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:05:02.513042",
+  "llm_cost": 0.002718,
+  "llm_model": "gpt-6-luna"
+}

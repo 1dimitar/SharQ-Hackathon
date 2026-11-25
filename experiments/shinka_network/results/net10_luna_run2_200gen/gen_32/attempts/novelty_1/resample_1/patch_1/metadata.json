@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "soften_transit_pressure",
+  "patch_description": "Use maximum incident traffic rather than mean incident traffic to normalize transit-node pressure, and floor the inverse-pressure factor at 0.75. This makes the discount less sensitive to the average node load and limits how strongly busy nodes lose two-hop-path reward. It tests the recommended pressure-normalization change while keeping the existing demand-based path rewards and linear terms unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:41:56.411361",
+  "llm_cost": 0.0011013,
+  "llm_model": "gpt-6-luna"
+}

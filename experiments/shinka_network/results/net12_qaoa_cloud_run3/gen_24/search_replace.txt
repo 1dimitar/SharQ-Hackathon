@@ -1,0 +1,25 @@
+<NAME>
+bilateral_relay_affinity
+</NAME>
+
+<DESCRIPTION>
+Score each candidate relay using both adjacent demand legs, rather than choosing relays solely by node pressure. The minimum-leg-sensitive geometric score suppresses relays with one strong leg but one weak leg, while retaining the existing pressure discount and distributing each OD pair’s bounded reward over all candidate relays. This changes only the relay ranking signal; it adds no quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                relays.append(j)
+                # High-pressure nodes are less attractive as transit points.
+                relay_scores.append(1.0 / (0.35 + float(pressure[j])))
+=======
+                relays.append(j)
+                # Favor relays supported by both adjacent demand legs, while
+                # retaining the existing discount for high-pressure nodes.
+                leg_a = float(t[i, j])
+                leg_b = float(t[j, k])
+                weaker = min(leg_a, leg_b)
+                stronger = max(leg_a, leg_b)
+                affinity = np.sqrt(weaker * (stronger + 1e-6))
+                relay_scores.append(affinity / (0.35 + float(pressure[j])))
+>>>>>>> REPLACE
+</DIFF>

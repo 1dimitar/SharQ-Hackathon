@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tempered_recombination",
+  "patch_description": "This replaces batch-screened neighborhood search with a tempered trajectory search. It spends LP calls on individual proposals, alternating between bottleneck-weighted degree-preserving switches and occasional recombination of strong archived networks. A cyclic temperature schedule accepts some worsening moves to escape local minima, while an elite archive preserves the best solutions and supplies restart points. This gives the search a different exploration pattern and avoids spending many LP calls on a single surrogate-ranked batch.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:18:35.396222",
+  "llm_cost": 0.0033905000000000003,
+  "llm_model": "gpt-6-luna"
+}

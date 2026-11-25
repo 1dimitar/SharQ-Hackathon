@@ -1,0 +1,14 @@
+{
+  "generation": 128,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_exponent",
+  "patch_description": "Reduce the pressure exponent in relay ranking from 1 to 0.75 while leaving the affinity formula and candidate budgets unchanged. This tests whether the current ranking discounts high-pressure relays too strongly: high-affinity candidates can rank better even when their node pressure is elevated. The selected relay weights and the separate full-path alternative remain unchanged, isolating the effect to candidate ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T22:38:50.509543",
+  "llm_cost": 0.0009443000000000001,
+  "llm_model": "gpt-6-luna"
+}

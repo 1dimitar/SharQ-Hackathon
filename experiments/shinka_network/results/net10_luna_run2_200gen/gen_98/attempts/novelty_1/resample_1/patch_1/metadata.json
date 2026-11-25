@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_path_congestion",
+  "patch_description": "This approach builds a sparse portfolio of promising two-hop routes rather than rewarding every possible two-hop path. For each OD pair, it selects a few transit nodes using demand support and node pressure, then rewards those paths. Separately, it adds positive pairwise terms for high-demand links that share a source or destination, discouraging topologies that concentrate traffic on a small set of incident links. The sparse route selection keeps the term count within the limit while retaining incentives for indirect service.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:50:01.658272",
+  "llm_cost": 0.0014679,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,67 @@
+<NAME>
+neighbor_role_diversity
+</NAME>
+
+<DESCRIPTION>
+Keep the baseline direct-demand reward, and add a modest positive interaction for selecting links whose endpoints have similar network roles. Two outgoing neighbors with similar demand profiles offer redundant downstream options; likewise, two incoming neighbors with similar profiles offer redundant origins. Penalizing these pairs encourages the two links at each node to provide more diverse routing options, while the direct-demand reward still favors useful links. Cosine normalization makes the interactions comparable across nodes with different total demand. The construction adds at most \(n(n-1)(n-2)\) quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
+    quadratic = {}
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+=======
+    n = len(demand)
+    scale = float(demand.max()) or 1.0
+    linear = {
+        (i, j): -float(demand[i, j]) / scale
+        for i in range(n) for j in range(n) if i != j
+    }
+
+    # Similar endpoint demand profiles imply redundant routing options.
+    # Normalize rows/columns so the interaction measures profile similarity,
+    # not simply the overall traffic volume at a node.
+    row_norm = np.linalg.norm(demand, axis=1)
+    col_norm = np.linalg.norm(demand, axis=0)
+    rows = np.divide(
+        demand, row_norm[:, None],
+        out=np.zeros_like(demand, dtype=float),
+        where=row_norm[:, None] > 0,
+    )
+    cols = np.divide(
+        demand, col_norm[None, :],
+        out=np.zeros_like(demand, dtype=float),
+        where=col_norm[None, :] > 0,
+    )
+
+    quadratic = {}
+    diversity_weight = 0.15
+
+    for i in range(n):
+        neighbors = [j for j in range(n) if j != i]
+
+        # Outgoing links from i should reach nodes with distinct downstream
+        # demand profiles.
+        for a_pos, j in enumerate(neighbors):
+            for k in neighbors[a_pos + 1:]:
+                similarity = float(np.dot(rows[j], rows[k]))
+                if similarity > 1e-12:
+                    quadratic[((i, j), (i, k))] = diversity_weight * similarity
+
+        # Incoming links to i should come from nodes with distinct demand
+        # origins, avoiding redundant access to the same traffic sources.
+        for a_pos, j in enumerate(neighbors):
+            for k in neighbors[a_pos + 1:]:
+                similarity = float(np.dot(cols[j], cols[k]))
+                if similarity > 1e-12:
+                    quadratic[((j, i), (k, i))] = diversity_weight * similarity
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+
+</DIFF>

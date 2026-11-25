@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_three_hop",
+  "patch_description": "For OD pairs whose best two-hop route has weak leg evidence or is closely matched by another route, test one three-hop path with positive demand on all three legs. Discount it by pressure at both transit nodes, then add small couplings for its two consecutive link pairs. This gives the surrogate a limited signal for viable longer routes without rewarding every three-hop fragment or substantially increasing the coupling count.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:41:37.191325",
+  "llm_cost": 0.0036227000000000004,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "support_balanced_paths",
+  "patch_description": "This design keeps the direct-demand and endpoint signals, but changes how two-hop rewards are assigned. Rather than giving every candidate path a largely independent reward, it estimates each path\u2019s support from the demand on both edges, discounts transit through busy nodes, and allocates a bounded per-OD reward across candidate intermediates. A uniform-share component preserves a nonzero incentive for less-supported paths, while the support-based component favors paths with stronger evidence in the demand matrix.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:43:34.602195",
+  "llm_cost": 0.0029503,
+  "llm_model": "gpt-6-luna"
+}

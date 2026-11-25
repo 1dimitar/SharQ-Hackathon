@@ -1,0 +1,27 @@
+<NAME>
+directional_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Estimate relay pressure from the larger of a node’s incoming and outgoing demand totals, rather than their sum. Transit requires both an incoming and an outgoing link, and each node has only two of each; a node with a strongly one-sided traffic profile can therefore be a bottleneck even when its combined incident total looks moderate. Using the larger directional total in the existing path discount is a targeted way to discourage over-reliance on such relays while leaving direct-link rewards and the number of quadratic terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    incident = np.sum(traffic, axis=0) + np.sum(traffic, axis=1)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    node_pressure = np.maximum(0.75, incident / max_incident)
+=======
+    incoming = np.sum(traffic, axis=0)
+    outgoing = np.sum(traffic, axis=1)
+    # A relay needs capacity in both directions; its more heavily loaded
+    # direction is the more informative bottleneck estimate.
+    incident = np.maximum(incoming, outgoing)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident <= 0.0:
+        max_incident = 1.0
+    node_pressure = np.maximum(0.75, incident / max_incident)
+>>>>>>> REPLACE
+</DIFF>

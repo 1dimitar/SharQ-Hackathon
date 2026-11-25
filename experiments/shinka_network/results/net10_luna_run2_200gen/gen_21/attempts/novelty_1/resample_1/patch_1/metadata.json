@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bounded_transit_surrogate",
+  "patch_description": "Separates demand preprocessing, linear-term construction, and two-hop interaction construction into small helpers. The two-hop reward discounts paths through high-load transit nodes using a bounded factor normalized by the maximum incident load, so transit pressure remains comparable across uneven demand matrices without eliminating useful path synergies.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:40:34.157190",
+  "llm_cost": 0.0011876,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "bottleneck_aware_screening",
+  "patch_description": "Rank screened moves first by their effect on the parent\u2019s positive-price links, then by surrogate-energy change. A two-switch that removes a bottleneck link without adding another is more promising for reducing the LP objective than an energy-favored move that leaves the bottlenecks untouched. Keeping energy as the secondary criterion retains the existing pool-specific guidance, while the unchanged batch size limits the extra LP-call cost. Pass the already-computed LP detail into screening at both call sites.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:35:30.976159",
+  "llm_cost": 0.0011091,
+  "llm_model": "gpt-6-luna"
+}

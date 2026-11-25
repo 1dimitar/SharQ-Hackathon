@@ -1,0 +1,473 @@
+--- a/original.py
++++ b/original.py
+@@ -1,208 +1,295 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
++def _diffusion_distances(traffic):
++    """Estimate continuation distances at several walk lengths."""
++    n = len(traffic)
++
++    affinity = np.exp(2.4 * traffic)
++    np.fill_diagonal(affinity, 0.0)
++
++    # Fractional degree-balanced reference graph. This is not a topology
++    # optimisation: it supplies a deterministic multihop similarity metric.
++    for _ in range(40):
++        affinity /= np.maximum(affinity.sum(axis=1), 1e-15)[:, None]
++        affinity /= np.maximum(affinity.sum(axis=0), 1e-15)[None, :]
++
++    transition = affinity / np.maximum(
++        affinity.sum(axis=1), 1e-15
++    )[:, None]
++
++    horizon = max(3, int(np.ceil(np.log2(max(n, 2)))) + 1)
++    walk = transition.copy()
++    reach = np.zeros_like(traffic)
++    weight = 1.0
++    weight_sum = 0.0
++
++    for _ in range(horizon):
++        reach += weight * walk
++        weight_sum += weight
++        walk = walk @ transition
++        weight *= 0.48
++
++    reach /= weight_sum
++
++    off_diagonal = ~np.eye(n, dtype=bool)
++    reference = max(float(reach[off_diagonal].mean()), 1e-15)
++
++    # A branch is typically several hops from an arbitrary destination.
++    # Larger networks therefore have a larger continuation-cost baseline.
++    baseline = max(1.35, np.log2(float(n)) - 0.65)
++    distance = baseline - 0.80 * np.log(
++        np.maximum(reach / reference, 1e-12)
++    )
++    distance = np.clip(distance, 0.70, baseline + 2.0)
++    np.fill_diagonal(distance, 0.0)
++    return distance, baseline
++
++
++def _balanced_pair_costs(weights, distance, left, right, baseline):
++    """Evaluate every pair of facilities using a balanced soft assignment."""
++    total = float(weights.sum())
++    if total <= 1e-15:
++        return np.zeros(len(left), dtype=float)
++
++    first_cost = distance[left]
++    second_cost = distance[right]
++    difference = first_cost - second_cost
++
++    temperature = 0.14 * baseline
++    balance_strength = 0.22 * baseline
++
++    # For p_d routed through the first branch, the objective is
++    #
++    # sum_d w_d [p_d*c1_d + (1-p_d)*c2_d + temperature*entropy(p_d)]
++    #       + balance_strength * (load1-load2)^2 / total.
++    #
++    # The optimal assignments are logistic functions of one common offset.
++    # Solve that scalar consistency condition for all pairs simultaneously.
++    lower = np.full(len(left), -4.0 * balance_strength)
++    upper = np.full(len(left), 4.0 * balance_strength)
++
++    for _ in range(15):
++        offset = 0.5 * (lower + upper)
++        logits = np.clip(
++            (difference + offset[:, None]) / temperature,
++            -45.0,
++            45.0,
++        )
++        assignment = 1.0 / (1.0 + np.exp(logits))
++        imbalance = (2.0 * assignment - 1.0) @ weights
++        residual = offset - 4.0 * balance_strength * imbalance / total
++
++        above = residual > 0.0
++        upper = np.where(above, offset, upper)
++        lower = np.where(above, lower, offset)
++
++    offset = 0.5 * (lower + upper)
++    logits = np.clip(
++        (difference + offset[:, None]) / temperature,
++        -45.0,
++        45.0,
++    )
++    assignment = 1.0 / (1.0 + np.exp(logits))
++    complement = 1.0 - assignment
++
++    entropy = (
++        assignment * np.log(np.maximum(assignment, 1e-15))
++        + complement * np.log(np.maximum(complement, 1e-15))
++    )
++    routing_cost = (
++        assignment * first_cost
++        + complement * second_cost
++        + temperature * entropy
++    ) @ weights
++
++    imbalance = (2.0 * assignment - 1.0) @ weights
++    routing_cost += balance_strength * imbalance * imbalance / total
++    return routing_cost / baseline
++
++
++def _add_quadratic(quadratic, first, second, weight):
++    if second < first:
++        first, second = second, first
++    key = (first, second)
++    quadratic[key] = quadratic.get(key, 0.0) + float(weight)
++
++
++def _facility_orientation(traffic, distance, baseline, inbound,
++                          linear, quadratic):
++    """Build complementary branch costs for one traffic orientation."""
++    n = len(traffic)
++    totals = traffic.sum(axis=1)
++    mean_total = max(float(totals.mean()), 1e-15)
++
++    for center in range(n):
++        if totals[center] <= 1e-15:
++            continue
++
++        branches = np.array(
++            [j for j in range(n) if j != center], dtype=int
++        )
++        m = len(branches)
++        a, b = np.triu_indices(m, 1)
++
++        costs = _balanced_pair_costs(
++            traffic[center],
++            distance,
++            branches[a],
++            branches[b],
++            baseline,
++        )
++
++        # Both orientations together recover approximately one direct-link
++        # reward, with additional multihop and branch-complementarity effects.
++        pressure = float(np.clip(
++            (totals[center] / mean_total) ** 0.30, 0.70, 1.50
++        ))
++        costs *= 0.5 * pressure
++
++        pair_matrix = np.zeros((m, m), dtype=float)
++        pair_matrix[a, b] = costs
++        pair_matrix[b, a] = costs
++
++        # Exact decomposition on degree-two choices:
++        # cost(j,k) = main(j) + main(k) + interaction(j,k).
++        # The full interaction matrix has zero off-diagonal row sums.
++        row_sums = pair_matrix.sum(axis=1)
++        sum_main = float(costs.sum()) / (m - 1)
++        main = (row_sums - sum_main) / (m - 2)
++        interaction = pair_matrix - main[:, None] - main[None, :]
++        np.fill_diagonal(interaction, 0.0)
++
++        # A common main-effect shift is constant on valid degree-two rows.
++        main -= float(main.mean())
++
++        # Keep a compact, symmetric graph of the strongest pair effects.
++        # This gives O(n^2) retained terms for a fixed neighbour budget.
++        keep = min(4, m - 1)
++        selected = np.zeros((m, m), dtype=bool)
++        for position in range(m):
++            ranking = np.argsort(
++                -np.abs(interaction[position]), kind="stable"
++            )
++            accepted = 0
++            for other in ranking:
++                other = int(other)
++                if other == position:
++                    continue
++                selected[position, other] = True
++                accepted += 1
++                if accepted == keep:
++                    break
++
++        selected |= selected.T
++        np.fill_diagonal(selected, False)
++        retained = np.where(selected, interaction, 0.0)
++
++        # Full interactions have zero background field. Restore that property
++        # approximately after dropping weak interactions.
++        marginal = 2.0 / m
++        main -= marginal * retained.sum(axis=1)
++
++        links = []
++        for position, node in enumerate(branches):
++            node = int(node)
++            link = (node, center) if inbound else (center, node)
++            links.append(link)
++            linear[link] += float(main[position])
++
++        for position in range(m):
++            for other in range(position + 1, m):
++                weight = float(retained[position, other])
++                if abs(weight) > 1e-12:
++                    _add_quadratic(
++                        quadratic, links[position], links[other], weight
++                    )
++
++
+ def surrogate_terms(demand):
+-    """Build direct-link and selectively pressure-discounted two-hop terms."""
+-    matrix = np.asarray(demand, dtype=float)
+-    n = len(matrix)
+-
+-    traffic = np.maximum(matrix, 0.0).copy()
++    """Return cost-only QUBO coefficients and an external degree penalty."""
++    traffic = np.asarray(demand, dtype=float).copy()
++    traffic = np.nan_to_num(
++        traffic, nan=0.0, posinf=0.0, neginf=0.0
++    )
++    traffic = np.maximum(traffic, 0.0)
+     np.fill_diagonal(traffic, 0.0)
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
+-    if scale <= 0.0:
+-        scale = 1.0
+-
+-    normalized = traffic / scale
+-    roots = np.sqrt(normalized)
++    n = len(traffic)
++
+     linear = {
+-        (i, j): -float(0.75 * normalized[i, j] + 0.25 * roots[i, j])
++        (i, j): 0.0
+         for i in range(n)
+         for j in range(n)
+         if i != j
+     }
+-
+-    incident = np.maximum(traffic.sum(axis=0), traffic.sum(axis=1))
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-
+-    # Estimate transit demand on plausible two-hop routes, using incident
+-    # load as an initial congestion estimate. Keep only the two best routes
+-    # per OD pair to avoid spreading load over unsupported intermediates.
+-    initial_pressure = np.maximum(0.65, incident / max_incident)
+-    transit_load = np.zeros(n, dtype=float)
++    quadratic = {}
++
++    maximum = float(traffic.max()) if traffic.size else 0.0
++    if maximum <= 0.0:
++        return linear, quadratic, 1.45
++
++    traffic /= maximum
++
++    # Retain sensitivity to medium-sized demands without allowing tiny
++    # entries to dominate aggregate endpoint traffic.
++    effective = 0.85 * traffic + 0.15 * np.sqrt(traffic)
++    np.fill_diagonal(effective, 0.0)
++
++    distance, baseline = _diffusion_distances(traffic)
++    reverse_distance, reverse_baseline = _diffusion_distances(traffic.T)
++
++    _facility_orientation(
++        effective, distance, baseline, False, linear, quadratic
++    )
++    _facility_orientation(
++        effective.T, reverse_distance, reverse_baseline,
++        True, linear, quadratic
++    )
++
++    # Reciprocal arcs consume two ports while returning to an already
++    # reachable endpoint. Keep them possible when both direct demands
++    # are substantial, but mildly discourage gratuitous two-cycles.
++    reciprocal_strength = 0.13 + 0.025 * np.log2(n / 5.0)
+     for i in range(n):
+-        for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
+-                continue
+-            routes = []
+-            for j in range(n):
+-                if j == i or j == k:
+-                    continue
+-                evidence = float(normalized[i, j] + normalized[j, k])
+-                if evidence <= 0.02:
+-                    continue
+-                rank = (0.25 + evidence) / (float(initial_pressure[j]) ** 0.75)
+-                routes.append((rank, j, evidence))
+-            routes.sort(reverse=True)
+-            selected = routes[:2]
+-            if not selected:
+-                continue
+-            strengths = [
+-                rank * rank * (0.20 + evidence)
+-                for rank, _, evidence in selected
+-            ]
+-            total_strength = sum(strengths)
+-            routed_fraction = 0.35 + 0.65 * (1.0 - float(normalized[i, k]))
+-            for (_, j, _), strength in zip(selected, strengths):
+-                transit_load[j] += (
+-                    float(traffic[i, k]) * routed_fraction * strength / total_strength
+-                )
+-
+-    projected_pressure = incident / max_incident + 0.35 * transit_load / max_incident
+-    node_pressure = np.maximum(0.65, np.minimum(1.8, projected_pressure))
+-
+-    positive = traffic[traffic > 0.0]
+-    cutoff = float(np.quantile(positive, 0.75)) if positive.size else 0.0
+-    high_cutoff = float(np.quantile(positive, 0.90)) if positive.size else 0.0
+-    quadratic = {}
+-
+-    for i in range(n):
+-        for k in range(n):
+-            if i == k or traffic[i, k] <= 0.0:
+-                continue
+-
+-            support = 0.70 * normalized[i, k] + 0.30 * roots[i, k]
+-            candidates = []
+-            for j in range(n):
+-                if j == i or j == k:
+-                    continue
+-                edge_pressure = normalized[i, j] + normalized[j, k]
+-                pressure = float(node_pressure[j])
+-                affinity = 0.25 + edge_pressure
+-                rank = affinity / (pressure ** 0.75)
+-                discount = pressure * (1.0 + 0.5 * edge_pressure)
+-                candidates.append((float(rank), j, float(discount)))
+-
+-            candidates.sort(reverse=True)
+-            keep = min(len(candidates), 4 if traffic[i, k] >= cutoff else 2)
+-            # Add one alternative only when the route ranking is genuinely
+-            # ambiguous and the candidate has evidence on both of its legs.
+-            if keep < len(candidates):
+-                frontier = candidates[keep - 1][0]
+-                next_rank, next_j, _ = candidates[keep]
+-                next_evidence = float(normalized[i, next_j] + normalized[next_j, k])
+-                best_rank = max(candidates[0][0], 1e-12)
+-                if (next_rank / max(frontier, 1e-12) >= 0.92
+-                        and next_rank / best_rank >= 0.65
+-                        and next_evidence >= 0.05):
+-                    keep += 1
+-            selected = set()
+-
+-            for position, (_, j, discount) in enumerate(candidates[:keep]):
+-                selected.add(j)
+-                rank_factor = 1.0 + 0.08 * (keep - position)
+-                weight = -0.46 * float(support) * rank_factor / discount
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = weight
+-
+-            # Retain one alternative selected by the full-path model's
+-            # pressure discount, unless it was already selected by affinity.
+-            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+-            if remaining:
+-                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+-                first, second = (i, j), (j, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = -0.30 * float(support) / discount
+-
+-            # Three-hop Taylor terms are omitted: pairwise fragments can
+-            # reward incomplete paths and misrank valid two-link exchanges.
+-
+-    # Correct excessive mean-field attraction from overlapping route rewards.
+-    # Use soft degree-balanced link marginals rather than assuming that every
+-    # potential partner is equally likely to appear in a sampled topology.
+-    if quadratic:
+-        propensity = np.exp(
+-            2.0 * (0.75 * normalized + 0.25 * roots)
+-        )
+-        np.fill_diagonal(propensity, 0.0)
+-        for _ in range(20):
+-            propensity *= (
+-                2.0 / np.maximum(propensity.sum(axis=1), 1e-12)
+-            )[:, None]
+-            propensity *= (
+-                2.0 / np.maximum(propensity.sum(axis=0), 1e-12)
+-            )[None, :]
+-        # Fractional scaling need not respect individual binary upper bounds.
+-        np.minimum(propensity, 1.0, out=propensity)
+-
+-        exposure = np.zeros((n, n), dtype=float)
+-        for (first, second), weight in quadratic.items():
+-            if weight < 0.0:
+-                exposure[first] -= weight * float(propensity[second])
+-                exposure[second] -= weight * float(propensity[first])
+-
+-        active_exposure = exposure[exposure > 0.0]
+-        if active_exposure.size:
+-            threshold = float(np.quantile(active_exposure, 0.75))
+-            for link in linear:
+-                excess = max(0.0, float(exposure[link]) - threshold)
+-                # Center only a fraction of unusually large background
+-                # rewards; preserve the full benefit of completing a path.
+-                linear[link] += min(0.18, 0.25 * excess)
+-
+-    # Penalize a small number of demand-weighted redundant branch pairs.
+-    # Outbound profiles describe destinations; transposed profiles describe
+-    # origins for the analogous inbound correction.
+-    for inbound in (False, True):
+-        od = normalized.T if inbound else normalized
+-        profiles = np.sqrt(od).copy()
+-        np.fill_diagonal(profiles, 1.0)
+-        for center in range(n):
+-            weights = od[center]
+-            if float(weights.sum()) <= 0.0:
+-                continue
+-            gram = (profiles * weights[None, :]) @ profiles.T
+-            branches = [j for j in range(n) if j != center]
+-            normalizer = max(float(gram[j, j]) for j in branches)
+-            if normalizer <= 1e-12:
+-                continue
+-
+-            redundant = []
+-            for position, j in enumerate(branches):
+-                for k in branches[position + 1:]:
+-                    overlap = float(gram[j, k]) / normalizer
+-                    if overlap > 0.15:
+-                        redundant.append((overlap, j, k))
+-            redundant.sort(reverse=True)
+-
+-            for overlap, j, k in redundant[:3]:
+-                first = (j, center) if inbound else (center, j)
+-                second = (k, center) if inbound else (center, k)
+-                key = (first, second) if first < second else (second, first)
+-                quadratic[key] = quadratic.get(key, 0.0) + 0.24 * overlap
+-
+-    return linear, quadratic, 1.25
++        for j in range(i + 1, n):
++            importance = 0.5 * (traffic[i, j] + traffic[j, i])
++            weight = reciprocal_strength * (1.0 - 0.70 * importance)
++            _add_quadratic(quadratic, (i, j), (j, i), weight)
++
++    # Explicit normalization makes the intended penalty scale unambiguous;
++    # the evaluator's subsequent normalization is then effectively a no-op.
++    largest = max(
++        max((abs(v) for v in linear.values()), default=0.0),
++        max((abs(v) for v in quadratic.values()), default=0.0),
++    )
++    if largest > 1e-15:
++        inverse = 1.0 / largest
++        linear = {link: float(v * inverse) for link, v in linear.items()}
++        quadratic = {
++            pair: float(v * inverse) for pair, v in quadratic.items()
++        }
++
++    # No degree penalties are included in the returned coefficients.
++    return linear, quadratic, 1.45
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

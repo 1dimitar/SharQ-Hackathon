@@ -1,0 +1,14 @@
+{
+  "generation": 101,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_route_surrogate",
+  "patch_description": "Separates demand preparation, direct-link valuation, and route-interaction construction into small helpers. The route stage uses mean-normalized intermediate-node pressure and allocates each OD pair\u2019s indirect reward only across its three most supported transit nodes, rather than spreading it across every possible two-hop path. This keeps the surrogate sparse while retaining demand-informed route incentives and link-diversity penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:18.304845",
+  "llm_cost": 0.0016373,
+  "llm_model": "gpt-6-luna"
+}

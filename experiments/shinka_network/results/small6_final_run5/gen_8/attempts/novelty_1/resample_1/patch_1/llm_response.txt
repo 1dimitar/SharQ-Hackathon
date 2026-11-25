@@ -1,0 +1,48 @@
+<NAME>
+nonbacktracking_regularizer
+</NAME>
+
+<DESCRIPTION>
+Add a soft penalty for reciprocal link pairs. With only two outgoing links per node, a reciprocal pair wastes two potential two-hop walks by returning to their origins. Discouraging this redundancy should improve neighborhood expansion and reduce routing bottlenecks, complementing the existing demand-specific path rewards.
+
+Scale the penalty by average direct-link value and logarithmic network size, and discount it when both directions have strong direct demand. This adds only n(n−1)/2 couplings while giving the post-processor a connectivity-sensitive ranking signal. A modest size-dependent increase in the evaluator’s constraint weight also targets the observed infeasible samples without adding degree penalties.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    """Build direct-link and selectively pressure-discounted two-hop terms."""
+=======
+    """Build demand-aware path rewards with a sparse backtracking penalty."""
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    return linear, quadratic, 1.25
+=======
+    # Reciprocal links consume scarce two-hop expansion: i->j->i carries
+    # no source-destination traffic. Unlike another path reward, this term
+    # discourages a structural source of poor typical-sample connectivity.
+    mean_direct = -float(sum(linear.values())) / max(1, n * (n - 1))
+    depth_scale = max(
+        0.75,
+        float(np.log2(max(n, 2))) / float(np.log2(10.0)),
+    )
+    backtrack_weight = 0.65 * mean_direct * depth_scale
+
+    if backtrack_weight > 0.0:
+        for i in range(n):
+            for j in range(i + 1, n):
+                # Preserve reciprocal links when substantial traffic in
+                # BOTH directions makes them genuinely useful shortcuts.
+                mutual = min(
+                    float(normalized[i, j]),
+                    float(normalized[j, i]),
+                )
+                quadratic[((i, j), (j, i))] = float(
+                    backtrack_weight * (1.0 - 0.45 * mutual)
+                )
+
+    # Keep constraint enforcement modest, but slightly stronger as the
+    # number of variables and incident route interactions grows.
+    penalty_weight = min(1.45, 1.30 + 0.008 * max(0, n - 10))
+    return linear, quadratic, float(penalty_weight)
+>>>>>>> REPLACE
+</DIFF>

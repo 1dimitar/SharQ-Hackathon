@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "normalized_relay_rewards",
+  "patch_description": "Distribute each OD pair\u2019s indirect-path reward across its possible relays rather than giving every relay the same unnormalised reward. Weight the allocation by relay capacity and by whether the two links in the candidate path align with substantial endpoint traffic. This keeps the total reward for an OD pair bounded while still favoring plausible two-hop routes, and reduces the incentive for the QUBO to accumulate many overlapping relay rewards.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:41:39.489056",
+  "llm_cost": 0.0009199,
+  "llm_model": "gpt-6-luna"
+}

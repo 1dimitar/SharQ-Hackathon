@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_dual_archive",
+  "patch_description": "This version combines energy-guided local search with dual/load pressure and structural diversity, without allowing any one signal to dominate move selection. It retains good, distinct LP-scored networks as parents; generates focused 2-switches alongside rotations, kicks, and occasional path relinking; and adapts exploration upward when progress stalls. The initial LP budget and neighborhood sizes scale with \\(n\\), and duplicate or cached networks are skipped so calls are spent on new topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:43:13.816238",
+  "llm_cost": 0.0052277,
+  "llm_model": "gpt-6-luna"
+}

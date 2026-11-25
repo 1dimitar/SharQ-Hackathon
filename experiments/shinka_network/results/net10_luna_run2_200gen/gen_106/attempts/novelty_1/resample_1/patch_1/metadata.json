@@ -1,0 +1,14 @@
+{
+  "generation": 106,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capped_detour_support",
+  "patch_description": "The earlier programs reward every possible two-hop route independently, so the total reward for one OD pair can grow with the number of candidate transit nodes and overwhelm the direct-link signal. This design instead treats detours as a limited backup budget: for each OD pair, it scores candidate intermediates by transit-node pressure and existing demand on the route edges, then distributes a capped total reward across them. Direct demand remains the main signal, while selective detours can still influence which links are chosen. The number of quadratic terms remains within the required bound.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:52:41.190763",
+  "llm_cost": 0.0012974000000000002,
+  "llm_model": "gpt-6-luna"
+}

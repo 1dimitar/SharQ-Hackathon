@@ -1,0 +1,14 @@
+{
+  "generation": 161,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "moderate_direct_reward",
+  "patch_description": "Increase the concave component of the direct-link reward from 0.15 to 0.25 while keeping the linear component dominant. This gives moderate-demand links somewhat more influence when choosing the limited degree slots, without changing the existing path terms or making the reward substantially more concave.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:58:46.822495",
+  "llm_cost": 0.0008550000000000001,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,16 @@
+<NAME>
+balanced_relay_affinity
+</NAME>
+
+<DESCRIPTION>
+Rank candidate relays by requiring both legs to contribute, while giving a useful stronger leg some additional credit: change the affinity to `min(a, b) + 0.25 * max(a, b)`. This increases the stronger-leg contribution from 0.15 to 0.25 without allowing it to dominate a weak leg. The existing pressure discount, relay budget, and reward weights remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = min(a, b) + 0.15 * max(a, b) + 0.01
+=======
+                affinity = min(a, b) + 0.25 * max(a, b)
+>>>>>>> REPLACE
+
+</DIFF>

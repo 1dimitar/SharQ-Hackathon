@@ -1,0 +1,16 @@
+<NAME>
+balanced_relay_ranking
+</NAME>
+
+<DESCRIPTION>
+Increase the strong-leg contribution in the relay-ranking affinity from 0.15 to 0.25 while retaining the weak-leg emphasis, pressure discount, and relay budget. This tests the suggested bottleneck-sensitive ranking: a relay is more attractive when both legs are useful, but an especially strong leg can still distinguish otherwise comparable routes. Only the candidate ranking changes; the existing coupling weights and sparse interaction structure remain intact.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                affinity = min(a, b) + 0.15 * max(a, b) + 0.01
+=======
+                affinity = min(a, b) + 0.25 * max(a, b) + 0.01
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,88 @@
+--- a/original.py
++++ b/original.py
+@@ -1,72 +1,75 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+     """Build the surrogate cost terms of the topology QUBO from the demand matrix.
+ 
+     Args:
+         demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+             (zero diagonal).
+ 
+     Returns:
+         linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+             (x_ij = 1 if the directed link i -> j is built), i != j.
+         quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+         penalty_weight: float. Strength of the degree penalty that the evaluator adds
+             after rescaling these terms so the largest |weight| is 1.
+ 
+     Lower energy must mean a better topology. Baseline: reward each link by the demand
+     it carries directly.
+     """
+     n = len(demand)
+     d = np.asarray(demand, dtype=float)
+     scale = float(d.max()) or 1.0
+     row = d.sum(axis=1)
+     col = d.sum(axis=0)
+ 
+     # Direct service remains the strongest signal; two-hop paths get a
+     # discounted reward, normalized by the traffic pressure at their endpoints.
+     linear = {
+         (i, j): -float(d[i, j]) / scale
+         for i in range(n) for j in range(n) if i != j
+     }
+     quadratic = {}
++    # Lower-demand nodes are preferred as relays. Normalize suitability for
++    # each endpoint pair so the total reward does not grow with relay count.
++    node_pressure = row + col
+     for i in range(n):
+-        for j in range(n):
+-            if i == j:
++        for k in range(n):
++            traffic = float(d[i, k])
++            if i == k or traffic <= 0.0:
+                 continue
+-            for k in range(n):
+-                if k == j or k == i:
+-                    continue
+-                traffic = float(d[i, k])
+-                if traffic <= 0.0:
+-                    continue
+-                pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))
+-                value = -0.20 * (traffic / scale) * (scale / pressure)
++            relays = [j for j in range(n) if j != i and j != k]
++            suitability = [1.0 / (1.0 + float(node_pressure[j]) / scale) for j in relays]
++            suitability_total = sum(suitability)
++            pressure = max(scale, 0.5 * (float(row[i]) + float(col[k])))
++            pair_reward = 0.30 * (traffic / scale) * (scale / pressure)
++            for j, fit in zip(relays, suitability):
++                value = -pair_reward * (fit / suitability_total)
+                 if value:
+                     quadratic[((i, j), (j, k))] = value
+ 
+     penalty_weight = 4.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

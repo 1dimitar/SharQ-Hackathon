@@ -1,0 +1,16 @@
+<NAME>
+stronger_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Increase the pressure exponent used to rank relay candidates from 1 to 1.25. This makes relay selection more cautious about routing through nodes with high incident demand, which may otherwise become transit bottlenecks. The final quadratic reward and relay budget remain unchanged, isolating the effect to which relays are selected.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                candidates.append((affinity / pressure, j, pressure))
+=======
+                candidates.append((affinity / (pressure ** 1.25), j, pressure))
+>>>>>>> REPLACE
+
+</DIFF>

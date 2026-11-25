@@ -1,0 +1,16 @@
+<NAME>
+degree_penalty_tune
+</NAME>
+
+<DESCRIPTION>
+Raise the evaluator’s degree-penalty weight slightly from 1.0 to 1.05. The current samples are already almost always feasible, so this is a deliberately small adjustment: it may discourage near-feasible low-energy samples that need repair, without substantially changing the demand-based reward structure or suppressing topology exploration. Since the evaluator rescales the objective terms before applying this penalty, the change is local and bounded; compare feasibility and both best and median gaps to ensure the stronger penalty does not harm topology quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, 1.0
+=======
+    return linear, quadratic, 1.05
+>>>>>>> REPLACE
+
+</DIFF>

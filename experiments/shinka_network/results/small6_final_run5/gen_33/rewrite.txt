@@ -1,0 +1,169 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link and congestion-adjusted sparse two-hop QUBO terms."""
+    traffic = np.asarray(demand, dtype=float)
+    n = int(traffic.shape[0])
+
+    traffic = np.maximum(
+        np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0), 0.0
+    ).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    z = traffic / scale
+
+    row_sum = traffic.sum(axis=1)
+    col_sum = traffic.sum(axis=0)
+    row_share = traffic / np.maximum(row_sum[:, None], 1e-12)
+    col_share = traffic / np.maximum(col_sum[None, :], 1e-12)
+
+    incident = np.maximum(row_sum, col_sum)
+    incident_max = float(np.max(incident)) if incident.size else 0.0
+    if incident_max > 0.0:
+        base_pressure = incident / incident_max
+    else:
+        base_pressure = np.zeros(n, dtype=float)
+
+    roots = np.sqrt(z)
+    share_affinity = np.sqrt(np.maximum(row_share * col_share, 0.0))
+
+    # Direct links remain the strongest simple signal. The softened power
+    # term preserves useful distinction among medium-sized demands.
+    direct_score = (
+        0.62 * np.power(z, 0.78)
+        + 0.24 * roots
+        + 0.14 * share_affinity
+    )
+    linear = {
+        (i, j): -float(direct_score[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+
+    positive = traffic[traffic > 0.0]
+    cutoff = float(np.quantile(positive, 0.68)) if positive.size else 0.0
+
+    # First pass: score plausible routes using endpoint affinity and the
+    # existing node-traffic pressure, then estimate transit use. Restricting
+    # the estimate to a few promising routes avoids treating every possible
+    # intermediate node as equally likely.
+    route_data = {}
+    estimated_transit = np.zeros(n, dtype=float)
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                first_affinity = (
+                    0.56 * np.sqrt(row_share[i, j]) + 0.44 * roots[i, j]
+                )
+                second_affinity = (
+                    0.56 * np.sqrt(col_share[j, k]) + 0.44 * roots[j, k]
+                )
+                balance = float(np.sqrt(max(first_affinity * second_affinity, 0.0)))
+                edge_evidence = 0.20 * (roots[i, j] + roots[j, k])
+
+                # A floor keeps zero-demand legs from making a transit node
+                # categorically impossible.
+                initial_rank = (
+                    0.18 + balance + edge_evidence
+                ) / ((0.55 + base_pressure[j]) ** 0.62)
+
+                candidates.append((float(initial_rank), j, balance))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            route_data[(i, k)] = candidates
+
+            if candidates:
+                top = candidates[:min(3, len(candidates))]
+                rank_sum = sum(max(item[0], 1e-12) for item in top)
+                demand_mass = float(z[i, k])
+                for rank, j, _ in top:
+                    estimated_transit[j] += demand_mass * max(rank, 1e-12) / rank_sum
+
+    transit_max = float(np.max(estimated_transit)) if estimated_transit.size else 0.0
+    if transit_max > 0.0:
+        transit_pressure = estimated_transit / transit_max
+    else:
+        transit_pressure = np.zeros(n, dtype=float)
+
+    # The second-pass surcharge is intentionally bounded: transit estimates
+    # refine, rather than replace, the node's ordinary incident-traffic load.
+    pressure = 0.55 + 0.55 * base_pressure + 0.24 * transit_pressure
+
+    quadratic = {}
+
+    def add_pair(a, b, value):
+        key = (a, b) if a < b else (b, a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    for (i, k), candidates in route_data.items():
+        if not candidates:
+            continue
+
+        demand_strength = float(z[i, k])
+        support = 0.68 * demand_strength ** 0.74 + 0.32 * np.sqrt(demand_strength)
+        # Direct-link reward already accounts for much of a large OD pair.
+        support *= 1.0 - 0.28 * np.sqrt(demand_strength)
+
+        keep = min(len(candidates), 3 if traffic[i, k] >= cutoff else 2)
+
+        for position, (_, j, balance) in enumerate(candidates[:keep]):
+            rank_factor = 1.10 - 0.09 * position
+            affinity_factor = 0.50 + 0.72 * balance
+
+            route_scale = (
+                support * rank_factor * affinity_factor
+                / (pressure[j] ** 0.55)
+            )
+            first = (i, j)
+            second = (j, k)
+
+            # Reward completing a plausible two-hop route.
+            add_pair(first, second, -0.36 * route_scale)
+
+            # A small positive term limits double-counting the indirect
+            # alternative when the corresponding direct link is selected.
+            redundancy = (
+                0.060
+                * support
+                * (0.45 + 0.55 * np.sqrt(demand_strength))
+                * (0.40 + 0.60 * balance)
+            )
+            add_pair((i, k), first, redundancy)
+            add_pair((i, k), second, redundancy)
+
+    return linear, quadratic, 1.15
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,72 @@
+<NAME>
+adaptive_parent_selection
+</NAME>
+
+<DESCRIPTION>
+The current parent selector samples uniformly from the archive almost half the time, so it can repeatedly spend LP calls exploring the same regions while neglecting promising, under-visited networks. Track parent selection counts and weight selection by a blend of LP rank, low visit count, and structural isolation from other archive members. This retains preference for strong networks while directing more search toward underexplored regions; the existing stall counter provides an additional bonus to parents whose neighborhoods have not recently improved.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    parent_stalls = {}
+=======
+    seen = {}
+    best_net = None
+    best_score = float("inf")
+    parent_stalls = {}
+    parent_visits = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Favor good parents while giving isolated and under-used members a chance."""
+        if not pop:
+            return best_net
+
+        weights = []
+        for rank, net in enumerate(pop):
+            quality = 1.0 / (1.0 + 0.10 * rank)
+            exploration = 1.0 / (1.0 + parent_visits.get(net, 0)) ** 0.7
+            isolation = min(
+                (distance(net, other) for other in pop if other != net),
+                default=0,
+            )
+            isolation_bonus = 1.0 + min(1.5, isolation / 12.0)
+            stall_bonus = 1.0 + min(1.0, parent_stalls.get(net, 0) * 0.1)
+            weights.append(quality * (0.35 + 0.65 * exploration)
+                           * isolation_bonus * stall_bonus)
+
+        pick = float(rng.random()) * sum(weights)
+        for net, weight in zip(pop, weights):
+            pick -= weight
+            if pick <= 0:
+                return net
+        return pop[-1]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        parent = select_parent(pop)
+        if parent is None:
+            break
+
+        try:
+=======
+        parent = select_parent(pop)
+        if parent is None:
+            break
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+
+        try:
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,131 @@
+--- a/original.py
++++ b/original.py
+@@ -1,110 +1,126 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+     """Build direct-link rewards and capacity-aware, sparse two-hop rewards."""
+     traffic = np.asarray(demand, dtype=float)
+     n = len(traffic)
+ 
+     # Ignore negative, non-finite, and diagonal entries.
+     traffic = np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0)
+     traffic = np.maximum(traffic, 0.0).copy()
+     np.fill_diagonal(traffic, 0.0)
+ 
+     scale = float(np.max(traffic)) if traffic.size else 0.0
+     if scale <= 0.0:
+         scale = 1.0
+     normalized = traffic / scale
+ 
+     # Favor direct service, retaining a modest concave contribution so that
+     # medium-demand links are not entirely dominated by the largest demands.
+     linear = {}
+     for i in range(n):
+         for j in range(n):
+             if i == j:
+                 continue
+             value = float(normalized[i, j])
+             linear[(i, j)] = -(0.82 * value + 0.18 * np.sqrt(value))
+ 
+     # A relay is a less attractive candidate when its incident demand is high.
+     incoming = np.sum(normalized, axis=0)
+     outgoing = np.sum(normalized, axis=1)
+     incident = np.maximum(incoming, outgoing)
+     max_incident = float(np.max(incident)) if incident.size else 0.0
+     if max_incident > 0.0:
+         pressure = incident / max_incident
+     else:
+         pressure = np.zeros(n, dtype=float)
+ 
+     quadratic = {}
+-    max_relays = min(2, max(0, n - 2))
++    max_relays = min(4, max(0, n - 2))
++    positive_pairs = [
++        (float(normalized[i, k]), i, k)
++        for i in range(n)
++        for k in range(n)
++        if i != k and normalized[i, k] > 0.0
++    ]
++    positive_pairs.sort(key=lambda item: (-item[0], item[1], item[2]))
++    priority_count = (len(positive_pairs) + 4) // 5
++    priority_pairs = {
++        (i, k) for _, i, k in positive_pairs[:priority_count]
++    }
+     total_path_strength = 0.30
+ 
+     for i in range(n):
+         for k in range(n):
+             if i == k:
+                 continue
+ 
+             value = float(normalized[i, k])
+             if value <= 0.0 or max_relays == 0:
+                 continue
+ 
+             # Cap the total incentive for routing this OD pair indirectly;
+             # distribute it only among the most promising relays.
+             support = 0.68 * value + 0.32 * np.sqrt(value)
+             candidates = []
+             for j in range(n):
+                 if j == i or j == k:
+                     continue
+ 
+                 edge_load = float(normalized[i, j] + normalized[j, k])
+                 # Lower scores indicate a more available relay/path.
+                 congestion = (
+                     0.65 * float(pressure[j])
+                     + 0.30 * edge_load
+                 )
+                 quality = 1.0 / (0.55 + congestion)
+                 candidates.append((quality, j))
+ 
+             candidates.sort(key=lambda item: (-item[0], item[1]))
+-            chosen = candidates[:max_relays]
++            relay_count = (
++                max_relays
++                if (i, k) in priority_pairs
++                else min(2, max_relays)
++            )
++            chosen = candidates[:relay_count]
+             quality_sum = sum(item[0] for item in chosen)
+             if quality_sum <= 0.0:
+                 continue
+ 
+             for quality, j in chosen:
+                 weight = (
+                     -total_path_strength
+                     * support
+                     * quality
+                     / quality_sum
+                 )
+                 first, second = (i, j), (j, k)
+                 key = (first, second) if first < second else (second, first)
+                 quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+ 
+     # Degree penalties are supplied by the evaluator.
+     penalty_weight = 4.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

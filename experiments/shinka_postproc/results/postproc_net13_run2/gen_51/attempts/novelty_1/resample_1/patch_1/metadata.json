@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "archive_matching",
+  "patch_description": "Add a bounded archive-guided matching operator. Every sixth search round, it builds a candidate from two randomized bipartite matchings: each matching gives every source one outgoing link and every destination one incoming link. A backtracking assignment excludes self-loops and duplicate links, so the combined network is valid by construction. Destination choices are biased toward links shared by strong LP-scored archive members. The candidate joins the existing move pool and is screened alongside other proposals, keeping this exploratory operator bounded rather than replacing the established search.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:19:02.282883",
+  "llm_cost": 0.0035071,
+  "llm_model": "gpt-6-luna"
+}

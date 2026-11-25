@@ -1,31 +1,10 @@
-### Hello SharQs
+# QOBLIB network design
 
-## Leaderboard
+Open [main.ipynb](main.ipynb) from the repository root. Choose a network from 11 through 24 and run all cells to generate a solution, verify its routed traffic, and display the weighted directed graph. The notebook also verifies the archived submissions for networks 10 through 24.
 
-[leaderboard/LEADERBOARD.md](leaderboard/LEADERBOARD.md): the best network found so far for each
-QOBLIB 08 instance, by any method, with a QOBLIB `.sol` file per record. It shows the best per
-instance, the best that came out of a quantum sampler, and the best gap per method, under a chart
-of our gap to QOBLIB's best known value per instance (`leaderboard/gap_to_best_known.png`).
-`leaderboard.py` re-checks and re-scores every topology with the routing LP, so a claimed score is
-never trusted.
+By default, the notebook replays the selected run with its archived QAOA candidates. Set `FRESH_QAOA = True` to sample a new pool using the local or cloud backend. A fresh pool or a time-limited search can change the result.
 
-```bash
-uv run python leaderboard.py show                 # rebuild and print the leaderboard
-uv run python leaderboard.py scan                 # import the result files our tools write
-uv run python leaderboard.py submit my.sol --method lp_local_search --label "what produced it"
-```
-
-From any script or notebook:
-
-```python
-import leaderboard
-leaderboard.submit("network12", arcs, method="qaoa_partitioned", label="my idea")  # arcs: [(i, j), ...]
-```
-
-`scan` knows the evolution runs (`shinka_network/results`), post-processing runs and QAOA pools
-(`shinka_postproc`), the LP local search reports and `.sol` files. Add a line to `SOURCES` in
-`leaderboard.py` when a new tool writes topologies elsewhere. `shinka_network/eval_sizes.py`
-evaluates surrogate programs on network12-16 and submits their topologies as they are found.
-`shinka_postproc/pipeline.py` chains a Hamiltonian, partitioned QAOA (any block size / depth / Qoro
-cluster, one cloud job at a time) and an evolved post-processor, largest gap to the best known value
-first, and submits both the raw QAOA and the post-processed networks.
+- [Run configurations](experiments/workflow.py) pair each instance with its candidate pool, QUBO builder, classical search program, and routing budget.
+- [shinka_network](experiments/shinka_network/) contains the evolved QUBO builders and their experiment history.
+- [shinka_postproc](experiments/shinka_postproc/) contains the classical search generations, routing oracle, sampling code, and historical run reports.
+- [data](data/) contains the notebook's demand matrix, candidate pools, leaderboard records, and archived solutions.

@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_microbatches",
+  "patch_description": "Reduce the LP screening batch from 9 networks to 3. The current search commits several LP calls to moves generated from one parent before it can use their scores to choose the next parent. Smaller batches make the archive and parent selection respond sooner to LP results, which is valuable when the Hamiltonian energy is only loosely correlated with true congestion. The overall LP budget is unchanged; the trade-off is slightly more neighborhood-generation overhead, which should remain modest under the time limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:35:58.574997",
+  "llm_cost": 0.0011811,
+  "llm_model": "gpt-6-luna"
+}

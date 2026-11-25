@@ -1,0 +1,128 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Return linear terms, quadratic terms, and degree-penalty weight."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    t = np.maximum(t, 0.0)
+    np.fill_diagonal(t, 0.0)
+
+    dmax = float(t.max()) if t.size else 0.0
+    if dmax <= 0.0:
+        dmax = 1.0
+
+    links = [(i, j) for i in range(n) for j in range(n) if i != j]
+    linear = {e: -float(t[e[0], e[1]]) / dmax for e in links}
+    quadratic = {}
+
+    # A node with high total incident demand is treated as a less attractive
+    # relay. The resulting weights are normalized separately for each OD pair.
+    row = t.sum(axis=1)
+    col = t.sum(axis=0)
+    node_load = row + col
+    mean_load = float(node_load.mean()) if n else 0.0
+    if mean_load > 0.0:
+        relay_quality = 1.0 / (0.35 + node_load / mean_load)
+    else:
+        relay_quality = np.ones(n, dtype=float)
+
+    # Allocate each OD pair's relay credit across possible intermediates.
+    # The quadratic term rewards a complete two-link route; a smaller linear
+    # component gives modest credit to links that are useful as relay segments.
+    relay_credit = 0.32
+    relay_linear_credit = 0.10
+    relay_potential = {e: 0.0 for e in links}
+
+    for i in range(n):
+        for k in range(n):
+            d = float(t[i, k])
+            if i == k or d <= 0.0:
+                continue
+
+            candidates = [m for m in range(n) if m != i and m != k]
+            if not candidates:
+                continue
+            qsum = sum(float(relay_quality[m]) for m in candidates)
+            if qsum <= 0.0:
+                continue
+
+            for m in candidates:
+                share = float(relay_quality[m]) / qsum
+                e1, e2 = (i, m), (m, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+
+                # Shares sum to one for each OD pair, limiting duplicate
+                # rewards when many alternative intermediates are available.
+                quadratic[key] = quadratic.get(key, 0.0) - (
+                    relay_credit * (d / dmax) * share
+                )
+                relay_potential[e1] += (d / dmax) * share * 0.5
+                relay_potential[e2] += (d / dmax) * share * 0.5
+
+    max_relay = max(relay_potential.values(), default=0.0)
+    if max_relay > 0.0:
+        for e in links:
+            linear[e] -= relay_linear_credit * relay_potential[e] / max_relay
+
+    # Penalize choosing two links from the same endpoint when both represent
+    # large fractions of that endpoint's demand. These local couplings also
+    # keep the interaction graph structured around individual nodes.
+    endpoint_penalty = 0.10
+
+    for i in range(n):
+        denom = float(row[i])
+        if denom > 0.0:
+            outgoing = [(i, j) for j in range(n) if j != i]
+            for a in range(len(outgoing)):
+                e1 = outgoing[a]
+                p1 = float(t[e1[0], e1[1]]) / denom
+                for b in range(a + 1, len(outgoing)):
+                    e2 = outgoing[b]
+                    p2 = float(t[e2[0], e2[1]]) / denom
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+                    quadratic[key] = quadratic.get(key, 0.0) + (
+                        endpoint_penalty * p1 * p2
+                    )
+
+    for j in range(n):
+        denom = float(col[j])
+        if denom > 0.0:
+            incoming = [(i, j) for i in range(n) if i != j]
+            for a in range(len(incoming)):
+                e1 = incoming[a]
+                p1 = float(t[e1[0], e1[1]]) / denom
+                for b in range(a + 1, len(incoming)):
+                    e2 = incoming[b]
+                    p2 = float(t[e2[0], e2[1]]) / denom
+                    key = (e1, e2) if e1 < e2 else (e2, e1)
+                    quadratic[key] = quadratic.get(key, 0.0) + (
+                        endpoint_penalty * p1 * p2
+                    )
+
+    # The evaluator rescales the objective terms before applying this degree
+    # penalty, so keep it strong enough to support valid 2-in/2-out topologies.
+    penalty_weight = 1.5
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

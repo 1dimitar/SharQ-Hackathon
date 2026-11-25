@@ -1,0 +1,14 @@
+{
+  "generation": 120,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_load_balance",
+  "patch_description": "Reorganizes construction into demand preparation, direct-link scoring, and sparse route scoring. Instead of spreading each OD pair\u2019s indirect reward across every possible intermediate, it retains only its three strongest supported two-hop routes, with congestion discounting based on component-edge demand and transit-node pressure. This reduces quadratic-term count, avoids rewarding implausible routes, and keeps the indirect reward budget bounded per OD pair. The returned interface and evaluator-supplied degree penalties are unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:54:33.033752",
+  "llm_cost": 0.0013852,
+  "llm_model": "gpt-6-luna"
+}

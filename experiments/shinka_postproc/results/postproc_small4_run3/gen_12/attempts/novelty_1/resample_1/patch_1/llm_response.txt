@@ -1,0 +1,61 @@
+<NAME>
+adaptive_archive_exploration
+</NAME>
+
+<DESCRIPTION>
+Balance archive exploration using each parent’s visit count, while retaining the existing elite-selection branch. This reduces repeated sampling of the same regions without discarding good networks. Also increase the number and strength of multi-switch kicks when a parent stalls, giving stalled searches a larger chance to escape local optima. Both changes adapt to the instance size and use no additional LP calls.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    best_score = float("inf")
+    parent_stalls = {}
+=======
+    best_score = float("inf")
+    parent_stalls = {}
+    parent_visits = {}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def select_parent(pop):
+        """Mix elite exploitation with sampling from diverse archived networks."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            return pop[int(rng.integers(min(6, len(pop))))]
+        return pop[int(rng.integers(len(pop)))]
+=======
+    def select_parent(pop):
+        """Mix elite exploitation with score- and visit-aware archive exploration."""
+        if not pop:
+            return best_net
+        if rng.random() < 0.48:
+            parent = pop[int(rng.integers(min(6, len(pop))))]
+        else:
+            weights = np.asarray([
+                1.0 / (np.sqrt(1.0 + i) * np.sqrt(1.0 + parent_visits.get(net, 0)))
+                for i, net in enumerate(pop)
+            ], dtype=float)
+            weights /= weights.sum()
+            parent = pop[int(rng.choice(len(pop), p=weights))]
+        parent_visits[parent] = parent_visits.get(parent, 0) + 1
+        return parent
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Occasional multi-switch kicks broaden the neighborhood beyond one step.
+        for _ in range(24):
+            cur = set(net)
+            for _ in range(2 + int(rng.integers(4))):
+=======
+        # Increase nonlocal perturbations as this parent repeatedly stalls.
+        stalls = parent_stalls.get(net, 0)
+        kick_count = min(64, 24 + 8 * stalls)
+        max_strength = max(2, min(n // 2, 2 + stalls // 2))
+        for _ in range(kick_count):
+            cur = set(net)
+            strength = min(max_strength, 2 + int(rng.integers(4)) + stalls // 3)
+            for _ in range(strength):
+>>>>>>> REPLACE
+
+</DIFF>

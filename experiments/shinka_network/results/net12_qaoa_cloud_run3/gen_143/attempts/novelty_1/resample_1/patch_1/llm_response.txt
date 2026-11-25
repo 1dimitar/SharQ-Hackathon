@@ -1,0 +1,16 @@
+<NAME>
+stronger_direct_reward
+</NAME>
+
+<DESCRIPTION>
+Increase the direct-link blend from 0.75 value + 0.25 square-root value to 0.85 value + 0.15 square-root value, leaving normalization and all relay logic unchanged. This gives heavy OD pairs more influence on link selection, which may help the larger network12_s1 gap while keeping the edit controlled and easy to evaluate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                linear[(i, j)] = -(0.75 * value + 0.25 * np.sqrt(value))
+=======
+                linear[(i, j)] = -(0.85 * value + 0.15 * np.sqrt(value))
+>>>>>>> REPLACE
+
+</DIFF>

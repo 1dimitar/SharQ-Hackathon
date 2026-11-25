@@ -1,0 +1,14 @@
+{
+  "generation": 79,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "Combines the stronger concave direct-link preference from the inspiration program with its demand-sensitive two-hop rewards and transit-node pressure discount. Concavity gives moderate-demand links more influence than a purely linear demand reward, while the quadratic terms favor plausible indirect service without overwhelming the direct-link signal. Terms are built only for positive-demand OD pairs, keeping the quadratic count at most \\(n(n-1)(n-2)\\), and the evaluator remains responsible for degree penalties.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:47:44.974654",
+  "llm_cost": 0.0012395000000000002,
+  "llm_model": "gpt-6-luna"
+}

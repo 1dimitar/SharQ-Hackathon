@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "recombine_repair",
+  "patch_description": "Rather than spending most LP calls on neighborhoods around individual networks, this approach uses an evolutionary archive: it recombines links from distinct high-quality parents, repairs each offspring, and evaluates a small, diverse, surrogate-ranked batch. Degree-preserving mutations add variation, while elitist replacement and occasional restarts preserve both strong solutions and alternative topologies. This explores combinations of good substructures that ordinary local descent may not reach.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:40:29.719696",
+  "llm_cost": 0.0026517,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,309 @@
+<NAME>
+routing_delta_screen
+</NAME>
+
+<DESCRIPTION>
+Replace the pressure heuristic with batched, demand-aware routing estimates and an online model of LP score changes. Removing highly loaded links is not intrinsically beneficial: their replacements may create longer routes or concentrate traffic elsewhere. Two inexpensive routing patterns measure these effects directly, while regression learns which proxy changes actually predict LP improvements within this run.
+
+Keep protected energy, routing, learned, novelty, and random slots so prediction errors cannot monopolize the budget. Cache features only for scored or selected networks, and add a wall-time guard. This targets the screening weakness suggested by the stronger routing-based prior program without replacing the archive or move generators.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    parent_stalls = {}
+    parent_visits = {}
+=======
+    parent_stalls = {}
+    parent_visits = {}
+    deadline = time.perf_counter() + 142.0
+    feature_cache = {}
+    pending_parent = {}
+    feature_scale = None
+    energy_normalizer = None
+    gram = np.eye(9) * 5.0
+    rhs = np.zeros(9)
+    training_pairs = 0
+    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    traffic /= max(float(traffic.sum()) / max(1, 2 * n), 1.0)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+        score = seen[net]
+=======
+    def evaluate(net):
+        nonlocal best_net, best_score, training_pairs
+        net = canon(net)
+        if net not in seen:
+            seen[net] = tools.lp(net)
+            parent = pending_parent.pop(net, None)
+            if (parent in seen and net in feature_cache
+                    and parent in feature_cache and feature_scale is not None):
+                score, old_score = seen[net], seen[parent]
+                if (np.isfinite(score) and np.isfinite(old_score)
+                        and score > 0 and old_score > 0):
+                    delta = np.clip(
+                        (feature_cache[net] - feature_cache[parent])
+                        / feature_scale, -6.0, 6.0,
+                    )
+                    target = float(np.clip(np.log(score / old_score), -0.3, 0.3))
+                    weight = 1.0 / (1.0 + 3.0 * abs(target))
+                    gram[:] += weight * np.outer(delta, delta)
+                    rhs[:] += weight * delta * target
+                    training_pairs += 1
+        score = seen[net]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        fresh = [
+            m for m in moves
+            if m not in seen and not tools.is_cached(m)
+        ]
+        if not fresh:
+            return []
+
+        base_e = energy(parent)
+        ranked = [(energy(net) - base_e, net) for net in fresh]
+        ranked.sort(key=lambda item: item[0])
+
+        selected = []
+        energy_quota = min(4 if detail else 6, batch_size)
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= energy_quota:
+                break
+
+        # Independent pressure ranking combines LP loads/dual prices and direct
+        # demand on newly introduced links.
+        if detail and len(selected) < batch_size:
+            loads = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("loads", {}).items()
+            }
+            prices = {
+                tuple(map(int, a)): float(v)
+                for a, v in detail.get("prices", {}).items()
+            }
+            max_load = max(loads.values(), default=1.0) or 1.0
+            max_price = max(prices.values(), default=1.0) or 1.0
+            max_demand = float(np.max(demand)) if np.size(demand) else 1.0
+            max_demand = max(max_demand, 1.0)
+            parent_set = set(parent)
+
+            pressure_ranked = []
+            for net in fresh:
+                net_set = set(net)
+                removed = parent_set - net_set
+                added = net_set - parent_set
+                proxy = sum(
+                    0.65 * loads.get(a, 0.0) / max_load
+                    + 0.35 * prices.get(a, 0.0) / max_price
+                    for a in removed
+                )
+                proxy -= sum(
+                    0.45 * float(demand[a[0], a[1]]) / max_demand
+                    for a in added
+                )
+                pressure_ranked.append((proxy, net))
+            pressure_ranked.sort(key=lambda item: item[0], reverse=True)
+
+            pressure_quota = min(3, batch_size - len(selected))
+            added_pressure = 0
+            for _, net in pressure_ranked:
+                if all(distance(net, old) >= 2 for old in selected):
+                    selected.append(net)
+                    added_pressure += 1
+                if added_pressure >= pressure_quota:
+                    break
+
+        # Mostly exploit the surrogate ranking, but reserve one slot for a
+        # randomly chosen fresh move to preserve exploration.
+        for _, net in ranked:
+            if len(selected) >= batch_size - 1:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) < batch_size:
+            selected.append(tail[int(rng.integers(len(tail)))])
+        return selected[:batch_size]
+=======
+    def routing_features(nets, energies):
+        """Batched shortest-path routing; no optimization solver is used."""
+        count = len(nets)
+        successors = np.asarray(nets, dtype=int)[:, :, 1].reshape(count, n, 2)
+        bb = np.arange(count)[:, None]
+        nodes = np.arange(n)[None, :]
+        s0, s1 = successors[:, :, 0], successors[:, :, 1]
+
+        def route(lengths):
+            dist = np.full((count, n, n), np.inf)
+            dist[:, np.arange(n), np.arange(n)] = 0.0
+            dist[bb, nodes, s0] = lengths[:, :, 0]
+            dist[bb, nodes, s1] = lengths[:, :, 1]
+            for k in range(n):
+                np.minimum(
+                    dist, dist[:, :, k, None] + dist[:, None, k, :],
+                    out=dist,
+                )
+            connected = np.isfinite(dist).all(axis=(1, 2))
+            d0 = dist[bb, s0, :] + lengths[:, :, 0, None]
+            d1 = dist[bb, s1, :] + lengths[:, :, 1, None]
+            good0 = np.isfinite(d0) & (d0 <= d1 + 1.e-9)
+            good1 = np.isfinite(d1) & (d1 <= d0 + 1.e-9)
+            denominator = np.maximum(good0.astype(float) + good1, 1.0)
+            f0, f1 = good0 / denominator, good1 / denominator
+            diagonal = np.arange(n)
+            f0[:, diagonal, diagonal] = 0.0
+            f1[:, diagonal, diagonal] = 0.0
+            order = np.argsort(dist, axis=1)
+            flow = np.broadcast_to(traffic, (count, n, n)).copy()
+            destinations = np.arange(n)[None, :]
+            for rank in range(n - 1, 0, -1):
+                source = order[:, rank, :]
+                amount = flow[bb, source, destinations].copy()
+                flow[bb, s0[bb, source], destinations] += (
+                    amount * f0[bb, source, destinations]
+                )
+                flow[bb, s1[bb, source], destinations] += (
+                    amount * f1[bb, source, destinations]
+                )
+            loads = np.stack(
+                ((flow * f0).sum(axis=2), (flow * f1).sum(axis=2)),
+                axis=2,
+            ).reshape(count, 2 * n)
+            return loads, connected
+
+        first, connected = route(np.ones((count, n, 2)))
+        relative = first / np.maximum(first.mean(axis=1, keepdims=True), 1.e-9)
+        second, _ = route(
+            (1.0 + 1.5 * np.minimum(relative, 6.0) ** 2).reshape(count, n, 2)
+        )
+        blended = first.copy()
+        objective = first.max(axis=1) + 0.1 * first.mean(axis=1)
+        for fraction in (0.2, 0.4, 0.6, 0.8, 1.0):
+            trial = (1.0 - fraction) * first + fraction * second
+            value = trial.max(axis=1) + 0.1 * trial.mean(axis=1)
+            better = value < objective
+            blended[better] = trial[better]
+            objective[better] = value[better]
+
+        def summaries(loads):
+            top_count = max(2, n // 2)
+            top = np.partition(loads, 2 * n - top_count, axis=1)[:, -top_count:]
+            return np.column_stack((
+                loads.mean(axis=1), loads.max(axis=1),
+                top.mean(axis=1), np.sqrt((loads * loads).mean(axis=1)),
+            ))
+
+        features = np.column_stack((
+            np.log(np.maximum(
+                np.column_stack((summaries(first), summaries(blended))), 1.e-9
+            )),
+            np.asarray(energies) / energy_normalizer,
+        ))
+        proxy = 0.85 * blended.max(axis=1) + 0.15 * blended.mean(axis=1)
+        return features, proxy, connected
+
+    def screen_batch(moves, parent, detail=None, batch_size=9):
+        nonlocal feature_scale, energy_normalizer
+        fresh = sorted(
+            m for m in moves if m not in seen and not tools.is_cached(m)
+        )
+        if not fresh:
+            return []
+        energies = np.asarray([energy(net) for net in fresh])
+        if energy_normalizer is None:
+            energy_normalizer = max(float(np.std(energies)), 1.e-9)
+
+        features, proxy, connected = routing_features(fresh, energies)
+        good = np.flatnonzero(connected)
+        if not len(good):
+            return []
+        fresh = [fresh[int(i)] for i in good]
+        energies, features, proxy = energies[good], features[good], proxy[good]
+        if feature_scale is None:
+            feature_scale = np.maximum(np.std(features, axis=0), 0.04)
+        if parent not in feature_cache:
+            pf, _, _ = routing_features([parent], [energy(parent)])
+            feature_cache[parent] = pf[0]
+
+        def ranks(values):
+            order = np.argsort(values, kind="stable")
+            result = np.empty(len(order))
+            result[order] = np.arange(len(order))
+            return result / max(1, len(order) - 1)
+
+        if training_pairs >= 4 * n:
+            coefficients = np.linalg.solve(gram, rhs)
+            changes = np.clip(
+                (features - feature_cache[parent]) / feature_scale, -6.0, 6.0
+            )
+            prediction = changes @ coefficients
+            combined = 0.8 * ranks(prediction) + 0.2 * ranks(proxy)
+        else:
+            combined = 0.8 * ranks(proxy) + 0.2 * ranks(energies)
+
+        selected = []
+        selected_set = set()
+
+        def take(order, quota):
+            added = 0
+            for i in order:
+                i = int(i)
+                if added >= quota or len(selected) >= batch_size:
+                    break
+                if i not in selected_set:
+                    selected.append(i)
+                    selected_set.add(i)
+                    added += 1
+
+        # Protected independent signals, followed by learned exploitation.
+        take(np.argsort(energies, kind="stable"), 2)
+        take(np.argsort(proxy, kind="stable"), 2)
+        learned_order = np.argsort(combined, kind="stable")
+        take(learned_order, max(1, batch_size - 6))
+
+        # Novelty is measured against multiple good regions, not just the parent.
+        references = [set(net) for net in archive()[:2 * n]]
+        shortlist = [
+            int(i) for i in learned_order[:max(4 * batch_size, len(fresh) // 3)]
+            if int(i) not in selected_set
+        ]
+        if shortlist:
+            novel = max(
+                shortlist,
+                key=lambda i: (
+                    min(len(set(fresh[i]) ^ old) for old in references),
+                    -combined[i],
+                ),
+            )
+            take([novel], 1)
+
+        tail = [i for i in range(len(fresh)) if i not in selected_set]
+        if tail:
+            take([tail[int(rng.integers(len(tail)))]], 1)
+        take(learned_order, batch_size - len(selected))
+
+        for i in selected:
+            feature_cache[fresh[i]] = features[i].copy()
+            pending_parent[fresh[i]] = parent
+        return [fresh[i] for i in selected]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    while tools.lp_calls_left > 0:
+        rounds += 1
+=======
+    while tools.lp_calls_left > 0 and time.perf_counter() < deadline:
+        rounds += 1
+>>>>>>> REPLACE
+</DIFF>

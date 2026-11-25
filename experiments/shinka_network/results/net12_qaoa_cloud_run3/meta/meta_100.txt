@@ -1,0 +1,643 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link rewards using a blend of linear and square-root demand. Adds two-hop rewards for demanded routes, discounted by relay-node pressure and edge demand; returns a fixed penalty weight of 1.0 for evaluator-supplied degree penalties.
+- **Performance**: Combined score was 0.83, with a 14.61% mean best-solution gap, 27.10% mean median gap, 17% mean feasibility rate, and 880 quadratic terms.
+- **Feedback**: On both network12 instances, best solutions were about 14–15% above the reference, while median gaps were about 27%; only 9–26% of QAOA solutions were feasible before repair. The largest gap was on `network12_s1` (+14.8%), indicating that the surrogate rewards produced varied topologies but did not reliably yield high-quality feasible solutions.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build negative direct-link rewards using a linear-plus-square-root mixture, and negative two-hop rewards using concave demand support discounted by relay pressure and edge traffic. It sets the evaluator’s degree-penalty weight to 4.0.
+- **Performance**: Combined score was 0.77, with a 17.37% mean best gap, 47.33% mean median gap, 10% mean feasible rate, and 880 quadratic terms.
+- **Feedback**: The best gaps were +22.3% on network12_s0 and +12.5% on network12_s1; only 16% and 3% of sampled solutions, respectively, were valid before repair. The especially poor median gaps and low feasibility suggest the surrogate’s rewards and fixed penalty do not reliably guide QAOA toward strong valid networks.
+**Program Identifier:** Generation 1 - Patch Name stronger_degree_enforcement - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for normalized, nonnegative off-diagonal demand, blending linear and square-root terms. Adds quadratic rewards for two-hop routes, discounted by relay-node pressure and edge demand, with a fixed degree-violation penalty of 10.
+- **Performance**: Combined score was 0.78; mean best and median gaps were 18.79% and 39.72%, mean feasible rate was 0.22, and each instance used 880 quadratic terms.
+- **Feedback**: The best solutions were 16.3% and 21.3% above reference, with the largest gap on network12_s1; only 15–30% of sampled solutions were valid before repair. The differing topology diversity (76 versus 45) and substantial median gaps indicate that the surrogate generated varied candidates but often missed strong solutions or feasibility.
+**Program Identifier:** Generation 3 - Patch Name stronger_degree_penalty - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build negative linear rewards for direct links, combining linear and square-root terms. It adds negative quadratic rewards for selected two-hop paths, choosing relays by leg affinity discounted by estimated node pressure, and sets the evaluator-supplied degree penalty weight to 1.5.
+- **Performance**: Combined score was 0.85, with mean best and median gaps of 11.36% and 25.86%, a 0.08 feasible rate, and 264 quadratic terms on average.
+- **Feedback**: On the two network12 instances, best gaps were +10.0% and +12.8%, with the latter the largest; only 6–10% of solutions were valid before repair. The 264-term models produced many distinct topologies, but low feasibility and weaker median results indicate that the surrogate’s rewards and relay selection did not reliably guide QAOA to high-quality feasible designs.
+**Program Identifier:** Generation 5 - Patch Name sparse_relay_support - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns concave demand-based rewards to direct links, and rewards two-hop paths with weights discounted by relay-node pressure and edge demand. It uses a fixed degree-penalty weight of 5.0.
+- **Performance**: Combined score was 0.78, with a 16.90% mean best gap, 40.47% mean median gap, 19% feasibility rate, and 880 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 14.3% and 19.5%; only 7–31% of QAOA solutions were valid before repair. The larger gap and lower feasibility on `network12_s1` suggest the surrogate’s topology rewards and penalty do not consistently guide sampling toward high-quality feasible designs.
+**Program Identifier:** Generation 8 - Patch Name strengthen_degree_feasibility - Correct Program: True
+
+**Program Name: Pressure-Discounted QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for direct demand links using a weighted linear and square-root demand score, plus negative quadratic rewards for two-hop routes. Two-hop rewards are weaker and discounted by relay pressure and edge demand; the evaluator handles degree penalties, set here to 6.0.
+- **Performance**: Combined score was 0.83, with a 9.52% mean best-solution gap, 33.09% mean median gap, 17% feasibility rate, and 880 quadratic terms.
+- **Feedback**: Across both network12 cases, best solutions were about 9.4–9.6% above the reference, while median gaps were 29.8–36.3%. Only 13–20% of solutions were valid before repair, suggesting the surrogate finds varied topologies but often relies on repair to enforce feasibility.
+**Program Identifier:** Generation 2 - Patch Name balanced_paths - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns negative linear rewards to direct links using a blend of linear and square-root demand. It adds negative quadratic rewards for two-hop paths, discounted by relay-node pressure and edge load, with a degree-constraint penalty weight of 5.
+- **Performance**: Combined score was 0.79; mean best and median gaps were 16.85% and 38.27%, feasibility before repair averaged 18%, and the model used 880 quadratic terms.
+- **Feedback**: On both network12 cases, best solutions were about 17% worse than the reference, while median gaps ranged from 30.1% to 46.4%. Only 8–27% of samples were valid before repair, indicating that the degree penalty did not reliably enforce feasibility despite generating many distinct topologies.
+**Program Identifier:** Generation 4 - Patch Name stronger_degree_feasibility - Correct Program: True
+
+**Program Name: Demand-Aware Relay and Congestion Surrogate**
+- **Implementation**: Normalizes nonnegative, non-self traffic and rewards direct links with linear and concave demand terms. It distributes each OD pair’s relay reward across candidate paths, estimates transit loads, and adds soft congestion penalties for pairs of links sharing a source or destination; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.84, with mean best and median gaps of 12.55% and 26.89%, a 0.13 feasible rate, and 2,200 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were +10.9% and +14.2%; only 25% and 1% of solutions were valid before repair, despite 78–86 distinct topologies. The larger median gaps and low feasibility suggest the surrogate’s relay/load balancing terms did not reliably guide QAOA toward strong feasible designs.
+**Program Identifier:** Generation 6 - Patch Name balanced-route - Correct Program: True
+
+**Program Name: Congestion-Aware Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns concave demand-weighted rewards to direct links, and adds two-hop rewards discounted for busy relays and overlapping traffic. It also penalizes imbalanced reciprocal links and returns a degree-constraint penalty weight of 2.5.
+- **Performance**: Combined score was 0.82; mean best and median gaps were 15.03% and 29.21%, feasibility before repair averaged 10%, and the model produced 935 quadratic terms.
+- **Feedback**: Across both network12 cases, best solutions were 14.2–15.8% above the reference, while median gaps were 25.8–32.6%; the largest gap was on `network12_s0`. The low pre-repair feasibility rate suggests constraint satisfaction remains a key weakness despite generating many distinct topologies.
+**Program Identifier:** Generation 7 - Patch Name balanced_path_qubo - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for every off-diagonal direct link, blending traffic magnitude with its square root. Adds pressure-discounted quadratic rewards for traffic-supported two-hop paths and uses a degree-violation penalty of 6.0.
+- **Performance**: Combined score was 0.79, with an 18.47% mean best-solution gap, 35.43% mean median gap, 3% mean feasibility rate, and 880 quadratic terms.
+- **Feedback**: On both network12 instances, best solutions were about 18% above reference cost, while median gaps ranged from 33% to 38%. Only 2–4% of QAOA samples were valid before repair, suggesting the surrogate’s degree penalty did not sufficiently enforce feasibility.
+**Program Identifier:** Generation 11 - Patch Name stronger_degree_penalty - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns negative linear rewards to direct links using a linear-plus-square-root demand score, and adds demand-supported two-hop rewards discounted by relay pressure and edge load. A network-size-scaled penalty weight is returned for evaluator-supplied degree constraints.
+- **Performance**: Combined score was 0.79, with mean best gap 18.48%, mean median gap 38.10%, feasible rate 0.16, and 880 quadratic terms.
+- **Feedback**: On the two network12 instances, best gaps were +22.9% and +14.1%; only 16% of sampled solutions were valid before repair. The larger gap on `network12_s0` and high median gaps indicate that the surrogate’s rewards did not consistently guide QAOA toward strong feasible topologies.
+**Program Identifier:** Generation 10 - Patch Name adaptive_degree_penalty - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for direct links and quadratic rewards for demand-supported two-hop paths, discounting paths through high-pressure nodes. It derives a capped degree-penalty weight from normalized coefficient influence.
+- **Performance**: Combined score was 0.74, with mean best and median gaps of 22.65% and 48.96%, a 0.17 feasible rate, and 880 quadratic terms.
+- **Feedback**: Across both network12 cases, best gaps were 21.2–24.1%, while only 14–20% of solutions were valid before repair. The largest gap occurred on network12_s0; the evaluator produced many distinct topologies but feasibility and solution quality remained limited.
+**Program Identifier:** Generation 12 - Patch Name adaptive_degree_penalty - Correct Program: True
+
+**Program Name: Pressure-Aware Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build direct-link rewards combining linear and square-root terms. Adds sparse, pressure-discounted two-hop rewards, retaining two or four relays per OD pair depending on demand; degree penalties are delegated to the evaluator.
+- **Performance**: Combined score was 0.84, with 9.92% mean best gap, 30.61% mean median gap, 15% mean feasibility rate, and 220 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were +14.9% and +4.9%, while median gaps were +37.4% and +23.8%; only 9–20% of solutions were valid before repair. The larger gap on `network12_s0` and low pre-repair feasibility indicate that the surrogate’s path rewards and sparsification do not consistently yield strong feasible topologies.
+**Program Identifier:** Generation 13 - Patch Name adaptive_sparse_relays - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link rewards using a linear-plus-square-root demand score. It adds pressure-discounted rewards for each OD pair’s best `max(1, n // 5)` relay nodes, while leaving degree penalties to the evaluator.
+- **Performance**: Combined score was 0.82, with a 13.00% mean best gap, 33.71% mean median gap, 5% mean feasibility rate, and 176 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 11.8% and 14.2%; median gaps were substantially larger, and only 4–6% of solutions were valid before repair. The largest gap occurred on `network12_s1`, suggesting that the surrogate’s good best results did not translate into consistently strong or feasible samples.
+**Program Identifier:** Generation 15 - Patch Name sparse_relay_support - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns direct-link rewards using a linear-plus-square-root mix, and adds concave two-hop rewards discounted by relay-node pressure and edge demand. Degree penalties are delegated to the evaluator, with penalty weight 1.0.
+- **Performance**: Combined score was 0.78, with a 16.43% mean best-solution gap, 45.88% mean median gap, 17% mean feasibility rate, and 880 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 14.1% and 18.8%; only 16–17% of solutions were valid before repair. The approach generated many distinct topologies, but the larger median gaps indicate that its surrogate rewards did not consistently guide QAOA toward high-quality solutions.
+**Program Identifier:** Generation 16 - Patch Name recalibrate_pressure_discount - Correct Program: True
+
+**Program Name: Sparse Capacity-Aware Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link rewards using a linear-plus-square-root blend, and distributes capped two-hop rewards across up to two relays selected by incident-demand pressure and edge load. It returns evaluator-supplied degree penalties with weight 4.0.
+- **Performance**: Combined score was 0.82; mean best and median gaps were 11.59% and 35.22%, mean feasibility before repair was 13%, and the model produced 176 quadratic terms.
+- **Feedback**: Across two network12 cases, best gaps were +13.1% and +10.1%, while median gaps were +43.8% and +26.7%. Feasibility varied sharply (23% versus 3%), suggesting the surrogate found diverse topologies but often produced invalid QAOA solutions before repair.
+**Program Identifier:** Generation 9 - Patch Name balanced_twohop - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Relay QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear weights to direct links using a weighted linear and square-root demand score, and adds negative quadratic terms for up to two or more high-affinity relay candidates per OD pair. Relay attractiveness is adjusted for node pressure; the evaluator supplies degree penalties, set here to 1.5.
+- **Performance**: Combined score was 0.83, with mean best and median gaps of 11.64% and 30.99%, a 1% mean feasible rate, and 264 quadratic terms.
+- **Feedback**: On the two network12 cases, best-solution gaps were 13.8% and 9.4%, while median gaps were 27.7% and 34.3%; the largest gap was on `network12_s0`. Only 0–3% of QAOA solutions were valid before repair, suggesting feasibility is a major weakness despite generating many distinct topologies.
+**Program Identifier:** Generation 14 - Patch Name balanced_path_qubo - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and assigns direct-link linear terms using a weighted mix of demand and its square root. For each positive-demand link, it adds two-hop quadratic terms for high-ranked intermediate nodes, with selection counts based on a demand quantile and weights discounted by node and edge pressure.
+- **Performance**: Combined score was 0.84, with an 11.81% mean best gap, 27.69% mean median gap, 14% mean feasibility rate, and 308 quadratic terms.
+- **Feedback**: Across the two network12 instances, best gaps were 12.7% and 11.0%; only 7% and 21% of QAOA solutions were valid before repair. The 308-term model produced many distinct topologies, but its low pre-repair feasibility and median gaps show that the surrogate’s two-hop weighting did not closely match the reference solutions.
+**Program Identifier:** Generation 18 - Patch Name balanced_relay_crossover - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for nonnegative direct traffic, blending demand with its square root. Adds discounted two-hop rewards for each demanded OD pair, retaining only a small set of strongest relays ranked by node pressure and edge load; uses a degree-penalty weight of 5.0.
+- **Performance**: Combined score was 0.83, with a 12.20% mean best gap, 28.73% mean median gap, 15% mean pre-repair feasibility, and 176 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 13.1% and 11.3%, while only 12–18% of QAOA samples were valid before repair. The sparse relay selection kept the interaction count limited, but solution quality and feasibility remained weak relative to the reference.
+**Program Identifier:** Generation 19 - Patch Name sparse_relay_budget - Correct Program: True
+
+**Program Name: Sparse Bottleneck-Aware QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demands, assigns negative linear rewards to every directed link, and adds sparse quadratic relay rewards for the top two or three bottleneck-aware routes per positive-demand pair. Relay ranking and reward strength are discounted by node traffic pressure; the evaluator supplies degree penalties separately.
+- **Performance**: Combined score was 0.83, with a 13.55% mean best-solution gap, 27.65% mean median gap, 28% mean feasible rate, and 188 quadratic terms.
+- **Feedback**: Across both network12 cases, best gaps were 12.9–14.2%, while median gaps were 26.9–28.4%; the largest gap occurred on `network12_s1`. Feasibility before repair varied substantially (44% versus 11%), suggesting the surrogate produces diverse candidates but does not consistently guide QAOA toward valid solutions.
+**Program Identifier:** Generation 20 - Patch Name bottleneck_relay_sparse - Correct Program: True
+
+**Program Name: Surrogate Network-Design QUBO Terms**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link rewards, and adds pairwise relay rewards for up to two high-scoring routes per origin-destination pair. It also adds route-diversity synergy from similar traffic profiles; degree penalties are left to the evaluator.
+- **Performance**: Combined score was 0.76, with mean best and median gaps of 21.49% and 42.47%, a 24% feasible rate, and 1,496 quadratic terms.
+- **Feedback**: On both network12 cases, best solutions were about 21–22% worse than reference, while median gaps exceeded 41%; pre-repair validity ranged from 7% to 41%. The relatively large QUBO and low feasibility suggest the surrogate’s rewards did not sufficiently guide QAOA toward strong valid topologies.
+**Program Identifier:** Generation 17 - Patch Name route_diversity - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for nonnegative, normalized off-diagonal demand, combining linear and square-root terms. Adds pressure-discounted quadratic rewards for two-hop paths, while leaving degree penalties to the evaluator.
+- **Performance**: Achieved a combined score of 0.81, with a 13.68% mean best-solution gap, 34.17% mean median gap, 20% mean feasibility rate, and 880 quadratic terms.
+- **Feedback**: Across both network12 cases, best-solution gaps were 10.4–16.9%, with network12_s0 performing worst; only 19–20% of solutions were valid before repair. The surrogate generated 89–92 distinct topologies, suggesting variety, but the relatively low feasibility rate and sizable median gaps limit solution quality.
+**Program Identifier:** Generation 21 - Patch Name moderate_twohop_reward - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for direct links using a weighted linear and square-root demand signal, then adds weaker two-hop rewards discounted by relay pressure and edge demand. It sets the evaluator’s degree-penalty weight to 6.0.
+- **Performance**: Combined score was 0.85, with a 10.20% mean best-solution gap, 27.66% mean median gap, and 8% mean feasibility rate across 880 quadratic terms.
+- **Feedback**: Both network12 cases beat the reference objective by roughly 10% (largest gap: +10.5%), but only 7–9% of QAOA solutions were feasible before repair. The relatively large median gaps and many distinct topologies suggest results vary substantially across sampled solutions.
+**Program Identifier:** Generation 22 - Patch Name calibrated_relay_pressure - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link linear rewards using a weighted linear/square-root demand score, and builds sparse two-hop rewards for high-affinity relays adjusted by node pressure. It limits relay candidates per origin-destination pair and uses a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.85, with mean best and median gaps of 10.94% and 26.69%, a 0.14 mean feasible rate, and 264 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 9.5% and 12.4%, while median gaps were about 27%; only 3% and 25% of solutions were valid before repair. The sparse 264-term model produced many distinct topologies, but feasibility and median solution quality remained weak.
+**Program Identifier:** Generation 23 - Patch Name sparse_balanced_relays - Correct Program: True
+
+**Program Name: Demand-Weighted Relay and Congestion Surrogate**
+- **Implementation**: Builds normalized linear rewards for direct links and distributes bounded quadratic rewards across relay paths according to adjacent-leg demand and relay pressure. It estimates transit loads, adds soft penalties for pairs of busy links sharing a source or destination, normalizes coefficients, and leaves degree penalties to the evaluator.
+- **Performance**: Combined score was 0.77, with a 21.55% mean best gap, 41.64% mean median gap, 2% mean feasibility rate, and 966 quadratic terms.
+- **Feedback**: On the two network12 cases, the best gaps were +24.2% and +18.9%; the largest gap occurred on `network12_s0`. Before repair, only 0–4% of solutions were valid, despite 66–96 distinct topologies, suggesting the surrogate’s many quadratic terms did not reliably guide QAOA to feasible, high-quality designs.
+**Program Identifier:** Generation 24 - Patch Name bilateral_relay_affinity - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards from normalized direct demand using a linear/square-root blend, then adds sparse two-hop rewards discounted by relay pressure and edge demand. It limits candidate relays per route, uses a fixed path strength and degree-penalty weight, and leaves degree enforcement and sample repair to the evaluator.
+- **Performance**: Combined score was 0.82, with an 11.86% mean best-solution gap, 34.59% mean median gap, 1% mean pre-repair feasibility, and 352 quadratic terms.
+- **Feedback**: On both network12 instances, the best solutions were about 11.8–11.9% worse than the reference; median gaps ranged from 29.9% to 39.3%. Low feasibility before repair and many distinct topologies suggest the QAOA search struggled to find valid, consistently high-quality solutions.
+**Program Identifier:** Generation 25 - Patch Name balanced_sparse_relays - Correct Program: True
+
+**Program Name: Capacity-Aware Sparse Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, rewards direct links with a linear-plus-square-root term, and assigns capped two-hop rewards to the most promising relays based on incident-load pressure and path demand. It limits relay choices for most OD pairs, canonicalizes and combines quadratic terms, and returns a fixed degree-penalty weight of 4.0.
+- **Performance**: Combined score was 0.81, with mean best gap 12.96%, median gap 35.56%, feasible rate 0.14, and 212 quadratic terms.
+- **Feedback**: Best solutions were about 13% above the reference on both instances, while median gaps were larger (29.2% and 41.9%). Only 12–15% of QAOA solutions were feasible before repair, suggesting feasibility and typical solution quality remain key weaknesses despite 84 distinct topologies per instance.
+**Program Identifier:** Generation 26 - Patch Name targeted_relay_options - Correct Program: True
+
+**Program Name: Demand-Weighted Relay and Congestion Surrogate**
+- **Implementation**: Builds normalized linear rewards for direct links and distributes a bounded quadratic relay reward across two-hop paths, favoring lower-pressure relay nodes. It estimates link loads, adds soft penalties for pairs of busy links sharing a source or destination, normalizes coefficients, and leaves degree penalties to the evaluator.
+- **Performance**: Combined score was 0.80, with a 15.01% mean best-solution gap, 35.56% mean median gap, and 13% mean feasibility rate across 2,200 quadratic terms.
+- **Feedback**: Best solutions were 13.8% and 16.2% worse than reference; the latter was the largest gap. Before repair, feasibility varied sharply between instances (24% versus 2%), despite 70–79 distinct topologies, indicating that solution quality and constraint satisfaction remain challenges.
+**Program Identifier:** Generation 27 - Patch Name pressure_discount_sweep - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Relay QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and adds sparse negative quadratic terms for selected two-hop relays ranked by leg affinity and adjusted for node pressure. Relay budgets increase for high-demand OD pairs; the evaluator supplies degree penalties, with a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.85, with a 10.86% mean best gap, 25.17% mean median gap, 17% mean feasibility rate, and 304 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were +9.5% and +12.3%; median gaps were +26.5% and +23.9%, and only 14–20% of QAOA solutions were valid before repair. The largest gap occurred on network12_s1, suggesting the surrogate’s promising direct-link and relay rewards still leave a notable quality and feasibility gap.
+**Program Identifier:** Generation 28 - Patch Name targeted_high_demand_relays - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigning direct-link rewards from a linear/concave blend and two-hop rewards from demand-weighted paths discounted by relay-node pressure and edge load. It keeps only the best pressure-adjusted relays per OD pair, with a relay budget based on network size; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.75, with a 20.56% mean best-solution gap, 47.38% mean median gap, 3% mean feasibility rate, and 352 quadratic terms.
+- **Feedback**: On both network12 cases, best solutions were about 20% above the reference, while median gaps were roughly 46–49%; only 2–3% of QAOA solutions were valid before repair. The approach generated many distinct topologies but had low un-repaired feasibility, suggesting its surrogate rewards did not reliably guide the solver to strong feasible designs.
+**Program Identifier:** Generation 30 - Patch Name expand_relay_budget - Correct Program: True
+
+**Program Name: Pressure-Adjusted Sparse Relay QUBO**
+- **Implementation**: Normalizes nonnegative demand, rewards direct links with a concave linear term, and selects up to three high-affinity two-hop routes per OD pair. Route rewards account for leg balance and relay pressure; the evaluator supplies degree penalties separately.
+- **Performance**: Combined score was 0.82, with an 11.57% mean best gap, 36.77% mean median gap, 20% mean feasibility rate, and 264 quadratic terms.
+- **Feedback**: Best solutions were 10.0–13.2% above the reference, with network12_s1 showing the largest gap; only 16–24% of solutions were valid before repair. The 96 and 71 distinct topologies indicate varied search outcomes, but median gaps show substantial room to improve solution quality.
+**Program Identifier:** Generation 29 - Patch Name sparse_route_portfolio - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for normalized, nonnegative off-diagonal demand, combining linear and square-root terms. Adds pressure-discounted quadratic rewards for supported two-hop paths, while leaving degree penalties to the evaluator.
+- **Performance**: Combined score was 0.84, with an 11.62% mean best-solution gap, 29.22% mean median gap, 14% feasibility rate, and 880 quadratic terms.
+- **Feedback**: Best gaps were 13.5% on `network12_s0` and 9.7% on `network12_s1`; median gaps were larger, especially on `s0` (38.6%). The low pre-repair feasibility rate suggests that, despite exploring many distinct topologies, the surrogate did not consistently guide QAOA toward valid solutions.
+**Program Identifier:** Generation 31 - Patch Name conservative_leg_affinity - Correct Program: True
+
+**Program Name: Sparse Demand-Weighted Relay QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links using a weighted linear/square-root demand score, and adds negative quadratic terms for up to a few high-ranked two-hop relays per positive-demand OD pair. Relay ranking uses leg traffic affinity adjusted by node pressure; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.82, with a 14.00% mean best-solution gap, 32.32% mean median gap, 21% mean feasible rate, and 264 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 13.2–14.8%, while median gaps ranged from 24.7–39.9%; network12_s0 had the largest gap. Only 19–24% of QAOA solutions were valid before repair, indicating feasibility remains a weakness despite generating 80–84 distinct topologies.
+**Program Identifier:** Generation 32 - Patch Name balanced_relay_affinity - Correct Program: True
+
+**Program Name: Demand-Weighted Relay Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear weights to direct links, and adds sparse negative quadratic terms for selected two-hop relays ranked by leg affinity and node pressure. It returns a fixed degree-penalty weight of 1.5; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.0, and the program did not pass validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The feedback gives no further detail to identify whether the failure came from the generated terms or the sampling infrastructure.
+**Program Identifier:** Generation 35 - Patch Name top_od_relay_focus - Correct Program: False
+
+**Program Name: Pressure-Aware Sparse Relay QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link rewards using a linear-plus-square-root blend, and adds sparse negative quadratic rewards for promising two-leg relays. Relay selection favors plausible leg demands, discounts pressured transit nodes, and returns a degree-penalty weight of 5.0.
+- **Performance**: Combined score was 0.0; the program did not pass validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The reported failure prevents assessing whether the QUBO choices themselves affected solution quality.
+**Program Identifier:** Generation 38 - Patch Name sparse-relay-pressure - Correct Program: False
+
+**Program Name: Sparse Bottleneck-Aware Relay QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns negative linear rewards to direct links, and adds sparse quadratic relay rewards for the top two or four candidate relays per positive-demand pair. Relay ranking and rewards account for leg bottlenecks and node traffic pressure; the evaluator supplies degree penalties separately.
+- **Performance**: Combined score was 0.0, and the program did not pass validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The feedback does not identify a specific implementation defect, but sampling failure prevented successful evaluation.
+**Program Identifier:** Generation 33 - Patch Name targeted_relay_fourth - Correct Program: False
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build negative linear costs, then adds negative quadratic terms for a limited set of candidate two-hop relays, discounted by estimated node pressure. Returns a fixed penalty weight of 1.5; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.0, and the program did not pass validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The feedback indicates sampling failure, not a specific defect in the surrogate’s cost calculations.
+**Program Identifier:** Generation 34 - Patch Name pressure_discount_075 - Correct Program: False
+
+**Program Name: Sparse Pressure-Discounted QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to build negative linear rewards for direct links, then adds negative quadratic rewards for a bounded number of relay paths per OD pair. Relay candidates are ranked by demand affinity and discounted by node and leg pressure; degree penalties are delegated to the evaluator.
+- **Performance**: Combined score was 0.0, with the program failing validation.
+- **Feedback**: Cloud quantum sampling failed because the ensemble reported that 0 of 12 programs completed. The feedback does not identify a specific defect in the surrogate logic, only that sampling execution failed.
+**Program Identifier:** Generation 36 - Patch Name sparse_pressure_paths - Correct Program: False
+
+**Program Name: Endpoint-Congestion Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative directed demand, estimates transit load by distributing two-hop traffic toward lower-pressure relays, and uses the resulting burden for linear link utilities and shared-endpoint quadratic congestion penalties. It normalizes coefficients together and returns a fixed degree-penalty weight of 2.5.
+- **Performance**: Combined score was 0.0; the program failed validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The evaluation gives no further diagnostic identifying which implementation detail caused the failure.
+**Program Identifier:** Generation 37 - Patch Name endpoint_load_balance - Correct Program: False
+
+**Program Name: Sparse Demand-Weighted Relay QUBO**
+- **Implementation**: Builds negative linear rewards for every directed link from normalized positive demand, combining linear and square-root terms. Adds sparse two-hop relay rewards for the highest-ranked candidate relays per positive-demand OD pair, adjusts weights by relay pressure, and returns a fixed degree-penalty weight.
+- **Performance**: Combined score was 0.0; the program did not pass validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The feedback indicates an execution failure, not a specific defect in the surrogate-term calculations.
+**Program Identifier:** Generation 39 - Patch Name targeted_relay_support - Correct Program: False
+
+**Program Name: Sparse QUBO Network Design Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-route linear credits using a mix of demand and its square root, and adds bounded two-relay credits plus weak endpoint-crowding costs as quadratic terms. It returns a degree-penalty weight of 4.0 for the evaluator.
+- **Performance**: Combined score was 0.0; the program did not pass validation.
+- **Feedback**: Cloud quantum sampling failed with an ensemble execution error: 0 of 12 programs completed. The evaluation does not identify a specific defect in the surrogate calculations, but the sampling failure prevented successful assessment.
+**Program Identifier:** Generation 40 - Patch Name route_credit_balance - Correct Program: False
+
+**Program Name: Congestion-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns concave-weighted rewards to direct links, and adds negative quadratic terms for up to four promising two-hop relays per OD pair, discounted for relay congestion and edge overlap. It also penalizes imbalanced reciprocal links and returns a degree-constraint penalty weight of 2.5.
+- **Performance**: Combined score was 0.83, with mean best and median gaps of 15.09% and 25.45%, a 7% mean feasible rate, and 407 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 14.4% and 15.7%; the latter was the largest gap. Before repair, 0% and 15% of solutions were valid, indicating that feasibility was a major weakness despite diverse topologies.
+**Program Identifier:** Generation 43 - Patch Name bottleneck_relay_budget - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards from normalized direct demands, combining linear and square-root components. Adds weaker two-hop rewards discounted by relay pressure and edge demand, and returns a fixed degree-penalty weight of 6.0.
+- **Performance**: Combined score was 0.82, with a 14.92% mean best gap, 29.88% mean median gap, 18% mean pre-repair feasibility, and 880 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were +12.9% and +16.9% versus reference, with the larger gap on s1. QAOA produced diverse topologies but relatively few valid solutions before repair (11% and 25%), suggesting feasibility remains a weakness despite the pressure-discounted rewards.
+**Program Identifier:** Generation 46 - Patch Name stronger_relay_pressure - Correct Program: True
+
+**Program Name: Focused Two-Hop Network Design Surrogate**
+- **Implementation**: Sanitizes and normalizes demand, assigns every directed arc a negative linear incentive, and adds quadratic rewards for up to two relays on paths serving the top 10% of positive-demand OD pairs. Relay candidates are ranked by leg affinity and penalized for demand pressure; degree penalties are left to the evaluator.
+- **Performance**: Combined score was 0.83, with a 14.01% mean best gap, 27.81% mean median gap, 18% mean feasibility rate, and 18 quadratic terms on average.
+- **Feedback**: On the two network12 cases, best gaps were +16.8% and +11.2%; pre-repair feasibility varied sharply from 37% to 0%. The surrogate generated diverse topologies, but weak feasibility and median gaps indicate its limited path rewards and external degree penalties did not consistently guide QAOA to high-quality valid designs.
+**Program Identifier:** Generation 47 - Patch Name elite-relay-sparse - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand to form negative linear rewards that blend traffic strength and its square root. Adds negative two-hop rewards for a limited set of relays ranked by leg affinity and node pressure, with a fixed degree-penalty weight of 1.5.
+- **Performance**: Combined score was 0.80, with mean best and median gaps of 17.22% and 34.22%, a 4% mean pre-repair feasibility rate, and 264 quadratic terms.
+- **Feedback**: On both network12 instances, the best solutions were 15.6–18.9% above reference and median gaps were about 34%; network12_s1 had the largest gap. Very low validity before repair and many distinct topologies suggest the surrogate’s rewards and relay selection did not reliably guide QAOA toward feasible, high-quality designs.
+**Program Identifier:** Generation 48 - Patch Name stronger_relay_pressure - Correct Program: True
+
+**Program Name: Fractional Congestion-Aware QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, estimates fractional two-hop edge loads using relay affinity and node pressure, then creates diminishing-return linear utilities and sparse congestion penalties for the strongest shared-tail/shared-head links. It adds small negative couplings for promising two-hop routes and returns a fixed degree-penalty weight of 8.0.
+- **Performance**: Combined score was 0.75, with a 22.48% mean best-solution gap, 46.85% median gap, 22% mean feasibility rate, and 848 quadratic terms.
+- **Feedback**: The largest gap was 27.0% on `network12_s0`; only 13% of its solutions were feasible before repair, compared with 31% on `network12_s1`. The sparse congestion interactions kept the quadratic-term count at 848, but solution quality and feasibility remained limited.
+**Program Identifier:** Generation 41 - Patch Name fractional_congestion - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Two-Hop QUBO**
+- **Implementation**: Builds negative direct-link rewards from normalized demand, combining linear and square-root terms, then adds sparse two-hop rewards for the strongest relay candidates per positive-demand origin–destination pair. Relay scores account for weaker-leg affinity and node pressure; the penalty weight is fixed at 1.5.
+- **Performance**: Combined score was 0.84, with an 11.80% mean best gap, 28.85% mean median gap, 8% mean feasible rate, and 264 quadratic terms.
+- **Feedback**: Best results were 9.6–14.1% above the reference, with the largest gap on `network12_s0`; only 3–13% of solutions were valid before repair. The method produced many distinct topologies (79–94), suggesting exploration, but feasibility and median solution quality remain weak.
+**Program Identifier:** Generation 42 - Patch Name balanced_relay_affinity - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Relay QUBO**
+- **Implementation**: Scales nonnegative off-diagonal demand to [0, 1], rewards direct links with linear terms, and adds sparse quadratic rewards for promising two-link relay routes. Relay candidates are ranked by geometric leg affinity and adjusted for node relay pressure; the evaluator supplies degree penalties separately.
+- **Performance**: Combined score was 0.83, with a 13.11% mean best-solution gap, 29.06% mean median gap, 12% mean feasibility rate, and 176 quadratic terms.
+- **Feedback**: Both network12 cases had best gaps above reference (11.8% and 14.4%), while only 6–17% of QAOA solutions were valid before repair. The larger gap on network12_s1 suggests the surrogate’s route rewards and penalties did not reliably guide the solver to high-quality feasible topologies, despite producing many distinct candidates.
+**Program Identifier:** Generation 44 - Patch Name sparse_relay_model - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative, non-self demands and assigns direct-link rewards using a linear-plus-square-root demand score. It adds limited two-hop rewards for selected relays, discounted by relay pressure and edge demand, and returns a degree-penalty weight of 6.0.
+- **Performance**: Combined score was 0.81, with a 9.72% mean best gap, 41.90% mean median gap, 4% mean pre-repair feasibility, and 640 quadratic terms.
+- **Feedback**: The best solutions were 8.5–10.9% above the reference, while median gaps were 38.8–45.0%; only 2–5% of sampled topologies were valid before repair. The approach explored many distinct topologies, but its low feasibility rate and large median gaps indicate limited consistency.
+**Program Identifier:** Generation 45 - Patch Name selective_relay_portfolio - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Two-Hop Surrogate**
+- **Implementation**: Builds negative linear rewards from normalized direct demand and sparse quadratic rewards for selected two-hop routes. Relay candidates are ranked by leg affinity adjusted for node pressure, with at most `min(n-2, max(2, int(sqrt(n)))` relays per origin-destination pair; the returned penalty weight is 1.5.
+- **Performance**: Combined score was 0.84, with an 11.06% mean best-solution gap, 27.50% mean median gap, 23% feasible rate, and 264 quadratic terms.
+- **Feedback**: Both network12 cases beat the reference objective by 10.5–11.6%, but median gaps remained 24.6–30.5% and only 12–33% of solutions were feasible before repair. The worst gap was on network12_s1; the routine also produced 90–99 distinct topologies per case.
+**Program Identifier:** Generation 51 - Patch Name balanced_relay_ranking - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Assigns negative linear rewards to demand-weighted direct links and adds bounded, rank-tapered rewards for promising two-leg routes through low-pressure relays. It also adds sparse positive congestion interactions among the busiest same-direction links at each node, with a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.80; mean best and median gaps were 16.58% and 34.77%, feasibility before repair averaged 17%, and the model used 345 quadratic terms.
+- **Feedback**: Results varied across the two 12-node cases: best gaps were 12.7% and 20.4%, with only 11% and 23% of solutions valid before repair. The 85–88 distinct topologies suggest exploration, but the low feasibility and larger median gaps indicate solution quality remains inconsistent.
+**Program Identifier:** Generation 49 - Patch Name spare_capacity_relays - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Relay QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and adds negative quadratic rewards for selected two-hop paths. Relay candidates are ranked by leg demand and node pressure; the evaluator supplies degree penalties, with a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.83; mean best and median gaps were 11.66% and 31.48%, feasibility before repair averaged 0.09, and each instance produced 264 quadratic terms.
+- **Feedback**: The two network12 cases had best gaps of +13.3% and +10.0%, with median gaps of +36.3% and +26.7%. Low pre-repair feasibility and sizeable median gaps indicate that, despite diverse topologies, the surrogate’s QAOA solutions often need repair and remain suboptimal.
+**Program Identifier:** Generation 50 - Patch Name gentler_relay_pressure - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for nonnegative off-diagonal demand, combining linear and square-root demand terms. Adds sparse two-hop rewards for each positive-demand OD pair, ranking relays by leg affinity discounted by node pressure, and leaves degree penalties to the evaluator.
+- **Performance**: Combined score was 0.84, with a 10.58% mean best-solution gap, 29.83% mean median gap, 4% mean pre-repair feasibility, and 264 quadratic terms.
+- **Feedback**: On both network12 cases, best solutions were about 10% above reference costs, while median gaps were roughly 28–32%. The low pre-repair validity rate and 6,012 circuits per case suggest the surrogate yields diverse topologies but does not reliably encode feasible designs.
+**Program Identifier:** Generation 52 - Patch Name bottleneck_relay_ranking - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, then assigns negative linear utility to direct links using demand and source/destination pressure. Adds sparse negative quadratic rewards for balanced reciprocal links and one capacity-conscious relay per positive-demand OD pair; the evaluator applies degree penalties separately with weight 1.25.
+- **Performance**: Combined score was 0.77, with mean best and median gaps of 18.50% and 43.89%, a 9% mean feasible rate, and 118 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 22.5% and 14.5%, while median gaps were 41.5% and 46.2%; only 16% and 2% of solutions were feasible before repair. The approach generated 92–93 distinct topologies, but weak feasibility and large median gaps indicate the surrogate and separately applied degree penalties did not reliably guide QAOA toward high-quality valid designs.
+**Program Identifier:** Generation 53 - Patch Name capacity_pairing - Correct Program: True
+
+**Program Name: Sparse Demand-Weighted Surrogate QUBO**
+- **Implementation**: Scales nonnegative off-diagonal demands by the peak and assigns negative direct-link rewards using a linear–square-root blend. For high-demand OD pairs (top decile), it adds sparse two-hop rewards for up to two relays, favoring balanced legs and lower-traffic relays; the evaluator applies a degree penalty of 3.0.
+- **Performance**: Combined score was 0.80, with mean best and median gaps of 18.04% and 32.25%, a 9% feasible rate, and 24 quadratic terms on average.
+- **Feedback**: The two network12 cases had best gaps of +16.4% and +19.7%; network12_s1 was the largest gap, with a +37.2% median gap. Only 7–10% of QAOA solutions were valid before repair, suggesting feasibility is a key weakness despite the compact quadratic structure.
+**Program Identifier:** Generation 55 - Patch Name focused_relay_qubo - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for every directed off-diagonal demand, blending normalized traffic with its square root. Adds negative quadratic rewards for selected two-hop routes, favoring high-demand paths while discounting relays by estimated incident pressure and edge load; degree penalties are left to the evaluator.
+- **Performance**: Achieved a combined score of 0.82, with mean best and median gaps of 16.49% and 27.99%, a 9% mean feasibility rate, and 264 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 12.9% and 20.1%, with the latter the largest; only 1% and 16% of solutions were valid before repair. The surrogate produced 69–89 distinct topologies, but low pre-repair feasibility and sizable gaps indicate room to improve solution quality.
+**Program Identifier:** Generation 54 - Patch Name ranked_relay_budget - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand and creates negative linear direct-link weights blending demand with its square root. For each positive-demand pair, it adds pressure-discounted two-hop terms for the top-ranked intermediate nodes, plus one alternative, and returns a fixed penalty weight of 1.25.
+- **Performance**: Combined score was 0.81, with an 11.20% mean best gap, 39.18% mean median gap, 15% mean feasibility rate, and 288 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 10.8–11.6%, while median gaps ranged from 29.8–48.6%; only 9–21% of solutions were valid before repair. The largest gap occurred on `network12_s0`, indicating the surrogate produced varied topologies but limited solution quality and feasibility.
+**Program Identifier:** Generation 56 - Patch Name concentrate_extra_relays - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Relay QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative traffic, scores every non-self direct link, and rewards selected two-hop relay pairs, using demand and relay pressure to weight terms. It selects two relays per positive-demand OD pair, or four for demands at or above the 90th-percentile cutoff, and sets the penalty weight to 1.0.
+- **Performance**: Combined score was 0.82, with mean best gap 13.80%, median gap 33.09%, feasibility rate 0.17, and 200 quadratic terms.
+- **Feedback**: Across two network12 cases, best gaps were 13.2% and 14.4%; only 14–21% of QAOA solutions were valid before repair, despite 88–96 distinct topologies. The consistently large median gaps and low feasibility suggest the sparse relay rewards and fixed penalty weight leave room to improve solution quality and constraint satisfaction.
+**Program Identifier:** Generation 59 - Patch Name selective_relay_support - Correct Program: True
+
+**Program Name: Demand-Weighted Sparse Relay QUBO**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, scores direct links with a linear/square-root blend, and adds sparse two-hop relay rewards for positive-demand pairs. Relays are ranked by geometric-mean OD-leg affinity and node pressure; the evaluator applies a degree penalty of 1.5.
+- **Performance**: Combined score was 0.83, with mean best and median gaps of 12.98% and 29.61%, a 4% mean pre-repair feasibility rate, and 304 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 12.5% and 13.4%, while median gaps were 31.1% and 28.1%; only 0% and 9% of solutions were valid before repair. The sparse relay construction yielded 80–88 distinct topologies, but feasibility was especially weak on the first case.
+**Program Identifier:** Generation 61 - Patch Name relay_budgeted_surrogate - Correct Program: True
+
+**Program Name: Sparse Demand-Aware Surrogate QUBO**
+- **Implementation**: Builds normalized direct-link rewards and sparse relay interactions, ranking candidate relays by leg affinity and node pressure. The code contains unresolved `<<<<<<< SEARCH` / `>>>>>>> REPLACE` merge markers and conflicting affinity implementations.
+- **Performance**: Combined score was 0.0.
+- **Feedback**: The program failed to load with a `SyntaxError` on line 47, so it did not pass validation or produce a valid evaluation.
+**Program Identifier:** Generation 64 - Patch Name bottleneck_relay_ranking - Correct Program: False
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns concave-weighted rewards to direct links, and adds pressure-discounted quadratic rewards for a limited number of promising two-hop relays per demanded pair. It uses a fixed degree-penalty weight of 5.0 and limits relay candidates to reduce interaction-graph density.
+- **Performance**: The combined score was 0.80, with mean best and median gaps of 15.94% and 36.06%, a 0.17 feasible rate, and 176 quadratic terms on average.
+- **Feedback**: Across the two network12 cases, best gaps ranged from 13.6% to 18.3%; only 9–26% of samples were valid before repair. The largest gap was on `network12_s0`, while 88–89 distinct topologies indicate sampling diversity despite weaker median results.
+**Program Identifier:** Generation 58 - Patch Name bottleneck_relay_ranking - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for direct links using a blend of linear and square-root demand, plus sparse two-hop rewards for the strongest relays per demanded OD pair. Relay rewards are discounted by node pressure and edge demand; a fixed penalty weight of 5.0 encourages required degrees.
+- **Performance**: Combined score was 0.67, with a 34.26% mean best-solution gap, 70.18% mean median gap, 20% feasible rate, and 352 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were +37.3% and +31.3%; the first case had no valid solutions before repair, while the second had 39% validity. The sparse relay selection kept the quadratic-term count at 352, but solution quality and feasibility remained weak, especially on network12_s0.
+**Program Identifier:** Generation 60 - Patch Name relay_budget_third - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds negative linear rewards for normalized off-diagonal demand, blending linear and square-root terms, and negative quadratic rewards for demand-supported two-hop paths. It discounts paths through high-pressure relay nodes, handles zero-demand inputs, and leaves degree penalties to the evaluator.
+- **Performance**: Combined score was 0.85, with mean best and median gaps of 11.05% and 25.55%, a 6% feasible rate, and 880 quadratic terms on average.
+- **Feedback**: The best solutions were 9.9–12.2% above the reference, with network12_s1 showing the largest gap; median gaps were about 25.5%. Only 4–7% of QAOA solutions were valid before repair, despite producing 82–85 distinct topologies across 6,012 circuits per case.
+**Program Identifier:** Generation 62 - Patch Name direct_heavy_blend - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for direct links using a linear/square-root demand blend, then adds negative quadratic terms for the strongest pressure-discounted two-hop relays per demanded pair. It limits relay candidates to reduce QUBO density and uses a degree penalty of 5.0.
+- **Performance**: Combined score was 0.85, with mean best and median gaps of 10.91% and 26.28%, a 2% feasible rate, and 176 quadratic terms on average.
+- **Feedback**: The two network12 cases had best gaps of 10.5% and 11.3%, while median gaps were about 26–27%; only 0–4% of QAOA samples were feasible before repair. The surrogate produced many distinct topologies, but the low feasibility rate and larger median gaps point to degree-constraint satisfaction and solution quality as key weaknesses.
+**Program Identifier:** Generation 63 - Patch Name bottleneck_relay_ranking - Correct Program: True
+
+**Program Name: Demand-Weighted Relay Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and builds sparse quadratic rewards for selected two-hop relays using leg affinity and relay-pressure weighting. It uses a fixed relay budget with up to two extra relays for high-demand OD pairs; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.84, with mean best and median gaps of 13.80% and 25.47%, a 0.17 mean pre-repair feasibility rate, and 288 quadratic terms.
+- **Feedback**: For both network12 cases, best gaps were 13.2–14.4%, while median gaps were 23.4–27.6%; network12_s0 had the largest gap. Only 13–20% of solutions were valid before repair, suggesting feasibility and solution quality remain limitations despite exploring 77–91 distinct topologies.
+**Program Identifier:** Generation 65 - Patch Name selective_high_demand_relays - Correct Program: True
+
+**Program Name: Demand-Weighted Diversity Surrogate QUBO**
+- **Implementation**: Builds normalized direct-demand rewards using a blend of linear and square-root terms, then adds quadratic couplings for neighborhood diversity, pressure-weighted similarity, and reciprocal traffic. Returns a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.82, with a 12.16% mean best gap, 33.63% mean median gap, 10% mean feasibility rate, and 1,350 quadratic terms.
+- **Feedback**: Results varied across instances: network12_s0 achieved a 7.5% best gap but only 1% of solutions were valid before repair, while network12_s1 had a 16.9% best gap and 19% validity. The largest gap and high median gaps suggest the surrogate’s rewards and diversity couplings do not consistently guide QAOA toward strong feasible solutions.
+**Program Identifier:** Generation 57 - Patch Name diverse_neighborhoods - Correct Program: True
+
+**Program Name: Sparse Pressure-Discounted Relay QUBO**
+- **Implementation**: Builds normalized direct-link rewards and sparse two-hop relay rewards, selecting a limited number of candidate relays per OD pair and discounting paths for relay congestion and edge load. Returns a fixed degree-penalty weight of 5.0; the evaluator supplies the degree penalties.
+- **Performance**: Combined score was 0.82, with a 15.15% mean best gap, 30.39% mean median gap, 4% mean feasibility rate, and 176 quadratic terms.
+- **Feedback**: On both network12 instances, best solutions were 13.3–16.9% worse than the reference, with the largest gap on s0; only 0–7% of solutions were valid before repair. The runs produced 90–93 distinct topologies, suggesting diversity, but the sparse surrogate rewards did not reliably yield feasible high-quality solutions.
+**Program Identifier:** Generation 66 - Patch Name aggregated_relay_qubo - Correct Program: True
+
+**Program Name: Demand-Weighted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, rewards direct links with a concave demand-based score, and adds pressure-discounted two-hop interactions for the top two or four relay candidates per OD pair. It returns evaluator-supplied degree penalties with penalty weight 1.0.
+- **Performance**: Combined score was 0.81, with a 15.16% mean best gap, 32.99% mean median gap, 24% feasibility rate, and 220 quadratic terms.
+- **Feedback**: The best gaps were +20.1% on `network12_s0` and +10.2% on `network12_s1`; only about one quarter of QAOA solutions were valid before repair. The runs produced 88–96 distinct topologies, suggesting exploration, but solution quality and feasibility remain limited.
+**Program Identifier:** Generation 67 - Patch Name gentler_relay_pressure - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, rewards direct links with a concave linear score, and adds pressure-discounted two-hop terms for only the strongest relays per OD pair. It returns a fixed degree-penalty weight of 15 and limits the interaction graph to 176 quadratic terms.
+- **Performance**: Combined score was 0.82, with 12.97% mean best-solution gap, 32.29% mean median gap, and 19% mean feasible rate.
+- **Feedback**: Results varied across the two instances: best gaps were 10.8% and 15.1%, while pre-repair feasibility was 29% and 9%. The sparse model generated 6,012 circuits per instance, but low feasibility—especially on network12_s1—and substantial median gaps indicate room to improve solution quality and constraint satisfaction.
+**Program Identifier:** Generation 70 - Patch Name stronger_degree_feasibility - Correct Program: True
+
+**Program Name: Sparse Relay-Aware Surrogate QUBO**
+- **Implementation**: Normalizes and sanitizes demand, assigns negative linear rewards to direct links using a blend of demand and its square root, and adds sparse two-hop rewards for each OD pair’s top candidate relays. Relay ranking balances leg traffic and accounts for relay pressure; the evaluator supplies degree penalties with weight 1.5.
+- **Performance**: Combined score was 0.81, with a 14.38% mean best gap, 35.50% mean median gap, 5% feasibility rate, and 264 quadratic terms on average.
+- **Feedback**: On the two network12 cases, best-solution gaps were 16.9% and 11.8%, while median gaps exceeded 32%; only 1–9% of solutions were valid before repair. The sparse relay interactions produced 94 and 86 distinct topologies, but feasibility remains a major weakness.
+**Program Identifier:** Generation 71 - Patch Name sparse_relay_balance - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for nonnegative off-diagonal demand, blending linear and square-root terms. Adds sparse, pressure-adjusted two-hop rewards for each OD pair’s best relays, with a relay budget based on network size; leaves degree penalties to the evaluator.
+- **Performance**: Combined score was 0.80, with a 15.02% mean best-solution gap, 37.26% mean median gap, 19% feasible rate, and 264 quadratic terms.
+- **Feedback**: On both network12 instances, the best solutions were about 15% above the reference, while median gaps were roughly 36–38%; only 5–33% of solutions were valid before repair. The approach produced 80–87 distinct topologies, but its sparse interactions did not yield consistently feasible or near-reference solutions.
+**Program Identifier:** Generation 68 - Patch Name gentler_relay_pressure_discount - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Relay QUBO**
+- **Implementation**: Normalizes nonnegative demand, rewards direct links with a weighted linear-plus-square-root score, and adds negative quadratic rewards for a limited set of high-quality two-hop relays per OD pair. Relay quality accounts for support on both legs and intermediate-node pressure; the penalty weight is fixed at 1.5.
+- **Performance**: Combined score was 0.83, with mean best and median gaps of 13.52% and 30.24%, a 12% mean feasible rate, and 264 quadratic terms.
+- **Feedback**: The best results were 9.7% and 17.3% above reference for network12_s0 and network12_s1, respectively; only 6–17% of solutions were valid before repair. The largest gap on s1 and low feasibility suggest the sparse relay rewards did not consistently guide QAOA toward strong, valid topologies.
+**Program Identifier:** Generation 69 - Patch Name sparse_relay_balance - Correct Program: True
+
+**Program Name: Demand-Profile Surrogate QUBO**
+- **Implementation**: Scales and sanitizes demand, then assigns direct-link rewards using a concave linear/square-root function. Adds quadratic penalties for overlapping gateway traffic profiles and returns a fixed degree-penalty weight of 1.25.
+- **Performance**: Combined score was 0.82, with a 14.08% mean best-solution gap, 32.48% median gap, 11% mean feasibility rate, and 1,319 quadratic terms.
+- **Feedback**: On both network12 cases, best solutions were 13.3–14.9% above the reference, while median gaps were 26.1–38.9%. Low pre-repair validity (7–15%) suggests the surrogate’s profile penalties did not sufficiently guide QAOA toward feasible topologies.
+**Program Identifier:** Generation 72 - Patch Name gateway_diversity - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns concave negative rewards to direct links, and builds sparse two-hop rewards for each positive-demand origin–destination pair by ranking relay candidates using leg affinity and node pressure. It limits relays by network size and returns a fixed degree-penalty weight of 7.0.
+- **Performance**: Combined score was 0.82, with a 12.70% mean best gap, 31.19% mean median gap, 14% feasible rate, and 264 quadratic terms.
+- **Feedback**: On the two network12 cases, best solutions were 10.8% and 14.6% above reference; the latter was the largest gap. Only 11–17% of solutions were valid before repair, indicating feasibility was a notable weakness despite producing many distinct topologies.
+**Program Identifier:** Generation 73 - Patch Name relay_balanced_surrogate - Correct Program: True
+
+**Program Name: Rank-Gated Sparse Route Surrogate**
+- **Implementation**: Normalizes and sanitizes demand, assigns negative linear rewards to direct links, and adds bounded quadratic rewards for a small number of promising two-hop routes. Route selection is guided by link competitiveness, relay pressure, and edge load; degree constraints are left to the evaluator, with penalty weight 4.0.
+- **Performance**: Combined score was 0.81, with a 14.22% mean best gap, 35.36% mean median gap, 4% mean pre-repair feasibility, and 176 quadratic terms.
+- **Feedback**: On both network12 instances, the best result beat the reference by 12.0–16.5%, but median gaps remained 34.2–36.5%. Only 4% of sampled solutions were valid before repair, indicating that strong best-case topology quality did not translate into consistent feasible solutions.
+**Program Identifier:** Generation 78 - Patch Name rank_gated_route_cover - Correct Program: True
+
+**Program Name: Sparse Demand-Weighted Relay QUBO**
+- **Implementation**: Normalizes finite, nonnegative off-diagonal demand, rewards direct links with linear terms, and adds sparse quadratic rewards for the highest-ranked two-hop relays. Relay ranking accounts for leg affinity and node traffic pressure; degree penalties are delegated to the evaluator.
+- **Performance**: Combined score was 0.84, with a 13.20% mean best gap, 25.53% mean median gap, 15% mean feasibility rate, and 220 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 11.7% and 14.7%, while median gaps were 23.7% and 27.3%; the latter was the largest gap. Only 6–24% of solutions were valid before repair, indicating feasibility is a key weakness despite producing diverse topologies.
+**Program Identifier:** Generation 74 - Patch Name balanced_relay_v2 - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns negative linear rewards using a linear-plus-square-root demand score, and adds quadratic rewards for up to three selected two-hop paths per OD pair. Path selection favors strong leg affinity while discounting highly pressured transit nodes; degree penalties are left to the evaluator.
+- **Performance**: Combined score was 0.83, with a 12.26% mean best gap, 31.94% mean median gap, 16% mean feasibility rate, and 264 quadratic terms.
+- **Feedback**: Best gaps were +9.3% on network12_s0 and +15.2% on network12_s1; median gaps and pre-repair validity varied substantially, with only 3% of s1 solutions valid. The largest gap and low feasibility indicate that the surrogate’s path rewards do not reliably produce strong feasible topologies across instances.
+**Program Identifier:** Generation 75 - Patch Name balanced_relay_selection - Correct Program: True
+
+**Program Name: Sparse Load-Aware QUBO Surrogate**
+- **Implementation**: Normalizes and sanitizes demand, then creates concave direct-link rewards and sparse two-hop rewards using up to two relays per OD pair, ranked by estimated link and node load. Returns a fixed degree-penalty weight of 2.0; the evaluator applies the degree penalties.
+- **Performance**: Combined score was 0.80, with a 13.56% mean best-solution gap, 40.61% mean median gap, 7% mean feasibility rate, and 176 quadratic terms.
+- **Feedback**: On both network12 cases, the best gaps were 12.7–14.4%, while median gaps were 37.6–43.6%; only 4–9% of QAOA solutions were valid before repair. The sparse relay selection keeps the interaction graph limited, but solution quality and raw feasibility remain weak.
+**Program Identifier:** Generation 76 - Patch Name shadow_route - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links using a weighted linear/square-root demand term, and adds negative quadratic rewards for selected two-hop paths. Relay candidates are ranked by demand affinity and discounted by node traffic pressure and edge demand; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.84, with mean best and median gaps of 12.88% and 27.00%, a 9% feasible rate, and 352 quadratic terms on average.
+- **Feedback**: On the two network12 cases, best gaps were +14.9% and +10.8%, while only 12% and 6% of solutions were valid before repair. The larger gap on `network12_s0` and low feasibility suggest the surrogate rewards useful paths, but does not reliably guide QAOA toward feasible, reference-quality topologies.
+**Program Identifier:** Generation 77 - Patch Name relaybalance - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear costs for direct links, combining traffic strength with its square root. Adds negative quadratic rewards for selected two-hop routes, ranking relays by link affinity discounted by node pressure; the evaluator supplies degree penalties with weight 1.5.
+- **Performance**: Combined score was 0.81, with mean best and median gaps of 16.08% and 31.67%, a 0.39 feasible rate, and 264 quadratic terms on average.
+- **Feedback**: The two network12 cases had best gaps of +12.5% and +19.7%; the latter was the largest. Before repair, only 21–57% of QAOA solutions were valid, suggesting feasibility is a significant weakness despite generating 65–72 distinct topologies.
+**Program Identifier:** Generation 81 - Patch Name balanced_relay - Correct Program: True
+
+**Program Name: Pressure-Discounted Relay QUBO Surrogate**
+- **Implementation**: Sanitizes demand values, excludes self-traffic, and normalizes flows to build concave direct-link rewards. It adds negative quadratic rewards for selected two-hop relay paths, ranking relays by leg affinity and node pressure, with a pressure-favored backup; the penalty weight is fixed at 1.25.
+- **Performance**: Combined score was 0.78, with an 18.19% mean best-solution gap, 40.20% mean median gap, 12% mean feasibility rate, and 308 quadratic terms.
+- **Feedback**: Across two network12 cases, best gaps were +17.1% and +19.2%; the latter had no valid solutions before repair, while the former had 25%. Both produced many distinct topologies (89 and 80), suggesting exploration but limited solution quality and feasibility.
+**Program Identifier:** Generation 79 - Patch Name balanced_relay_affinity - Correct Program: True
+
+**Program Name: Pressure-Adjusted Two-Hop QUBO Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for nonnegative off-diagonal demand, blending linear and square-root terms. Adds sparse negative quadratic rewards for the best pressure-adjusted two-hop relays per OD pair, and returns a unit degree-penalty weight.
+- **Performance**: Combined score was 0.81, with a 14.34% mean best-solution gap, 34.96% mean median gap, 15% mean feasibility rate, and 352 quadratic terms.
+- **Feedback**: On both network12 instances, best solutions were about 14% above the reference; median gaps were 33–37%, and only 6–24% of solutions were valid before repair. The largest gap was on `network12_s1` (+14.9%), suggesting the surrogate’s rewards and sparse relay choices did not consistently yield high-quality feasible topologies.
+**Program Identifier:** Generation 80 - Patch Name relay_budget_coverage - Correct Program: True
+
+**Program Name: Demand-Weighted Direct and Relay QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and adds sparse negative quadratic terms for selected two-hop routes. Relay candidates are ranked by leg traffic and node pressure, with extra candidates for high-demand OD pairs; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.82, with a 14.50% mean best gap, 30.75% mean median gap, 4% mean feasibility before repair, and 288 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 13.3% and 15.7%, while median gaps were 28.0% and 33.5%. Low pre-repair validity suggests the surrogate’s route rewards and supplied degree penalties did not reliably yield feasible topologies.
+**Program Identifier:** Generation 82 - Patch Name selective_high_demand_relays - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demands and assigns direct-link rewards combining linear and square-root demand. For each demanded OD pair, it adds negative quadratic terms for a limited set of candidate relays, ranked by leg affinity and discounted by node pressure; degree penalties are delegated to the evaluator.
+- **Performance**: Combined score was 0.81, with a 15.38% mean best gap, 32.58% mean median gap, 17% mean feasibility rate, and 264 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were +12.4% and +18.3%, with only 7% and 26% of solutions valid before repair. The larger gap on s1 and low feasibility suggest that the surrogate’s relay choices and degree-penalty setup do not consistently guide QAOA toward high-quality feasible topologies.
+**Program Identifier:** Generation 83 - Patch Name selective_path_support - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Two-Hop QUBO**
+- **Implementation**: Builds normalized negative linear rewards for every directed link, then adds sparse two-hop rewards for the highest-affinity relays per positive-demand OD pair, adjusted for relay-node pressure. Uses a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.84, with mean best and median gaps of 11.46% and 26.71%, a 24% feasibility rate, and 264 quadratic terms on average.
+- **Feedback**: On network12, the best solutions were 10.6–12.3% above the reference, but validity before repair varied sharply between instances (45% versus 4%). The worse network12_s1 result indicates feasibility and solution quality are inconsistent despite the fixed sparse relay budget.
+**Program Identifier:** Generation 84 - Patch Name restore_affinity_floor - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for nonnegative off-diagonal demand, combining linear and square-root terms. Adds pressure-discounted quadratic rewards for a limited set of promising two-hop relays per OD pair, while leaving degree penalties to the evaluator.
+- **Performance**: Combined score was 0.83, with an 11.38% mean best gap, 31.05% mean median gap, 12% feasibility before repair, and 264 quadratic terms.
+- **Feedback**: The best gaps were 13.9% for network12_s0 and 8.9% for network12_s1; median gaps were substantially larger, and only 8–16% of solutions were valid before repair. The approach produced 85–91 distinct topologies across 6,012 circuits per case, suggesting exploration but limited solution quality and feasibility.
+**Program Identifier:** Generation 85 - Patch Name balanced_relay_selection - Correct Program: True
+
+**Program Name: Bottleneck-Aware Sparse Relay Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to every direct link, and adds sparse relay-pair rewards for promising two-hop routes using bottleneck affinity and relay-load penalties. It scales relay candidates with network size and gives more alternatives to high-demand pairs; the evaluator applies a fixed penalty weight of 1.5.
+- **Performance**: Combined score was 0.80, with a 14.45% mean best-solution gap, 37.94% mean median gap, 11% mean feasible rate, and 196 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were 12.9% and 16.0%, while median gaps were 30.1% and 45.8%; only 8–15% of solutions were valid before repair. The larger network12_s1 gap and low feasibility suggest the surrogate’s relay rewards and fixed penalty do not reliably guide QAOA toward high-quality feasible topologies.
+**Program Identifier:** Generation 86 - Patch Name adaptive_relay_budget - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO Terms**
+- **Implementation**: Normalizes and sanitizes demand, then assigns negative linear rewards to direct links using a blend of demand and its square root. It adds discounted two-hop rewards based on demand support, leg affinity, relay pressure, and leg load, with a fixed degree-penalty weight of 1.5.
+- **Performance**: Combined score was 0.81; mean best and median gaps were 14.23% and 33.63%, feasibility rate was 10%, and the model produced 880 quadratic terms.
+- **Feedback**: On the two network12 cases, best gaps were +12.0% and +16.4%, with median gaps near 33%; only 5–15% of QAOA solutions were valid before repair. The 93 and 81 distinct topologies indicate solution diversity, but the low feasibility rate and larger network12_s1 gap limit performance.
+**Program Identifier:** Generation 87 - Patch Name pressure_balanced_paths - Correct Program: True
+
+**Program Name: Demand-Weighted Sparse Relay QUBO**
+- **Implementation**: Normalizes finite, nonnegative off-diagonal demand and assigns negative linear costs to direct links, blending demand with its square root. It adds sparse two-hop rewards for ranked relay candidates, weighted by OD demand and relay pressure, and returns a degree-penalty weight of 2.0.
+- **Performance**: Combined score was 0.82, with a 13.53% mean best gap, 31.60% mean median gap, 18% mean feasibility rate, and 216 quadratic terms.
+- **Feedback**: The largest best gap was 17.8% on network12_s0; network12_s1 had a 9.3% gap. Before repair, only 6% and 31% of solutions were valid, respectively, indicating feasibility was a notable weakness despite diverse topologies and sparse couplings.
+**Program Identifier:** Generation 88 - Patch Name adaptive_relay_budget - Correct Program: True
+
+**Program Name: Sparse Demand-Weighted Relay QUBO**
+- **Implementation**: Normalizes finite, nonnegative off-diagonal demand, rewards direct links with linear terms, and adds sparse quadratic rewards for the top two or four candidate relays per positive-demand OD pair. Relay scores use two-leg affinity and incident-demand pressure; the evaluator supplies degree penalties separately, with penalty weight 2.0.
+- **Performance**: Combined score was 0.79, with mean best gap 16.42%, mean median gap 37.60%, 27% feasibility, and 200 quadratic terms.
+- **Feedback**: On both network12 cases, best solutions were 15.3–17.6% above reference and only 19–35% of samples were valid before repair. The worst gap was network12_s1; the sparse 200-term construction yielded varied topologies but did not consistently find high-quality feasible solutions.
+**Program Identifier:** Generation 89 - Patch Name high_demand_cutoff_90 - Correct Program: True
+
+**Program Name: Demand-Aware Relay and Congestion Surrogate**
+- **Implementation**: Builds normalized negative linear rewards for direct demand, then adds quadratic rewards for a few demand-supported relay paths, ranked by balanced leg demand and discounted for relay pressure. It estimates transit loads to penalize pairs of busy links sharing a source or destination, normalizes coefficients, and leaves degree penalties to the evaluator.
+- **Performance**: Combined score was 0.82, with a 10.58% mean best-solution gap, 35.52% mean median gap, 8% mean feasibility rate, and 796 quadratic terms.
+- **Feedback**: Across both network12 cases, best gaps were about 10.3–10.8%; median gaps were 32.1–38.9%, and only 16% or 0% of solutions were valid before repair. The surrogate produced 80 distinct topologies per case, suggesting variety but weak feasibility and inconsistent solution quality.
+**Program Identifier:** Generation 90 - Patch Name balanced_relay_selection - Correct Program: True
+
+**Program Name: Demand-Weighted Surrogate QUBO**
+- **Implementation**: Normalizes nonnegative demand, then assigns each directed link a reward combining linear and square-root demand utility. Adds endpoint-sharing quadratic penalties scaled by source or destination traffic pressure, with a fixed penalty weight of 5.0 for degree constraints added by the evaluator.
+- **Performance**: Combined score was 0.81, with a 13.75% mean best-solution gap, 33.43% mean median gap, 10% feasibility rate, and 589 quadratic terms on average.
+- **Feedback**: Best solutions exceeded the reference by 11.0–16.5%, with the largest gap on network12_s0; median gaps were larger, at 32.4–34.5%. Only 6–13% of QAOA solutions were valid before repair, suggesting feasibility is a key weakness despite generating many distinct topologies.
+**Program Identifier:** Generation 91 - Patch Name endpoint_congestion_diversification - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Relay QUBO Surrogate**
+- **Implementation**: Builds normalized direct-link rewards with a linear-plus-square-root demand term, then adds sparse two-hop rewards for the top-ranked relays per positive-demand pair. Relay ranking blends geometric leg affinity and bottleneck demand, adjusts for node and edge pressure, and uses a larger relay budget for high-demand pairs; degree penalties are delegated to the evaluator.
+- **Performance**: Combined score was 0.83, with mean best and median gaps of 13.44% and 29.52%, a 10% mean feasible rate, and 304 quadratic terms.
+- **Feedback**: On both network12 cases, the best result was about 13% worse than the reference, while median gaps were about 29–30%; only 7–12% of solutions were valid before repair. The sparse terms produced 63–77 distinct topologies, suggesting variety, but feasibility remains the key weakness.
+**Program Identifier:** Generation 93 - Patch Name pressure_relay_blend - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Relay QUBO**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link rewards using a linear and square-root blend, and selects a sparse set of relay paths ranked by leg strength and relay pressure. Relay rewards blend two weighting schemes, with extra candidates for high-demand links; the penalty weight is fixed at 1.5.
+- **Performance**: Combined score was 0.80, with a 13.30% mean best gap, 39.89% mean median gap, 4% mean feasibility before repair, and 304 quadratic terms.
+- **Feedback**: Best gaps were +17.4% on `network12_s0` and +9.2% on `network12_s1`; median gaps remained larger at +46.1% and +33.6%. The low pre-repair feasibility rate and large median gaps indicate that the sparse relay rewards did not consistently produce strong valid QAOA solutions.
+**Program Identifier:** Generation 94 - Patch Name balanced_relay_crossover - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative off-diagonal demand, assigns concave demand-based rewards to direct links, and adds two-hop rewards for a limited set of relay candidates ranked by balanced leg affinity and discounted by node pressure. It returns a fixed penalty weight of 1.0, leaving degree penalties to the evaluator.
+- **Performance**: Combined score was 0.83, with a 10.13% mean best-solution gap, 33.69% mean median gap, 4% mean pre-repair feasibility, and 276 quadratic terms.
+- **Feedback**: Across the two network12 cases, best gaps were 9.7–10.6%; network12_s0 had the largest gap. Feasibility was especially weak before repair (0% and 8%), despite 63–78 distinct topologies and 6012 circuits per case.
+**Program Identifier:** Generation 95 - Patch Name high_demand_relay_cutoff - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse Relay QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns direct-link rewards using a linear-plus-square-root demand score, and adds sparse negative quadratic terms for promising two-hop relays. Relay selection favors plausible legs while accounting for node pressure, with deterministic tie-breaking; the evaluator adds degree penalties separately.
+- **Performance**: Combined score was 0.81, with a 12.02% mean best-solution gap, 38.73% mean median gap, 17% feasibility rate, and 220 quadratic terms.
+- **Feedback**: Both network12 cases beat the reference objective by 11.3–12.7%, but median gaps remained high and only 12–23% of solutions were feasible before repair. The larger gap occurred on network12_s1, suggesting the surrogate finds strong topologies but QAOA feasibility and consistency remain challenges.
+**Program Identifier:** Generation 92 - Patch Name sparse_relay_blend - Correct Program: True
+
+**Program Name: Demand-Weighted Sparse Relay QUBO**
+- **Implementation**: Normalizes finite, nonnegative off-diagonal demand; assigns negative linear costs to direct links and sparse negative quadratic costs to selected two-hop routes, ranked by leg affinity and relay pressure. It returns a degree-penalty weight of 2.0, with up to two relay candidates per OD pair or four for larger demands.
+- **Performance**: Combined score was 0.78, with an 18.41% mean best gap, 41.68% mean median gap, 8% mean feasibility rate, and 220 quadratic terms.
+- **Feedback**: Both network12 cases beat the reference only to within 17.3–19.5% on best solutions, while median gaps were 34.3–49.1%. Only 5–10% of solutions were valid before repair, suggesting feasibility and solution quality remain key limitations despite diverse topologies.
+**Program Identifier:** Generation 96 - Patch Name balanced_leg_affinity - Correct Program: True
+
+**Program Name: Demand-Weighted Sparse Relay QUBO**
+- **Implementation**: Builds normalized negative linear rewards for every possible direct link, then adds sparse negative quadratic rewards for up to two relay paths per positive-demand pair. Relay selection favors lower-pressure nodes and mildly favors existing demand on both legs; the evaluator applies a degree penalty of 2.0.
+- **Performance**: Combined score was 0.85, with an 11.56% mean best gap, 25.83% mean median gap, 0% mean feasible rate, and 176 quadratic terms.
+- **Feedback**: On both 12-node cases, the best solution remained 9.4–13.7% above the reference, while median gaps were about 26%. QAOA produced no valid solutions before repair, despite exploring 69–91 distinct topologies across 6,012 circuits per case; the largest gap occurred on `network12_s1`.
+**Program Identifier:** Generation 98 - Patch Name sparse_relay_pipeline - Correct Program: True
+
+**Program Name: Pressure-Discounted Two-Hop QUBO Surrogate**
+- **Implementation**: Normalizes and sanitizes demand, assigns negative linear rewards to direct links using a linear-plus-square-root demand score, and adds negative quadratic rewards for selected two-hop paths. Relay candidates are ranked by leg affinity and node pressure, with a budget of up to roughly \(\sqrt{n}\) relays per OD pair; the evaluator supplies degree penalties.
+- **Performance**: Combined score was 0.80, with mean best and median gaps of 13.75% and 36.88%, a 0.17 feasible rate, and 352 quadratic terms on average.
+- **Feedback**: Both network12 cases had best gaps around 13–14%, while median gaps were substantially larger (34.7–39.1%). Only 16–17% of QAOA solutions were valid before repair, indicating feasibility is a major weakness despite exploring 63–84 distinct topologies.
+**Program Identifier:** Generation 100 - Patch Name pressure_rank_125 - Correct Program: True
+
+**Program Name: Pressure-Aware Sparse QUBO Surrogate**
+- **Implementation**: Normalizes nonnegative demand, assigns negative linear rewards to direct links, and adds sparse negative quadratic rewards for selected two-hop paths. Relay candidates are ranked by leg affinity adjusted for intermediate-node pressure, with a larger relay budget for high-demand pairs; the penalty weight is fixed at 1.5.
+- **Performance**: Combined score was 0.82, with a 12.13% mean best gap, 34.76% mean median gap, 0% mean feasibility before repair, and 216 quadratic terms.
+- **Feedback**: Across both network12 cases, best solutions were 10.7–13.6% above the reference, while median gaps were 32.0–37.5%; the largest gap was on network12_s0. The QAOA runs produced diverse topologies but no valid solutions before repair, indicating that feasibility remains a key weakness despite the sparse relay rewards.
+**Program Identifier:** Generation 102 - Patch Name selective_relay_budget - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+## Successful Algorithmic Patterns
+- **Generation 28 remains the clear leader:** its Pressure-Aware Sparse Two-Hop QUBO scores **0.85**, with a **10.86% mean best gap** and **25.17% mean median gap**. Its selective relay construction combines demand-supported paths, relay-pressure discounts, and a larger relay budget only for high-demand OD pairs.
+- **Selective, pressure-aware relay ranking is the strongest observed pattern.** Generation 28 ranks relays using leg affinity adjusted for node pressure, then applies a mild rank factor and pressure discount to relay rewards. Its case-level best gaps are **+9.5%** on `network12_s0` and **+12.3%** on `network12_s1`, with median gaps of **26.5%** and **23.9%**.
+- **The latest variants reinforce that good best solutions do not necessarily yield good typical solutions.** Generation 98 scores **0.85** and has an **11.56% mean best gap**, close to Generation 28, but its **25.83% median gap** is slightly worse and its pre-repair feasibility is **0%**. Generation 28’s **17%** mean feasibility and stronger median gap indicate more consistent evaluated solutions.
+
+## Ineffective Approaches
+- **Changing relay budgets or sparse-ranking details did not surpass Generation 28.** Generation 92 (`sparse_relay_blend`, score **0.81**) and Generation 96 (`balanced_leg_affinity`, **0.78**) have mean best gaps of **12.02%** and **18.41%**. Generation 102 (`selective_relay_budget`, **0.82**) reaches **12.13%**, but its median gap is **34.76%** and feasibility is **0%**.
+- **Adding more relay interactions is not a reliable improvement.** Generation 100 (`pressure_rank_125`) averages **352 quadratic terms** but scores **0.80**, with **13.75%** best and **36.88%** median gaps. By comparison, Generation 28 uses **304 terms** and has materially better typical-solution performance.
+- **Poor pre-repair feasibility persists across the recent variants.** Generation 98 produces no valid solutions before repair despite exploring **69–91 distinct topologies** per case; Generation 102 also has **0%** feasibility. Generation 92 and Generation 96 reach only **17%** and **8%**, respectively, and still underperform the leader. This supports the earlier finding that topology diversity or feasibility alone does not predict overall score.
+
+## Implementation Insights
+- **Generation 28’s direct-link reward is explicit and demand-sensitive:** it clips negative demand, zeros the diagonal, normalizes by the maximum, then assigns each off-diagonal pair `-(0.75*d + 0.25*sqrt(d))`. This preserves rewards for moderate demand while prioritizing heavier OD pairs.
+- **Its relay score integrates leg affinity with intermediate-node pressure.** For relay `j`, it ranks by `sqrt((0.1+a)*(0.1+b)) / (0.75 + pressure[j])`, then discounts the reward by pressure again. A small base relay set is expanded by up to two candidates for OD pairs at or above the positive-demand 80th percentile. That selective allocation is associated with the leader’s **0.85** score and **25.17%** mean median gap.
+- **The latest implementations use related components but do not reproduce the same outcome.** Generation 92 also uses linear-plus-square-root direct rewards and sparse relay terms, yet scores **0.81** with a **38.73%** median gap. Generation 98 uses a similar pressure-aware pipeline and scores **0.85**, but its **25.83%** median gap and **0%** feasibility remain slightly worse than Generation 28.
+- **The fixed degree-penalty weight is not sufficient by itself to ensure feasible outputs.** Generation 28 returns **1.5** and has **17%** mean feasibility; Generation 102 also uses **1.5** but has **0%**. Generation 96 returns **2.0** yet has only **8%** feasibility. These results suggest that feasibility depends on the full reward and penalty structure, not penalty weight alone.
+
+## Performance Analysis
+- **Generation 28 remains best overall among the compared programs:** score **0.85**, mean best gap **10.86%**, median gap **25.17%**, and mean feasibility **17%**. The new programs score **0.78–0.85**; only Generation 98 matches its score, and it is slightly worse on both mean gaps (**11.56%** best, **25.83%** median).
+- **Generation 98 is the closest recent competitor, but its per-case results are less consistent with feasible output.** Its best gaps are **9.4–13.7%**, versus Generation 28’s **9.5% / 12.3%**. Despite exploring many topologies, Generation 98 has **0%** pre-repair feasibility, while Generation 28 has **14–20%** across the two cases.
+- **The other recent results show substantial degradation in typical-solution quality.** Generation 92’s median gap is **38.73%**, Generation 96’s **41.68%**, Generation 100’s **36.88%**, and Generation 102’s **34.76%**, all well above Generation 28’s **25.17%**.
+- **Term count does not explain performance by itself.** Generation 28’s **304** quadratic terms outperform Generation 100’s **352** and several lower-term variants. Across the results, the quality of relay selection and its integration with demand and pressure are more consistent differentiators than simply increasing or decreasing interaction count.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+1. **Concentrate extra relays on the highest-demand OD pairs.** Raise the cutoff for the additional relay budget from the 80th to the 90th percentile, leaving the base relay count, two-relay cap, ranking, and reward formulas unchanged. This tests whether a smaller set of especially important pairs benefits more from extra interactions without increasing the overall model size.
+
+2. **Favor relays whose weaker leg is stronger.** Replace the geometric-mean affinity used to rank candidates with `min(first_leg, second_leg) + 0.25 * max(first_leg, second_leg)`, while keeping the pressure adjustment, relay budgets, and reward calculation fixed. This tests whether avoiding paths with one weak demand-supported leg improves typical solutions.
+
+3. **Tune pressure sensitivity in the relay ranking.** Rank candidates using `affinity / (0.75 + node_pressure[j])**p`, testing `p = 0.75` and `p = 1.25` as separate variants while retaining the current pressure discount in the reward. Generation 28’s pressure-aware selection is a key part of its strong results, so this isolates whether its current pressure sensitivity is well calibrated.
+
+4. **Vary relay reward strength by OD demand.** Keep the direct-link rewards, relay ranking, and budgets unchanged, but multiply relay weights by `1.1` for pairs at or above the existing 80th-percentile cutoff and by `0.9` for other positive-demand pairs. This extends the program’s successful demand-sensitive allocation to reward strength without adding relay terms.
+
+5. **Reduce the base relay count while preserving high-demand extras.** Change the base count from `max(2, n // 4)` to `max(1, n // 5)`, retaining the existing cap of two extra relays for high-demand pairs. This tests whether removing lower-ranked base relays improves typical-solution quality while preserving the selective support that distinguishes the current best program.

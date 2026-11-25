@@ -1,0 +1,14 @@
+{
+  "generation": 105,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_cut_crossover",
+  "patch_description": "Combines transit-aware path rewards and near-tie coverage with the two-node-cut correction from the strongest prior variants. Reciprocal penalties remain compact, while blended frequency/strength debiasing discourages overused links without adding couplings. Vectorized transit estimates remove repeated Python route loops, and a gentle size taper limits route-reward dominance on larger instances. Degree penalties remain exclusively evaluator-supplied.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:23:55.930674",
+  "llm_cost": 0.099136,
+  "llm_model": "gpt-6.1-sol"
+}

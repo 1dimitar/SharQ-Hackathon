@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_rewards",
+  "patch_description": "The current linear term gives direct-demand links a reward proportional to demand, so a few very large OD pairs can dominate many useful moderate-demand links. Replace that reward with a square-root normalized reward, while keeping the existing two-hop couplings unchanged. This preserves the preference for direct service but compresses the range of direct rewards, giving the routing structure represented by the quadratic terms more influence. It also changes only the linear-term construction, so it does not increase the interaction count or computational cost.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:44:34.846167",
+  "llm_cost": 0.0008767,
+  "llm_model": "gpt-6-luna"
+}

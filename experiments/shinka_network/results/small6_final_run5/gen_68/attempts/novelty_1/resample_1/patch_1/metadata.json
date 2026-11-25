@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "localized_cut_pressure",
+  "patch_description": "Add a bounded, pair-local cut adjustment to the existing two-hop route terms. For each adjacent node pair, estimate the fraction of its combined incident demand that crosses the pair\u2019s boundary. Use the average for the two pairs on a candidate route to slightly discount routes through pairs with greater external load, affecting both route selection and reward strength. This preserves the current sparse route model and term count while giving the energy a localized load signal; the adjustment is bounded so it does not overwhelm direct-demand rewards. The existing overlap correction continues to use the adjusted route weight.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:49:27.704851",
+  "llm_cost": 0.0037340000000000003,
+  "llm_model": "gpt-6-luna"
+}

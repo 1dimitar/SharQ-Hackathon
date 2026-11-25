@@ -1,0 +1,76 @@
+<NAME>
+complementary_neighbor_service
+</NAME>
+
+<DESCRIPTION>
+Add a compact reward for choosing two neighbors that serve different parts of a node’s traffic. Existing route rewards evaluate paths independently, so two attractive neighbors can receive rewards despite offering largely redundant coverage.
+
+Estimate onward-link probabilities from the direct scores, calibrated to two links per node. A neighbor serves itself immediately. For each neighbor pair, measure the additional demand coverage beyond its better individual member, discounting overlapping coverage. Apply the same construction to incoming links using reversed traffic.
+
+Keep only n//2 pairs per node and direction, with strength 0.24 relative to the mean direct reward. This adds at most n² couplings, preserves the existing route and cut signals, and provides a bounded, demand-specific preference for complementary neighborhoods. The expected benefit is better typical samples and more informative exchange rankings; evaluation is needed to establish whether it improves the score.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    return linear, quadratic, penalty_weight
+=======
+    # Reward complementary neighbor service, rather than counting each
+    # plausible route independently. Each profile approximates the chance
+    # that a neighbor can serve a destination in one additional hop.
+    mean_direct = float(direct_score.sum()) / max(1, n * (n - 1))
+    service_strength = 0.24 * mean_direct * max(
+        0.80, float(np.log2(max(n, 2))) / float(np.log2(12.0))
+    )
+    service_budget = max(1, n // 2)
+
+    for reverse in (False, True):
+        scores = direct_score.T if reverse else direct_score
+        demands = z.T if reverse else z
+        profiles = np.minimum(
+            1.0,
+            2.0 * scores
+            / np.maximum(scores.sum(axis=1, keepdims=True), 1e-12),
+        )
+        # Arrival at the destination needs no onward link.
+        np.fill_diagonal(profiles, 1.0)
+
+        for v in range(n):
+            total = float(demands[v].sum())
+            if total <= 0.0:
+                continue
+            weights = demands[v] / total
+            neighbors = [a for a in range(n) if a != v]
+            local_profiles = profiles[neighbors]
+            coverage = local_profiles @ weights
+            reference = float(coverage.max())
+            if reference <= 1e-12:
+                continue
+
+            overlap = (
+                local_profiles * weights[None, :]
+            ) @ local_profiles.T
+            candidates = []
+            for a_pos, a in enumerate(neighbors):
+                for b_pos in range(a_pos + 1, len(neighbors)):
+                    b = neighbors[b_pos]
+                    # Union coverage minus the better singleton's coverage.
+                    gain = max(
+                        0.0,
+                        float(min(coverage[a_pos], coverage[b_pos]))
+                        - float(overlap[a_pos, b_pos]),
+                    ) / reference
+                    if gain > 1e-12:
+                        candidates.append((gain, a, b))
+
+            candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
+            for gain, a, b in candidates[:service_budget]:
+                first = (a, v) if reverse else (v, a)
+                second = (b, v) if reverse else (v, b)
+                add_pair(
+                    first, second,
+                    -service_strength * min(1.0, gain),
+                )
+
+    return linear, quadratic, penalty_weight
+>>>>>>> REPLACE
+</DIFF>

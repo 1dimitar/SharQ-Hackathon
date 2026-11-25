@@ -1,0 +1,14 @@
+{
+  "generation": 131,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "protected_archive_relink",
+  "patch_description": "Relinking paths are currently mixed into the general move set, so surrogate screening can discard every bridge step in a batch. Track the relinking intermediates separately and reserve one LP evaluation for a fresh bridge whenever one is available. Also choose the target from the full set of sufficiently distant archive members rather than repeatedly favoring the first few score-ranked targets. This preserves a chance to test relinking progress while varying which strong, structurally distinct region it connects to.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:35:22.470952",
+  "llm_cost": 0.0030825,
+  "llm_model": "gpt-6-luna"
+}

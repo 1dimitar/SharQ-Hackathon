@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "mixed_routing_screen",
+  "patch_description": "Adds a demand-aware screening model based on shortest-path traffic, alongside the Hamiltonian energy. An online regularized model learns which inexpensive features predict actual LP scores within the current run.\n\nLP batches mix energy-ranked moves, learned predictions, routing estimates, and structural exploration. The search retains diverse archive members, uses bottleneck guidance without making it exclusive, and includes rotations, multi-switch perturbations, and archive-directed moves. All certified scores still come exclusively from the supplied tools.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:53:15.319716",
+  "llm_cost": 0.080208,
+  "llm_model": "gpt-6.1-sol"
+}

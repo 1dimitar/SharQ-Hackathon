@@ -1,0 +1,14 @@
+{
+  "generation": 124,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_pressure_floor",
+  "patch_description": "Replace the current smoothly varying transit score with mean-normalized incident-demand pressure and a 0.75 floor. This tests the suggested mean-based normalization and floor while leaving the direct-link rewards, path rewards, and per-OD cap unchanged. The floor limits how strongly a quiet relay can be favored, while nodes above average pressure are progressively discounted.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:55:00.676439",
+  "llm_cost": 0.0008938,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 73,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relink-diverse-search",
+  "patch_description": "The current approach spends up to five LP calls per parent on mostly local proposals and does not explicitly connect promising, structurally different networks. This version uses smaller batches to give feedback more frequently, keeps a diverse elite archive, and periodically path-relinks an elite toward a distant archive member. It also mixes bottleneck-focused exchanges with unrestricted switches and rotations, while using surrogate energy to screen proposals before LP evaluation. Seed scoring is reduced to 24 diverse networks so more of the budget is available for guided improvement.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:36:10.635394",
+  "llm_cost": 0.0026823999999999997,
+  "llm_model": "gpt-6-luna"
+}

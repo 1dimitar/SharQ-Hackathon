@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "weaken_noisy_transit_rewards",
+  "patch_description": "The current program\u2019s two-hop rewards can make the annealer favor routes through a node simply because they create a short path, even when that node is already busy or the route is not useful for balancing link loads. The current congestion discount helps, but the measured median gap is still worse than with the earlier, undiscouted two-hop model. Reduce the reward coefficient from 0.12 to 0.06 so direct-demand rewards remain the stronger signal and less reliable transit-path incentives have less influence on typical samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:38:56.934872",
+  "llm_cost": 0.0008411,
+  "llm_model": "gpt-6-luna"
+}

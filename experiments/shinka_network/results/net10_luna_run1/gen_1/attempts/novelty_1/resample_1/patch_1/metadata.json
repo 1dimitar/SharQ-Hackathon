@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "This surrogate keeps the useful direct-demand signal, then adds a conservative reward for pairs of links that form a two-hop route. The two-hop reward is scaled by the demand\u2019s row and column traffic levels, so it does not treat every possible intermediate node as equally attractive. A smaller node-traffic term favors links incident to nodes likely to need transit capacity. Coefficients are normalized together, and the quadratic term count is at most \\(n(n-1)(n-2)\\), within the stated limit. This is a routing-inspired approximation rather than an exact prediction of the routing LP.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:15:05.022290",
+  "llm_cost": 0.0010638,
+  "llm_model": "gpt-6-luna"
+}

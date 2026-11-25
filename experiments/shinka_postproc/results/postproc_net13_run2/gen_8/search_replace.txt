@@ -1,0 +1,76 @@
+<NAME>
+diverse_batch_screening
+</NAME>
+
+<DESCRIPTION>
+The current batch screen uses a symmetric-difference threshold of 2, which often does little to distinguish valid two-switch moves. Build the first part of each LP batch from a small, energy-ranked shortlist using farthest-point selection instead: keep the best-energy move as an anchor, then prefer moves that are topologically distant from those already selected. Require distance 6 where possible, relax to 4 if needed, and retain the existing energy-ranked fill as a fallback. This aims to spend LP calls across more distinct network variants without losing the surrogate’s guidance.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        selected = []
+        # First take good-energy moves that are not all tiny variants of one another.
+        for _, net in ranked:
+            if all(distance(net, old) >= 2 for old in selected):
+                selected.append(net)
+            if len(selected) >= min(6, batch_size):
+                break
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        selected = []
+        target = min(6, batch_size)
+        # Keep the shortlist surrogate-promising, then spread LP calls across
+        # distinct topologies instead of selecting near-identical local moves.
+        shortlist = ranked[:min(len(ranked), max(18, 3 * batch_size))]
+        if shortlist:
+            selected.append(shortlist[0][1])
+
+        # Farthest-point selection, relaxing the distance requirement only
+        # when the promising shortlist cannot supply enough diverse moves.
+        for min_distance in (6, 4):
+            while len(selected) < target:
+                eligible = [
+                    item for item in shortlist
+                    if item[1] not in selected
+                    and min(distance(item[1], old) for old in selected) >= min_distance
+                ]
+                if not eligible:
+                    break
+                _, net = max(
+                    eligible,
+                    key=lambda item: (
+                        min(distance(item[1], old) for old in selected),
+                        -item[0],
+                    ),
+                )
+                selected.append(net)
+
+        # Fill remaining slots with the best surrogate-ranked moves.
+        for _, net in ranked:
+            if len(selected) >= batch_size:
+                break
+            if net not in selected:
+                selected.append(net)
+
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

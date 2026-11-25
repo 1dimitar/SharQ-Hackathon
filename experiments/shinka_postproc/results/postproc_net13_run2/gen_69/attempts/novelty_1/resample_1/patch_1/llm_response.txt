@@ -1,0 +1,44 @@
+<NAME>
+novelty_reserve
+</NAME>
+
+<DESCRIPTION>
+Reserve one LP evaluation per batch for the valid, uncached move that is most structurally different from the scored archive. The current batch selector favors surrogate rank and diversity within a shortlist, but may still omit a novel move elsewhere in the neighborhood. Replacing the final selected move preserves the promising choices while explicitly testing a new region; surrogate rank breaks ties in novelty.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+        return selected[:batch_size]
+=======
+        # Reserve a little batch capacity for tail exploration.
+        tail = [net for _, net in ranked if net not in selected]
+        if tail and len(selected) >= 4 and len(selected) < batch_size:
+            rng.shuffle(tail)
+            selected.extend(tail[:batch_size - len(selected)])
+
+        # Reserve one evaluation for the move farthest from the scored archive.
+        # Surrogate rank breaks ties, retaining an informed choice among equally
+        # novel proposals.
+        references = archive()
+        if references and selected:
+            ref_sets = [set(net) for net in references]
+            rank_index = {net: i for i, (_, net) in enumerate(ranked)}
+            novelty_pool = [net for _, net in ranked if net not in selected]
+            if novelty_pool:
+                novel = max(
+                    novelty_pool,
+                    key=lambda net: (
+                        min(len(set(net) ^ ref) for ref in ref_sets),
+                        -rank_index[net],
+                    ),
+                )
+                selected[-1] = novel
+        return selected[:batch_size]
+>>>>>>> REPLACE
+
+</DIFF>

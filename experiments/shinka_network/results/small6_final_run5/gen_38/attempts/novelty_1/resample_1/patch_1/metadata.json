@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "route_diversity_congestion",
+  "patch_description": "This design keeps sparse, demand-specific two-hop route rewards, but ranks transit nodes using balanced leg affinity and estimated transit pressure. It adaptively adds one route when the next candidate is close in quality, rather than uniformly increasing coupling density.\n\nThe additional idea is a small congestion/diversity proxy: pairs of high-demand links sharing a tail or head receive a mild positive interaction, discouraging the QUBO from concentrating heavy direct traffic around one node. Direct-versus-indirect redundancy is also represented, so completing a two-hop route is less valuable when its demand already has a strong direct link. The interactions are kept modest so they guide valid-topology rankings without overwhelming the direct-link signal.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:19:35.943585",
+  "llm_cost": 0.0037742,
+  "llm_model": "gpt-6-luna"
+}

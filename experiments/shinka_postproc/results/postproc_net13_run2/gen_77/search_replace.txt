@@ -1,0 +1,57 @@
+<NAME>
+novelty_aware_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Keep a strong preference for the best archive members, while using the remaining selection probability to explore archive regions that are both structurally underexplored and represented by parents selected less often. The existing visit and improvement statistics still influence selection, so novelty alone cannot dominate productive search regions. This targets a weakness in the current selector: it discounts stalled parents, but otherwise gives non-elite archive members similar chances regardless of whether their regions have been explored.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # The original elite/uniform mixture is the baseline distribution.
+        elite_n = min(6, len(pop))
+        baseline = [
+            (0.48 / elite_n if i < elite_n else 0.0)
+            + 0.52 / len(pop)
+            for i in range(len(pop))
+        ]
+
+        # Discount repeatedly visited parents with no improvement; reward
+        # parents whose evaluations have improved their own incumbent.
+        weights = []
+        for net, base in zip(pop, baseline):
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            productivity = (1.0 + 0.7 * successes) / (1.0 + 0.35 * visits + 0.65 * stalls)
+            weights.append(base * productivity)
+
+        total = sum(weights)
+=======
+        # Preserve a strong quality bias, but reserve the remaining probability
+        # for archive members from novel, infrequently selected regions.
+        elite_n = min(6, len(pop))
+        quality = [
+            (0.65 / elite_n if i < elite_n else 0.0)
+            for i in range(len(pop))
+        ]
+        novelty = []
+        for net in pop:
+            others = [other for other in pop if other != net]
+            separation = min((distance(net, other) for other in others), default=0)
+            visits = parent_visits.get(net, 0)
+            stalls = parent_stalls.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            productivity = (1.0 + 0.7 * successes) / (1.0 + 0.35 * visits + 0.65 * stalls)
+            rarity = 1.0 / math.sqrt(1.0 + visits)
+            novelty.append((separation + 1.0) * rarity * productivity)
+
+        novelty_total = sum(novelty)
+        weights = [
+            quality[i] + 0.35 * novelty[i] / novelty_total
+            for i in range(len(pop))
+        ]
+
+        total = sum(weights)
+>>>>>>> REPLACE
+</DIFF>

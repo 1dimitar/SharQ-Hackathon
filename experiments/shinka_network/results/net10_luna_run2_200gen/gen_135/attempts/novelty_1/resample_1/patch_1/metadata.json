@@ -1,0 +1,14 @@
+{
+  "generation": 135,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "path_strength_056",
+  "patch_description": "This makes a controlled increase to the current program\u2019s two-hop path strength, from 0.46 to 0.56, while leaving its demand transform, relay-pressure discount, edge discount, and penalty weight unchanged. The intent is to give useful indirect routes somewhat more influence without changing the established term structure; this is one of the recommended sweep values to compare against the current setting. The function still uses only demand data and emits at most \\(n(n-1)(n-2)\\) quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:56:06.677160",
+  "llm_cost": 0.0011633,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,322 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link, supported-route, and small-cut cost terms."""
+    traffic = np.asarray(demand, dtype=float)
+    n = int(traffic.shape[0])
+    traffic = np.maximum(
+        np.nan_to_num(traffic, nan=0.0, posinf=0.0, neginf=0.0),
+        0.0,
+    ).copy()
+    np.fill_diagonal(traffic, 0.0)
+
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    z = traffic / (scale if scale > 0.0 else 1.0)
+    root_z = np.sqrt(z)
+
+    # Normalizing before computing totals also avoids overflow for large
+    # but finite demand values. All quantities below are scale invariant.
+    row_sum = z.sum(axis=1)
+    col_sum = z.sum(axis=0)
+    row_share = z / np.maximum(row_sum[:, None], 1e-12)
+    col_share = z / np.maximum(col_sum[None, :], 1e-12)
+
+    incident = np.maximum(row_sum, col_sum)
+    max_incident = float(np.max(incident)) if incident.size else 0.0
+    if max_incident > 0.0:
+        pressure = 0.48 + 0.72 * incident / max_incident
+    else:
+        pressure = np.ones(n, dtype=float)
+
+    share_bonus = np.sqrt(np.maximum(row_share * col_share, 0.0))
+    direct_score = (
+        0.62 * np.power(z, 0.78)
+        + 0.24 * root_z
+        + 0.14 * share_bonus
+    )
+    linear = {
+        (i, j): -float(direct_score[i, j])
+        for i in range(n)
+        for j in range(n)
+        if i != j
+    }
+    quadratic = {}
+
+    if scale <= 0.0:
+        return linear, quadratic, 1.15
+
+    positive = z[z > 0.0]
+    cutoff = float(np.quantile(positive, 0.68))
+
+    first_affinity = 0.56 * np.sqrt(row_share) + 0.44 * root_z
+    second_affinity = 0.56 * np.sqrt(col_share) + 0.44 * root_z
+    rank_pressure = pressure ** 0.88
+    reward_pressure = pressure ** 0.35
+
+    # Only O(n^2) routes are retained. Their contribution otherwise fades
+    # relative to the O(n) selected direct links on larger valid networks.
+    # Use a mild correction rather than increasing the coupling count.
+    route_size_factor = float(np.clip(np.sqrt(n / 12.0), 0.85, 1.42))
+
+    # Estimate the demand-weighted load assigned to intermediate nodes by
+    # the same sparse two-hop alternatives used below. Sharing each OD pair's
+    # supported demand among its selected candidates avoids counting every
+    # alternative as if it carried the full flow.
+    estimated_route_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            demand_score = (
+                0.68 * z[i, k] ** 0.74 + 0.32 * root_z[i, k]
+            )
+            support = float(
+                demand_score * (1.0 - 0.32 * root_z[i, k])
+            )
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                balance = float(np.sqrt(
+                    first_affinity[i, j] * second_affinity[j, k]
+                ))
+                edge_evidence = 0.20 * (
+                    root_z[i, j] + root_z[j, k]
+                )
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / rank_pressure[j]
+                )
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = min(
+                len(candidates),
+                3 if z[i, k] >= cutoff else 2,
+            )
+            selected = candidates[:keep]
+            rank_total = sum(item[0] for item in selected)
+            if rank_total > 0.0:
+                for rank, j in selected:
+                    estimated_route_load[j] += support * rank / rank_total
+
+    average_route_load = float(np.mean(estimated_route_load))
+    if average_route_load > 1e-12:
+        transit_discount = np.clip(
+            1.0 - 0.12 * np.maximum(
+                estimated_route_load / average_route_load - 1.0, 0.0
+            ),
+            0.78,
+            1.0,
+        )
+    else:
+        transit_discount = np.ones(n, dtype=float)
+
+    def add_pair(a, b, value):
+=======
+    route_size_factor = float(np.clip(np.sqrt(n / 12.0), 0.85, 1.42))
+
+    # Estimate the demand-weighted load assigned to intermediate nodes by
+    # the same sparse two-hop alternatives used below. Sharing each OD pair's
+    # supported demand among its selected candidates avoids counting every
+    # alternative as if it carried the full flow.
+    estimated_route_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            demand_score = (
+                0.68 * z[i, k] ** 0.74 + 0.32 * root_z[i, k]
+            )
+            support = float(
+                demand_score * (1.0 - 0.32 * root_z[i, k])
+            )
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                balance = float(np.sqrt(
+                    first_affinity[i, j] * second_affinity[j, k]
+                ))
+                edge_evidence = 0.20 * (
+                    root_z[i, j] + root_z[j, k]
+                )
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / rank_pressure[j]
+                )
+                candidates.append((float(rank), j))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = min(
+                len(candidates),
+                3 if z[i, k] >= cutoff else 2,
+            )
+            selected = candidates[:keep]
+            rank_total = sum(item[0] for item in selected)
+            if rank_total > 0.0:
+                for rank, j in selected:
+                    estimated_route_load[j] += support * rank / rank_total
+
+    average_route_load = float(np.mean(estimated_route_load))
+    if average_route_load > 1e-12:
+        transit_discount = np.clip(
+            1.0 - 0.12 * np.maximum(
+                estimated_route_load / average_route_load - 1.0, 0.0
+            ),
+            0.78,
+            1.0,
+        )
+    else:
+        transit_discount = np.ones(n, dtype=float)
+
+    def add_pair(a, b, value):
+        key = (a, b) if a < b else (b, a)
+        quadratic[key] = quadratic.get(key, 0.0) + float(value)
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or z[i, k] <= 0.0:
+                continue
+
+            demand_score = (
+                0.68 * z[i, k] ** 0.74 + 0.32 * root_z[i, k]
+            )
+            support = float(
+                demand_score * (1.0 - 0.32 * root_z[i, k])
+            )
+
+            candidates = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                balance = float(np.sqrt(
+                    first_affinity[i, j] * second_affinity[j, k]
+                ))
+                edge_evidence = 0.20 * (
+                    root_z[i, j] + root_z[j, k]
+                )
+
+                # A harmonic mean requires evidence on BOTH legs. Unlike
+                # an arithmetic mean, one excellent link cannot compensate
+                # for an unsupported second link.
+                a = float(root_z[i, j])
+                b = float(root_z[j, k])
+                bilateral_support = 2.0 * a * b / max(a + b, 1e-12)
+                leg_factor = 0.72 + 0.56 * bilateral_support
+
+                rank = (
+                    (0.18 + balance + edge_evidence)
+                    / rank_pressure[j]
+                )
+                candidates.append((
+                    float(rank), j, balance, leg_factor
+                ))
+
+            candidates.sort(key=lambda item: (-item[0], item[1]))
+            keep = min(
+                len(candidates),
+                3 if z[i, k] >= cutoff else 2,
+            )
+
+            for position, (_, j, path_affinity, leg_factor) in enumerate(
+                candidates[:keep]
+            ):
+                rank_factor = 1.12 - 0.10 * position
+                affinity_factor = 0.45 + 0.85 * path_affinity
+                route_scale = (
+                    route_size_factor
+                    * support
+                    * rank_factor
+                    * affinity_factor
+                    / reward_pressure[j]
+                    * transit_discount[j]
+                )
+
+                first = (i, j)
+                second = (j, k)
+                add_pair(
+                    first,
+                    second,
+                    -0.37 * route_scale * leg_factor,
+                )
+
+                # Keep direct/indirect redundancy weaker than route
+                # completion. Apply the same size correction so their
+                # relative influence does not drift with n.
+                direct_redundancy = (
+                    route_size_factor
+                    * 0.085
+                    * support
+                    * (0.45 + 0.55 * root_z[i, k])
+                    * (0.25 + 0.75 * path_affinity)
+                )
+                add_pair((i, k), first, direct_redundancy)
+                add_pair((i, k), second, direct_redundancy)
+
+    # On a valid topology, a two-node set has
+    # 4 - x_ij - x_ji boundary links in either direction.
+    # Its inverse squared capacity is exactly quadratic:
+    # 1/(4-x-y)^2 = 1/16 + 7*(x+y)/144 + 13*x*y/144.
+    cut_linear = np.zeros((n, n), dtype=float)
+    incident_scale = max_incident if max_incident > 0.0 else 1.0
+    cut_strength = 0.80 / 144.0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            internal_demand = float(z[i, j] + z[j, i])
+            external_demand = max(
+                0.0,
+                max(
+                    float(row_sum[i] + row_sum[j]),
+                    float(col_sum[i] + col_sum[j]),
+                ) - internal_demand,
+            )
+            squared_load = (external_demand / incident_scale) ** 2
+            if squared_load <= 0.0:
+                continue
+
+            coefficient = cut_strength * squared_load
+            cut_linear[i, j] = cut_linear[j, i] = 7.0 * coefficient
+            add_pair((i, j), (j, i), 13.0 * coefficient)
+
+    # These node potentials and common offsets are constant on valid
+    # degree-two topologies; removing them preserves their energy ranking.
+    if n > 1:
+        node_offset = cut_linear.sum(axis=1) / (n - 1)
+        edge_offset = float(cut_linear.sum()) / (n * (n - 1))
+        for i, j in linear:
+            linear[(i, j)] += float(
+                cut_linear[i, j]
+                - node_offset[i]
+                - node_offset[j]
+                + edge_offset
+            )
+
+    return linear, quadratic, 1.15
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

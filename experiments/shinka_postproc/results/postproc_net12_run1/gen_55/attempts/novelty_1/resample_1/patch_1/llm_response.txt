@@ -1,0 +1,92 @@
+<NAME>
+ucb_parent_selection
+</NAME>
+
+<DESCRIPTION>
+Track how often each archive network is selected and how often its search batch improves on that parent. Select parents with an upper-confidence-style bonus: strong basins remain attractive, while under-tested archive members receive exploration weight. This allocates LP calls adaptively instead of repeatedly sampling parents using only their archive rank, and retains explicit exploration of distant archive entries.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    def choose_parent(stale):
+        # Favor good networks, but use a diversity-based archive member often
+        # enough to avoid repeatedly searching only around the incumbent.
+        if len(archive) == 1 or rng.random() < 0.38:
+            return best_net
+        top = archive[:min(6, len(archive))]
+        weights = np.array([1.0 / (1.0 + i * 0.7) for i in range(len(top))])
+        if stale > 8 and len(archive) > len(top):
+            extra = archive[len(top):]
+            if rng.random() < 0.5:
+                return extra[int(rng.integers(len(extra)))]
+        return top[int(rng.choice(len(top), p=weights / weights.sum()))]
+
+    stale = 0
+    kick_size = 2
+    iteration = 0
+=======
+    # Per-parent search productivity; counts persist while the archive evolves.
+    parent_trials = {}
+    parent_successes = {}
+
+    def choose_parent(stale):
+        if len(archive) == 1:
+            return archive[0]
+        total = sum(parent_trials.values()) + 1
+        weights = []
+        for net in archive:
+            trials = parent_trials.get(net, 0)
+            successes = parent_successes.get(net, 0)
+            # Smooth the success rate and add an exploration bonus for
+            # archive members that have received few LP evaluations.
+            productivity = (successes + 0.5) / (trials + 1.0)
+            explore = math.sqrt(math.log(total + 1.0) / (trials + 1.0))
+            rank = archive.index(net)
+            quality = 1.0 / (1.0 + 0.22 * rank)
+            weights.append(quality * (0.25 + productivity + 0.9 * explore))
+        probs = np.asarray(weights, dtype=float)
+        probs /= probs.sum()
+        return archive[int(rng.choice(len(archive), p=probs))]
+
+    stale = 0
+    kick_size = 2
+    iteration = 0
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        previous_best = best_score
+        improved = False
+        for net in batch:
+=======
+        previous_best = best_score
+        improved = False
+        parent_improved = False
+        for net in batch:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+                # Also retain promising basin members even when not global best.
+=======
+                if value < parent_score:
+                    parent_improved = True
+                if value < previous_best:
+                    improved = True
+                    previous_best = value
+                # Also retain promising basin members even when not global best.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        if improved:
+            stale = 0
+            kick_size = 2
+=======
+        parent_trials[parent] = parent_trials.get(parent, 0) + 1
+        if parent_improved:
+            parent_successes[parent] = parent_successes.get(parent, 0) + 1
+
+        if improved:
+            stale = 0
+            kick_size = 2
+>>>>>>> REPLACE
+
+</DIFF>

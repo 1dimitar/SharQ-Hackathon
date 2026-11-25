@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "endpoint_pressure_020",
+  "patch_description": "Increase the endpoint-pressure multiplier from 0.10 to 0.20 while leaving the direct-link rewards and pair construction unchanged. This tests whether a stronger estimate of transit burden helps the pair penalties discourage links that concentrate load at high-traffic sending or receiving nodes. The change is deliberately focused so its effect can be compared with the current design.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:20:39.410424",
+  "llm_cost": 0.0007629000000000001,
+  "llm_model": "gpt-6-luna"
+}

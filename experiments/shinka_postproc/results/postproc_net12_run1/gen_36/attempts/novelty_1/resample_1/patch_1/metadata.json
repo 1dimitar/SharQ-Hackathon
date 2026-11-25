@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_productivity",
+  "patch_description": "Track how many LP evaluations each parent generates, how often its neighborhood improves the incumbent, and the size of its best gain. Use these measurements to bias parent selection toward productive search regions, while retaining an exploration floor so untested or less productive archive members can still be selected. Attribute each evaluated batch\u2019s improvement to the parent that generated it; this changes search allocation without changing the candidate-generation or scoring logic.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:47:00.072438",
+  "llm_cost": 0.0017414000000000002,
+  "llm_model": "gpt-6-luna"
+}

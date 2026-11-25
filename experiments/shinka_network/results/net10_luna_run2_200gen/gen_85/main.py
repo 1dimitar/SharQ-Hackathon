@@ -1,0 +1,121 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic surrogate costs from a demand matrix."""
+    d = np.asarray(demand, dtype=float)
+    d = np.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0)
+    d = np.maximum(d, 0.0)
+
+    n = int(d.shape[0])
+    scale = float(np.max(d)) if d.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+    dn = d / scale
+
+    rows = np.sum(d, axis=1)
+    cols = np.sum(d, axis=0)
+    endpoint = rows[:, None] + cols[None, :]
+    endpoint_scale = float(np.max(endpoint)) if endpoint.size else 0.0
+    if endpoint_scale <= 0.0:
+        endpoint_scale = 1.0
+
+    # The concave direct term retains useful medium-sized demands, while the
+    # endpoint component values links that join high-volume origins/destinations.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            direct = float(dn[i, j])
+            endpoint_value = float(endpoint[i, j]) / endpoint_scale
+            value = 0.86 * (0.78 * direct + 0.22 * np.sqrt(direct))
+            value += 0.14 * endpoint_value
+            linear[(i, j)] = -float(value)
+
+    # Allocate a bounded reward for each OD pair among its candidate
+    # intermediates. This avoids treating every possible two-hop route as an
+    # independent full-strength benefit.
+    incident = rows + cols
+    mean_incident = float(np.mean(incident)) if incident.size else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+
+    node_capacity = np.sqrt(
+        1.0 / (1.0 + np.maximum(0.0, incident / mean_incident))
+    )
+
+    quadratic = {}
+    indirect_budget = 0.62
+    uniform_mix = 0.30
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or d[i, k] <= 0.0:
+                continue
+
+            mids = []
+            evidence = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+
+                # Geometric support rewards paths whose two component links
+                # both have demand, but the floor keeps alternatives viable.
+                a = float(dn[i, j])
+                b = float(dn[j, k])
+                support = np.sqrt(a * b)
+                score = (0.18 + 0.82 * support) * float(node_capacity[j])
+                mids.append(j)
+                evidence.append(score)
+
+            if not mids:
+                continue
+
+            evidence = np.asarray(evidence, dtype=float)
+            total = float(np.sum(evidence))
+            if total <= 0.0:
+                supported_share = np.full(len(mids), 1.0 / len(mids))
+            else:
+                supported_share = evidence / total
+
+            # Mix in a uniform allocation so weak-support paths still receive
+            # some incentive instead of being completely excluded.
+            shares = (
+                (1.0 - uniform_mix) * supported_share
+                + uniform_mix / len(mids)
+            )
+            direct_signal = 0.78 * float(dn[i, k]) + 0.22 * float(np.sqrt(dn[i, k]))
+            budget = min(
+                indirect_budget * float(dn[i, k]),
+                0.38 * direct_signal,
+            )
+
+            for j, share in zip(mids, shares):
+                weight = -budget * float(share)
+                if weight != 0.0:
+                    quadratic[((i, j), (j, k))] = weight
+
+    return linear, quadratic, 1.0
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

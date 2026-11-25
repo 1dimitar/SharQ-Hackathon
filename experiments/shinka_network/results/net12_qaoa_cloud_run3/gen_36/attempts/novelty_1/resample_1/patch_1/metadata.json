@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_pressure_paths",
+  "patch_description": "This crossover keeps the current program\u2019s sparse, demand-informed relay selection, which used fewer quadratic terms and scored better than rewarding every two-hop path. It combines that selection with the inspiration program\u2019s concave path support and a discount for pressured relays and heavily loaded path legs. Direct-link rewards and the current degree-penalty weight are retained. The sparse couplings limit unnecessary interactions while still rewarding plausible two-hop routes.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:52:14.604536",
+  "llm_cost": 0.0013766,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 151,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "selective_third_route",
+  "patch_description": "Use two rewarded routes per demand by default, allowing a discounted third only for heavy demands whose third route is nearly as attractive as the second. Tighten both requirements gradually with network size. This reduces credit for marginal paths that may consume scarce degree capacity without relieving bottlenecks, while retaining alternatives where split routing is most valuable. It also reduces coupling count without adding interaction types.\n\nRestore the transit-pressure ranking exponent to 0.82: the supplied comparisons show that reducing it to 0.75 weakened both sample quality and post-processing performance. Leave reward strength and feasibility penalties unchanged to isolate the route-selection change.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T04:08:25.539612",
+  "llm_cost": 0.05502,
+  "llm_model": "gpt-6.1-sol"
+}

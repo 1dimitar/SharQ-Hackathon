@@ -1,0 +1,93 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build direct-link and pressure-allocated two-hop cost terms."""
+    traffic = np.asarray(demand, dtype=float)
+    n = len(traffic)
+
+    # Use nonnegative, off-diagonal traffic and define a safe normalization.
+    traffic = np.maximum(traffic, 0.0).copy()
+    np.fill_diagonal(traffic, 0.0)
+    scale = float(np.max(traffic)) if traffic.size else 0.0
+    if scale <= 0.0:
+        scale = 1.0
+
+    normalized = traffic / scale
+
+    # A direct link is valuable in proportion to the demand it immediately serves.
+    linear = {
+        (i, k): -float(normalized[i, k])
+        for i in range(n)
+        for k in range(n)
+        if i != k
+    }
+
+    # Incident demand is a rough measure of competition for transit capacity.
+    incident = traffic.sum(axis=0) + traffic.sum(axis=1)
+    mean_incident = float(incident.mean()) if n else 0.0
+    if mean_incident <= 0.0:
+        mean_incident = 1.0
+    pressure = np.maximum(0.5, incident / mean_incident)
+
+    quadratic = {}
+    path_budget = 0.24
+
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+
+            # Geometric support favors intermediate nodes for which both
+            # constituent links have traffic evidence. The small floor lets
+            # otherwise unsupported but potentially useful paths remain eligible.
+            candidates = []
+            supports = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                left = float(normalized[i, j])
+                right = float(normalized[j, k])
+                support = np.sqrt((left + 0.02) * (right + 0.02))
+                support /= float(pressure[j])
+                candidates.append(j)
+                supports.append(support)
+
+            total_support = float(sum(supports))
+            if total_support <= 0.0:
+                continue
+
+            # Keep the total two-hop reward for this OD bounded, independent
+            # of the number of candidate intermediates.
+            od_budget = path_budget * float(normalized[i, k])
+            for j, support in zip(candidates, supports):
+                weight = -od_budget * (support / total_support)
+                e1, e2 = (i, j), (j, k)
+                key = (e1, e2) if e1 < e2 else (e2, e1)
+                quadratic[key] = quadratic.get(key, 0.0) + float(weight)
+
+    # Degree penalties are supplied by the evaluator.
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_relay_affinity",
+  "patch_description": "Rank candidate relays by requiring both legs to contribute, while giving a useful stronger leg some additional credit: change the affinity to `min(a, b) + 0.25 * max(a, b)`. This increases the stronger-leg contribution from 0.15 to 0.25 without allowing it to dominate a weak leg. The existing pressure discount, relay budget, and reward weights remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:11:22.044626",
+  "llm_cost": 0.0009706000000000001,
+  "llm_model": "gpt-6-luna"
+}

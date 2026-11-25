@@ -1,0 +1,14 @@
+{
+  "generation": 67,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "archive_biased_kicks",
+  "patch_description": "After a parent has repeatedly stalled, perturb a non-elite archive member rather than repeatedly kicking the current parent. Bias the kick toward links with positive LP prices, falling back to the most heavily loaded links. Keep the archive member unchanged, and send both the kicked network and a surrogate-screened batch from its neighborhood to LP evaluation. This adds a targeted way to explore a different basin while preserving elite networks and reusing the existing proposal ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:02:43.434989",
+  "llm_cost": 0.0028187000000000004,
+  "llm_model": "gpt-6-luna"
+}

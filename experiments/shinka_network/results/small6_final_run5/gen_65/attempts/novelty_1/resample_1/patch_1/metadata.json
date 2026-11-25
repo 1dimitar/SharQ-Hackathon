@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "sparse_cut_balance",
+  "patch_description": "Combines the compact, demand-aware direct and two-hop terms with the two-node cut congestion signal from the strongest prior variant. It omits the ambiguous extra routes and three-hop search, which increased coupling count and reduced feasibility without improving the reported score. The cut contribution is projected into the linear terms so its node-level offsets do not distort rankings among valid degree-two topologies.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:46:46.546968",
+  "llm_cost": 0.0030139000000000003,
+  "llm_model": "gpt-6-luna"
+}

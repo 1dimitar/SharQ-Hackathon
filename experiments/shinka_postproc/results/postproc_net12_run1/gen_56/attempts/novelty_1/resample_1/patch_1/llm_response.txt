@@ -1,0 +1,75 @@
+<NAME>
+random_seed_hedge
+</NAME>
+
+<DESCRIPTION>
+Reserve a small number of initial LP evaluations for genuinely random valid networks before scoring the repaired QAOA candidates. Each network is formed from two distinct derangements, giving every node exactly two incoming and two outgoing links with no self-loops. This hedges against seed pools where QAOA repairs miss a strong region of the network space, while keeping the random-start budget small so the QAOA starts remain the main source of search quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    for net in sorted(repaired, key=lambda x: tools.energy(x)):
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+=======
+    # Hedge against pools whose repaired QAOA samples miss strong regions.
+    # Two distinct derangements form a valid directed 2-in/2-out topology.
+    random_starts = set()
+    n = tools.n
+    for _ in range(8):
+        first = None
+        for _attempt in range(100):
+            perm = rng.permutation(n)
+            if all(int(perm[i]) != i for i in range(n)):
+                first = perm
+                break
+        if first is None:
+            continue
+
+        second = None
+        for _attempt in range(100):
+            perm = rng.permutation(n)
+            if all(int(perm[i]) != i and int(perm[i]) != int(first[i])
+                   for i in range(n)):
+                second = perm
+                break
+        if second is None:
+            continue
+
+        net = norm(
+            [(i, int(first[i])) for i in range(n)]
+            + [(i, int(second[i])) for i in range(n)]
+        )
+        if tools.is_valid(net):
+            random_starts.add(net)
+
+    # Score this small random allocation first so it is not crowded out by
+    # energy-ranked QAOA repairs.
+    for net in random_starts:
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+
+    for net in sorted(repaired, key=lambda x: tools.energy(x)):
+        if tools.lp_calls_left <= 0:
+            break
+        try:
+            evaluate(net)
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                break
+            raise
+>>>>>>> REPLACE
+
+</DIFF>

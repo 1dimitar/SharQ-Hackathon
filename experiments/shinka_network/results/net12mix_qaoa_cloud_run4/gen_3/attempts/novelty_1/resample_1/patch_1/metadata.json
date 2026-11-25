@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "congestion_aware_twohop",
+  "patch_description": "Keep direct demand as the primary signal and add a modest reward for two-link paths that serve positive-demand origin-destination pairs. Discount paths through nodes with high combined incoming and outgoing demand, which are more likely to become transit bottlenecks and can concentrate traffic. These O(n^3) interactions connect links that form useful routes while remaining below the quadratic-term limit. Increasing the degree penalty makes valid degrees more influential in the QUBO before samples are repaired.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:44:24.842806",
+  "llm_cost": 0.0020134,
+  "llm_model": "gpt-6-luna"
+}

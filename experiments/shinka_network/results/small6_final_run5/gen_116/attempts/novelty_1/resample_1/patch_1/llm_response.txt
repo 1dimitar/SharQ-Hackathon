@@ -1,0 +1,30 @@
+<NAME>
+tail_exposure_calibration
+</NAME>
+
+<DESCRIPTION>
+Raise the exposure cutoff from the 75th to the 80th percentile and reduce the correction slope from 0.25 to 0.12. This makes the linear adjustment target only the most unusually exposed links and less aggressively counteracts route rewards. The smaller, more selective correction should preserve useful path-completion signals while reducing distortion of topology rankings; the existing cap remains as a safeguard.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        active_exposure = exposure[exposure > 0.0]
+        if active_exposure.size:
+            threshold = float(np.quantile(active_exposure, 0.75))
+            for link in linear:
+                excess = max(0.0, float(exposure[link]) - threshold)
+                # Center only a fraction of unusually large background
+                # rewards; preserve the full benefit of completing a path.
+                linear[link] += min(0.18, 0.25 * excess)
+=======
+        active_exposure = exposure[exposure > 0.0]
+        if active_exposure.size:
+            threshold = float(np.quantile(active_exposure, 0.80))
+            for link in linear:
+                excess = max(0.0, float(exposure[link]) - threshold)
+                # Apply a smaller correction only to the upper tail, preserving
+                # more of the route-completion signal in ordinary cases.
+                linear[link] += min(0.18, 0.12 * excess)
+>>>>>>> REPLACE
+
+</DIFF>

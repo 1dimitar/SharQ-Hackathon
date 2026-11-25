@@ -1,0 +1,85 @@
+"""Surrogate QUBO terms for QOBLIB 08 network design."""
+
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build linear and quadratic surrogate cost terms for a directed network."""
+    t = np.asarray(demand, dtype=float)
+    n = len(t)
+    if n == 0:
+        return {}, {}, 1.0
+
+    # Ignore invalid negative/non-finite entries and remove any diagonal traffic.
+    t = np.where(np.isfinite(t), np.maximum(t, 0.0), 0.0).copy()
+    np.fill_diagonal(t, 0.0)
+    scale = float(t.max())
+    if scale <= 0.0:
+        scale = 1.0
+    d = t / scale
+
+    # A node with large total incident demand is a less attractive relay:
+    # its incident links are more likely to face transit-load pressure.
+    pressure = (d.sum(axis=0) + d.sum(axis=1))
+    pmax = float(pressure.max()) if pressure.size else 0.0
+    if pmax > 0.0:
+        pressure /= pmax
+
+    # Direct service remains the strongest individual signal. The small
+    # endpoint adjustment breaks ties toward links joining less pressured
+    # nodes without overwhelming the observed pair demand.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            endpoint_relief = 0.5 * (1.0 - 0.5 * (pressure[i] + pressure[j]))
+            linear[(i, j)] = float(-0.72 * d[i, j] - 0.035 * endpoint_relief)
+
+    # A two-hop route i -> j -> k is valuable when it serves meaningful
+    # demand, but its bonus is deliberately smaller than the direct-link
+    # reward. Low-pressure relays receive a modest preference. Attenuating
+    # paths whose component links already carry strong direct demand adds a
+    # simple congestion-awareness correction.
+    quadratic = {}
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            first = d[i, j]
+            for k in range(n):
+                if k == i or k == j:
+                    continue
+                pair_demand = d[i, k]
+                if pair_demand <= 0.0:
+                    continue
+
+                relay_relief = 0.75 + 0.5 * (1.0 - pressure[j])
+                leg_congestion = 1.0 + 0.35 * (first + d[j, k])
+                weight = -0.27 * pair_demand * relay_relief / leg_congestion
+                if weight:
+                    quadratic[((i, j), (j, k))] = float(weight)
+
+    # The evaluator adds this separately from the returned objective.
+    penalty_weight = 2.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

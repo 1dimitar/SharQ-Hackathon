@@ -1,0 +1,239 @@
+<NAME>
+recombine_and_anneal
+</NAME>
+
+<DESCRIPTION>
+This approach replaces repeated neighborhood enumeration with a small evolutionary search. It seeds a diverse population from energy-ranked repaired QAOA samples, then generates candidates by recombining two valid networks and applying random degree-preserving switches. A lightweight surrogate screen chooses which offspring deserve LP calls, while a temperature-based acceptance rule lets the population explore beyond strict improvements. A modest random-start quota hedges against QAOA pools that happen to be weak.
+</DESCRIPTION>
+
+<CODE>
+```python
+# EVOLVE-BLOCK-START
+def improve(demand, candidates, tools, rng):
+    import math
+
+    n = tools.n
+    seen = {}
+    population = []
+    best_net = None
+    best_score = float("inf")
+
+    def canon(arcs):
+        return tuple(sorted(tuple(map(int, a)) for a in arcs))
+
+    def energy(net):
+        try:
+            return float(tools.energy(net))
+        except Exception:
+            return 0.0
+
+    def evaluate(net):
+        nonlocal best_net, best_score
+        net = canon(net)
+        if net in seen:
+            return seen[net]
+        if not tools.is_valid(net) or tools.lp_calls_left <= 0:
+            return float("inf")
+        try:
+            score = float(tools.lp(net))
+        except Exception as exc:
+            if type(exc).__name__ == "BudgetExhausted":
+                return float("inf")
+            raise
+        seen[net] = score
+        if score < best_score:
+            best_net, best_score = net, score
+        return score
+
+    def add_population(net):
+        net = canon(net)
+        if net not in seen or net in population:
+            return
+        population.append(net)
+        if len(population) > 20:
+            # Preserve the strongest members but replace structurally redundant
+            # weaker members with genuinely different networks.
+            population.sort(key=lambda x: seen[x])
+            elites = population[:8]
+            remainder = population[8:]
+            chosen = list(elites)
+            while remainder and len(chosen) < 20:
+                candidate = max(
+                    remainder,
+                    key=lambda x: min(len(set(x) ^ set(y)) for y in chosen)
+                    - 0.04 * (seen[x] - best_score) / max(1.0, best_score),
+                )
+                chosen.append(candidate)
+                remainder.remove(candidate)
+            population[:] = chosen
+
+    # Repair all candidates cheaply, then prioritize a diverse energy-ranked
+    # subset. Retain a small fraction of random repairs for initialization hedge.
+    repaired = set()
+    for cand in candidates:
+        try:
+            net = canon(tools.repair(cand))
+            if tools.is_valid(net):
+                repaired.add(net)
+        except Exception:
+            continue
+
+    ordered = sorted(repaired, key=energy)
+    seeds = []
+    for net in ordered:
+        if all(len(set(net) ^ set(old)) >= 4 for old in seeds):
+            seeds.append(net)
+        if len(seeds) >= 14:
+            break
+    for net in ordered:
+        if len(seeds) >= 22:
+            break
+        if net not in seeds:
+            seeds.append(net)
+
+    # Randomly perturb repaired samples rather than relying only on QAOA starts.
+    for _ in range(min(6, max(0, len(candidates) // 16))):
+        if ordered:
+            base = ordered[int(rng.integers(len(ordered)))]
+            net = base
+            for _ in range(2 + int(rng.integers(4))):
+                net = mutate(net, 1) if False else net
+            # A repair from randomized links provides a different basin.
+            raw = list(base)
+            rng.shuffle(raw)
+            try:
+                random_repair = canon(tools.repair(raw[:max(1, len(raw) - 2)]))
+                if tools.is_valid(random_repair):
+                    seeds.append(random_repair)
+            except Exception:
+                pass
+
+    if not seeds:
+        try:
+            fallback = canon(tools.repair([]))
+            if tools.is_valid(fallback):
+                seeds = [fallback]
+        except Exception:
+            return []
+
+    # Spend only a portion of the budget on initial seed evaluations.
+    seed_limit = min(len(seeds), max(12, min(28, tools.lp_calls_left // 8)))
+    for net in seeds[:seed_limit]:
+        if tools.lp_calls_left <= 0:
+            break
+        evaluate(net)
+        add_population(net)
+
+    if not population:
+        return []
+
+    def switch_once(net):
+        arcs = list(net)
+        if len(arcs) < 2:
+            return net
+        for _ in range(20):
+            i, j = rng.choice(len(arcs), size=2, replace=False)
+            a, b = arcs[int(i)]
+            c, d = arcs[int(j)]
+            x, y = (a, d), (c, b)
+            cur = set(net)
+            if a != d and c != b and x not in cur and y not in cur:
+                cur.remove((a, b))
+                cur.remove((c, d))
+                cur.add(x)
+                cur.add(y)
+                return canon(cur)
+        return net
+
+    def mutate(net, count):
+        cur = net
+        for _ in range(count):
+            cur = switch_once(cur)
+        return cur
+
+    def offspring(p, q):
+        # Blend edges from both parents, then use the problem's free repair
+        # operator to restore the exact in/out degree constraints.
+        union = list(set(p) | set(q))
+        rng.shuffle(union)
+        for keep in (0.55, 0.70, 0.85):
+            raw = union[:max(1, int(keep * len(union)))]
+            try:
+                child = canon(tools.repair(raw))
+                if tools.is_valid(child):
+                    return child
+            except Exception:
+                pass
+        return mutate(p, 2 + int(rng.integers(4)))
+
+    def select_parent():
+        # Rank-based selection keeps quality pressure without collapsing diversity.
+        ranked = sorted(population, key=lambda x: seen[x])
+        top = ranked[:max(1, min(10, len(ranked)))]
+        weights = [1.0 / ((i + 1) ** 0.8) for i in range(len(top))]
+        return top[int(rng.choice(len(top), p=[w / sum(weights) for w in weights]))]
+
+    used = 0
+    stall = 0
+    while tools.lp_calls_left > 0:
+        used += 1
+        p = select_parent()
+        q = select_parent()
+        child = offspring(p, q)
+        if rng.random() < 0.75:
+            child = mutate(child, 1 + int(rng.integers(4)))
+
+        # Occasionally introduce a larger shake from a nonelite member.
+        if stall > 8 and rng.random() < 0.35:
+            donor = population[int(rng.integers(len(population)))]
+            child = mutate(donor, 4 + int(rng.integers(7)))
+
+        proposals = {child}
+        # Generate a few siblings cheaply; the energy rank screens LP expenditure.
+        for _ in range(3):
+            sibling = offspring(select_parent(), select_parent())
+            sibling = mutate(sibling, 1 + int(rng.integers(3)))
+            proposals.add(sibling)
+
+        fresh = [x for x in proposals
+                 if tools.is_valid(x) and x not in seen and not tools.is_cached(x)]
+        if not fresh:
+            stall += 1
+            continue
+
+        fresh.sort(key=energy)
+        # Evaluate one strong-screened offspring and sometimes a second diverse one.
+        batch = fresh[:1]
+        if len(fresh) > 1 and rng.random() < 0.30:
+            batch.append(fresh[-1])
+
+        old_best = best_score
+        for net in batch:
+            if tools.lp_calls_left <= 0:
+                break
+            score = evaluate(net)
+            if math.isfinite(score):
+                add_population(net)
+                # A modest annealed replacement criterion promotes exploration.
+                parent_score = min(seen.get(p, best_score), seen.get(q, best_score))
+                temp = max(150.0, 1800.0 * (0.985 ** (used % 250)))
+                if score <= parent_score or rng.random() < math.exp(
+                    min(0.0, (parent_score - score) / temp)
+                ):
+                    if net not in population:
+                        population.append(net)
+
+        if best_score < old_best:
+            stall = 0
+        else:
+            stall += 1
+
+        # Keep population bounded and protect the best discoveries.
+        if len(population) > 28:
+            population.sort(key=lambda x: seen[x])
+            population[:] = population[:20]
+
+    return list(best_net) if best_net is not None else []
+# EVOLVE-BLOCK-END
+```
+</CODE>

@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "selective_high_demand_relays",
+  "patch_description": "Allocate up to two additional relay candidates only to OD pairs in the top decile of positive demands. This concentrates extra two-hop interactions on the traffic most likely to benefit from alternate routing, while preserving the current relay budget for other pairs. The deterministic 90th-percentile cutoff is computed from the demand matrix, and the number of added quadratic terms remains comfortably below the limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T21:32:23.997927",
+  "llm_cost": 0.0011904,
+  "llm_model": "gpt-6-luna"
+}

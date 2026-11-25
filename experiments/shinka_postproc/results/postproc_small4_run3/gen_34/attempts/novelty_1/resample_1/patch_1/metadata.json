@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "adaptive_signal_quotas",
+  "patch_description": "Track whether energy-ranked, routing-ranked, and dual/load-focused selections produce successive LP improvements. Use smoothed success rates to modestly adjust their next-round quotas, while bounding each adjustment and retaining the existing operator, novelty, and random exploration slots. This lets LP budget shift toward signals that are useful on the current instance and pool without allowing a small number of early wins to eliminate other search directions.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:25:17.108429",
+  "llm_cost": 0.0035769,
+  "llm_model": "gpt-6-luna"
+}

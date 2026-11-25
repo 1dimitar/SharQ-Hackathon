@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_twohop",
+  "patch_description": "Keep the direct-demand link reward, and add a restrained reward for two-link paths that can carry traffic between their endpoints. Weight that reward by the intermediate node\u2019s traffic burden, so paths through heavily loaded nodes are less attractive, and discount it relative to direct service to avoid letting many indirect-path terms overwhelm the direct-link signal. The quadratic term count is at most \\(n(n-1)(n-2)\\), within the stated limit. A moderate degree-penalty weight also helps the QUBO favour valid degree patterns before repair.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T23:40:37.931859",
+  "llm_cost": 0.0007823999999999999,
+  "llm_model": "gpt-6-luna"
+}

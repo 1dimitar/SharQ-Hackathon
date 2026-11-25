@@ -1,0 +1,69 @@
+<NAME>
+transit_load_discount
+</NAME>
+
+<DESCRIPTION>
+Add a conservative second pass that estimates which transit nodes are likely to carry demand across plausible two-hop routes. The estimate distributes each demand over its three highest-ranked intermediates, then mildly raises the pressure on heavily used nodes before the existing route selection. This makes the route rewards account for aggregate transit load, not just a node’s row and column sums, while preserving the current sparse coupling structure and limiting the adjustment to 18%.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    positive = traffic[traffic > 0.0]
+    if positive.size:
+        cutoff = float(np.quantile(positive, 0.68))
+    else:
+        cutoff = 0.0
+
+    quadratic = {}
+=======
+    positive = traffic[traffic > 0.0]
+    if positive.size:
+        cutoff = float(np.quantile(positive, 0.68))
+    else:
+        cutoff = 0.0
+
+    # Estimate aggregate transit load using the strongest plausible
+    # two-hop routes, then apply a mild second-pass congestion discount.
+    estimated_load = np.zeros(n, dtype=float)
+    for i in range(n):
+        for k in range(n):
+            if i == k or traffic[i, k] <= 0.0:
+                continue
+
+            route_scores = []
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                first_affinity = (
+                    0.56 * np.sqrt(row_share[i, j])
+                    + 0.44 * np.sqrt(z[i, j])
+                )
+                second_affinity = (
+                    0.56 * np.sqrt(col_share[j, k])
+                    + 0.44 * np.sqrt(z[j, k])
+                )
+                balance = np.sqrt(max(first_affinity * second_affinity, 0.0))
+                edge_evidence = 0.20 * (
+                    np.sqrt(z[i, j]) + np.sqrt(z[j, k])
+                )
+                rank = (
+                    0.18 + balance + edge_evidence
+                ) / (pressure[j] ** 0.88)
+                route_scores.append((float(rank), j))
+
+            route_scores.sort(key=lambda item: (-item[0], item[1]))
+            top_routes = route_scores[:min(3, len(route_scores))]
+            total_rank = sum(max(rank, 0.0) for rank, _ in top_routes)
+            if total_rank > 0.0:
+                demand_mass = z[i, k] ** 0.70
+                for rank, j in top_routes:
+                    estimated_load[j] += demand_mass * max(rank, 0.0) / total_rank
+
+    max_estimated_load = float(np.max(estimated_load)) if estimated_load.size else 0.0
+    if max_estimated_load > 0.0:
+        pressure *= 1.0 + 0.18 * estimated_load / max_estimated_load
+
+    quadratic = {}
+>>>>>>> REPLACE
+
+</DIFF>

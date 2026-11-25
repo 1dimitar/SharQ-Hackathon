@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "route_interaction_balance",
+  "patch_description": "Count how often each link is used in a selected two-hop route, then mildly attenuate quadratic terms involving heavily reused links. This regularizes variables that otherwise accumulate disproportionate interaction strength, which can distort both sampling and energy-based ranking. The interface provides only a scalar degree penalty, so this targets interaction imbalance without adding an unsupported link-specific constraint penalty; linear demand rewards and the existing degree penalty remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:06:23.984344",
+  "llm_cost": 0.002601,
+  "llm_model": "gpt-6-luna"
+}

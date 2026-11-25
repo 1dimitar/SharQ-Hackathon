@@ -1,0 +1,14 @@
+{
+  "generation": 189,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "diffusion_load_proxy",
+  "patch_description": "This approach builds a demand-informed diffusion model rather than scoring links primarily by their individual traffic. It estimates which relays can usefully connect high-demand source\u2013destination pairs, then rewards corresponding two-link wedges with a capacity-discounted benefit. A separate positive interaction discourages selecting pairs of links that concentrate traffic on an already high-pressure receiver. The construction uses only linear terms and O(n\u00b3) quadratic terms, and uses mean incident demand to measure relay pressure.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:02:31.878621",
+  "llm_cost": 0.0016058000000000001,
+  "llm_model": "gpt-6-luna"
+}

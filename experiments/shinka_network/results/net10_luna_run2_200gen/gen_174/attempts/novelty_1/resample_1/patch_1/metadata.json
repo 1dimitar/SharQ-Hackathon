@@ -1,0 +1,14 @@
+{
+  "generation": 174,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "concave_direct_reward",
+  "patch_description": "Shift the direct-link reward from 0.85/0.15 to 0.75/0.25 between normalized demand and its square root. This controlled adjustment gives moderate-demand links more influence, which may improve typical sampled topologies while retaining a substantial preference for high-demand direct links. The two-hop terms and all other settings remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T17:00:25.639178",
+  "llm_cost": 0.0008177,
+  "llm_model": "gpt-6-luna"
+}

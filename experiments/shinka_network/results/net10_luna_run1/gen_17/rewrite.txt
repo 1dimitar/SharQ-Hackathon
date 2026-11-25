@@ -1,0 +1,113 @@
+import time
+
+# EVOLVE-BLOCK-START
+import numpy as np
+
+
+def surrogate_terms(demand):
+    """Build demand-conditioned direct, relay, and endpoint-congestion terms."""
+    t = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+    if t.ndim != 2 or t.shape[0] != t.shape[1]:
+        raise ValueError("demand must be a square matrix")
+    n = t.shape[0]
+    np.fill_diagonal(t, 0.0)
+
+    positive = t[t > 0.0]
+    if positive.size:
+        peak = float(positive.max())
+        mean = float(positive.mean())
+        # Blend robust mean scaling with peak scaling, retaining bounded weights.
+        scale = max(0.65 * peak + 0.35 * mean, 1e-15)
+        t = np.minimum(t, scale) / scale
+
+    rows = t.sum(axis=1)
+    cols = t.sum(axis=0)
+    total = float(t.sum())
+
+    # A link has value both for its own traffic and for access to a busy
+    # destination. The endpoint component is deliberately subordinate.
+    linear = {}
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            endpoint = 0.5 * (
+                rows[i] / max(total, 1e-15) +
+                cols[j] / max(total, 1e-15)
+            )
+            linear[(i, j)] = -float(t[i, j] + 0.12 * endpoint)
+
+    quadratic = {}
+
+    # Reward completed two-hop routes. Relay attractiveness is conditioned on
+    # how much traffic the relay can plausibly handle, rather than treating all
+    # intermediates as interchangeable.
+    for i in range(n):
+        for k in range(n):
+            if i == k or t[i, k] <= 0.0:
+                continue
+            demand_ik = float(t[i, k])
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                # Favor relays with both incoming and outgoing traffic support,
+                # but temper the reward at globally busy relays.
+                support_in = float(t[i, j])
+                support_out = float(t[j, k])
+                relay_capacity = 1.0 / (1.0 + 0.25 * (rows[j] + cols[j]))
+                support = 0.25 + 0.75 * np.sqrt(
+                    max(0.0, support_in * support_out)
+                )
+                value = 0.24 * demand_ik * float(support) * relay_capacity
+                if value > 1e-12:
+                    e1, e2 = (i, j), (j, k)
+                    quadratic[(e1, e2)] = -float(value)
+
+    # Penalize combinations that place two selected links at the same
+    # high-throughput endpoint. Demand-conditioned endpoint weights make this
+    # distinguish useful choices, unlike a uniform degree penalty.
+    for node in range(n):
+        outgoing = [(node, j) for j in range(n) if j != node]
+        incoming = [(i, node) for i in range(n) if i != node]
+        out_pressure = float(rows[node] / max(total, 1e-15))
+        in_pressure = float(cols[node] / max(total, 1e-15))
+
+        for a in range(len(outgoing)):
+            e1 = outgoing[a]
+            for b in range(a + 1, len(outgoing)):
+                e2 = outgoing[b]
+                # Avoid penalizing links that directly serve significant demand.
+                relief = 0.5 * (float(t[e1]) + float(t[e2]))
+                value = 0.035 * out_pressure * max(0.0, 1.0 - relief)
+                if value > 1e-12:
+                    quadratic[(e1, e2)] = quadratic.get((e1, e2), 0.0) + value
+
+        for a in range(len(incoming)):
+            e1 = incoming[a]
+            for b in range(a + 1, len(incoming)):
+                e2 = incoming[b]
+                relief = 0.5 * (float(t[e1]) + float(t[e2]))
+                value = 0.035 * in_pressure * max(0.0, 1.0 - relief)
+                if value > 1e-12:
+                    key = (e1, e2)
+                    quadratic[key] = quadratic.get(key, 0.0) + value
+
+    penalty_weight = 1.0
+    return linear, quadratic, penalty_weight
+
+
+# EVOLVE-BLOCK-END
+
+
+def run_surrogate(demand):
+    """Fixed entry point called by the evaluator, once per demand matrix."""
+    demand = np.array(demand, dtype=float)
+    start = time.perf_counter()
+    linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+    return {
+        "n": len(demand),
+        "linear": linear,
+        "quadratic": quadratic,
+        "penalty_weight": penalty_weight,
+        "seconds": time.perf_counter() - start,
+    }

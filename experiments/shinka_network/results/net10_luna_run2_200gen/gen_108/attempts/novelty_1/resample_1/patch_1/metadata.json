@@ -1,0 +1,14 @@
+{
+  "generation": 108,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "capacity_aware_route_portfolio",
+  "patch_description": "This combines demand-based direct-link rewards with a small portfolio of capacity-aware two-hop routes. Candidate routes are ranked using estimated component-edge load and transit-node pressure, then their reward is shared across the best candidates for each OD pair. It also adds sparse positive pairwise terms that discourage jointly selecting links associated with two highly pressured nodes, encouraging a more balanced network. The candidate cap keeps the quadratic term count below the required limit.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:53:26.961287",
+  "llm_cost": 0.0026444000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,21 @@
+<NAME>
+stronger_edge_discount
+</NAME>
+
+<DESCRIPTION>
+Increase the discount on two-hop rewards when either component link already carries substantial direct demand. The current factor, `1 + 0.5 * edge_pressure`, may still favor paths that concentrate traffic on busy links. Raising the coefficient to `0.85` tests a stronger congestion aversion while leaving node-pressure handling and all other terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.85 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

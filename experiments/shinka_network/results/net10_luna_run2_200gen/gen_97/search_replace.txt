@@ -1,0 +1,18 @@
+<NAME>
+stronger_edge_suppression
+</NAME>
+
+<DESCRIPTION>
+Increase suppression of two-hop rewards when either link already carries substantial direct demand. The current denominator, `1 + 0.5 * edge_pressure`, discounts those routes only mildly; replacing it with `(1 + edge_pressure) ** 1.5` makes routes through potentially loaded links less attractive. This tests the suggested stronger-suppression direction while leaving direct-link rewards, node pressure, and all other terms unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                        float(node_pressure[j])
+                        * (1.0 + 0.5 * edge_pressure)
+=======
+                        float(node_pressure[j])
+                        * (1.0 + edge_pressure) ** 1.5
+>>>>>>> REPLACE
+
+</DIFF>

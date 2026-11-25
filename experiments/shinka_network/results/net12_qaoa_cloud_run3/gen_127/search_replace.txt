@@ -1,0 +1,16 @@
+<NAME>
+increase_relay_reward
+</NAME>
+
+<DESCRIPTION>
+Increase the two-hop relay reward coefficient from 0.30 to 0.35 while leaving the support formula, pressure calculation, and relay budget unchanged. This is a targeted test of whether relay support is underweighted relative to direct-link rewards: stronger two-hop interactions may help the QUBO favor topologies that can serve traffic through plausible relays. The change preserves the existing sparsity and coupling structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                quadratic[key] = -0.30 * support / pressure
+=======
+                quadratic[key] = -0.35 * support / pressure
+>>>>>>> REPLACE
+
+</DIFF>

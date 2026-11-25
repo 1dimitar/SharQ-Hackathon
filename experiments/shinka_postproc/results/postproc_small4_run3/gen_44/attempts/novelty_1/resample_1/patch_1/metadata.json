@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_source_quotas",
+  "patch_description": "Adapt the LP batch allocation among energy, learned prediction, routing proxy, novelty, and exploration using each source\u2019s recent rate of beating the selected parent. Every source starts with a protected slot when enough candidates are available; remaining slots are allocated in proportion to smoothed success rates. This preserves the existing multi-signal portfolio while allowing the search to favor signals that are working on the current pool, without committing to one heuristic or tuning quotas to a particular network size.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:47:05.223419",
+  "llm_cost": 0.0041409,
+  "llm_model": "gpt-6-luna"
+}

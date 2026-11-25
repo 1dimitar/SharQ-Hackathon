@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "paircover",
+  "patch_description": "The current model combines direct-link rewards, selected two-hop routes, and reciprocal-cut terms. This version adds a complementary-neighbor signal: for each node, it scores pairs of outgoing (and incoming) neighbors by how well their demand-derived service profiles cover traffic destinations, then decomposes that pair score into linear and quadratic terms. It uses both directions of traffic and a concave coverage function to favor useful, less-overlapping service. Two-hop route rewards are retained as a weaker, sparse signal, while the degree penalty is raised modestly to encourage feasible samples.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:16:57.185982",
+  "llm_cost": 0.005015800000000001,
+  "llm_model": "gpt-6-luna"
+}

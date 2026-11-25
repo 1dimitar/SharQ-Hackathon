@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "bottleneck_relay_sparse",
+  "patch_description": "Uses a sparse set of two-hop interactions, retaining only the strongest relay candidates for each positive-demand OD pair. Relay affinity depends on both legs: the weaker leg limits the score, while the stronger leg provides a small supporting signal. This reduces rewards for paths that look attractive only because of one leg. Direct-link rewards remain demand-based, with a modest concave component so medium-sized demands still influence the topology. Pressure discounts relays at nodes with high incident demand. The sparse path terms also keep the interaction graph smaller than the dense two-hop construction.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T18:38:03.841847",
+  "llm_cost": 0.0012997,
+  "llm_model": "gpt-6-luna"
+}

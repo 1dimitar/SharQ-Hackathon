@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "dual_guided_hot_arc_moves",
+  "patch_description": "The current generator already proposes switches involving bottleneck links, but its LP-batch shortlist can favor energy-ranked or random moves and fail to spend calls on those proposals. Use the magnitude of positive LP prices to score how strongly a move removes priced arcs, with a normalized high-load fallback when prices are unavailable. Preserve that score when proposals are duplicated or combined into walks and rotations. Then reserve shortlist and LP-batch capacity for moves with the greatest bottleneck-arc removal. This makes dual guidance affect which networks are actually certified, while retaining the existing energy, routing, and exploratory selections.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:26:00.845731",
+  "llm_cost": 0.0036847,
+  "llm_model": "gpt-6-luna"
+}

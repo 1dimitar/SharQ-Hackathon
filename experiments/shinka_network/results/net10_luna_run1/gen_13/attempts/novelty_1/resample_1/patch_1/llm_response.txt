@@ -1,0 +1,28 @@
+<NAME>
+unaveraged_twohop_reward
+</NAME>
+
+<DESCRIPTION>
+Replace the per-intermediate averaging and node-congestion discount with a modest, uniform reward for each demand-supported two-hop path. The current factors make each quadratic coefficient especially small, so these terms may have little influence relative to direct-link rewards. Using `-0.08 * demand[i, k] / scale` keeps the same sparse set of interactions while giving selected paths a stronger signal. The coefficient is deliberately well below the previously tried strong two-hop reward, which performed worse than the direct-demand baseline.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                congestion = 1.0 + node_load[j] / mean_load
+                weight = -0.18 * float(demand[i, k]) / (scale * max(1, n - 2) * congestion)
+                quadratic[((i, j), (j, k))] = weight
+=======
+            for j in range(n):
+                if j == i or j == k:
+                    continue
+                # Reward demand-supported two-hop paths uniformly. Avoid
+                # spreading each OD reward across all possible intermediates,
+                # which makes each useful path interaction too weak.
+                weight = -0.08 * float(demand[i, k]) / scale
+                quadratic[((i, j), (j, k))] = weight
+>>>>>>> REPLACE
+
+</DIFF>

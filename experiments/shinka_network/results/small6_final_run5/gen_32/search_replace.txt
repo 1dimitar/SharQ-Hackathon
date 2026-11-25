@@ -1,0 +1,66 @@
+<NAME>
+targeted_branch_diversity
+</NAME>
+
+<DESCRIPTION>
+Replace the broad penalty on every pair of links sharing a node with a sparse penalty on only the most redundant branch pairs. Two branches are redundant when their demand-weighted traffic profiles are similar, so selecting both is less likely to provide useful routing alternatives. This makes the congestion proxy more specific to the demand matrix, reduces unnecessary couplings, and may improve both QUBO sampling and energy-based ranking of link exchanges. The replacement adds at most three pairs per node in each direction.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Sparse transit-capacity proxy: multiple selected links entering or
+    # leaving a heavily loaded node tend to concentrate transit there.
+    row_scale = np.maximum(row / max(float(row.max()), 1e-12), 0.10)
+    col_scale = np.maximum(col / max(float(col.max()), 1e-12), 0.10)
+    for v in range(n):
+        in_links = [(u, v) for u in range(n) if u != v]
+        out_links = [(v, w) for w in range(n) if w != v]
+        node_factor = float(pressure[v]) ** 1.2
+
+        for a in range(len(in_links)):
+            i, _ = in_links[a]
+            for b in range(a + 1, len(in_links)):
+                k, _ = in_links[b]
+                strength = 0.075 * node_factor * np.sqrt(row_scale[i] * row_scale[k])
+                add_q(in_links[a], in_links[b], strength)
+
+        for a in range(len(out_links)):
+            _, j = out_links[a]
+            for b in range(a + 1, len(out_links)):
+                _, k = out_links[b]
+                strength = 0.075 * node_factor * np.sqrt(col_scale[j] * col_scale[k])
+                add_q(out_links[a], out_links[b], strength)
+=======
+    # Penalize only branch pairs whose demand-weighted traffic profiles
+    # overlap substantially. Broad same-node penalties also discourage
+    # useful, complementary branches.
+    for inbound in (False, True):
+        od = t.T if inbound else t
+        profiles = np.sqrt(od).copy()
+        np.fill_diagonal(profiles, 1.0)
+
+        for center in range(n):
+            weights = od[center]
+            if float(weights.sum()) <= 0.0:
+                continue
+
+            gram = (profiles * weights[None, :]) @ profiles.T
+            branches = [j for j in range(n) if j != center]
+            normalizer = max(float(gram[j, j]) for j in branches)
+            if normalizer <= 1e-12:
+                continue
+
+            redundant = []
+            for position, j in enumerate(branches):
+                for k in branches[position + 1:]:
+                    overlap = float(gram[j, k]) / normalizer
+                    if overlap > 0.15:
+                        redundant.append((overlap, j, k))
+            redundant.sort(reverse=True)
+
+            for overlap, j, k in redundant[:3]:
+                first = (j, center) if inbound else (center, j)
+                second = (k, center) if inbound else (center, k)
+                add_q(first, second, 0.20 * overlap)
+>>>>>>> REPLACE
+</DIFF>

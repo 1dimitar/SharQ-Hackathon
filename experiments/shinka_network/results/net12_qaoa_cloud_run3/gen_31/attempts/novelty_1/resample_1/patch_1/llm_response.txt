@@ -1,0 +1,29 @@
+<NAME>
+conservative_leg_affinity
+</NAME>
+
+<DESCRIPTION>
+Scale each two-hop reward by a conservative affinity for its two legs, based on their normalized direct demands. The geometric mean reduces rewards when one leg has little demand support, while the 0.1 offset avoids eliminating paths with a zero-demand leg. Existing pressure discounting and the number of quadratic terms remain unchanged.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = (
+                    -path_strength * path_support
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+=======
+                leg_a = float(traffic[i, j]) / scale
+                leg_b = float(traffic[j, k]) / scale
+                weak_leg = min(leg_a, leg_b)
+                strong_leg = max(leg_a, leg_b)
+                leg_affinity = np.sqrt(
+                    (0.1 + weak_leg) * (0.1 + strong_leg)
+                ) / 1.1
+
+                weight = (
+                    -path_strength * path_support * leg_affinity
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+                )
+>>>>>>> REPLACE
+</DIFF>

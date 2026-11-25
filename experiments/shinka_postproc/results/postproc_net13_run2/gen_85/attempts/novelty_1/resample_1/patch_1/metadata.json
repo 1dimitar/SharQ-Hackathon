@@ -1,0 +1,14 @@
+{
+  "generation": 85,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "adaptive_operator_portfolio",
+  "patch_description": "Track LP-confirmed success rates separately for focused swaps, random swaps, rotations, and multi-switch kicks. Use those rates to allocate a diverse portion of each LP batch across operators, with a nonzero exploration floor so that operators are not abandoned prematurely. Update the rates from each evaluated move\u2019s outcome relative to its parent. This directs scarce LP calls toward operators that have recently produced improvements while preserving exploration.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:46:12.102366",
+  "llm_cost": 0.0035358000000000004,
+  "llm_model": "gpt-6-luna"
+}

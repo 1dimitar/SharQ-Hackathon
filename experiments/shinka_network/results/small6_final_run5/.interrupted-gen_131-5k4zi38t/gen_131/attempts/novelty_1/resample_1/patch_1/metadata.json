@@ -1,0 +1,14 @@
+{
+  "generation": 131,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "weighted_route_congestion",
+  "patch_description": "The current route-frequency correction counts every selected two-hop alternative equally, even though its coupling strength already reflects demand support. Replace the unit count with the magnitude of the negative route coupling. This makes the existing correction target links that participate in many *high-support* routes, rather than links that appear frequently only because of numerous weak alternatives. The rest of the sparsity, cutoff, and penalty logic remains unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T03:46:03.077583",
+  "llm_cost": 0.0028266000000000003,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "cross_entropy_topology",
+  "patch_description": "Replaces neighborhood search with a cross-entropy sampling strategy. It learns which directed links occur in low-LP-score networks, then repeatedly samples new valid topologies as two disjoint derangements (two perfect matchings with no self-links). Mixing learned link preferences with uniform exploration helps it search regions beyond local exchanges, while LP-scored elites update the sampling distribution.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:10:45.295680",
+  "llm_cost": 0.0031638,
+  "llm_model": "gpt-6-luna"
+}

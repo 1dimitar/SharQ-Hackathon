@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "trafficbalanced_conflicts",
+  "patch_description": "The current program uses sparse two-hop rewards and a relatively weak degree penalty. This version instead uses direct-demand rewards plus endpoint-pressure conflict couplings: links compete when they share a sender or receiver, with coupling strength informed by both the shared node\u2019s normalized traffic and the other endpoints\u2019 traffic pressure. The pair scale adapts modestly to demand heterogeneity and stays bounded; a small endpoint term supplements direct demand. It omits path couplings, which can reward routes without reliably improving the maximum link load, and uses a stronger degree penalty to discourage repair-heavy samples. The conflict construction has at most \\(2n(n-1)(n-2)\\) quadratic terms.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:49:40.249441",
+  "llm_cost": 0.0025192,
+  "llm_model": "gpt-6-luna"
+}

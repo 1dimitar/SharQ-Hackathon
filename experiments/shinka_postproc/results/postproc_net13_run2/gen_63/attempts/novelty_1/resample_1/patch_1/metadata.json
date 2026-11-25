@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual-guided-annealing",
+  "patch_description": "This search spends a modest share of the LP budget scoring diverse repaired starts, then uses bottleneck-focused degree-preserving exchanges and occasional three-link rotations to explore their neighborhoods. Surrogate energy screens proposals, while an annealed parent-selection rule and bounded archive help the search escape repeatedly stalled regions. It also occasionally proposes a few exchanges toward a distant strong archive member, enabling limited path relinking without letting it dominate the search. LP evaluations are deduplicated, and the best evaluated network is always returned.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:27:03.696845",
+  "llm_cost": 0.0034687,
+  "llm_model": "gpt-6-luna"
+}

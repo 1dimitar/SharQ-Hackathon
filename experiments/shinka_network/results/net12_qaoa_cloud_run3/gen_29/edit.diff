@@ -1,0 +1,182 @@
+--- a/original.py
++++ b/original.py
+@@ -1,103 +1,126 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+-def surrogate_terms(demand):
+-    """Build direct-link rewards and pressure-discounted two-hop rewards."""
+-    traffic = np.asarray(demand, dtype=float)
+-    n = len(traffic)
+-
+-    # Negative entries and self-demands do not represent useful network traffic.
+-    traffic = np.maximum(traffic, 0.0).copy()
++def _prepare_demand(demand):
++    """Return nonnegative, zero-diagonal demand and a safe normalization."""
++    traffic = np.maximum(np.asarray(demand, dtype=float), 0.0).copy()
+     np.fill_diagonal(traffic, 0.0)
+ 
+-    scale = float(np.max(traffic)) if traffic.size else 0.0
+-    if scale <= 0.0:
+-        scale = 1.0
+-    normalized = traffic / scale
++    peak = float(np.max(traffic)) if traffic.size else 0.0
++    if peak <= 0.0:
++        peak = 1.0
++    return traffic, traffic / peak
+ 
+-    # Direct service is the most reliable way to reduce a link's routed load.
+-    # The concave component also gives moderate demands a useful, but smaller,
+-    # influence when selecting the limited two outgoing/incoming links.
++
++def _node_pressures(traffic):
++    """Estimate relay pressure from the larger directional demand total."""
++    incoming = np.sum(traffic, axis=0)
++    outgoing = np.sum(traffic, axis=1)
++    incident = np.maximum(incoming, outgoing)
++
++    peak = float(np.max(incident)) if incident.size else 0.0
++    if peak <= 0.0:
++        return np.zeros(len(traffic), dtype=float)
++    return incident / peak
++
++
++def _direct_link_terms(normalized):
++    """Give direct service a concave reward to value moderate demands too."""
++    n = len(normalized)
+     linear = {}
+     for i in range(n):
+         for j in range(n):
+             if i == j:
+                 continue
+             d = float(normalized[i, j])
+-            linear[(i, j)] = -(0.80 * d + 0.20 * np.sqrt(d))
++            linear[(i, j)] = -(0.45 * d + 0.55 * np.sqrt(d))
++    return linear
+ 
+-    # A relay with large incoming or outgoing demand is a less attractive
+-    # place to route additional traffic. Use the larger direction as a simple
+-    # estimate of its transit pressure.
+-    incoming = np.sum(traffic, axis=0)
+-    outgoing = np.sum(traffic, axis=1)
+-    incident = np.maximum(incoming, outgoing)
+-    max_incident = float(np.max(incident)) if incident.size else 0.0
+-    if max_incident <= 0.0:
+-        max_incident = 1.0
+-    node_pressure = incident / max_incident
+ 
+-    # A two-hop route is useful as an alternate to a direct link, but should
+-    # not be rewarded as strongly as direct service. The pressure discount
+-    # reduces the reward for routes through busy relays or using already
+-    # heavily demanded edges.
++def _route_portfolio(normalized, pressure, relay_limit=3):
++    """Build sparse rewards for the strongest two-hop relay choices per OD."""
++    n = len(normalized)
+     quadratic = {}
+-    path_strength = 0.30
++    epsilon = 0.02
++    route_strength = 0.30
+ 
+-    for i in range(n):
+-        for k in range(n):
+-            if i == k:
++    for source in range(n):
++        for target in range(n):
++            if source == target:
+                 continue
+ 
+-            d = float(normalized[i, k])
+-            if d <= 0.0:
++            od = float(normalized[source, target])
++            if od <= 0.0:
+                 continue
+ 
+-            path_support = 0.72 * d + 0.28 * np.sqrt(d)
++            # Concavity retains useful influence for moderate OD demands.
++            od_support = 0.70 * od + 0.30 * np.sqrt(od)
++            candidates = []
+ 
+-            for j in range(n):
+-                if j == i or j == k:
++            for relay in range(n):
++                if relay == source or relay == target:
+                     continue
+ 
+-                edge_pressure = float(normalized[i, j] + normalized[j, k])
+-                # A sublinear pressure discount preserves a preference for
+-                # lightly loaded relays without making that preference too sharp.
+-                relay_discount = (0.75 + float(node_pressure[j]) / 1.75) ** 0.75
+-                edge_discount = 1.0 + 0.35 * edge_pressure
++                first_leg = float(normalized[source, relay])
++                second_leg = float(normalized[relay, target])
++                weaker = min(first_leg, second_leg)
++                stronger = max(first_leg, second_leg)
+ 
+-                weight = (
+-                    -path_strength
+-                    * path_support
+-                    / (relay_discount * edge_discount)
+-                )
++                # The ratio term makes a weak leg matter more than in a
++                # purely geometric average, while the floor keeps otherwise
++                # useful transit links eligible.
++                balance = (epsilon + weaker) / (epsilon + stronger)
++                leg_affinity = np.sqrt(
++                    (epsilon + weaker) * (epsilon + stronger)
++                ) * (0.55 + 0.45 * balance)
+ 
+-                first, second = (i, j), (j, k)
++                relay_discount = 0.65 + 0.70 * float(pressure[relay])
++                rank = leg_affinity / relay_discount
++                candidates.append((rank, relay, leg_affinity, relay_discount))
++
++            # Keep a small portfolio of alternatives instead of coupling
++            # every possible relay into the interaction graph.
++            candidates.sort(key=lambda item: (-item[0], item[1]))
++            for _, relay, affinity, discount in candidates[:relay_limit]:
++                weight = -route_strength * od_support * affinity / discount
++                first = (source, relay)
++                second = (relay, target)
+                 key = (first, second) if first < second else (second, first)
+-                quadratic[key] = weight
++                quadratic[key] = float(weight)
+ 
+-    # The evaluator supplies the degree penalties; a stronger value discourages
+-    # infeasible degree patterns before its repair step.
+-    penalty_weight = 6.0
++    return quadratic
++
++
++def surrogate_terms(demand):
++    """Return direct-link rewards and sparse, pressure-adjusted route rewards."""
++    traffic, normalized = _prepare_demand(demand)
++    pressure = _node_pressures(traffic)
++
++    linear = _direct_link_terms(normalized)
++    quadratic = _route_portfolio(normalized, pressure)
++
++    # Degree penalties are added by the evaluator, not included in these terms.
++    penalty_weight = 10.0
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

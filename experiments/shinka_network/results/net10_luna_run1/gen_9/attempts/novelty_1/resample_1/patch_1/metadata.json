@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "relay_capacity_surrogate",
+  "patch_description": "This surrogate estimates whether a node is a useful relay from the balance between traffic entering and leaving it, rather than from its total load. It rewards direct links for their own demand and adds sparse, demand-conditioned rewards for pairs of links that form a two-hop route. The relay factor favors nodes with capacity on both sides of a route, while the path reward is reduced when the direct demand is already well served by its direct-link term. This provides a different transit profile while keeping the interaction set to at most O(n\u00b3).",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:16:22.206685",
+  "llm_cost": 0.0009358000000000001,
+  "llm_model": "gpt-6-luna"
+}

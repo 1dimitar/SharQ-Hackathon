@@ -1,0 +1,118 @@
+--- a/original.py
++++ b/original.py
+@@ -1,48 +1,98 @@
+ """Surrogate QUBO terms for QOBLIB 08 network design. ShinkaEvolve edits the EVOLVE block."""
+ 
+ import time
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ 
+ 
+ def surrogate_terms(demand):
+-    """Build the surrogate cost terms of the topology QUBO from the demand matrix.
++    """Return linear and quadratic QUBO cost terms for directed links."""
++    t = np.asarray(demand, dtype=float)
++    n = len(t)
++    if n < 2:
++        return {}, {}, 2.5
+ 
+-    Args:
+-        demand: (n, n) float array; demand[i, j] is the traffic from node i to node j
+-            (zero diagonal).
++    # Keep the surrogate well-defined for unusual inputs.
++    t = np.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0)
++    t = np.maximum(t, 0.0).copy()
++    np.fill_diagonal(t, 0.0)
+ 
+-    Returns:
+-        linear: dict {(i, j): weight}. Weight on the binary variable x_ij
+-            (x_ij = 1 if the directed link i -> j is built), i != j.
+-        quadratic: dict {((i, j), (k, l)): weight}. Weight on the product x_ij * x_kl.
+-        penalty_weight: float. Strength of the degree penalty that the evaluator adds
+-            after rescaling these terms so the largest |weight| is 1.
++    maximum = float(t.max())
++    links = [(i, j) for i in range(n) for j in range(n) if i != j]
++    if maximum <= 0.0:
++        return {e: 0.0 for e in links}, {}, 2.5
+ 
+-    Lower energy must mean a better topology. Baseline: reward each link by the demand
+-    it carries directly.
+-    """
+-    n = len(demand)
+-    scale = float(demand.max()) or 1.0
+-    linear = {(i, j): -float(demand[i, j]) / scale for i in range(n) for j in range(n) if i != j}
++    d = t / maximum
++
++    # Direct traffic remains the dominant signal. The small square-root
++    # component gives moderate demands some influence without replacing it.
++    linear = {}
++    for i, j in links:
++        direct = 0.90 * d[i, j] + 0.10 * np.sqrt(d[i, j])
++        linear[(i, j)] = -float(direct)
++
+     quadratic = {}
+-    penalty_weight = 1.0
++
++    # Give each OD pair a small, normalized amount of two-hop credit. Traffic
++    # activity is used only as a mild relay preference: a less busy relay is
++    # somewhat more attractive, but no relay is excluded.
++    activity = (t.sum(axis=0) + t.sum(axis=1)) / maximum
++    mean_activity = float(activity.mean())
++    activity_ratio = activity / (mean_activity + 1e-12)
++    relay_weight = 1.0 / np.sqrt(0.5 + activity_ratio)
++    relay_weight = np.clip(relay_weight, 0.55, 1.45)
++
++    twohop_scale = 0.18
++    for i in range(n):
++        for k in range(n):
++            if i == k or d[i, k] <= 0.0:
++                continue
++
++            relays = [j for j in range(n) if j != i and j != k]
++            if not relays:
++                continue
++            total_weight = sum(float(relay_weight[j]) for j in relays)
++            if total_weight <= 0.0:
++                continue
++
++            for j in relays:
++                share = float(d[i, k]) * float(relay_weight[j]) / total_weight
++                a, b = (i, j), (j, k)
++                key = (a, b) if a < b else (b, a)
++                quadratic[key] = quadratic.get(key, 0.0) - twohop_scale * share
++
++    # A restrained reciprocal bonus encourages a pair of links when demand
++    # exists in both directions, while keeping the interaction graph compact.
++    reciprocal_scale = 0.035
++    for i in range(n):
++        for j in range(i + 1, n):
++            strength = min(float(d[i, j]), float(d[j, i]))
++            if strength > 0.0:
++                a, b = (i, j), (j, i)
++                key = (a, b) if a < b else (b, a)
++                quadratic[key] = quadratic.get(key, 0.0) - reciprocal_scale * strength
++
++    # Remove only numerical noise; retain small but meaningful couplings.
++    quadratic = {key: float(value) for key, value in quadratic.items()
++                 if abs(value) > 1e-12}
++
++    penalty_weight = 2.5
+     return linear, quadratic, penalty_weight
+ 
+ 
+ # EVOLVE-BLOCK-END
+ 
+ 
+ def run_surrogate(demand):
+     """Fixed entry point called by the evaluator, once per demand matrix."""
+     demand = np.array(demand, dtype=float)
+     start = time.perf_counter()
+     linear, quadratic, penalty_weight = surrogate_terms(demand.copy())
+     return {
+         "n": len(demand),
+         "linear": linear,
+         "quadratic": quadratic,
+         "penalty_weight": penalty_weight,
+         "seconds": time.perf_counter() - start,
+     }

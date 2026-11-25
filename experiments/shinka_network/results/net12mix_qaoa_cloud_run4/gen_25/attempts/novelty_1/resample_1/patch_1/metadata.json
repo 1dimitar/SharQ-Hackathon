@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced_path_load",
+  "patch_description": "This crossover keeps the current implementation\u2019s demand-based direct-link rewards and sparse, selective two-hop path credit. It adds modest positive couplings for pairs of links that share an origin or destination, borrowing the load-balancing signal from the stronger endpoint-exposure implementation. Concave exposure scaling prevents high-volume nodes from dominating; the smaller path-coupling set keeps the quadratic model compact. The degree penalty remains external, with a weight chosen to discourage invalid topologies without adding degree terms here.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:45:36.304945",
+  "llm_cost": 0.0016558,
+  "llm_model": "gpt-6-luna"
+}

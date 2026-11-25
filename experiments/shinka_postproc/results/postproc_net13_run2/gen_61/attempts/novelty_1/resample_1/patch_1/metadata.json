@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_parent_selection",
+  "patch_description": "Track how often each archive member is selected and how much its search produces improvements. Parent selection then balances low-score elites with underexplored members and parents whose neighborhoods have recently yielded gains, instead of relying only on fixed rank-based sampling. This preserves exploitation while giving productive or neglected regions more opportunities to contribute. The counters are updated only from LP-scored results; move generation and selection remain free.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T00:24:10.790329",
+  "llm_cost": 0.0020575,
+  "llm_model": "gpt-6-luna"
+}

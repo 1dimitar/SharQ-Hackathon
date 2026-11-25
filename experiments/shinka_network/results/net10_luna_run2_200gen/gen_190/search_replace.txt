@@ -1,0 +1,16 @@
+<NAME>
+stronger_edge_load_discount
+</NAME>
+
+<DESCRIPTION>
+The direct-link blend already uses the evidence-backed 85:15 calibration. Instead, strengthen the existing discount on two-hop paths whose constituent links have substantial direct demand. Those links are more likely to have limited capacity left for transit traffic, so this makes the path rewards more load-aware without adding quadratic terms or changing the QUBO structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                    / (float(node_pressure[j]) * (1.0 + 0.5 * edge_pressure))
+=======
+                    / (float(node_pressure[j]) * (1.0 + 1.0 * edge_pressure))
+>>>>>>> REPLACE
+
+</DIFF>

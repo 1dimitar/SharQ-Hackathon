@@ -1,0 +1,38 @@
+<NAME>
+stagnation_guided_rotations
+</NAME>
+
+<DESCRIPTION>
+Increase three-edge rotation diversity only after repeated unsuccessful batches, using `kick_size` as the existing stagnation signal. In this stronger phase, most sampled rotations include a priced bottleneck edge, while the other two edges remain exploratory. When an improvement resets `kick_size`, rotation generation returns to its normal level. This targets the recommended escape move without spending extra LP calls or changing the search during productive periods.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Three-edge rotations allow moves that cannot be obtained in one switch.
+        rotations = max(10, 8 * kick_size)
+        for _ in range(rotations):
+            if len(arcs) < 3:
+                break
+            ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+=======
+        # Escalate rotation exploration only after sustained stagnation. In
+        # that phase, anchor most rotations on a priced bottleneck edge.
+        hot_ids = [i for i, arc in enumerate(arcs) if arc in hot]
+        if kick_size >= 5:
+            rotations = 12 + 10 * kick_size
+        else:
+            rotations = max(10, 8 * kick_size)
+        for _ in range(rotations):
+            if len(arcs) < 3:
+                break
+            if kick_size >= 5 and hot_ids and rng.random() < 0.85:
+                p = int(rng.choice(hot_ids))
+                rest = [i for i in range(len(arcs)) if i != p]
+                q, r = (int(i) for i in rng.choice(rest, size=2, replace=False))
+                ids = (p, q, r)
+            else:
+                ids = rng.choice(len(arcs), size=3, replace=False)
+            (a, b), (c, d), (e, f) = (arcs[int(i)] for i in ids)
+>>>>>>> REPLACE
+</DIFF>

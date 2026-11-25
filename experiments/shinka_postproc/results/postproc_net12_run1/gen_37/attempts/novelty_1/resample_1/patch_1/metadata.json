@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dual_benefit_slots",
+  "patch_description": "Use the LP dual prices directionally when screening moves: a switch is promising when it removes highly priced links and adds low-priced ones. Keep the existing energy-ranked batch, but reserve a few additional LP evaluations for moves with the strongest positive price benefit. This preserves the surrogate\u2019s useful signal while ensuring promising dual-guided moves are not crowded out by energy ranking.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:48:26.705254",
+  "llm_cost": 0.0018891000000000001,
+  "llm_model": "gpt-6-luna"
+}

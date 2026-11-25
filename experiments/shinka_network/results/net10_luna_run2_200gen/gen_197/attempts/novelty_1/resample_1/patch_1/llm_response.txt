@@ -1,0 +1,25 @@
+<NAME>
+balanced_relay_pressure
+</NAME>
+
+<DESCRIPTION>
+Estimate relay pressure from the average of a node’s incoming and outgoing demand, rather than letting either side dominate. Keep the existing mean normalization and raise the pressure floor to 0.65, so low-demand nodes are not treated as nearly uncongested transit points. This changes only the relay discount used by the existing two-hop model; it does not add quadratic terms.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    incident = np.sum(d, axis=0) + np.sum(d, axis=1)
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 1e-12:
+        mean_incident = 1.0
+    node_pressure = np.maximum(0.5, incident / mean_incident)
+=======
+    incoming = np.sum(d, axis=0)
+    outgoing = np.sum(d, axis=1)
+    incident = 0.5 * (incoming + outgoing)
+    mean_incident = float(np.mean(incident)) if n else 0.0
+    if mean_incident <= 1e-12:
+        mean_incident = 1.0
+    node_pressure = np.maximum(0.65, incident / mean_incident)
+>>>>>>> REPLACE
+</DIFF>

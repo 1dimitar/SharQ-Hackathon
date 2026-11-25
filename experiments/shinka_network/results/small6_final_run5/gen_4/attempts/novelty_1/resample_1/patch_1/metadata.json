@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "balanced-path-qubo",
+  "patch_description": "The current approach combines a demand-weighted direct-link reward with up to five selected two-hop rewards per demand, discounted by transit-node pressure. The proposal uses a more selective, adaptive path set: it scores candidate transit nodes using source/destination demand shares and node pressure, and keeps two or three candidates depending on the demand\u2019s rank. Direct rewards use a softened demand score plus a source/destination-share bonus. Small positive couplings between a direct link and the edges of its selected two-hop alternatives discourage rewarding redundant ways to serve the same demand. The degree penalty remains external; the returned penalty weight is adjusted to 1.15.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:46:45.439254",
+  "llm_cost": 0.0025722999999999996,
+  "llm_model": "gpt-6-luna"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 74,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "bilateral_route_support",
+  "patch_description": "Make two-hop route selection and reward sensitive to whether both legs are strong, rather than letting a single strong leg dominate their additive score. For each candidate transit node, blend the harmonic mean of the normalized leg demands with the harmonic mean of their source-row and destination-column shares. The harmonic means preserve the weak-leg bottleneck, while the bounded shares reflect how important each leg is to its endpoint. Use this blended signal in both candidate ranking and the existing discount, while retaining part of the additive signal for continuity with the current model.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T02:56:46.971772",
+  "llm_cost": 0.0029365000000000003,
+  "llm_model": "gpt-6-luna"
+}

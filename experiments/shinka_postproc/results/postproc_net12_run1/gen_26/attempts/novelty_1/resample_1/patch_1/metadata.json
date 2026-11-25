@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "price_ranked_archive",
+  "patch_description": "Rather than repeatedly descending from one incumbent, this approach keeps a small, diverse archive of evaluated networks and allocates LP calls in ranked batches. It borrows the useful bottleneck-price signal and surrogate energy from earlier approaches, but combines them with an archive-based search: candidate switches are ranked by directional price relief and energy, while a separate slice of each batch preserves exploration. Promising networks are retained based on both LP quality and edge-set diversity, giving the search more chances to leave a local basin. Repaired QAOA samples seed the archive, and multi-switch perturbations provide fallback proposals when ordinary switches are exhausted.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T20:41:59.777141",
+  "llm_cost": 0.0019306,
+  "llm_model": "gpt-6-luna"
+}

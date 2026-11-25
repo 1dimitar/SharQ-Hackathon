@@ -1,0 +1,25 @@
+<NAME>
+edge_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+The current two-hop allocation favors paths whose component links already carry substantial direct demand through the geometric-support term, but it does not explicitly suppress those potentially congested links. Discount each intermediate’s evidence by the average normalized demand on its two component edges. Using a moderate coefficient of 0.5 should temper this effect without eliminating useful demand-supported paths, and it changes only the allocation of the existing OD-pair budget.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                support = np.sqrt(a * b)
+                score = (0.18 + 0.82 * support) * float(node_capacity[j])
+                mids.append(j)
+=======
+                support = np.sqrt(a * b)
+                edge_pressure = 0.5 * (a + b)
+                pressure_discount = 1.0 + 0.5 * edge_pressure
+                score = (
+                    (0.18 + 0.82 * support)
+                    * float(node_capacity[j])
+                    / pressure_discount
+                )
+                mids.append(j)
+>>>>>>> REPLACE
+</DIFF>

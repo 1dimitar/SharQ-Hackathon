@@ -1,0 +1,79 @@
+<NAME>
+multi_target_relink
+</NAME>
+
+<DESCRIPTION>
+The current path relinking follows just one randomly chosen archive target, so useful intermediate networks can be missed when that path stalls or its early steps are poor. Replace it with short paths toward several strong, distinct targets. At each step, retain the best-overlap switches as candidate moves and randomly choose among them to continue the path. This gives the existing surrogate-based batch screening more target-directed alternatives without spending LP calls on every path step.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        # Add intermediate networks on a short path toward a strong, distinct
+        # archived solution. Each two-switch must increase overlap with the target.
+        targets = [
+            x for x in sorted(seen, key=seen.get)[:12]
+            if x != net and distance(net, x) >= 6
+        ]
+        if targets:
+            target = targets[int(rng.integers(len(targets)))]
+            target_edges = set(target)
+            path_net = net
+            for _ in range(8):
+                path_arcs = list(path_net)
+                path_set = set(path_net)
+                overlap = len(path_set & target_edges)
+                improving = []
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        cand = switch(path_net, p, q)
+                        if cand is not None:
+                            gain = len(set(cand) & target_edges) - overlap
+                            if gain > 0:
+                                improving.append((gain, cand))
+                if not improving:
+                    break
+                best_gain = max(g for g, _ in improving)
+                choices = [cand for gain, cand in improving if gain == best_gain]
+                path_net = choices[int(rng.integers(len(choices)))]
+                moves.add(path_net)
+=======
+        # Relink toward several high-quality archive members rather than relying
+        # on one randomly selected target. Keep distinct targets to explore
+        # different regions of the degree-preserving topology space.
+        targets = []
+        for target in sorted(seen, key=seen.get)[:16]:
+            if target == net or distance(net, target) < 6:
+                continue
+            if all(distance(target, old) >= 4 for old in targets):
+                targets.append(target)
+            if len(targets) >= 3:
+                break
+
+        for target in targets:
+            target_edges = set(target)
+            path_net = net
+            for _ in range(6):
+                path_arcs = list(path_net)
+                path_set = set(path_net)
+                overlap = len(path_set & target_edges)
+                improving = []
+                for p in range(len(path_arcs)):
+                    for q in range(p + 1, len(path_arcs)):
+                        cand = switch(path_net, p, q)
+                        if cand is not None:
+                            gain = len(set(cand) & target_edges) - overlap
+                            if gain > 0:
+                                improving.append((gain, cand))
+                if not improving:
+                    break
+
+                best_gain = max(gain for gain, _ in improving)
+                choices = [cand for gain, cand in improving if gain == best_gain]
+                # Expose several equally promising path steps to surrogate
+                # screening, while continuing along a randomized one.
+                for cand in choices[:3]:
+                    moves.add(cand)
+                path_net = choices[int(rng.integers(len(choices)))]
+>>>>>>> REPLACE
+
+</DIFF>

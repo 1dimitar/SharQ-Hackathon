@@ -1,0 +1,22 @@
+<NAME>
+edge_pressure_discount
+</NAME>
+
+<DESCRIPTION>
+Discount indirect-path rewards when either constituent edge already has substantial direct demand. This is a focused test of edge-aware routing pressure: paths using heavily demanded links are less attractive as alternatives, while low-pressure links retain more incentive to support transit. Use a conservative coefficient of 0.25 so the adjustment refines, rather than overwhelms, the existing transit-node discount.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+                weight = -demand_fraction * (current_part + shared_part)
+                quadratic[((i, j), (j, k))] = weight
+=======
+                edge_pressure = 0.5 * (
+                    float(normalized[i, j]) + float(normalized[j, k])
+                )
+                pressure_discount = 1.0 + 0.25 * edge_pressure
+                weight = -demand_fraction * (current_part + shared_part) / pressure_discount
+                quadratic[((i, j), (j, k))] = weight
+>>>>>>> REPLACE
+
+</DIFF>

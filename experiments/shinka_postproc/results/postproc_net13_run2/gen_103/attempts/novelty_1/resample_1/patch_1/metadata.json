@@ -1,0 +1,14 @@
+{
+  "generation": 103,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "adaptive_operator_budget",
+  "patch_description": "Allocate proposal effort among two-switches, rotations, and multi-switch kicks according to their observed LP improvement rates. Smoothed success estimates prevent early results from dominating, while clipping each operator\u2019s multiplier preserves exploration. Update those estimates from evaluated moves, classifying them by the number of changed links. The focused bottleneck neighborhood remains intact; only the additional sampled proposals adapt.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:07:58.945123",
+  "llm_cost": 0.0028804000000000004,
+  "llm_model": "gpt-6-luna"
+}

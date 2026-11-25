@@ -1,0 +1,14 @@
+{
+  "generation": 112,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 10,
+  "patch_name": "operator_adaptive_effort",
+  "patch_description": "Track stalls separately for focused switches, random switches, rotations, and destination-matching proposals. When an operator repeatedly fails to produce an improvement on a parent, gradually increase its proposal effort, with caps to keep runtime bounded. Focused search also broadens its load-heavy link set as it stalls. Recording which operator generated each selected move lets successful operators reset their own stall counter rather than treating every operator as equally successful or unsuccessful.",
+  "error_msg": null,
+  "timestamp": "2026-11-22T01:16:25.235832",
+  "llm_cost": 0.0025457,
+  "llm_model": "gpt-6-luna"
+}

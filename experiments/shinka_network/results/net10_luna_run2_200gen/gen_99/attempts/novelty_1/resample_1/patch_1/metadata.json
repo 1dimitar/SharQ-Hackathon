@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "two_hop_strength",
+  "patch_description": "Reduce the two-hop reward strength from 0.56 to 0.50. The current surrogate already gives strong direct-link rewards, while its two-hop terms contribute to a low valid-before-repair rate (69% on average). A modest reduction keeps incentives for useful indirect routes but makes them less likely to overwhelm direct-demand evidence and degree-penalty guidance. This is a targeted test of the suggested strength sweep and may improve the quality of typical sampled topologies without changing term count or runtime.",
+  "error_msg": null,
+  "timestamp": "2026-11-21T16:49:55.671902",
+  "llm_cost": 0.0008092,
+  "llm_model": "gpt-6-luna"
+}

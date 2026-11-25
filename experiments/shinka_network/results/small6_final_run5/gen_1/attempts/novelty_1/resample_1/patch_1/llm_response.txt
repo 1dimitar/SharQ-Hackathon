@@ -1,0 +1,56 @@
+<NAME>
+direct_route_correction
+</NAME>
+
+<DESCRIPTION>
+The current surrogate rewards a two-hop route even when the same demand’s direct link is also selected, effectively counting that demand twice. Add small positive couplings between the direct link and each edge of a selected two-hop path. These partially offset the path reward when the direct link is present, while retaining some incentive for alternate paths because real traffic may split or need to avoid congestion. Apply the correction to both ranked and fallback paths, and accumulate coefficients so overlapping terms are handled consistently. The added terms grow only with the number of selected paths, well within the quadratic-term limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+            for position, (_, j, discount) in enumerate(candidates[:keep]):
+                selected.add(j)
+                rank_factor = 1.0 + 0.08 * (keep - position)
+                weight = -0.46 * float(support) * rank_factor / discount
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = weight
+
+            # Retain one alternative selected by the full-path model's
+            # pressure discount, unless it was already selected by affinity.
+            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                first, second = (i, j), (j, k)
+                key = (first, second) if first < second else (second, first)
+                quadratic[key] = -0.30 * float(support) / discount
+=======
+            direct = (i, k)
+
+            def add_route(j, weight):
+                first, second = (i, j), (j, k)
+                path_key = (first, second) if first < second else (second, first)
+                quadratic[path_key] = quadratic.get(path_key, 0.0) + weight
+
+                # A direct link and an alternate route serve overlapping
+                # traffic; partially cancel the alternate-route bonus.
+                for edge in (first, second):
+                    overlap_key = (direct, edge) if direct < edge else (edge, direct)
+                    quadratic[overlap_key] = (
+                        quadratic.get(overlap_key, 0.0) - 0.30 * weight
+                    )
+
+            for position, (_, j, discount) in enumerate(candidates[:keep]):
+                selected.add(j)
+                rank_factor = 1.0 + 0.08 * (keep - position)
+                weight = -0.46 * float(support) * rank_factor / discount
+                add_route(j, weight)
+
+            # Retain one alternative selected by the full-path model's
+            # pressure discount, unless it was already selected by affinity.
+            remaining = [candidate for candidate in candidates if candidate[1] not in selected]
+            if remaining:
+                _, j, discount = min(remaining, key=lambda candidate: (candidate[2], candidate[1]))
+                add_route(j, -0.30 * float(support) / discount)
+>>>>>>> REPLACE
+</DIFF>
